@@ -29,7 +29,8 @@ telegram: ${OBJECTS}
 .c.o :
 	${CC} ${COMPILE_FLAGS} ${INCLUDE} -c $< -o $@
 
+libtg.a: ${OBJECTS}
+	ar rs $@ ${OBJECTS}
 
 clean:
-	rm -rf *.o telegram config.log config.status > /dev/null || echo "all clean"
-
+	rm -rf *.a *.o telegram config.log config.status > /dev/null || echo "all clean"

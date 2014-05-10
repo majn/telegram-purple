@@ -34,6 +34,8 @@
 #include "util.h"
 #include "prpl.h"
 
+#include <libtg.h>
+
 #define PLUGIN_ID "prpl-telegram"
 
 #define TELEGRAM_APP_API_ID 16944
@@ -90,31 +92,38 @@ static void tgprpl_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo * info
 static void tgprpl_login(PurpleAccount * acct)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_login()\n");
+
+    purple_debug_info(PLUGIN_ID, "calling runtg()\n");
+    runtg(0, NULL);
+    purple_debug_info(PLUGIN_ID, "returned from runtg()\n");
+
+    /*
     PurpleConnection *gc = purple_account_get_connection(acct);
 
     const char *username = purple_account_get_username(acct);
     const char *sms_key = purple_account_get_string(acct, "sms_key", "");
     const char *hostname = purple_account_get_string(acct, "server", TELEGRAM_TEST_SERVER);
-	  int port = purple_account_get_int(acct, "port", TELEGRAM_DEFAULT_PORT);
+    int port = purple_account_get_int(acct, "port", TELEGRAM_DEFAULT_PORT);
 
     purple_debug_info(PLUGIN_ID, "logging in %s\n", username);
 
-    if (sms_key[0] == "") {
+    if (strcmp(sms_key[0], "")) {
       purple_debug_info(PLUGIN_ID, "no sms key -> send sms key request\n");
     }
 
-     purple_debug_info(PLUGIN_ID, "Connect\n");
+    purple_debug_info(PLUGIN_ID, "Connect\n");
     purple_connection_update_progress(gc, "Connecting", 0, 4);
     telegram_conn *conn;
     conn = g_new0(telegram_conn, 1);
     conn->gc = gc;
-	  conn->account = acct;
+    conn->account = acct;
     purple_connection_set_protocol_data(gc, conn);
 
     gc->proto_data = conn;
     purple_connection_set_state(gc, PURPLE_CONNECTED);
 
-    purple_debug_info(PLUGIN_ID, "Connected\n");  
+    purple_debug_info(PLUGIN_ID, "Connected\n");
+    */
 }
 
 
@@ -273,12 +282,12 @@ static GList *tgprpl_status_types(PurpleAccount * acct)
     types = g_list_prepend(types, type);
 
     type = purple_status_type_new_with_attrs(PURPLE_STATUS_AWAY, "unavailable", NULL, TRUE, TRUE, FALSE, "message", "Message", purple_value_new(PURPLE_TYPE_STRING), NULL);
-	 types = g_list_prepend(types, type);
+    types = g_list_prepend(types, type);
 
-	 type = purple_status_type_new(PURPLE_STATUS_OFFLINE, NULL, NULL, TRUE);
-	 types = g_list_append(types, type);
+    type = purple_status_type_new(PURPLE_STATUS_OFFLINE, NULL, NULL, TRUE);
+    types = g_list_append(types, type);
 
-	 return g_list_reverse(types);
+    return g_list_reverse(types);
 }
 
 static void tgprpl_set_status(PurpleAccount * acct, PurpleStatus * status)
@@ -549,6 +558,5 @@ static PurplePluginInfo info = {
     NULL,           // reserved
     NULL            // reserved
 };
-
 
 PURPLE_INIT_PLUGIN(telegram, init_plugin, info)
