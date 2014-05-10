@@ -2,7 +2,7 @@ telegram
 *.o
 *.so
 *.a
-Makefile
+/Makefile
 autom4te.cache
 config.h
 config.log

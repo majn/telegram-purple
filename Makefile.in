@@ -27,10 +27,12 @@ telegram: ${OBJECTS}
 	${CC} ${OBJECTS} ${LINK_FLAGS} -o $@
 
 .c.o :
-	${CC} ${COMPILE_FLAGS} ${INCLUDE} -c $< -o $@
+	${CC} -fPIC -DPIC ${COMPILE_FLAGS} ${INCLUDE} -c $< -o $@
 
 libtg.a: ${OBJECTS}
 	ar rs $@ ${OBJECTS}
+
+library: libtg.a
 
 clean:
 	rm -rf *.a *.o telegram config.log config.status > /dev/null || echo "all clean"
