@@ -14,11 +14,14 @@ telegram-purple
 3. Im Ordner von **telegram-purple** make ausführen:
 
 
-        cd telgram.purple
-        sudo make install
+        cd telgram-purple
+		./configure --disable-liblua --disable-libconfig
+        make
+		cd purple-plugin
+		make install
 
 
-Der Befehl kompiliert telegram-purple und kopiert die Dateien in den globale Plugin-Ordner von Pidgin. Das Protokoll Telegram sollte dann beim nächsten Start in der Accountverwaltung von Pidgin automatisch auftauchen.
+Das Protokoll Telegram sollte dann beim nächsten Start in der Accountverwaltung von Pidgin automatisch auftauchen.
 
 
 # Testen und Debuggen
