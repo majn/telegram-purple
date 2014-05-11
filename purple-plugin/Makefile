@@ -56,9 +56,11 @@ debug: $(LIBNAME)
 PLUGIN_DIR_PURPLE:=$(shell pkg-config --variable=plugindir purple)
 DATA_ROOT_DIR_PURPLE:=$(shell pkg-config --variable=datarootdir purple)
 
+# TODO: Find a better place for server.pub
 .PHONY: install
 install: $(LIBNAME)
 	install -D $(LIBNAME) $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(LIBNAME)
+	install -D ../tg-server.pub /etc/telegram/server.pub
 	install -D telegram16.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
 	install -D telegram22.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
 	install -D telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
@@ -66,6 +68,7 @@ install: $(LIBNAME)
 .PHONY: uninstall
 uninstall: $(LIBNAME)
 	rm -f $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(LIBNAME)
+	rm -f /etc/telegram/server.pub
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
@@ -77,4 +80,4 @@ clean:
 
 .PHONY: run
 run: all install
-	pidgin -d | grep -i 'plugins\|telegram'
+	pidgin -d

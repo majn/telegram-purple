@@ -15,10 +15,10 @@ telegram-purple
 
 
         cd telgram-purple
-		./configure --disable-liblua --disable-libconfig
-        make
-		cd purple-plugin
-		make install
+        ./configure --disable-liblua --disable-libconfig
+        make objects
+        cd purple-plugin
+        make install
 
 
 Das Protokoll Telegram sollte dann beim nächsten Start in der Accountverwaltung von Pidgin automatisch auftauchen.
@@ -31,7 +31,7 @@ Um **telegram-purple** während der Entwicklung zu testen, ist es sinnvoll vorhe
 
         sudo chmod 777 -R `pkg-config --variable=plugindir purple`
         sudo chmod 777 -R `pkg-config --variable=datarootdir purple`pixmaps/pidgin/protocol
-        
+
 
 ## Testen
 
@@ -40,7 +40,7 @@ Zum Compilen, Testen und Ausgeben aller Debugnachrichten folgenden Befehl ausfü
 
 
         make run
-        
+
 
 Falls die Lognachrichten nach kurzer Zeit nicht mehr angezeigt werden, und die Meldung "Wird geschlossen, da bereits ein andere libpurple-Client läuft" erscheint, die laufende Instanz von Pidgin mit folgendem Befehl beenden:
 
@@ -48,7 +48,7 @@ Falls die Lognachrichten nach kurzer Zeit nicht mehr angezeigt werden, und die M
         sudo killall pidgin
 
 
-           
+
 ### Filtern der Lognachrichten
 
 Wenn Pidgin einfach mit **make run** ausgeführt wird, werden alle Debugnachrichten des gesamten Programms ausgegegeben. Libpurple verwendet interne Loggingfunktionen die den Lognachrichten automatisch einen Prefix hinzufügen, z.B. "plugins:" für Nachrichten des Pluginsloaders und "prpl-telegram:" für Nachrichten dieses Plugins.
@@ -86,14 +86,14 @@ Wir wollen wenn möglichen den typischen Linux-C-Coding-Style verwenden. Bei Fun
 
 ## Logging
 
-Wenn irgendeine Ausgabe gemacht wird, sollte das ausschließlich über die Libpurple Debugging-Funktionen passieren (Siehe die Anleitung zum Debuggen im [Libpurple-Howto](https://developer.pidgin.im/wiki/CHowTo/DebugAPIHowTo "Libpurple-HowTo")). 
+Wenn irgendeine Ausgabe gemacht wird, sollte das ausschließlich über die Libpurple Debugging-Funktionen passieren (Siehe die Anleitung zum Debuggen im [Libpurple-Howto](https://developer.pidgin.im/wiki/CHowTo/DebugAPIHowTo "Libpurple-HowTo")).
 
 
         #include "debug.h"
         #define PLUGIN_ID "prpl-telegram"
-        
+
         // ...
-        
+
          purple_debug_info(PLUGIN_ID, "Debugnachricht");
 
 ## Troubleshooting

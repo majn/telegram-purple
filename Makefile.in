@@ -6,6 +6,9 @@ CPPFLAGS=@CPPFLAGS@
 DEFS=@DEFS@
 COMPILE_FLAGS=${CFLAGS} ${CPPFLAGS} ${DEFS} -Wall -Wextra -Werror -Wno-deprecated-declarations -fno-strict-aliasing -fno-omit-frame-pointer -ggdb
 
+# include libpurple headers for debugging purposes
+CFLAGS_PURPLE = $(shell pkg-config --cflags purple)
+
 EXTRA_LIBS=@LIBS@ @EXTRA_LIBS@
 LOCAL_LDFLAGS=-rdynamic -ggdb ${EXTRA_LIBS}
 LINK_FLAGS=${LDFLAGS} ${LOCAL_LDFLAGS}
@@ -27,12 +30,9 @@ telegram: ${OBJECTS}
 	${CC} ${OBJECTS} ${LINK_FLAGS} -o $@
 
 .c.o :
-	${CC} -fPIC -DPIC ${COMPILE_FLAGS} ${INCLUDE} -c $< -o $@
+	${CC} -fPIC -DPIC ${CFLAGS_PURPLE} ${COMPILE_FLAGS} ${INCLUDE} -c $< -o $@
 
-libtg.a: ${OBJECTS}
-	ar rs $@ ${OBJECTS}
-
-library: libtg.a
+objects: ${OBJECTS}
 
 clean:
 	rm -rf *.a *.o telegram config.log config.status > /dev/null || echo "all clean"

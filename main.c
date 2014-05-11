@@ -300,7 +300,7 @@ void parse_config (void) {
   strcpy (buf + l, "test");
   config_lookup_bool (&conf, buf, &test_dc);
 
-  strcpy (buf + l, "log_level");
+  strcpy (buf + l, "log_lev el");
   long long t = log_level;
   config_lookup_int (&conf, buf, (void *)&t);
   log_level = t;
@@ -476,22 +476,15 @@ void sig_abrt_handler (int signum __attribute__ ((unused))) {
   exit (EXIT_FAILURE);
 }
 
-int runtg (int argc, char **argv) {
+int main (int argc, char **argv) {
   signal (SIGSEGV, sig_segv_handler);
   signal (SIGABRT, sig_abrt_handler);
 
   log_level = 10;
 
   args_parse (argc, argv);
-  printf (
-    "Telegram-client version " TG_VERSION ", Copyright (C) 2013 Vitaly Valtman\n"
-    "Telegram-client comes with ABSOLUTELY NO WARRANTY; for details type `show_license'.\n"
-    "This is free software, and you are welcome to redistribute it\n"
-    "under certain conditions; type `show_license' for details.\n"
-  );
   running_for_first_time ();
   parse_config ();
-
 
   get_terminal_attributes ();
 
@@ -504,4 +497,12 @@ int runtg (int argc, char **argv) {
   inner_main ();
 
   return 0;
+}
+
+
+/**
+ * Log into Telegram with the given login credentials.
+ */
+int tg_login () {
+    return main(0, NULL);
 }

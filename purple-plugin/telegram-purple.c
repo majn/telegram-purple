@@ -16,7 +16,7 @@
 
 #include <glib.h>
 
-// TODO: check if we really need all those includes...
+// Libpurple Plugin Includes
 #include "notify.h"
 #include "plugin.h"  // NEEDED?
 #include "version.h"
@@ -34,23 +34,12 @@
 #include "util.h"
 #include "prpl.h"
 
-#include <libtg.h>
+// Telegram Includes
+#include <tg-cli.h>
 
-#define PLUGIN_ID "prpl-telegram"
+// telegram-purple includes
+#include "telegram-purple.h"
 
-#define TELEGRAM_APP_API_ID 16944
-#define TELEGRAM_APP_API_HASH "457b5a190c750ed0a772bc48bbdf75dc"
-#define TELEGRAM_TEST_SERVER "173.240.5.253"
-#define TELEGRAM_PRODUCTION_SERVER "173.240.5.1"
-#define TELEGRAM_DEFAULT_PORT 443
-#define TELEGRAM_PUBLIC_KEY "-----BEGIN RSA PUBLIC KEY-----MIIBCgKCAQEAwVACPi9w23mF3tBkdZz+zwrzKOaaQdr01vAbU4E1pvkfj4sqDsm6lyDONS789sVoD/xCS9Y0hkkC3gtL1tSfTlgCMOOul9lcixlEKzwKENj1Yz/s7daSan9tqw3bfUV/nqgbhGX81v/+7RFAEd+RwFnK7a+XYl9sluzHRyVVaTTveB2GazTwEfzk2DWgkBluml8OREmvfraX3bkHZJTKX4EQSjBbbdJ2ZXIsRrYOXfaA+xayEGB+8hdlLmAjbCVfaigxX0CDqWeR1yFL9kwd9P0NsZRPsmoqVwMbMu7mStFai6aIhc3nSlv8kg9qv1m6XHVQY3PnEw+QQtqSIXklHwIDAQAB-----END RSA PUBLIC KEY-----"
-
-
-typedef struct {
-	PurpleAccount *account;
-	PurpleConnection *gc;
-	PurpleSslConnection *gsc;
-} telegram_conn;
 
 static PurplePlugin *_telegram_protocol = NULL;
 
@@ -94,7 +83,7 @@ static void tgprpl_login(PurpleAccount * acct)
     purple_debug_info(PLUGIN_ID, "tgprpl_login()\n");
 
     purple_debug_info(PLUGIN_ID, "calling runtg()\n");
-    runtg(0, NULL);
+    tg_login();
     purple_debug_info(PLUGIN_ID, "returned from runtg()\n");
 
     /*
@@ -498,19 +487,35 @@ static PurplePluginProtocolInfo prpl_info = {
 	NULL			                              /* add_buddies_with_invite */
 };
 
-static void init_plugin(PurplePlugin *plugin)
+static void tgprpl_init(PurplePlugin *plugin)
 {
-   PurpleAccountOption *option;
+    PurpleAccountOption *option;
+	PurpleAccountUserSplit *split;
+	GList *verification_values = NULL;
 
-	prpl_info.user_splits = NULL;
+	// Required Verification-Key
+	split = purple_account_user_split_new("Verification key", "-", '@');
+	purple_account_user_split_set_reverse(split, FALSE);
+	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
+
+	// Extra Options
+ #define ADD_VALUE(list, desc, v) { \
+     PurpleKeyValuePair *kvp = g_new0(PurpleKeyValuePair, 1); \
+     kvp->key = g_strdup((desc)); \
+     kvp->value = g_strdup((v)); \
+     list = g_list_prepend(list, kvp); \
+ }
+	ADD_VALUE(verification_values, "Phone", "phone");
+	ADD_VALUE(verification_values, "SMS", "sms");
+	option = purple_account_option_list_new("Verification type", "verification_type", verification_values);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	option = purple_account_option_string_new("Server", "server", TELEGRAM_TEST_SERVER);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	option = purple_account_option_int_new("Port", "port", TELEGRAM_DEFAULT_PORT);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	// TODO: Path to public key (When you can change the server hostname, you should also be able to change the public key)
 
-	option = purple_account_option_string_new("SMS-Key", "sms_key", "0000");
+	option = purple_account_option_int_new("Port", "port", TELEGRAM_DEFAULT_PORT);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	_telegram_protocol = plugin;
@@ -559,4 +564,4 @@ static PurplePluginInfo info = {
     NULL            // reserved
 };
 
-PURPLE_INIT_PLUGIN(telegram, init_plugin, info)
+PURPLE_INIT_PLUGIN(telegram, tgprpl_init, info)
