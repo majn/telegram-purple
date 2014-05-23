@@ -476,7 +476,7 @@ void sig_abrt_handler (int signum __attribute__ ((unused))) {
   exit (EXIT_FAILURE);
 }
 
-int main (int argc, char **argv) {
+int tgmain (int argc, char **argv) {
   signal (SIGSEGV, sig_segv_handler);
   signal (SIGABRT, sig_abrt_handler);
 
@@ -503,6 +503,19 @@ int main (int argc, char **argv) {
 /**
  * Log into Telegram with the given login credentials.
  */
-int tg_login () {
-    return main(0, NULL);
+int tg_login (char *username, char *code, char *auth_mode) {
+    log_level = 10;
+    running_for_first_time ();
+    parse_config ();
+
+    get_terminal_attributes ();
+
+    #ifdef USE_LUA
+    if (lua_file) {
+      lua_init (lua_file);
+    }
+    #endif
+
+    loop_auto(username, code, auth_mode);
+    return 0;
 }

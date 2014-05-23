@@ -15,6 +15,7 @@
  */
 
 #include <glib.h>
+#include <string.h>
 
 // Libpurple Plugin Includes
 #include "notify.h"
@@ -82,18 +83,34 @@ static void tgprpl_login(PurpleAccount * acct)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_login()\n");
 
-    purple_debug_info(PLUGIN_ID, "calling runtg()\n");
-    tg_login();
-    purple_debug_info(PLUGIN_ID, "returned from runtg()\n");
-
-    /*
-    PurpleConnection *gc = purple_account_get_connection(acct);
-
     const char *username = purple_account_get_username(acct);
-    const char *sms_key = purple_account_get_string(acct, "sms_key", "");
+    const char *code     = purple_account_get_string(acct, "sms_key", NULL);
     const char *hostname = purple_account_get_string(acct, "server", TELEGRAM_TEST_SERVER);
     int port = purple_account_get_int(acct, "port", TELEGRAM_DEFAULT_PORT);
+    printf("username: %s\n", username);
+    printf("code: %s\n", code);
+    printf("hostname: %s\n", hostname);
+	
+	// TODO: Do proper input validation
+    if (code && strcmp(code, "")) {
+	  code = NULL;
+	}
 
+// You should receive a SMS with a code soon, please copy that code into the account option 'Verification Key'.
+    if (!code) {
+			purple_notify_message(
+				_telegram_protocol,
+				PURPLE_NOTIFY_MSG_INFO,
+				"Telegram Verification",
+				"Telegram needs to verify this phone number. ",
+				NULL,
+				NULL,
+				NULL
+			);
+	}
+    tg_login(username, code, TELEGRAM_AUTH_MODE_SMS);
+    /*
+    PurpleConnection *gc = purple_account_get_connection(acct);
     purple_debug_info(PLUGIN_ID, "logging in %s\n", username);
 
     if (strcmp(sms_key[0], "")) {
@@ -494,7 +511,7 @@ static void tgprpl_init(PurplePlugin *plugin)
 	GList *verification_values = NULL;
 
 	// Required Verification-Key
-	split = purple_account_user_split_new("Verification key", "-", '@');
+	split = purple_account_user_split_new("Verification key", NULL, '@');
 	purple_account_user_split_set_reverse(split, FALSE);
 	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
 
@@ -505,29 +522,22 @@ static void tgprpl_init(PurplePlugin *plugin)
      kvp->value = g_strdup((v)); \
      list = g_list_prepend(list, kvp); \
  }
-	ADD_VALUE(verification_values, "Phone", "phone");
-	ADD_VALUE(verification_values, "SMS", "sms");
+	ADD_VALUE(verification_values, "Phone", TELEGRAM_AUTH_MODE_PHONE);
+	ADD_VALUE(verification_values, "SMS", TELEGRAM_AUTH_MODE_SMS);
 	option = purple_account_option_list_new("Verification type", "verification_type", verification_values);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	option = purple_account_option_string_new("Server", "server", TELEGRAM_TEST_SERVER);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	// TODO: Path to public key (When you can change the server hostname, you should also be able to change the public key)
+	// TODO: Path to public key (When you can change the server hostname,
+    //        you should also be able to change the public key)
 
 	option = purple_account_option_int_new("Port", "port", TELEGRAM_DEFAULT_PORT);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	_telegram_protocol = plugin;
 }
-
-/*
-static gboolean plugin_load(PurplePlugin *plugin) {
-    purple_notify_message(plugin, PURPLE_NOTIFY_MSG_INFO, "Hallo Telegram",
-                          "Das ist nur ein Test des Build-Systems, bitte einfach weiter gehen.", NULL, NULL, NULL);
-    return TRUE;
-}
-*/
 
 static GList *tgprpl_actions(PurplePlugin * plugin, gpointer context)
 {

@@ -19,6 +19,7 @@
 #ifndef __LOOP_H__
 #define __LOOP_H__
 int loop (void);
+int loop_auto(char *username, char *code, char *auth_mode);
 void net_loop (int flags, int (*end)(void));
 void write_auth_file (void);
 void write_state_file (void);
