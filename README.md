@@ -96,6 +96,15 @@ Wenn irgendeine Ausgabe gemacht wird, sollte das ausschließlich über die Libpu
 
          purple_debug_info(PLUGIN_ID, "Debugnachricht");
 
+
+## GIT
+git pull 	-> Stand aktualisieren
+git add -A 	-> Files hinzufügen
+git push 	-> Stand hochladen
+git commit 	-> Commiten
+
+
+
 ## Troubleshooting
 
 Die lib muss eventuell nach /usr/lib/purple-2/telegram-purple.so kopiert werden
