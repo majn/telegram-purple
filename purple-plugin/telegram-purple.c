@@ -90,25 +90,27 @@ static void tgprpl_login(PurpleAccount * acct)
     printf("username: %s\n", username);
     printf("code: %s\n", code);
     printf("hostname: %s\n", hostname);
-	
+
 	// TODO: Do proper input validation
+    /*
     if (code && strcmp(code, "")) {
 	  code = NULL;
 	}
-
-// You should receive a SMS with a code soon, please copy that code into the account option 'Verification Key'.
+    */
     if (!code) {
-			purple_notify_message(
-				_telegram_protocol,
-				PURPLE_NOTIFY_MSG_INFO,
-				"Telegram Verification",
-				"Telegram needs to verify this phone number. ",
-				NULL,
-				NULL,
-				NULL
-			);
+		purple_notify_message(
+			_telegram_protocol,
+			PURPLE_NOTIFY_MSG_INFO,
+			"Telegram Verification",
+			"Telegram needs to verify this phone number. You should receive a SMS with a code soon, please copy that code into the account option 'Verification Key'.",
+			NULL,
+			NULL,
+			NULL
+		);
 	}
     tg_login(username, code, TELEGRAM_AUTH_MODE_SMS);
+	printf("Returned from tg_login...\n");
+
     /*
     PurpleConnection *gc = purple_account_get_connection(acct);
     purple_debug_info(PLUGIN_ID, "logging in %s\n", username);

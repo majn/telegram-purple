@@ -43,15 +43,18 @@ LDFLAGS =  $(ARCHFLAGS) -shared
 	$(CC) -c $(INCLUDE) $(CFLAGS) -o $@ $<
 
 $(LIBNAME): $(C_OBJS)
+	cd ..; make objects; cd ./purple-plugin;
 	$(LD) $(LDFLAGS) $(INCLUDE) $(LIBS_PURPLE) $(EXTRA_LIBS) -o $@ $^ $(OBJECTSTG)
 
 .PHONY: strip
 strip: $(LIBNAME)
 	$(STRIP) --strip-unneeded $(LIBNAME)
 
-.PHONY: debug
+.PHONY: debug install
 debug: CFLAGS += -g -DDEBUG
 debug: $(LIBNAME)
+	gdb -tui pidgin
+
 
 PLUGIN_DIR_PURPLE:=$(shell pkg-config --variable=plugindir purple)
 DATA_ROOT_DIR_PURPLE:=$(shell pkg-config --variable=datarootdir purple)

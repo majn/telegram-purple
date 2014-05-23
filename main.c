@@ -57,6 +57,10 @@
 #  include "lua-tg.h"
 #endif
 
+// TODO: Delete this shit
+#include <signal.h>
+#define BREAK raise(SIGINT);
+
 #define PROGNAME "telegram-client"
 #define VERSION "0.01"
 
@@ -515,7 +519,8 @@ int tg_login (char *username, char *code, char *auth_mode) {
       lua_init (lua_file);
     }
     #endif
-
+    
+	BREAK
     loop_auto(username, code, auth_mode);
     return 0;
 }

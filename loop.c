@@ -477,7 +477,9 @@ void init_loop (void) {
   } else {
     read_auth_file ();
   }
+  printf("update prompt()\n");
   update_prompt ();
+  printf("update prompt() done... \n");
 
   assert (DC_list[dc_working_num]);
   if (!DC_working || !DC_working->auth_key_id) {
@@ -494,7 +496,9 @@ void init_loop (void) {
     logprintf ("Requesting info about DC...\n");
   }
   do_help_get_config ();
+  printf("net_loop\n");
   net_loop (0, mcs);
+  printf("net_loop done...\n");
   if (verbosity) {
     logprintf ("DC_info: %d new DC got\n", new_dc_num);
   }
@@ -507,27 +511,41 @@ void init_loop (void) {
 }
 
 int start_loop (char* code, char* auth_mode) {
+  printf("Calling start_loop()\n");
+  printf("auth_state %i\n", auth_state);
   if (auth_state == 100 || !(DC_working->has_auth)) {
+    printf("auth_state == 100 || !(DC_working->has_auth)");
     int res = do_auth_check_phone (default_username);
     assert (res >= 0);
     logprintf ("%s\n", res > 0 ? "phone registered" : "phone not registered");
     if (res > 0 && !register_mode) {
       // Register Mode 1
+	  printf ("Register Mode 1\n");
       if (code) {
         if (do_send_code_result (code) >= 0) {
           printf ("Authentication successfull, state = 300\n");
           auth_state = 300;
         }
       } else {
+	      printf("No code given, attempting to register\n");
           // Send Code
-          if (strcmp(TELEGRAM_AUTH_MODE_SMS, auth_mode)) {
+		  printf ("auth mode %s\n", auth_mode);
+		  /*
+          if (strcmp(TELEGRAM_AUTH_MODE_SMS"sms", auth_mode)) {
+		  */
               do_send_code (default_username);
               printf ("Code from sms (if you did not receive an SMS and want to be called, type \"call\"): ");
+			  printf("storing current state in auth file...\n");
+    		  write_auth_file ();
+			  printf("exitting...\n");
+			  return 0;
+			  /*
           } else {
               printf ("You typed \"call\", switching to phone system.\n");
               do_phone_call (default_username);
               printf ("Calling you!");
           }
+		  */
       }
     } else {
       printf ("User is not registered. Do you want to register? [Y/n] ");
@@ -575,6 +593,7 @@ int start_loop (char* code, char* auth_mode) {
 	  */
     }
   }
+  printf("Authentication done\n");
 
   int i;
   for (i = 0; i <= MAX_DC_NUM; i++) if (DC_list[i] && !DC_list[i]->has_auth) {
