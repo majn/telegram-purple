@@ -107,4 +107,9 @@ git commit 	-> Commiten
 
 ## Troubleshooting
 
+Zum löschen der angelegten Accounts
+rm /home/USER/.purple/accounts.xml
+
 Die lib muss eventuell nach /usr/lib/purple-2/telegram-purple.so kopiert werden
+
+

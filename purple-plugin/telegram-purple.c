@@ -83,14 +83,28 @@ static void tgprpl_login(PurpleAccount * acct)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_login()\n");
 
-    const char *username = purple_account_get_username(acct);
-    const char *code     = purple_account_get_string(acct, "sms_key", NULL);
-    const char *hostname = purple_account_get_string(acct, "server", TELEGRAM_TEST_SERVER);
+    const char *username         = purple_account_get_username(acct);
+    const char *code             = purple_account_get_string(acct, "verification_key", NULL);
+    const char *hostname         = purple_account_get_string(acct, "server", TELEGRAM_TEST_SERVER);
+    const char *verificationType = purple_account_get_string(acct, "verification_type", TELEGRAM_AUTH_MODE_SMS);
     int port = purple_account_get_int(acct, "port", TELEGRAM_DEFAULT_PORT);
+
     printf("username: %s\n", username);
     printf("code: %s\n", code);
     printf("hostname: %s\n", hostname);
 
+    purple_debug_info(PLUGIN_ID, "running_for_first_time()\n");
+    running_for_first_time();
+    purple_debug_info(PLUGIN_ID, "parse_config()\n");
+    parse_config ();
+    purple_debug_info(PLUGIN_ID, "init_loop()\n");
+    init_loop();
+    purple_debug_info(PLUGIN_ID, "set_default_username()\n");
+    set_default_username (username);
+    purple_debug_info(PLUGIN_ID, "start_loop() -> Authentication\n");
+    start_loop (code, verificationType);
+    
+ 
 	// TODO: Do proper input validation
     /*
     if (code && strcmp(code, "")) {
@@ -108,7 +122,7 @@ static void tgprpl_login(PurpleAccount * acct)
 			NULL
 		);
 	}
-    tg_login(username, code, TELEGRAM_AUTH_MODE_SMS);
+   // tg_login(username, code, TELEGRAM_AUTH_MODE_SMS);
 	printf("Returned from tg_login...\n");
 
     /*
@@ -508,14 +522,14 @@ static PurplePluginProtocolInfo prpl_info = {
 
 static void tgprpl_init(PurplePlugin *plugin)
 {
-    PurpleAccountOption *option;
+   PurpleAccountOption *option;
 	PurpleAccountUserSplit *split;
 	GList *verification_values = NULL;
 
 	// Required Verification-Key
-	split = purple_account_user_split_new("Verification key", NULL, '@');
-	purple_account_user_split_set_reverse(split, FALSE);
-	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
+//	split = purple_account_user_split_new("Verification key", NULL, '@');
+//	purple_account_user_split_set_reverse(split, FALSE);
+//	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
 
 	// Extra Options
  #define ADD_VALUE(list, desc, v) { \
@@ -530,6 +544,7 @@ static void tgprpl_init(PurplePlugin *plugin)
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	option = purple_account_option_string_new("Server", "server", TELEGRAM_TEST_SERVER);
+   option = purple_account_option_string_new("Verification key", "verification_key", NULL);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	// TODO: Path to public key (When you can change the server hostname,
