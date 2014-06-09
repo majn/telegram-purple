@@ -16,10 +16,13 @@
 
 #include <glib.h>
 #include <string.h>
+#include <stdarg.h>
+
+// test
 
 // Libpurple Plugin Includes
 #include "notify.h"
-#include "plugin.h"  // NEEDED?
+#include "plugin.h"
 #include "version.h"
 #include "account.h"
 #include "accountopt.h"
@@ -37,12 +40,25 @@
 
 // Telegram Includes
 #include <tg-cli.h>
+#include "msglog.h"
 
 // telegram-purple includes
+#include "loop.h"
 #include "telegram-purple.h"
 
-
 static PurplePlugin *_telegram_protocol = NULL;
+
+/**
+ * Redirect the msglog of the telegram-cli application to the libpurple
+ *	logger
+ */
+void tg_cli_log_cb(const char* format, ...)
+{
+  va_list ap;
+  va_start (ap, format);
+  purple_debug_info(PLUGIN_ID, format, ap);
+  va_end (ap);
+}
 
 /**
  * Returns the base icon name for the given buddy and account.
@@ -522,9 +538,12 @@ static PurplePluginProtocolInfo prpl_info = {
 
 static void tgprpl_init(PurplePlugin *plugin)
 {
-   PurpleAccountOption *option;
+    PurpleAccountOption *option;
 	PurpleAccountUserSplit *split;
 	GList *verification_values = NULL;
+
+	// intialise logging
+    set_log_cb(&tg_cli_log_cb);
 
 	// Required Verification-Key
 //	split = purple_account_user_split_new("Verification key", NULL, '@');

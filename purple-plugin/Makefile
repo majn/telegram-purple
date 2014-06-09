@@ -4,7 +4,7 @@
 EXTRA_LIBS = -lcrypto -lz -lm -lreadline
 LDFLAGSTG = -L/usr/local/lib
 CPPFLAGSTG = -I/usr/local/include
-OBJECTSTG = ../main.o ../loop.o ../interface.o ../net.o ../mtproto-common.o ../mtproto-client.o ../queries.o ../structures.o ../binlog.o ../tools.o ../lua-tg.o
+OBJECTSTG = ../main.o ../loop.o ../interface.o ../net.o ../mtproto-common.o ../mtproto-client.o ../queries.o ../structures.o ../binlog.o ../tools.o ../lua-tg.o ../msglog.o
 INCLUDE = -I. -I..
 #
 
