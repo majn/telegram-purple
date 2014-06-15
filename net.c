@@ -634,6 +634,7 @@ struct dc *alloc_dc (int id, char *ip, int port UU) {
 }
 
 void dc_create_session (struct dc *DC) {
+  logprintf("dc_create_session(...)\n");
   struct session *S = talloc0 (sizeof (*S));
   assert (RAND_pseudo_bytes ((unsigned char *) &S->session_id, 8) >= 0);
   S->dc = DC;

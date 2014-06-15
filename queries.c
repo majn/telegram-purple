@@ -126,11 +126,13 @@ void query_restart (long long id) {
 }
 
 struct query *send_query (struct dc *DC, int ints, void *data, struct query_methods *methods, void *extra) {
+  logprintf("send_query(...)\n");
   assert (DC);
   assert (DC->auth_key_id);
   if (!DC->sessions[0]) {
     dc_create_session (DC);
   }
+  logprintf("telegram: verbosity: %d\n", verbosity);
   if (verbosity) {
     logprintf ( "Sending query of size %d to DC (%s:%d)\n", 4 * ints, DC->ip, DC->port);
   }
@@ -397,6 +399,7 @@ int send_code_on_answer (struct query *q UU) {
     tfree_str (phone_code_hash);
   }
   phone_code_hash = tstrndup (s, l);
+  logprintf("telegram: phone_code_hash: %s\n", phone_code_hash);
   fetch_int (); 
   fetch_bool ();
   want_dc_num = -1;
@@ -434,7 +437,7 @@ int config_got (void) {
 
 char *suser;
 extern int dc_working_num;
-void do_send_code (const char *user) {
+char* do_send_code (const char *user) {
   logprintf ("sending code\n");
   suser = tstrdup (user);
   want_dc_num = 0;
@@ -450,7 +453,7 @@ void do_send_code (const char *user) {
   logprintf ("send_code: dc_num = %d\n", dc_working_num);
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_code_methods, 0);
   net_loop (0, code_is_sent);
-  if (want_dc_num == -1) { return; }
+  if (want_dc_num == -1) { return phone_code_hash; }
 
   DC_working = DC_list[want_dc_num];
   if (!DC_working->sessions[0]) {
@@ -474,6 +477,8 @@ void do_send_code (const char *user) {
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_code_methods, 0);
   net_loop (0, code_is_sent);
   assert (want_dc_num == -1);
+
+  return phone_code_hash;
 }
 
 
@@ -626,12 +631,11 @@ int sign_in_on_answer (struct query *q UU) {
   fetch_user (&User);
   if (!our_id) {
     our_id = get_peer_id (User.id);
-      
     bl_do_set_our_id (our_id);
   }
   sign_in_ok = 1;
   if (verbosity) {
-    logprintf ( "authorized successfully: name = '%s %s', phone = '%s', expires = %d\n", User.first_name, User.last_name, User.phone, (int)(expires - get_double_time ()));
+    logprintf ( "telegram: authorized successfully: name = '%s %s', phone = '%s', expires = %d\n", User.first_name, User.last_name, User.phone, (int)(expires - get_double_time ()));
   }
   DC_working->has_auth = 1;
 
@@ -643,7 +647,6 @@ int sign_in_on_answer (struct query *q UU) {
 int sign_in_on_error (struct query *q UU, int error_code, int l, char *error) {
   logprintf ( "error_code = %d, error = %.*s\n", error_code, l, error);
   sign_in_ok = -1;
-  assert (0);
   return 0;
 }
 
@@ -652,11 +655,11 @@ struct query_methods sign_in_methods  = {
   .on_error = sign_in_on_error
 };
 
-int do_send_code_result (const char *code) {
+int do_send_code_result (const char *code, const char *sms_hash) {
   clear_packet ();
   out_int (CODE_auth_sign_in);
   out_string (suser);
-  out_string (phone_code_hash);
+  out_string(sms_hash);
   out_string (code);
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &sign_in_methods, 0);
   sign_in_ok = 0;
@@ -698,27 +701,27 @@ int get_contacts_on_answer (struct query *q UU) {
     struct user *U = fetch_alloc_user ();
     print_start ();
     push_color (COLOR_YELLOW);
-    printf ("User #%d: ", get_peer_id (U->id));
+    logprintf ("User #%d: ", get_peer_id (U->id));
     print_user_name (U->id, (peer_t *)U);
     push_color (COLOR_GREEN);
-    printf (" (");
-    printf ("%s", U->print_name);
+    logprintf (" (");
+    logprintf ("%s", U->print_name);
     if (U->phone) {
-      printf (" ");
-      printf ("%s", U->phone);
+      logprintf (" ");
+      logprintf ("%s", U->phone);
     }
-    printf (") ");
+    logprintf (") ");
     pop_color ();
     if (U->status.online > 0) {
-      printf ("online\n");
+      logprintf ("online\n");
     } else {
       if (U->status.online < 0) {
-        printf ("offline. Was online ");
+        logprintf ("offline. Was online ");
         print_date_full (U->status.when);
       } else {
-        printf ("offline permanent");
+        logprintf ("offline permanent");
       }
-      printf ("\n");
+      logprintf ("\n");
     }
     pop_color ();
     print_end ();
@@ -872,9 +875,9 @@ int msg_send_on_answer (struct query *q UU) {
       }
       print_start ();
       push_color (COLOR_YELLOW);
-      printf ("Link with user ");
+      logprintf ("Link with user ");
       print_user_name (U->id, (void *)U);
-      printf (" changed\n");
+      logprintf (" changed\n");
       pop_color ();
       print_end ();
     }
@@ -1175,15 +1178,15 @@ int get_dialogs_on_answer (struct query *q UU) {
     switch (get_peer_type (plist[i])) {
     case PEER_USER:
       UC = user_chat_get (plist[i]);
-      printf ("User ");
+      logprintf ("User ");
       print_user_name (plist[i], UC);
-      printf (": %d unread\n", dlist[2 * i + 1]);
+      logprintf (": %d unread\n", dlist[2 * i + 1]);
       break;
     case PEER_CHAT:
       UC = user_chat_get (plist[i]);
-      printf ("Chat ");
+      logprintf ("Chat ");
       print_chat_name (plist[i], UC);
-      printf (": %d unread\n", dlist[2 * i + 1]);
+      logprintf (": %d unread\n", dlist[2 * i + 1]);
       break;
     }
   }
@@ -1646,21 +1649,21 @@ void print_chat_info (struct chat *C) {
   peer_t *U = (void *)C;
   print_start ();
   push_color (COLOR_YELLOW);
-  printf ("Chat ");
+  logprintf ("Chat ");
   print_chat_name (U->id, U);
-  printf (" members:\n");
+  logprintf (" members:\n");
   int i;
   for (i = 0; i < C->user_list_size; i++) {
-    printf ("\t\t");
+    logprintf ("\t\t");
     print_user_name (MK_USER (C->user_list[i].user_id), user_chat_get (MK_USER (C->user_list[i].user_id)));
-    printf (" invited by ");
+    logprintf (" invited by ");
     print_user_name (MK_USER (C->user_list[i].inviter_id), user_chat_get (MK_USER (C->user_list[i].inviter_id)));
-    printf (" at ");
+    logprintf (" at ");
     print_date_full (C->user_list[i].date);
     if (C->user_list[i].user_id == C->admin_id) {
-      printf (" admin");
+      logprintf (" admin");
     }
-    printf ("\n");
+    logprintf ("\n");
   }
   pop_color ();
   print_end ();
@@ -1700,17 +1703,17 @@ void print_user_info (struct user *U) {
   peer_t *C = (void *)U;
   print_start ();
   push_color (COLOR_YELLOW);
-  printf ("User ");
+  logprintf ("User ");
   print_user_name (U->id, C);
-  printf (":\n");
-  printf ("\treal name: %s %s\n", U->real_first_name, U->real_last_name);
-  printf ("\tphone: %s\n", U->phone);
+  logprintf (":\n");
+  logprintf ("\treal name: %s %s\n", U->real_first_name, U->real_last_name);
+  logprintf ("\tphone: %s\n", U->phone);
   if (U->status.online > 0) {
-    printf ("\tonline\n");
+    logprintf ("\tonline\n");
   } else {
-    printf ("\toffline (was online ");
+    logprintf ("\toffline (was online ");
     print_date_full (U->status.when);
-    printf (")\n");
+    logprintf (")\n");
   }
   pop_color ();
   print_end ();
@@ -2127,27 +2130,27 @@ int add_contact_on_answer (struct query *q UU) {
     struct user *U = fetch_alloc_user ();
     print_start ();
     push_color (COLOR_YELLOW);
-    printf ("User #%d: ", get_peer_id (U->id));
+    logprintf ("User #%d: ", get_peer_id (U->id));
     print_user_name (U->id, (peer_t *)U);
     push_color (COLOR_GREEN);
-    printf (" (");
-    printf ("%s", U->print_name);
+    logprintf (" (");
+    logprintf ("%s", U->print_name);
     if (U->phone) {
-      printf (" ");
-      printf ("%s", U->phone);
+      logprintf (" ");
+      logprintf ("%s", U->phone);
     }
-    printf (") ");
+    logprintf (") ");
     pop_color ();
     if (U->status.online > 0) {
-      printf ("online\n");
+      logprintf ("online\n");
     } else {
       if (U->status.online < 0) {
-        printf ("offline. Was online ");
+        logprintf ("offline. Was online ");
         print_date_full (U->status.when);
       } else {
-        printf ("offline permanent");
+        logprintf ("offline permanent");
       }
-      printf ("\n");
+      logprintf ("\n");
     }
     pop_color ();
     print_end ();
@@ -2223,11 +2226,11 @@ int contacts_search_on_answer (struct query *q UU) {
   push_color (COLOR_YELLOW);
   for (i = 0; i < n; i++) {
     struct user *U = fetch_alloc_user ();
-    printf ("User ");
+    logprintf ("User ");
     push_color  (COLOR_RED);
-    printf ("%s %s", U->first_name, U->last_name); 
+    logprintf ("%s %s", U->first_name, U->last_name); 
     pop_color ();
-    printf (". Phone %s\n", U->phone);
+    logprintf (". Phone %s\n", U->phone);
   }
   pop_color ();
   print_end ();
@@ -2254,17 +2257,17 @@ int send_encr_accept_on_answer (struct query *q UU) {
   if (E->state == sc_ok) {
     print_start ();
     push_color (COLOR_YELLOW);
-    printf ("Encrypted connection with ");
+    logprintf ("Encrypted connection with ");
     print_encr_chat_name (E->id, (void *)E);
-    printf (" established\n");
+    logprintf (" established\n");
     pop_color ();
     print_end ();
   } else {
     print_start ();
     push_color (COLOR_YELLOW);
-    printf ("Encrypted connection with ");
+    logprintf ("Encrypted connection with ");
     print_encr_chat_name (E->id, (void *)E);
-    printf (" failed\n");
+    logprintf (" failed\n");
     pop_color ();
     print_end ();
   }
@@ -2276,17 +2279,17 @@ int send_encr_request_on_answer (struct query *q UU) {
   if (E->state == sc_deleted) {
     print_start ();
     push_color (COLOR_YELLOW);
-    printf ("Encrypted connection with ");
+    logprintf ("Encrypted connection with ");
     print_encr_chat_name (E->id, (void *)E);
-    printf (" can not be established\n");
+    logprintf (" can not be established\n");
     pop_color ();
     print_end ();
   } else {
     print_start ();
     push_color (COLOR_YELLOW);
-    printf ("Establishing connection with ");
+    logprintf ("Establishing connection with ");
     print_encr_chat_name (E->id, (void *)E);
-    printf ("\n");
+    logprintf ("\n");
     pop_color ();
     print_end ();
 
@@ -2679,12 +2682,12 @@ void do_visualize_key (peer_id_t id) {
     for (j = 0; j < 4; j ++) {    
       push_color (colors[x & 3]);
       push_color (COLOR_INVERSE);
-      printf ("  ");
+      logprintf ("  ");
       pop_color ();
       pop_color ();
       x = x >> 2;
     }
-    if (i & 1) { printf ("\n"); }
+    if (i & 1) { logprintf ("\n"); }
   }
   print_end ();
 }
@@ -2713,7 +2716,7 @@ int get_suggested_on_answer (struct query *q UU) {
     peer_t *U = (void *)fetch_alloc_user ();
     assert (get_peer_id (U->id) == l[2 * i]);
     print_user_name (U->id, U);
-    printf (" phone %s: %d mutual friends\n", U->user.phone, l[2 * i + 1]);
+    logprintf (" phone %s: %d mutual friends\n", U->user.phone, l[2 * i + 1]);
   }
   pop_color ();
   print_end ();

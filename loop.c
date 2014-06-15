@@ -75,6 +75,7 @@ extern int queries_num;
 int unread_messages;
 void got_it (char *line, int len);
 void net_loop (int flags, int (*is_end)(void)) {
+  logprintf("starting net_loop()\n");
   while (!is_end ()) {
     struct pollfd fds[101];
     int cc = 0;
@@ -84,11 +85,13 @@ void net_loop (int flags, int (*is_end)(void)) {
       cc ++;
     }
 
+    logprintf("writing_state_file()\n");
     write_state_file ();
     int x = connections_make_poll_array (fds + cc, 101 - cc) + cc;
     double timer = next_timer_in ();
     if (timer > 1000) { timer = 1000; }
     if (poll (fds, x, timer) < 0) {
+	  logprintf("poll returned -1, wait a little bit.\n");
       work_timers ();
       continue;
     }
@@ -109,7 +112,7 @@ void net_loop (int flags, int (*is_end)(void)) {
       lua_do_all ();
     #endif
     if (safe_quit && !queries_num) {
-      printf ("All done. Exit\n");
+      logprintf ("All done. Exit\n");
       rl_callback_handler_remove ();
       exit (0);
     }
@@ -182,6 +185,11 @@ void write_dc (int auth_file_fd, struct dc *DC) {
 }
 
 int our_id;
+
+void store_config () {
+  write_auth_file();
+}
+
 void write_auth_file (void) {
   if (binlog_enabled) { return; }
   int auth_file_fd = open (get_auth_key_filename (), O_CREAT | O_RDWR, 0600);
@@ -220,9 +228,9 @@ void read_dc (int auth_file_fd, int id, unsigned ver) {
   assert (read (auth_file_fd, &DC->auth_key_id, 8) == 8);
   assert (read (auth_file_fd, &DC->auth_key, 256) == 256);
   assert (read (auth_file_fd, &DC->server_salt, 8) == 8);
-  printf("auth_key_id: %lli \n", DC->auth_key_id);
-  printf("auth_key_id: ?");
-  printf("server_salt: %lli \n", DC->server_salt);
+  logprintf("auth_key_id: %lli \n", DC->auth_key_id);
+  logprintf("auth_key_id: ?");
+  logprintf("server_salt: %lli \n", DC->server_salt);
   if (DC->auth_key_id) {
     DC->flags |= 1;
   }
@@ -248,7 +256,10 @@ void read_auth_file (void) {
     empty_auth_file ();
   }
   assert (auth_file_fd >= 0);
+
+  // amount of data centers
   unsigned x;
+  // magic number of file
   unsigned m;
   if (read (auth_file_fd, &m, 4) < 4 || (m != DC_SERIALIZED_MAGIC && m != DC_SERIALIZED_MAGIC_V2)) {
     close (auth_file_fd);
@@ -463,7 +474,11 @@ int readline_active;
 int new_dc_num;
 int wait_dialog_list;
 
-void init_loop (void) {
+/**
+ * Discover the network and authorise with all data centers
+ */
+void network_connect (void) {
+  verbosity = 0;
   on_start ();
   if (binlog_enabled) {
     double t = get_double_time ();
@@ -477,79 +492,141 @@ void init_loop (void) {
   } else {
     read_auth_file ();
   }
-  printf("update prompt()\n");
+  logprintf("update prompt()\n");
   update_prompt ();
-  printf("update prompt() done... \n");
+  logprintf("update prompt() done... \n");
 
   assert (DC_list[dc_working_num]);
   if (!DC_working || !DC_working->auth_key_id) {
 //  if (auth_state == 0) {
+    logprintf("No working DC or not start_loopd.\n");
     DC_working = DC_list[dc_working_num];
     assert (!DC_working->auth_key_id);
     dc_authorize (DC_working);
     assert (DC_working->auth_key_id);
     auth_state = 100;
     write_auth_file ();
+    logprintf("Authorized DataCentre: auth_key_id: %lld \n", DC_working->auth_key_id);
   }
 
   if (verbosity) {
     logprintf ("Requesting info about DC...\n");
   }
   do_help_get_config ();
-  printf("net_loop\n");
+  logprintf("net_loop\n");
   net_loop (0, mcs);
-  printf("net_loop done...\n");
+  logprintf("net_loop done...\n");
   if (verbosity) {
     logprintf ("DC_info: %d new DC got\n", new_dc_num);
   }
   int i;
   for (i = 0; i <= MAX_DC_NUM; i++) if (DC_list[i] && !DC_list[i]->auth_key_id) {
+    logprintf("DataCentre %d not start_loopd, authorizing...\n", i);
     dc_authorize (DC_list[i]);
     assert (DC_list[i]->auth_key_id);
     write_auth_file ();
+    logprintf("DataCentre start_loopd, key id: %lld\n", DC_list[i]->auth_key_id);
   }
 }
 
+/**
+ * Return if the given phone is registered
+ */
+int network_phone_is_registered() {
+	int res = do_auth_check_phone (default_username);
+	assert(res >= 0);
+	return res;
+}
+
+
+/**
+ * Return if the current client is registered.
+ */
+int network_client_is_registered() {
+  return !(auth_state == 100 || !(DC_working->has_auth));
+}
+
+/**
+ * Request a verification for the given client, by sending
+ *  a code to the current phone number
+ */
+char* network_request_registration () 
+{
+    return do_send_code (default_username);
+}
+
+/**
+ * Verify the phone, by providing the code and the real name
+ *
+ * NOTE: This should be called when the phone number was previously
+ * unknown to the telegram network.
+ */
+int network_verify_phone_registration(char* code, char *firstname, char *lastname) 
+{
+    if (do_send_code_result_auth (code, firstname, lastname) >= 0) {
+      auth_state = 300;
+	  return 1;
+    }
+	return 0;
+}
+
+/**
+ * Verify the current client by providing the given code 
+ */
+int network_verify_registration(const char *code, const char *sms_hash) 
+{
+  logprintf("telegram: pointer - code: %p, hash: %p\n", code, sms_hash);
+  logprintf("telegram: string  - code: %s, hash: %s\n", code, sms_hash);
+  if (do_send_code_result (code, sms_hash) >= 0) {
+    logprintf ("Authentication successfull, state = 300\n");
+    auth_state = 300;
+	return 1;
+  }
+  return 0;
+}
+
 int start_loop (char* code, char* auth_mode) {
-  printf("Calling start_loop()\n");
-  printf("auth_state %i\n", auth_state);
+  logprintf("Calling start_loop()\n");
+  logprintf("auth_state %i\n", auth_state);
   if (auth_state == 100 || !(DC_working->has_auth)) {
-    printf("auth_state == 100 || !(DC_working->has_auth)");
+    logprintf("auth_state == 100 || !(DC_working->has_auth)");
     int res = do_auth_check_phone (default_username);
     assert (res >= 0);
     logprintf ("%s\n", res > 0 ? "phone registered" : "phone not registered");
     if (res > 0 && !register_mode) {
       // Register Mode 1
-	  printf ("Register Mode 1\n");
+	  logprintf ("Register Mode 1\n");
       if (code) {
+	    /*
         if (do_send_code_result (code) >= 0) {
-          printf ("Authentication successfull, state = 300\n");
+          logprintf ("Authentication successfull, state = 300\n");
           auth_state = 300;
         }
+		*/
       } else {
-	      printf("No code given, attempting to register\n");
+	      logprintf("No code given, attempting to register\n");
           // Send Code
-		  printf ("auth mode %s\n", auth_mode);
+		  logprintf ("auth mode %s\n", auth_mode);
 		  /*
           if (strcmp(TELEGRAM_AUTH_MODE_SMS"sms", auth_mode)) {
 		  */
               do_send_code (default_username);
-              printf ("Code from sms (if you did not receive an SMS and want to be called, type \"call\"): ");
-			  printf("storing current state in auth file...\n");
+              logprintf ("Code from sms (if you did not receive an SMS and want to be called, type \"call\"): ");
+			  logprintf("storing current state in auth file...\n");
     		  write_auth_file ();
-			  printf("exitting...\n");
+			  logprintf("exitting...\n");
 			  return 0;
 			  /*
           } else {
-              printf ("You typed \"call\", switching to phone system.\n");
+              logprintf ("You typed \"call\", switching to phone system.\n");
               do_phone_call (default_username);
-              printf ("Calling you!");
+              logprintf ("Calling you!");
           }
 		  */
       }
     } else {
-      printf ("User is not registered. Do you want to register? [Y/n] ");
-      printf ("ERROR THIS IS NOT POSSIBLE!\n");
+      logprintf ("User is not registered. Do you want to register? [Y/n] ");
+      logprintf ("ERROR THIS IS NOT POSSIBLE!\n");
 	  return 1;
       // Register Mode 2
       // TODO: Requires first and last name, decide how to handle this.
@@ -559,13 +636,13 @@ int start_loop (char* code, char* auth_mode) {
 	  /*
       size_t size;
       char *first_name;
-      printf ("First name: ");
+      logprintf ("First name: ");
       if (net_getline (&first_name, &size) == -1) {
         perror ("getline()");
         exit (EXIT_FAILURE);
       }
       char *last_name;
-      printf ("Last name: ");
+      logprintf ("Last name: ");
       if (net_getline (&last_name, &size) == -1) {
         perror ("getline()");
         exit (EXIT_FAILURE);
@@ -583,17 +660,17 @@ int start_loop (char* code, char* auth_mode) {
       } else {
          if (strcmp(TELEGRAM_AUTH_MODE_SMS, auth_mode)) {
              do_send_code (default_username);
-             printf ("Code from sms (if you did not receive an SMS and want to be called, type \"call\"): ");
+             logprintf ("Code from sms (if you did not receive an SMS and want to be called, type \"call\"): ");
          } else {
-             printf ("You typed \"call\", switching to phone system.\n");
+             logprintf ("You typed \"call\", switching to phone system.\n");
              do_phone_call (default_username);
-             printf ("Calling you! Code: ");
+             logprintf ("Calling you! Code: ");
          }
       }
 	  */
     }
   }
-  printf("Authentication done\n");
+  logprintf("Authentication done\n");
 
   int i;
   for (i = 0; i <= MAX_DC_NUM; i++) if (DC_list[i] && !DC_list[i]->has_auth) {
@@ -636,12 +713,12 @@ int start_loop (char* code, char* auth_mode) {
  * with 0. In all other cases exit with 1.
  */
 int loop_auto(char *username, char *code, char* auth_mode) {
-    init_loop();
+    network_connect();
     set_default_username (username);
     return start_loop(code, auth_mode);
 }
 
 int loop (void) {
-    init_loop();
+    network_connect();
     return start_loop(NULL, NULL);
 }

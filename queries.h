@@ -63,9 +63,9 @@ void work_timers (void);
 
 extern struct query_methods help_get_config_methods;
 
-void do_send_code (const char *user);
+char* do_send_code (const char *user);
 void do_phone_call (const char *user);
-int do_send_code_result (const char *code);
+int do_send_code_result (const char *code, const char *sms_hash);
 double get_double_time (void);
 
 void do_update_contact_list (void);

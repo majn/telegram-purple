@@ -59,12 +59,9 @@ static PurplePlugin *_telegram_protocol = NULL;
  */
 void tg_cli_log_cb(const char* format, va_list ap)
 {
-  // emulate libpurple logging function, because we cant pass va_list
-  // directly
-  time_t mtime = time(NULL);
-  const char *mdate = purple_utf8_strftime("%H:%M:%S", localtime(&mtime));
-  printf("(%s) prpl-telegram: ", mdate);
-  vprintf(format, ap);
+    char buffer[256];
+    vsnprintf(buffer, sizeof(buffer), format, ap);
+	purple_debug_info(PLUGIN_ID, "%s", buffer);
 }
 
 /**
@@ -105,72 +102,78 @@ static void tgprpl_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo * info
 static void tgprpl_login(PurpleAccount * acct)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_login()\n");
+    PurpleConnection *gc = purple_account_get_connection(acct);
 
-    const char *username         = purple_account_get_username(acct);
-    const char *code             = purple_account_get_string(acct, "verification_key", NULL);
-    const char *hostname         = purple_account_get_string(acct, "server", TELEGRAM_TEST_SERVER);
-    const char *verificationType = purple_account_get_string(acct, "verification_type", TELEGRAM_AUTH_MODE_SMS);
-    int port = purple_account_get_int(acct, "port", TELEGRAM_DEFAULT_PORT);
+    const char *username = purple_account_get_username(acct);
+    const char *code     = purple_account_get_string(acct, "verification_key", NULL);
+	const char *hash 	 = purple_account_get_string(acct, "verification_hash", NULL);
+    const char *hostname = purple_account_get_string(acct, "server", TELEGRAM_TEST_SERVER);
+    // const char *verificationType = purple_account_get_string(acct, "verification_type", TELEGRAM_AUTH_MODE_SMS);
+    // int port = purple_account_get_int(acct, "port", TELEGRAM_DEFAULT_PORT);
 
-    printf("username: %s\n", username);
-    printf("code: %s\n", code);
-    printf("hostname: %s\n", hostname);
+    purple_debug_info(PLUGIN_ID, "username: %s\n", username);
+    purple_debug_info(PLUGIN_ID, "code: %s\n", code);
+    purple_debug_info(PLUGIN_ID, "verification_hash: %s\n", hash);
+    purple_debug_info(PLUGIN_ID, "hostname: %s\n", hostname);
 
+	// ensure config-file exists an
     purple_debug_info(PLUGIN_ID, "running_for_first_time()\n");
     running_for_first_time();
+
+	// load all settings: the known network topology, log and configuration file paths
     purple_debug_info(PLUGIN_ID, "parse_config()\n");
     parse_config ();
-    purple_debug_info(PLUGIN_ID, "init_loop()\n");
-    init_loop();
     purple_debug_info(PLUGIN_ID, "set_default_username()\n");
     set_default_username (username);
-    purple_debug_info(PLUGIN_ID, "start_loop() -> Authentication\n");
-    start_loop (code, verificationType);
-    
- 
-	// TODO: Do proper input validation
-    /*
-    if (code && strcmp(code, "")) {
-	  code = NULL;
-	}
-    */
-    if (!code) {
-		purple_notify_message(
-			_telegram_protocol,
-			PURPLE_NOTIFY_MSG_INFO,
-			"Telegram Verification",
-			"Telegram needs to verify this phone number. You should receive a SMS with a code soon, please copy that code into the account option 'Verification Key'.",
-			NULL,
-			NULL,
-			NULL
-		);
-	}
-   // tg_login(username, code, TELEGRAM_AUTH_MODE_SMS);
-	printf("Returned from tg_login...\n");
 
-    /*
-    PurpleConnection *gc = purple_account_get_connection(acct);
-    purple_debug_info(PLUGIN_ID, "logging in %s\n", username);
+	// Connect to the network
+    purple_debug_info(PLUGIN_ID, "Connecting to the Telegram network...\n");
+    network_connect();
 
-    if (strcmp(sms_key[0], "")) {
-      purple_debug_info(PLUGIN_ID, "no sms key -> send sms key request\n");
-    }
+	// Login
+	if (!network_phone_is_registered()) {
+		purple_debug_info(PLUGIN_ID, "Phone is not registered, registering...\n");
+	} 
 
-    purple_debug_info(PLUGIN_ID, "Connect\n");
-    purple_connection_update_progress(gc, "Connecting", 0, 4);
-    telegram_conn *conn;
-    conn = g_new0(telegram_conn, 1);
-    conn->gc = gc;
+	if (!network_client_is_registered()) {
+		purple_debug_info(PLUGIN_ID, "Client is not registered\n");
+	
+	    if (code && hash) {
+		   purple_debug_info(PLUGIN_ID, "SMS code provided, trying to verify \n");
+		   purple_debug_info(PLUGIN_ID, "pointer - code:%p hash:%p\n", code, hash);
+		   purple_debug_info(PLUGIN_ID, "string - code%s hash:%s\n", code, hash);
+	       int verified = network_verify_registration(code, hash);
+		   if (verified) {
+		      store_config();
+		   } else {
+				purple_connection_set_state(gc, PURPLE_DISCONNECTED);
+				purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Verification Failed", 
+					"Please make sure you entered the correct verification code.", NULL, NULL, NULL);
+				return;
+		   }
+	    } else {
+		   // TODO: we should find a way to request the key
+		   //			only once.
+		   purple_debug_info(PLUGIN_ID, "Device not registered, requesting new authentication code.\n");
+		   char *new_hash = network_request_registration();
+		   purple_debug_info(PLUGIN_ID, "Saving verification_hash: '%s'", new_hash);
+		   purple_account_set_string(acct, "verification_hash", new_hash);
+		}
+	} 
+
+	// Our protocol data, that will be delivered to us
+	// through purple connection
+    telegram_conn *conn = g_new0(telegram_conn, 1);
+    conn->gc 	  = gc;
     conn->account = acct;
+
     purple_connection_set_protocol_data(gc, conn);
-
     gc->proto_data = conn;
-    purple_connection_set_state(gc, PURPLE_CONNECTED);
-
-    purple_debug_info(PLUGIN_ID, "Connected\n");
-    */
+	
+	// TODO: probably needs to be in callback after connection
+	purple_connection_set_state(gc, PURPLE_CONNECTED);
+    purple_debug_info(PLUGIN_ID, "Logged in...\n");
 }
-
 
 /**
  * This must be implemented.
@@ -192,6 +195,7 @@ static void tgprpl_close(PurpleConnection * gc)
 static int tgprpl_send_im(PurpleConnection * gc, const char *who, const char *message, PurpleMessageFlags flags)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_send_im()\n");
+	
     return -1;
 }
 
@@ -241,7 +245,6 @@ static void tgprpl_add_buddies(PurpleConnection * gc, GList * buddies, GList * g
 static void tgprpl_remove_buddy(PurpleConnection * gc, PurpleBuddy * buddy, PurpleGroup * group)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_remove_buddy()\n");
-
 }
 
 static void tgprpl_remove_buddies(PurpleConnection * gc, GList * buddies, GList * groups)
@@ -569,8 +572,13 @@ static void tgprpl_init(PurplePlugin *plugin)
 	option = purple_account_option_list_new("Verification type", "verification_type", verification_values);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	option = purple_account_option_string_new("Server", "server", TELEGRAM_TEST_SERVER);
-   option = purple_account_option_string_new("Verification key", "verification_key", NULL);
+	// option = purple_account_option_string_new("Server", "server", TELEGRAM_TEST_SERVER);
+	// prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+
+    option = purple_account_option_string_new("Verification key", "verification_key", NULL);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+
+    option = purple_account_option_string_new("Verification hash", "verification_hash", NULL);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	// TODO: Path to public key (When you can change the server hostname,
@@ -616,5 +624,6 @@ static PurplePluginInfo info = {
     NULL,           // reserved
     NULL            // reserved
 };
+
 
 PURPLE_INIT_PLUGIN(telegram, tgprpl_init, info)

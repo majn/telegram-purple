@@ -225,6 +225,7 @@ int rpc_send_packet (struct connection *c) {
 }
 
 int rpc_send_message (struct connection *c, void *data, int len) {
+  logprintf("rpc_send_message(...)\n");
   assert (len > 0 && !(len & 0xfc000003));
   int total_len = len >> 2;
   if (total_len < 0x7f) {
@@ -743,6 +744,7 @@ int aes_encrypt_message (struct dc *DC, struct encrypted_message *enc) {
 }
 
 long long encrypt_send_message (struct connection *c, int *msg, int msg_ints, int useful) {
+  logprintf("encrypt_send_message(...)\n");
   struct dc *DC = GET_DC(c);
   struct session *S = c->session;
   assert (S);
