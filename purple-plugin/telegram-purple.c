@@ -49,6 +49,7 @@
 
 // telegram-purple includes
 #include "loop.h"
+#include "queries.h"
 #include "telegram-purple.h"
 
 static PurplePlugin *_telegram_protocol = NULL;
@@ -97,6 +98,36 @@ static void tgprpl_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo * info
 }
 
 /**
+ * Request a verification key, save the returned verification_hash in the account settings
+ *  for later usage and inform the user.
+ */
+static void login_request_verification(PurpleAccount *acct)
+{
+	// TODO: we should find a way to request the key
+	//			only once.
+	purple_debug_info(PLUGIN_ID, "No code provided, requesting new authentication code.\n");
+	char *new_hash = network_request_registration();
+	purple_debug_info(PLUGIN_ID, "Saving verification_hash: '%s'", new_hash);
+	purple_account_set_string(acct, "verification_hash", new_hash);
+
+	purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Please Verify", 
+	 	"You need to verify this device, please enter the code Telegram has sent to you by SMS.", 
+	 	NULL, NULL, NULL);
+}
+
+/**
+ * Handle a failed verification, by removing the invalid sms code and
+ * 	notifying the user
+ */
+static void login_verification_fail(PurpleAccount *acct)
+{
+	// remove invalid sms code, so we won't try to register again
+	purple_account_set_string(acct, "verification_key", "");
+	purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Verification Failed", 
+		"Please make sure you entered the correct verification code.", NULL, NULL, NULL);
+}
+
+/**
  * This must be implemented.
  */
 static void tgprpl_login(PurpleAccount * acct)
@@ -120,7 +151,7 @@ static void tgprpl_login(PurpleAccount * acct)
     purple_debug_info(PLUGIN_ID, "running_for_first_time()\n");
     running_for_first_time();
 
-	// load all settings: the known network topology, log and configuration file paths
+	// load all settings: the known network topology, secret keys, logs and configuration file paths
     purple_debug_info(PLUGIN_ID, "parse_config()\n");
     parse_config ();
     purple_debug_info(PLUGIN_ID, "set_default_username()\n");
@@ -130,34 +161,50 @@ static void tgprpl_login(PurpleAccount * acct)
     purple_debug_info(PLUGIN_ID, "Connecting to the Telegram network...\n");
     network_connect();
 
-	// Login
+	// Assure phone number registration
 	if (!network_phone_is_registered()) {
 		purple_debug_info(PLUGIN_ID, "Phone is not registered, registering...\n");
+    	const char *first_name = purple_account_get_string(acct, "first_name", NULL);
+		const char *last_name  = purple_account_get_string(acct, "last_name", NULL);
+		if (!first_name || !last_name || !strlen(first_name) > 0 || !strlen(last_name) > 0) {
+			purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Registration Needed", 
+				"Enter your first and last name to register this phone number with the telegram network.", 
+				NULL, NULL, NULL);
+			return;
+		}
+		if (code && strlen(code) > 0 && hash && strlen(hash) > 0) {
+		    int registered = network_verify_phone_registration(code, hash, first_name, last_name);
+			if (registered) {
+				store_config();
+			} else {
+				login_verification_fail(acct);
+		    	return;
+			}
+		} else {
+		    login_request_verification(acct);
+		    return;
+		}
 	} 
 
+	// Assure client registration
 	if (!network_client_is_registered()) {
 		purple_debug_info(PLUGIN_ID, "Client is not registered\n");
 	
-	    if (code && hash) {
+	    if (code && strlen(code) > 0 && hash && strlen(hash) > 0) {
 		   purple_debug_info(PLUGIN_ID, "SMS code provided, trying to verify \n");
-		   purple_debug_info(PLUGIN_ID, "pointer - code:%p hash:%p\n", code, hash);
-		   purple_debug_info(PLUGIN_ID, "string - code%s hash:%s\n", code, hash);
+		   purple_debug_info(PLUGIN_ID, "strlen - code: %lu hash: %lu\n", strlen(code), strlen(hash));
+		   purple_debug_info(PLUGIN_ID, "pointer - code: %p hash: %p\n", code, hash);
+		   purple_debug_info(PLUGIN_ID, "string - code: %s hash: %s\n", code, hash);
 	       int verified = network_verify_registration(code, hash);
 		   if (verified) {
 		      store_config();
 		   } else {
-				purple_connection_set_state(gc, PURPLE_DISCONNECTED);
-				purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Verification Failed", 
-					"Please make sure you entered the correct verification code.", NULL, NULL, NULL);
+		   		login_verification_fail(acct);
 				return;
 		   }
 	    } else {
-		   // TODO: we should find a way to request the key
-		   //			only once.
-		   purple_debug_info(PLUGIN_ID, "Device not registered, requesting new authentication code.\n");
-		   char *new_hash = network_request_registration();
-		   purple_debug_info(PLUGIN_ID, "Saving verification_hash: '%s'", new_hash);
-		   purple_account_set_string(acct, "verification_hash", new_hash);
+		   login_request_verification(acct);
+		   return;
 		}
 	} 
 
@@ -579,6 +626,12 @@ static void tgprpl_init(PurplePlugin *plugin)
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
     option = purple_account_option_string_new("Verification hash", "verification_hash", NULL);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+
+    option = purple_account_option_string_new("First Name", "first_name", NULL);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+
+    option = purple_account_option_string_new("Last Name", "last_name", NULL);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	// TODO: Path to public key (When you can change the server hostname,

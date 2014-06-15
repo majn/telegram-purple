@@ -556,14 +556,28 @@ char* network_request_registration ()
 }
 
 /**
- * Verify the phone, by providing the code and the real name
+ * Request a verification for the given client, by sending
+ *  a code to the current phone number
+ */
+char* network_request_phone_registration () 
+{
+    return do_send_code (default_username);
+}
+
+
+/**
+ * Verify the phone number by providing the sms_code and the real name
  *
  * NOTE: This should be called when the phone number was previously
  * unknown to the telegram network.
  */
-int network_verify_phone_registration(char* code, char *firstname, char *lastname) 
+int network_verify_phone_registration(const char* code, const char *sms_hash, 
+	const char *first ,const char *last) 
 {
-    if (do_send_code_result_auth (code, firstname, lastname) >= 0) {
+    logprintf("Registering with code:%s, hash:%s, first:%s, last:%s\n", code, sms_hash, 
+		first, last);
+    if (do_send_code_result_auth (code, sms_hash, first, last) >= 0) {
+      logprintf ("Authentication successfull, state = 300\n");
       auth_state = 300;
 	  return 1;
     }
@@ -575,9 +589,9 @@ int network_verify_phone_registration(char* code, char *firstname, char *lastnam
  */
 int network_verify_registration(const char *code, const char *sms_hash) 
 {
-  logprintf("telegram: pointer - code: %p, hash: %p\n", code, sms_hash);
-  logprintf("telegram: string  - code: %s, hash: %s\n", code, sms_hash);
-  if (do_send_code_result (code, sms_hash) >= 0) {
+  logprintf("Verifying with hash:%s, code:%s\n", code, sms_hash);
+  int state;
+  if ((state = do_send_code_result (code, sms_hash)) >= 0) {
     logprintf ("Authentication successfull, state = 300\n");
     auth_state = 300;
 	return 1;

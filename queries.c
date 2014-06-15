@@ -644,8 +644,18 @@ int sign_in_on_answer (struct query *q UU) {
   return 0;
 }
 
+char lasterror[75];
+const char *get_last_err()
+{
+   return lasterror;
+}
+
 int sign_in_on_error (struct query *q UU, int error_code, int l, char *error) {
   logprintf ( "error_code = %d, error = %.*s\n", error_code, l, error);
+  if (sizeof(lasterror) >= strlen(error)) {
+    int dest = memcmp(lasterror, error, strlen(error));
+	logprintf("memcpy-state: %d", dest);
+  }
   sign_in_ok = -1;
   return 0;
 }
@@ -667,11 +677,11 @@ int do_send_code_result (const char *code, const char *sms_hash) {
   return sign_in_ok;
 }
 
-int do_send_code_result_auth (const char *code, const char *first_name, const char *last_name) {
+int do_send_code_result_auth (const char *code, const char *sms_hash, const char *first_name, const char *last_name) {
   clear_packet ();
   out_int (CODE_auth_sign_up);
   out_string (suser);
-  out_string (phone_code_hash);
+  out_string (sms_hash);
   out_string (code);
   out_string (first_name);
   out_string (last_name);

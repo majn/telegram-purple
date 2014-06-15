@@ -25,6 +25,12 @@ char* network_request_registration();
 int network_verify_registration(const char *code, const char *sms_hash);
 
 /**
+ * Verify the registration with the given registration code
+ */
+int network_verify_phone_registration(const char *code, const char *sms_hash, 
+	const char *first, const char *last);
+
+/**
  * Retur if the current phone is registered in the given network.
  */
 int network_phone_is_registered();

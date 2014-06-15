@@ -98,7 +98,7 @@ void do_load_document_thumb (struct document *video, int next);
 void do_help_get_config (void);
 int do_auth_check_phone (const char *user);
 int do_get_nearest_dc (void);
-int do_send_code_result_auth (const char *code, const char *first_name, const char *last_name);
+int do_send_code_result_auth (const char *code, const char *sms_hash, const char *first_name, const char *last_name);
 void do_import_auth (int num);
 void do_export_auth (int num);
 void do_add_contact (const char *phone, int phone_len, const char *first_name, int first_name_len, const char *last_name, int last_name_len, int force);
@@ -121,3 +121,5 @@ void do_restore_msg (long long id);
 int get_dh_config_on_answer (struct query *q);
 void fetch_dc_option (void);
 #endif
+
+const char *get_last_err();
