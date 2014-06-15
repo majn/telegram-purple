@@ -14,26 +14,27 @@
 
 #define COLOR_INVERSE "\033[7m"
 
-void log_printf(const char *format, ...)  
+/** 
+ * Log a message to the telegram-cli message log, by 
+ * just writing it to STDOUT and appending '***'
+ */
+void log_printf(const char *format, va_list ap)  
 {
   printf (COLOR_GREY " *** ");
-  va_list ap;
-  va_start (ap, format);
-  vfprintf (stdout, format, ap);
-  va_end (ap);
+  vprintf (format, ap);
   printf (COLOR_NORMAL);
 }
 
 /**
  * The callback that will log the given msg to the used target
  */
-void (*log_cb)(const char*, ...) = log_printf;
+void (*log_cb)(const char* format, va_list ap) = log_printf;
 
 /**
  * Set a custom logging callback to use instead of the regular
  * 	printf to stdout
  */
-void set_log_cb(void (*cb)(const char*, ...)) 
+void set_log_cb(void (*cb)(const char*, va_list ap))
 { 
    log_cb = cb;
 }
@@ -41,7 +42,7 @@ void set_log_cb(void (*cb)(const char*, ...))
 /**
  * Log a message to the current message log
  */
-void log_message(const char *format, ...) 
+void logprintf(const char *format, ...) 
 {
    va_list ap;
    va_start (ap, format);

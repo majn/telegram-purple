@@ -17,6 +17,9 @@
 #include <glib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 // test
 
@@ -37,6 +40,8 @@
 #include "status.h"
 #include "util.h"
 #include "prpl.h"
+#include "prefs.h"
+#include "util.h"
 
 // Telegram Includes
 #include <tg-cli.h>
@@ -52,12 +57,14 @@ static PurplePlugin *_telegram_protocol = NULL;
  * Redirect the msglog of the telegram-cli application to the libpurple
  *	logger
  */
-void tg_cli_log_cb(const char* format, ...)
+void tg_cli_log_cb(const char* format, va_list ap)
 {
-  va_list ap;
-  va_start (ap, format);
-  purple_debug_info(PLUGIN_ID, format, ap);
-  va_end (ap);
+  // emulate libpurple logging function, because we cant pass va_list
+  // directly
+  time_t mtime = time(NULL);
+  const char *mdate = purple_utf8_strftime("%H:%M:%S", localtime(&mtime));
+  printf("(%s) prpl-telegram: ", mdate);
+  vprintf(format, ap);
 }
 
 /**

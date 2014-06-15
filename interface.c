@@ -1191,24 +1191,24 @@ void hexdump (int *in_ptr, int *in_end) {
   print_end ();
 }
 
+/*
 void logprintf (const char *format, ...) {
   va_list ap;
   va_start (ap, format);
   log_message(format, ap);
   va_end (ap);
-  /*
-  int x = 0;
-  if (!prompt_was) {
-    x = 1;
-    print_start ();
-  }
-  printf (COLOR_GREY " *** ");
-  printf (COLOR_NORMAL);
-  if (x) {
-    print_end ();
-  }
-  */
+  //int x = 0;
+  //if (!prompt_was) {
+  //  x = 1;
+  //  print_start ();
+  //}
+  //printf (COLOR_GREY " *** ");
+  //printf (COLOR_NORMAL);
+  //if (x) {
+  //  print_end ();
+  //}
 }
+*/
 
 int color_stack_pos;
 const char *color_stack[10];
