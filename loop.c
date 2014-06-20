@@ -87,15 +87,22 @@ void net_loop (int flags, int (*is_end)(void)) {
 
     logprintf("writing_state_file()\n");
     write_state_file ();
+	// Ensure that all connections are active?
     int x = connections_make_poll_array (fds + cc, 101 - cc) + cc;
     double timer = next_timer_in ();
+
+	// Wait until file descriptors are ready
     if (timer > 1000) { timer = 1000; }
     if (poll (fds, x, timer) < 0) {
 	  logprintf("poll returned -1, wait a little bit.\n");
       work_timers ();
       continue;
     }
+
+	// Execute all timers that are currently due
     work_timers ();
+	
+	// ?
     if ((flags & 3) && (fds[0].revents & POLLIN)) {
       unread_messages = 0;
       if (flags & 1) {
@@ -107,6 +114,8 @@ void net_loop (int flags, int (*is_end)(void)) {
         got_it (line, strlen (line));
       }
     }
+
+	// 
     connections_poll_result (fds + cc, x - cc);
     #ifdef USE_LUA
       lua_do_all ();
@@ -599,6 +608,23 @@ int network_verify_registration(const char *code, const char *sms_hash)
   return 0;
 }
 
+/**
+ * Export current authentication state to all known data centers.
+ */
+void network_export_registration()
+{
+    int i;
+    for (i = 0; i <= MAX_DC_NUM; i++) if (DC_list[i] && !DC_list[i]->has_auth) {
+        do_export_auth (i);
+        do_import_auth (i);
+        bl_do_dc_signed (i);
+        write_auth_file ();
+    }
+    write_auth_file ();
+    fflush (stdout);
+    fflush (stderr);
+}
+
 int start_loop (char* code, char* auth_mode) {
   logprintf("Calling start_loop()\n");
   logprintf("auth_state %i\n", auth_state);
@@ -647,7 +673,6 @@ int start_loop (char* code, char* auth_mode) {
       //    - We need some sort of switch between registration modes
       //    - When this mode is selected First and Last name should be added to the form
       // Currently Requires Manuel Entry in Terminal.
-	  /*
       size_t size;
       char *first_name;
       logprintf ("First name: ");
@@ -668,7 +693,7 @@ int start_loop (char* code, char* auth_mode) {
       DC_working = DC_list[dc_working_num];
 
       if (*code) {
-         if (do_send_code_result_auth (code, first_name, last_name) >= 0) {
+         if (do_send_code_result_auth (code, "-", first_name, last_name) >= 0) {
              auth_state = 300;
          }
       } else {
@@ -681,7 +706,6 @@ int start_loop (char* code, char* auth_mode) {
              logprintf ("Calling you! Code: ");
          }
       }
-	  */
     }
   }
   logprintf("Authentication done\n");
@@ -717,19 +741,6 @@ int start_loop (char* code, char* auth_mode) {
   }
 
   return 0; //main_loop ();
-}
-
-/**
- * Do what loop does, but use input from arguments instead of prompting
- * the user
- *
- * When authentication is not yet done, request authenticatino code and exit
- * with 0. In all other cases exit with 1.
- */
-int loop_auto(char *username, char *code, char* auth_mode) {
-    network_connect();
-    set_default_username (username);
-    return start_loop(code, auth_mode);
 }
 
 int loop (void) {

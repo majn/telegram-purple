@@ -386,6 +386,7 @@ int wait_dialog_list;
 char *lua_file;
 
 void args_parse (int argc, char **argv) {
+  verbosity = 2;
   int opt = 0;
   while ((opt = getopt (argc, argv, "u:hk:vn:Nc:p:l:RfBL:Es:wW")) != -1) {
     switch (opt) {
@@ -501,26 +502,4 @@ int tgmain (int argc, char **argv) {
   inner_main ();
 
   return 0;
-}
-
-
-/**
- * Log into Telegram with the given login credentials.
- */
-int tg_login (char *username, char *code, char *auth_mode) {
-    log_level = 10;
-    running_for_first_time ();
-    parse_config ();
-
-    get_terminal_attributes ();
-
-    #ifdef USE_LUA
-    if (lua_file) {
-      lua_init (lua_file);
-    }
-    #endif
-    
-	BREAK
-    loop_auto(username, code, auth_mode);
-    return 0;
 }
