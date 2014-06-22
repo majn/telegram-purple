@@ -46,13 +46,24 @@
 // Telegram Includes
 #include <tg-cli.h>
 #include "msglog.h"
+#include "mtproto-client.h"
+#include "mtproto-common.h"
 
 // telegram-purple includes
 #include "loop.h"
 #include "queries.h"
 #include "telegram-purple.h"
+#include "request.h"
+
+#define BUDDYNAME_MAX_LENGTH 128
 
 static PurplePlugin *_telegram_protocol = NULL;
+
+// TODO: Use PurpleConnection from PurpleAccount callback
+PurpleConnection *_gc;
+// TODO: Use PurpleAccount from PurpleAccount callback
+PurpleAccount *_pa;
+PurpleGroup *tggroup;
 
 /**
  * Redirect the msglog of the telegram-cli application to the libpurple
@@ -64,6 +75,10 @@ void tg_cli_log_cb(const char* format, va_list ap)
     vsnprintf(buffer, sizeof(buffer), format, ap);
 	purple_debug_info(PLUGIN_ID, "%s", buffer);
 }
+
+void on_new_message(struct message *M);
+void user_allocated_handler(peer_t *user);
+void chat_allocated_handler(peer_t *chat);
 
 /**
  * Returns the base icon name for the given buddy and account.
@@ -77,16 +92,6 @@ static const char *tgprpl_list_icon(PurpleAccount * acct, PurpleBuddy * buddy)
 {
     purple_debug_info(PLUGIN_ID, "tgrpl_list_icon()\n");
 	return "telegram";
-}
-
-/**
- * Gets a short string representing this buddy's status.  This will
- * be shown on the buddy list.
- */
-static char *tgprpl_status_text(PurpleBuddy * buddy)
-{
-    purple_debug_info(PLUGIN_ID, "tgprpl_status_text()\n");
-	return "status text";
 }
 
 /**
@@ -125,6 +130,7 @@ static void login_verification_fail(PurpleAccount *acct)
 	purple_account_set_string(acct, "verification_key", "");
 	purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Verification Failed", 
 		"Please make sure you entered the correct verification code.", NULL, NULL, NULL);
+	
 }
 
 /**
@@ -134,6 +140,8 @@ static void tgprpl_login(PurpleAccount * acct)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_login()\n");
     PurpleConnection *gc = purple_account_get_connection(acct);
+	_gc = gc;
+	_pa = acct;
 
     const char *username = purple_account_get_username(acct);
     const char *code     = purple_account_get_string(acct, "verification_key", NULL);
@@ -199,14 +207,37 @@ static void tgprpl_login(PurpleAccount * acct)
 		   if (verified) {
 		      store_config();
 		   } else {
-		   		login_verification_fail(acct);
-				return;
+		      login_verification_fail(acct);
+			  return;
 		   }
 	    } else {
 		   login_request_verification(acct);
 		   return;
 		}
 	} 
+    purple_debug_info(PLUGIN_ID, "Logged in...\n");
+	purple_connection_set_display_name(gc, username);
+	purple_connection_set_state(gc, PURPLE_CONNECTED);
+	purple_blist_add_account(acct);
+
+	tggroup = purple_find_group("Telegram");
+	if (tggroup == NULL) {
+	   purple_debug_info(PLUGIN_ID, "PurpleGroup = NULL, creating");
+	   tggroup = purple_group_new("Telegram");
+	   purple_blist_add_group(tggroup, NULL);
+	}
+
+    purple_debug_info(PLUGIN_ID, "Fetching Network Info\n");
+	on_update_new_message(on_new_message);
+	on_user_allocated(user_allocated_handler);
+	on_chat_allocated(chat_allocated_handler);
+
+	// get all current contacts
+	purple_debug_info(PLUGIN_ID, "Fetching all current contacts...\n");
+	session_update_contact_list();
+
+	// get new messages
+	session_get_difference();
 
 	// Our protocol data, that will be delivered to us
 	// through purple connection
@@ -216,10 +247,33 @@ static void tgprpl_login(PurpleAccount * acct)
 
     purple_connection_set_protocol_data(gc, conn);
     gc->proto_data = conn;
-	
-	// TODO: probably needs to be in callback after connection
-	purple_connection_set_state(gc, PURPLE_CONNECTED);
-    purple_debug_info(PLUGIN_ID, "Logged in...\n");
+}
+
+void on_new_message(struct message *M)
+{
+   purple_debug_info(PLUGIN_ID, "New Message: %s\n", M->message);
+}
+
+void user_allocated_handler(peer_t *user)
+{
+   char* name = malloc(BUDDYNAME_MAX_LENGTH);
+   if (user_get_printname(user, name, BUDDYNAME_MAX_LENGTH) < 0) {
+     purple_debug_info(PLUGIN_ID, "Buddy name of (%d) too long, not adding to buddy list.\n", 
+	 	get_peer_id(user->id));
+     return;
+   }
+   PurpleBuddy *buddy = purple_find_buddy(_pa, name);
+   if (!buddy) { 
+       purple_debug_info(PLUGIN_ID, "User Allocated: %s\n", name);
+       PurpleBuddy *buddy = purple_buddy_new(_pa, name, name);
+       purple_blist_add_buddy(buddy, NULL, tggroup, NULL);
+       purple_blist_alias_buddy(buddy, name);
+   }
+}
+
+void chat_allocated_handler(peer_t *chat)
+{
+   purple_debug_info(PLUGIN_ID, "Chat Allocated: %s\n", chat->print_name);
 }
 
 /**
@@ -523,7 +577,7 @@ static PurplePluginProtocolInfo prpl_info = {
 	},
 	tgprpl_list_icon,
 	NULL,
-	tgprpl_status_text,
+	NULL,
 	tgprpl_tooltip_text,
 	tgprpl_status_types,
 	NULL,                                     /* blist_node_menu */
