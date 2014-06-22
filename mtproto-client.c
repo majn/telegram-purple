@@ -66,6 +66,8 @@
 
 #include "mtproto-common.h"
 
+#include "tg-cli.h"
+
 #define MAX_NET_RES        (1L << 16)
 extern int log_level;
 
@@ -906,6 +908,7 @@ void work_update_binlog (void) {
 
 void work_update (struct connection *c UU, long long msg_id UU) {
   unsigned op = fetch_int ();
+  logprintf("work_update(): OP:%d\n", op);
   switch (op) {
   case CODE_update_new_message:
     {
@@ -913,7 +916,8 @@ void work_update (struct connection *c UU, long long msg_id UU) {
       assert (M);
       fetch_pts ();
       unread_messages ++;
-      print_message (M);
+	  event_update_new_message(M);
+      //print_message (M);
       update_prompt ();
       break;
     };
@@ -1717,10 +1721,12 @@ int rpc_execute (struct connection *c, int op, int len) {
   if (verbosity) {
     logprintf ( "outbound rpc connection #%d : received rpc answer %d with %d content bytes\n", c->fd, op, len);
   }
-/*  if (op < 0) {
+  /*  
+  if (op < 0) {
     assert (read_in (c, Response, Response_len) == Response_len);
     return 0;
-  }*/
+  }
+  */
 
   if (len >= MAX_RESPONSE_SIZE/* - 12*/ || len < 0/*12*/) {
     logprintf ( "answer too long (%d bytes), skipping\n", len);

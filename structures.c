@@ -33,6 +33,8 @@
 #include "queries.h"
 #include "binlog.h"
 
+#include "tg-cli.h"
+
 #define sha1 SHA1
 
 static int id_cmp (struct message *M1, struct message *M2);
@@ -202,6 +204,21 @@ long long fetch_user_photo (struct user *U) {
 
   bl_do_set_user_profile_photo (U, photo_id, &big, &small);
   return 0;
+}
+
+int user_get_printname(peer_t *user, char *buffer, int maxlen) 
+{
+  char* last_name  = (user->user.last_name  && strlen(user->user.last_name))  ? user->user.last_name  : "";
+  char* first_name = (user->user.first_name && strlen(user->user.first_name)) ? user->user.first_name : "";
+  if (strlen(first_name) && strlen(last_name)) {
+    return snprintf(buffer, maxlen, "%s %s", first_name, last_name);
+  } else if (strlen(first_name)) {
+    return snprintf(buffer, maxlen, "%s", first_name);
+  } else if (strlen(last_name)) {
+    return snprintf(buffer, maxlen, "%s", last_name);
+  } else {
+    return snprintf(buffer, maxlen, "%d", get_peer_id(user->id));
+  }
 }
 
 int fetch_user (struct user *U) {
@@ -1512,10 +1529,12 @@ static int id_cmp (struct message *M1, struct message *M2) {
 }
 
 struct user *fetch_alloc_user (void) {
+  int send_event = 0;
   int data[2];
   prefetch_data (data, 8);
   peer_t *U = user_chat_get (MK_USER (data[1]));
   if (!U) {
+    send_event = 1;
     users_allocated ++;
     U = talloc0 (sizeof (*U));
     U->id = MK_USER (data[1]);
@@ -1524,6 +1543,9 @@ struct user *fetch_alloc_user (void) {
     Peers[peer_num ++] = U;
   }
   fetch_user (&U->user);
+  if (send_event) {
+    event_user_allocated(U);
+  }
   return &U->user;
 }
 
@@ -1871,10 +1893,12 @@ struct message *fetch_alloc_message_short_chat (void) {
 }
 
 struct chat *fetch_alloc_chat (void) {
+  int send_event = 0;
   int data[2];
   prefetch_data (data, 8);
   peer_t *U = user_chat_get (MK_CHAT (data[1]));
   if (!U) {
+    send_event = 1;
     chats_allocated ++;
     U = talloc0 (sizeof (*U));
     U->id = MK_CHAT (data[1]);
@@ -1883,6 +1907,9 @@ struct chat *fetch_alloc_chat (void) {
     Peers[peer_num ++] = U;
   }
   fetch_chat (&U->chat);
+  if (send_event) {
+	event_chat_allocated(U);
+  }
   return &U->chat;
 }
 

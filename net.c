@@ -59,6 +59,43 @@ extern FILE *log_net_f;
 
 void fail_connection (struct connection *c);
 
+/*
+ * Delegate the read-oprations to external function
+ */
+ssize_t (*netread)(int fd, void *buff, size_t size) = read;
+void set_net_read_cb(ssize_t (*cb)(int fd, void *buff, size_t size)) {
+  netread = cb;
+}
+
+/*
+ * Delegate the write operations to external function
+ */
+ssize_t (*netwrite)(int fd, const void *buff, size_t size) = write;
+void set_net_write_cb(ssize_t (*cb)(int fd, const void *buff, size_t size)) {
+  netwrite = cb;
+}
+
+/*
+ * Delegate the session creation to an external callback
+ *
+ * TODO: use dc_ensure_session instead of dc_create_session to create sessions,
+ *		 to make this actually work
+ */
+void dc_create_session (struct dc *DC);
+void dc_ensure_session_local (struct dc *DC, void (*on_session_ready)(void)) {
+  dc_create_session(DC);
+  on_session_ready();
+}
+void (*dc_ensure_session)(struct dc *DC, void (*on_session_ready)(void));
+void set_dc_ensure_session_cb (void (*dc_ens_sess)(struct dc *DC, void (*on_session_ready)(void)))
+{
+  dc_ensure_session = dc_ens_sess;
+}
+
+/*
+ *
+ */
+
 #define PING_TIMEOUT 10
 
 void start_ping_timer (struct connection *c);
@@ -386,22 +423,29 @@ void try_write (struct connection *c) {
   }
   int x = 0;
   while (c->out_head) {
-    int r = write (c->fd, c->out_head->rptr, c->out_head->wptr - c->out_head->rptr);
+    int r = netwrite (c->fd, c->out_head->rptr, c->out_head->wptr - c->out_head->rptr);
+
+	// Log all written packages
     if (r > 0 && log_net_f) {
       fprintf (log_net_f, "%.02lf %d OUT %s:%d", get_utime (CLOCK_REALTIME), r, c->ip, c->port);
       int i;
       for (i = 0; i < r; i++) {
+	    
         fprintf (log_net_f, " %02x", *(unsigned char *)(c->out_head->rptr + i));
       }
       fprintf (log_net_f, "\n");
       fflush (log_net_f);
     }
+	
     if (r >= 0) {
       x += r;
       c->out_head->rptr += r;
       if (c->out_head->rptr != c->out_head->wptr) {
+	    // Inhalt des Buffers nicht komplett abgeschickt,
+		// es geht nichts mehr in den Socket
         break;
       }
+	  // buffer ausgelesen, alten buffer löschen
       struct connection_buffer *b = c->out_head;
       c->out_head = b->next;
       if (!c->out_head) {
@@ -497,11 +541,12 @@ void try_read (struct connection *c) {
   }
   int x = 0;
   while (1) {
-    int r = read (c->fd, c->in_tail->wptr, c->in_tail->end - c->in_tail->wptr);
+    int r = netread (c->fd, c->in_tail->wptr, c->in_tail->end - c->in_tail->wptr);
     if (r > 0 && log_net_f) {
       fprintf (log_net_f, "%.02lf %d IN %s:%d", get_utime (CLOCK_REALTIME), r, c->ip, c->port);
       int i;
       for (i = 0; i < r; i++) {
+	    // print all writte bits
         fprintf (log_net_f, " %02x", *(unsigned char *)(c->in_tail->wptr + i));
       }
       fprintf (log_net_f, "\n");
@@ -509,13 +554,17 @@ void try_read (struct connection *c) {
     }
     if (r > 0) {
       c->last_receive_time = get_double_time ();
+	  // reset ping timer
       stop_ping_timer (c);
       start_ping_timer (c);
     }
     if (r >= 0) {
+	  // write pointer nach vorne setzen
       c->in_tail->wptr += r;
       x += r;
+
       if (c->in_tail->wptr != c->in_tail->end) {
+	    // Paket nicht komplett beschrieben, keine neuen Daten liegen an.
         break;
       }
       struct connection_buffer *b = new_connection_buffer (1 << 20);
@@ -646,3 +695,4 @@ void dc_create_session (struct dc *DC) {
   assert (!DC->sessions[0]);
   DC->sessions[0] = S;
 }
+

@@ -53,6 +53,7 @@
 
 #include "no-preview.h"
 #include "binlog.h"
+#include "tg-cli.h"
 
 #define sha1 SHA1
 
@@ -132,7 +133,6 @@ struct query *send_query (struct dc *DC, int ints, void *data, struct query_meth
   if (!DC->sessions[0]) {
     dc_create_session (DC);
   }
-  logprintf("telegram: verbosity: %d\n", verbosity);
   if (verbosity) {
     logprintf ( "Sending query of size %d to DC (%s:%d)\n", 4 * ints, DC->ip, DC->port);
   }
@@ -695,6 +695,7 @@ int do_send_code_result_auth (const char *code, const char *sms_hash, const char
 /* {{{ Get contacts */
 extern char *user_list[];
 
+int contacts_got = 0;
 int get_contacts_on_answer (struct query *q UU) {
   int i;
   assert (fetch_int () == (int)CODE_contacts_contacts);
@@ -708,7 +709,8 @@ int get_contacts_on_answer (struct query *q UU) {
   assert (fetch_int () == CODE_vector);
   n = fetch_int ();
   for (i = 0; i < n; i++) {
-    struct user *U = fetch_alloc_user ();
+    fetch_alloc_user ();
+	/*
     print_start ();
     push_color (COLOR_YELLOW);
     logprintf ("User #%d: ", get_peer_id (U->id));
@@ -735,7 +737,9 @@ int get_contacts_on_answer (struct query *q UU) {
     }
     pop_color ();
     print_end ();
+	*/
   }
+  contacts_got = 1;
   return 0;
 }
 
@@ -745,11 +749,14 @@ struct query_methods get_contacts_methods = {
 
 
 void do_update_contact_list (void) {
+  contacts_got = 0;
   clear_packet ();
   out_int (CODE_contacts_get_contacts);
   out_string ("");
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_contacts_methods, 0);
 }
+
+
 /* }}} */
 
 /* {{{ Encrypt decrypted */
@@ -2565,6 +2572,7 @@ int unread_messages;
 int difference_got;
 int seq, pts, qts, last_date;
 int get_state_on_answer (struct query *q UU) {
+  logprintf("get_state_on_answer()\n");
   assert (fetch_int () == (int)CODE_updates_state);
   bl_do_set_pts (fetch_int ());
   bl_do_set_qts (fetch_int ());
@@ -2578,6 +2586,7 @@ int get_state_on_answer (struct query *q UU) {
 
 int get_difference_active;
 int get_difference_on_answer (struct query *q UU) {
+  logprintf("get_difference_on_answer()\n");
   get_difference_active = 0;
   unsigned x = fetch_int ();
   if (x == CODE_updates_difference_empty) {
@@ -2629,7 +2638,8 @@ int get_difference_on_answer (struct query *q UU) {
     unread_messages = fetch_int ();
     write_state_file ();
     for (i = 0; i < ml_pos; i++) {
-      print_message (ML[i]);
+	  event_update_new_message(ML[i]);
+      //print_message (ML[i]);
     }
     if (x == CODE_updates_difference_slice) {
       do_get_difference ();
@@ -2651,6 +2661,7 @@ struct query_methods get_difference_methods = {
 };
 
 void do_get_difference (void) {
+  logprintf("do_get_difference()\n");
   get_difference_active = 1;
   difference_got = 0;
   clear_packet ();

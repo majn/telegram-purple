@@ -536,6 +536,10 @@ void network_connect (void) {
     write_auth_file ();
     logprintf("DataCentre start_loopd, key id: %lld\n", DC_list[i]->auth_key_id);
   }
+
+  // read saved connection state
+  read_state_file ();
+  read_secret_chat_file ();
 }
 
 /**
@@ -623,6 +627,25 @@ void network_export_registration()
     write_auth_file ();
     fflush (stdout);
     fflush (stderr);
+}
+
+/**
+ * Fetch all unknown messages of the current session
+ */
+void session_get_difference()
+{
+	do_get_difference();
+    net_loop (0, dgot);
+}
+
+extern int contacts_got;
+int cupdate_got() {
+  return contacts_got;
+}
+void session_update_contact_list()
+{
+  do_update_contact_list();
+  net_loop(0, cupdate_got);
 }
 
 int start_loop (char* code, char* auth_mode) {
@@ -722,9 +745,11 @@ int start_loop (char* code, char* auth_mode) {
   fflush (stdout);
   fflush (stderr);
 
+  // read saved connection state
   read_state_file ();
   read_secret_chat_file ();
-
+	
+  // callbacks for interface functions
   set_interface_callbacks ();
 
   do_get_difference ();

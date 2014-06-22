@@ -156,6 +156,7 @@ struct user {
   char *real_last_name;
 };
 
+
 struct chat_user {
   int user_id;
   int inviter_id;
@@ -379,6 +380,8 @@ void message_del_use (struct message *M);
 void peer_insert_name (peer_t *P);
 void peer_delete_name (peer_t *P);
 peer_t *peer_lookup_name (const char *s);
+
+int user_get_printname(peer_t *user, char *buffer, int maxlen);
 
 #define PEER_USER 1
 #define PEER_CHAT 2
