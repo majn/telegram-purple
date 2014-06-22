@@ -1467,32 +1467,32 @@ void print_message (struct message *M) {
     if (M->out) {
       push_color (COLOR_GREEN);
       if (msg_num_mode) {
-        printf ("%lld ", M->id);
+        logprintf ("%lld ", M->id);
       }
       print_date (M->date);
       pop_color ();
-      printf (" ");
+      logprintf (" ");
       print_user_name (M->to_id, user_chat_get (M->to_id));
       push_color (COLOR_GREEN);
       if (M->unread) {
-        printf (" <<< ");
+        logprintf (" <<< ");
       } else {
-        printf (" ««« ");
+        logprintf (" ««« ");
       }
     } else {
       push_color (COLOR_BLUE);
       if (msg_num_mode) {
-        printf ("%lld ", M->id);
+        logprintf ("%lld ", M->id);
       }
       print_date (M->date);
       pop_color ();
-      printf (" ");
+      logprintf (" ");
       print_user_name (M->from_id, user_chat_get (M->from_id));
       push_color (COLOR_BLUE);
       if (M->unread) {
-        printf (" >>> ");
+        logprintf (" >>> ");
       } else {
-        printf (" »»» ");
+        logprintf (" »»» ");
       }
       if (alert_sound) {
         play_sound();
@@ -1504,31 +1504,31 @@ void print_message (struct message *M) {
     if (M->out) {
       push_color (COLOR_GREEN);
       if (msg_num_mode) {
-        printf ("%lld ", M->id);
+        logprintf ("%lld ", M->id);
       }
       print_date (M->date);
-      printf (" ");
+      logprintf (" ");
       push_color (COLOR_CYAN);
-      printf (" %s", P->print_name);
+      logprintf (" %s", P->print_name);
       pop_color ();
       if (M->unread) {
-        printf (" <<< ");
+        logprintf (" <<< ");
       } else {
-        printf (" ««« ");
+        logprintf (" ««« ");
       }
     } else {
       push_color (COLOR_BLUE);
       if (msg_num_mode) {
-        printf ("%lld ", M->id);
+        logprintf ("%lld ", M->id);
       }
       print_date (M->date);
       push_color (COLOR_CYAN);
-      printf (" %s", P->print_name);
+      logprintf (" %s", P->print_name);
       pop_color ();
       if (M->unread) {
-        printf (" >>> ");
+        logprintf (" >>> ");
       } else {
-        printf (" »»» ");
+        logprintf (" »»» ");
       }
       if (alert_sound) {
         play_sound();
@@ -1538,13 +1538,13 @@ void print_message (struct message *M) {
     assert (get_peer_type (M->to_id) == PEER_CHAT);
     push_color (COLOR_MAGENTA);
     if (msg_num_mode) {
-      printf ("%lld ", M->id);
+      logprintf ("%lld ", M->id);
     }
     print_date (M->date);
     pop_color ();
-    printf (" ");
+    logprintf (" ");
     print_chat_name (M->to_id, user_chat_get (M->to_id));
-    printf (" ");
+    logprintf (" ");
     print_user_name (M->from_id, user_chat_get (M->from_id));
     if ((get_peer_type (M->from_id) == PEER_USER) && (get_peer_id (M->from_id) == our_id)) {
       push_color (COLOR_GREEN);
@@ -1552,25 +1552,25 @@ void print_message (struct message *M) {
       push_color (COLOR_BLUE);
     }
     if (M->unread) {
-      printf (" >>> ");
+      logprintf (" >>> ");
     } else {
-      printf (" »»» ");
+      logprintf (" »»» ");
     }
   }
   if (get_peer_type (M->fwd_from_id) == PEER_USER) {
-    printf ("[fwd from ");
+    logprintf ("[fwd from ");
     print_user_name (M->fwd_from_id, user_chat_get (M->fwd_from_id));
-    printf ("] ");
+    logprintf ("] ");
   }
   if (M->message && strlen (M->message)) {
-    printf ("%s", M->message);
+    logprintf ("%s", M->message);
   }
   if (M->media.type != CODE_message_media_empty) {
     print_media (&M->media);
   }
   pop_color ();
   assert (!color_stack_pos);
-  printf ("\n");
+  logprintf ("\n");
   print_end();
 }
 
