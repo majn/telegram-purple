@@ -4,7 +4,7 @@
 EXTRA_LIBS = -lcrypto -lz -lm -lreadline
 LDFLAGSTG = -L/usr/local/lib
 CPPFLAGSTG = -I/usr/local/include
-OBJECTSTG = ../main.o ../loop.o ../interface.o ../net.o ../mtproto-common.o ../mtproto-client.o ../queries.o ../structures.o ../binlog.o ../tools.o ../lua-tg.o ../msglog.o
+OBJECTSTG = ../main.o ../loop.o ../interface.o ../net.o ../mtproto-common.o ../mtproto-client.o ../queries.o ../structures.o ../binlog.o ../tools.o ../lua-tg.o ../msglog.o ../tg-cli.o
 INCLUDE = -I. -I..
 #
 
@@ -34,6 +34,7 @@ CFLAGS = \
 	-fPIC \
 	-DPURPLE_PLUGINS \
 	-DPIC \
+	-g \
 	$(CFLAGS_PURPLE)
 
 LIBS_PURPLE = $(shell pkg-config --libs purple)
@@ -53,7 +54,7 @@ strip: $(LIBNAME)
 .PHONY: debug install
 debug: CFLAGS += -g -DDEBUG
 debug: $(LIBNAME)
-	gdb -tui pidgin
+	gdb -tui -ex 'break telegram-purple.c:tgprpl_login' pidgin
 
 
 PLUGIN_DIR_PURPLE:=$(shell pkg-config --variable=plugindir purple)
@@ -83,4 +84,4 @@ clean:
 
 .PHONY: run
 run: all install
-	pidgin -d | grep telegram
+	pidgin -d
