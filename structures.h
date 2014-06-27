@@ -381,7 +381,7 @@ void peer_insert_name (peer_t *P);
 void peer_delete_name (peer_t *P);
 peer_t *peer_lookup_name (const char *s);
 
-int user_get_printname(peer_t *user, char *buffer, int maxlen);
+int user_get_alias(peer_t *user, char *buffer, int maxlen);
 
 #define PEER_USER 1
 #define PEER_CHAT 2

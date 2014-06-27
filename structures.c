@@ -206,7 +206,7 @@ long long fetch_user_photo (struct user *U) {
   return 0;
 }
 
-int user_get_printname(peer_t *user, char *buffer, int maxlen) 
+int user_get_alias(peer_t *user, char *buffer, int maxlen) 
 {
   char* last_name  = (user->user.last_name  && strlen(user->user.last_name))  ? user->user.last_name  : "";
   char* first_name = (user->user.first_name && strlen(user->user.first_name)) ? user->user.first_name : "";
