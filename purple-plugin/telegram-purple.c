@@ -67,13 +67,13 @@ PurpleGroup *tggroup;
 
 /**
  * Redirect the msglog of the telegram-cli application to the libpurple
- *	logger
+ *    logger
  */
 void tg_cli_log_cb(const char* format, va_list ap)
 {
     char buffer[256];
     vsnprintf(buffer, sizeof(buffer), format, ap);
-	purple_debug_info(PLUGIN_ID, "%s", buffer);
+    purple_debug_info(PLUGIN_ID, "%s", buffer);
 }
 
 void on_new_message(struct message *M);
@@ -91,7 +91,7 @@ void chat_allocated_handler(peer_t *chat);
 static const char *tgprpl_list_icon(PurpleAccount * acct, PurpleBuddy * buddy)
 {
     purple_debug_info(PLUGIN_ID, "tgrpl_list_icon()\n");
-	return "telegram";
+    return "telegram";
 }
 
 /**
@@ -99,7 +99,7 @@ static const char *tgprpl_list_icon(PurpleAccount * acct, PurpleBuddy * buddy)
  */
 static void tgprpl_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo * info, gboolean full)
 {
-	purple_debug_info(PLUGIN_ID, "tgprpl_tooltip_text()\n");
+    purple_debug_info(PLUGIN_ID, "tgprpl_tooltip_text()\n");
 }
 
 /**
@@ -108,29 +108,29 @@ static void tgprpl_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo * info
  */
 static void login_request_verification(PurpleAccount *acct)
 {
-	// TODO: we should find a way to request the key
-	//			only once.
-	purple_debug_info(PLUGIN_ID, "No code provided, requesting new authentication code.\n");
-	char *new_hash = network_request_registration();
-	purple_debug_info(PLUGIN_ID, "Saving verification_hash: '%s'", new_hash);
-	purple_account_set_string(acct, "verification_hash", new_hash);
+    // TODO: we should find a way to request the key
+    //            only once.
+    purple_debug_info(PLUGIN_ID, "No code provided, requesting new authentication code.\n");
+    char *new_hash = network_request_registration();
+    purple_debug_info(PLUGIN_ID, "Saving verification_hash: '%s'", new_hash);
+    purple_account_set_string(acct, "verification_hash", new_hash);
 
-	purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Please Verify", 
-	 	"You need to verify this device, please enter the code Telegram has sent to you by SMS.", 
-	 	NULL, NULL, NULL);
+    purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Please Verify", 
+         "You need to verify this device, please enter the code Telegram has sent to you by SMS.", 
+         NULL, NULL, NULL);
 }
 
 /**
  * Handle a failed verification, by removing the invalid sms code and
- * 	notifying the user
+ *     notifying the user
  */
 static void login_verification_fail(PurpleAccount *acct)
 {
-	// remove invalid sms code, so we won't try to register again
-	purple_account_set_string(acct, "verification_key", "");
-	purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Verification Failed", 
-		"Please make sure you entered the correct verification code.", NULL, NULL, NULL);
-	
+    // remove invalid sms code, so we won't try to register again
+    purple_account_set_string(acct, "verification_key", "");
+    purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Verification Failed", 
+        "Please make sure you entered the correct verification code.", NULL, NULL, NULL);
+    
 }
 
 /**
@@ -140,12 +140,12 @@ static void tgprpl_login(PurpleAccount * acct)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_login()\n");
     PurpleConnection *gc = purple_account_get_connection(acct);
-	_gc = gc;
-	_pa = acct;
+    _gc = gc;
+    _pa = acct;
 
     const char *username = purple_account_get_username(acct);
     const char *code     = purple_account_get_string(acct, "verification_key", NULL);
-	const char *hash 	 = purple_account_get_string(acct, "verification_hash", NULL);
+    const char *hash      = purple_account_get_string(acct, "verification_hash", NULL);
     const char *hostname = purple_account_get_string(acct, "server", TELEGRAM_TEST_SERVER);
     // const char *verificationType = purple_account_get_string(acct, "verification_type", TELEGRAM_AUTH_MODE_SMS);
     // int port = purple_account_get_int(acct, "port", TELEGRAM_DEFAULT_PORT);
@@ -155,94 +155,94 @@ static void tgprpl_login(PurpleAccount * acct)
     purple_debug_info(PLUGIN_ID, "verification_hash: %s\n", hash);
     purple_debug_info(PLUGIN_ID, "hostname: %s\n", hostname);
 
-	// ensure config-file exists an
+    // ensure config-file exists an
     purple_debug_info(PLUGIN_ID, "running_for_first_time()\n");
     running_for_first_time();
 
-	// load all settings: the known network topology, secret keys, logs and configuration file paths
+    // load all settings: the known network topology, secret keys, logs and configuration file paths
     purple_debug_info(PLUGIN_ID, "parse_config()\n");
     parse_config ();
     purple_debug_info(PLUGIN_ID, "set_default_username()\n");
     set_default_username (username);
 
-	// Connect to the network
+    // Connect to the network
     purple_debug_info(PLUGIN_ID, "Connecting to the Telegram network...\n");
     network_connect();
 
-	// Assure phone number registration
-	if (!network_phone_is_registered()) {
-		purple_debug_info(PLUGIN_ID, "Phone is not registered, registering...\n");
-    	const char *first_name = purple_account_get_string(acct, "first_name", NULL);
-		const char *last_name  = purple_account_get_string(acct, "last_name", NULL);
-		if (!first_name || !last_name || !strlen(first_name) > 0 || !strlen(last_name) > 0) {
-			purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Registration Needed", 
-				"Enter your first and last name to register this phone number with the telegram network.", 
-				NULL, NULL, NULL);
-			return;
-		}
-		if (code && strlen(code) > 0 && hash && strlen(hash) > 0) {
-		    int registered = network_verify_phone_registration(code, hash, first_name, last_name);
-			if (registered) {
-				store_config();
-			} else {
-				login_verification_fail(acct);
-		    	return;
-			}
-		} else {
-		    login_request_verification(acct);
-		    return;
-		}
-	} 
+    // Assure phone number registration
+    if (!network_phone_is_registered()) {
+        purple_debug_info(PLUGIN_ID, "Phone is not registered, registering...\n");
+        const char *first_name = purple_account_get_string(acct, "first_name", NULL);
+        const char *last_name  = purple_account_get_string(acct, "last_name", NULL);
+        if (!first_name || !last_name || !strlen(first_name) > 0 || !strlen(last_name) > 0) {
+            purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Registration Needed", 
+                "Enter your first and last name to register this phone number with the telegram network.", 
+                NULL, NULL, NULL);
+            return;
+        }
+        if (code && strlen(code) > 0 && hash && strlen(hash) > 0) {
+            int registered = network_verify_phone_registration(code, hash, first_name, last_name);
+            if (registered) {
+                store_config();
+            } else {
+                login_verification_fail(acct);
+                return;
+            }
+        } else {
+            login_request_verification(acct);
+            return;
+        }
+    } 
 
-	// Assure client registration
-	if (!network_client_is_registered()) {
-		purple_debug_info(PLUGIN_ID, "Client is not registered\n");
-	
-	    if (code && strlen(code) > 0 && hash && strlen(hash) > 0) {
-		   purple_debug_info(PLUGIN_ID, "SMS code provided, trying to verify \n");
-		   purple_debug_info(PLUGIN_ID, "strlen - code: %lu hash: %lu\n", strlen(code), strlen(hash));
-		   purple_debug_info(PLUGIN_ID, "pointer - code: %p hash: %p\n", code, hash);
-		   purple_debug_info(PLUGIN_ID, "string - code: %s hash: %s\n", code, hash);
-	       int verified = network_verify_registration(code, hash);
-		   if (verified) {
-		      store_config();
-		   } else {
-		      login_verification_fail(acct);
-			  return;
-		   }
-	    } else {
-		   login_request_verification(acct);
-		   return;
-		}
-	} 
+    // Assure client registration
+    if (!network_client_is_registered()) {
+        purple_debug_info(PLUGIN_ID, "Client is not registered\n");
+    
+        if (code && strlen(code) > 0 && hash && strlen(hash) > 0) {
+           purple_debug_info(PLUGIN_ID, "SMS code provided, trying to verify \n");
+           purple_debug_info(PLUGIN_ID, "strlen - code: %lu hash: %lu\n", strlen(code), strlen(hash));
+           purple_debug_info(PLUGIN_ID, "pointer - code: %p hash: %p\n", code, hash);
+           purple_debug_info(PLUGIN_ID, "string - code: %s hash: %s\n", code, hash);
+           int verified = network_verify_registration(code, hash);
+           if (verified) {
+              store_config();
+           } else {
+              login_verification_fail(acct);
+              return;
+           }
+        } else {
+           login_request_verification(acct);
+           return;
+        }
+    } 
     purple_debug_info(PLUGIN_ID, "Logged in...\n");
-	purple_connection_set_display_name(gc, username);
-	purple_connection_set_state(gc, PURPLE_CONNECTED);
-	purple_blist_add_account(acct);
+    purple_connection_set_display_name(gc, username);
+    purple_connection_set_state(gc, PURPLE_CONNECTED);
+    purple_blist_add_account(acct);
 
-	tggroup = purple_find_group("Telegram");
-	if (tggroup == NULL) {
-	   purple_debug_info(PLUGIN_ID, "PurpleGroup = NULL, creating");
-	   tggroup = purple_group_new("Telegram");
-	   purple_blist_add_group(tggroup, NULL);
-	}
+    tggroup = purple_find_group("Telegram");
+    if (tggroup == NULL) {
+        purple_debug_info(PLUGIN_ID, "PurpleGroup = NULL, creating");
+        tggroup = purple_group_new("Telegram");
+        purple_blist_add_group(tggroup, NULL);
+    }
 
     purple_debug_info(PLUGIN_ID, "Fetching Network Info\n");
-	on_update_new_message(on_new_message);
-	on_user_allocated(user_allocated_handler);
-	on_chat_allocated(chat_allocated_handler);
+    on_update_new_message(on_new_message);
+    on_user_allocated(user_allocated_handler);
+    on_chat_allocated(chat_allocated_handler);
 
-	// get all current contacts
-	purple_debug_info(PLUGIN_ID, "Fetching all current contacts...\n");
-	session_update_contact_list();
+    // get all current contacts
+    purple_debug_info(PLUGIN_ID, "Fetching all current contacts...\n");
+    session_update_contact_list();
 
-	// get new messages
-	session_get_difference();
+    // get new messages
+    session_get_difference();
 
-	// Our protocol data, that will be delivered to us
-	// through purple connection
+    // Our protocol data, that will be delivered to us
+    // through purple connection
     telegram_conn *conn = g_new0(telegram_conn, 1);
-    conn->gc 	  = gc;
+    conn->gc       = gc;
     conn->account = acct;
 
     purple_connection_set_protocol_data(gc, conn);
@@ -252,28 +252,36 @@ static void tgprpl_login(PurpleAccount * acct)
 void on_new_message(struct message *M)
 {
    purple_debug_info(PLUGIN_ID, "New Message: %s\n", M->message);
+   // TODO: this should probably be freed again somwhere
+   char *who = g_strdup_printf("%d", get_peer_id(M->from_id));
+   serv_got_im(_gc, who, M->message, PURPLE_MESSAGE_RECV, time(NULL));
+   g_free(who);
 }
 
 void user_allocated_handler(peer_t *user)
 {
-   char* name = malloc(BUDDYNAME_MAX_LENGTH);
-   if (user_get_printname(user, name, BUDDYNAME_MAX_LENGTH) < 0) {
-     purple_debug_info(PLUGIN_ID, "Buddy name of (%d) too long, not adding to buddy list.\n", 
-	 	get_peer_id(user->id));
-     return;
-   }
-   PurpleBuddy *buddy = purple_find_buddy(_pa, name);
-   if (!buddy) { 
-       purple_debug_info(PLUGIN_ID, "User Allocated: %s\n", name);
-       PurpleBuddy *buddy = purple_buddy_new(_pa, name, name);
-       purple_blist_add_buddy(buddy, NULL, tggroup, NULL);
-       purple_blist_alias_buddy(buddy, name);
-   }
+    gchar *name  = g_strdup_printf("%d", get_peer_id(user->id));
+    // TODO: this should probably be freed again somwhere
+    char *alias = malloc(BUDDYNAME_MAX_LENGTH);
+
+    if (user_get_alias(user, alias, BUDDYNAME_MAX_LENGTH) < 0) {
+        purple_debug_info(PLUGIN_ID, "Buddyalias of (%d) too long, not adding to buddy list.\n", 
+            get_peer_id(user->id));
+        return;
+    }
+    PurpleBuddy *buddy = purple_find_buddy(_pa, name);
+    if (!buddy) { 
+        purple_debug_info(PLUGIN_ID, "Adding %s to buddy list ", name);
+        buddy = purple_buddy_new(_pa, name, alias);
+        purple_blist_add_buddy(buddy, NULL, tggroup, NULL);
+    }
+    purple_buddy_set_protocol_data(buddy, (gpointer)&user->id);
+    g_free(name);
 }
 
 void chat_allocated_handler(peer_t *chat)
 {
-   purple_debug_info(PLUGIN_ID, "Chat Allocated: %s\n", chat->print_name);
+    purple_debug_info(PLUGIN_ID, "Chat Allocated: %s\n", chat->print_name);
 }
 
 /**
@@ -313,7 +321,7 @@ static int tgprpl_send_im(PurpleConnection * gc, const char *who, const char *me
  * @param message The message to send to the chat.
  * @param flags   A bitwise OR of #PurpleMessageFlags representing
  *                message flags.
- * @return 	  A positive number or 0 in case of success,
+ * @return       A positive number or 0 in case of success,
  *                a negative error number in case of failure.
  */
 static int tgprpl_send_chat(PurpleConnection * gc, int id, const char *message, PurpleMessageFlags flags)
@@ -427,10 +435,12 @@ static GList *tgprpl_status_types(PurpleAccount * acct)
     purple_debug_info(PLUGIN_ID, "tgprpl_status_types()\n");
     GList *types = NULL;
     PurpleStatusType *type;
-    type = purple_status_type_new_with_attrs(PURPLE_STATUS_AVAILABLE, "available", NULL, TRUE, TRUE, FALSE, "message", "Message", purple_value_new(PURPLE_TYPE_STRING), NULL);
+    type = purple_status_type_new_with_attrs(PURPLE_STATUS_AVAILABLE, "available", NULL, 
+        TRUE, TRUE, FALSE, "message", "Message", purple_value_new(PURPLE_TYPE_STRING), NULL);
     types = g_list_prepend(types, type);
 
-    type = purple_status_type_new_with_attrs(PURPLE_STATUS_AWAY, "unavailable", NULL, TRUE, TRUE, FALSE, "message", "Message", purple_value_new(PURPLE_TYPE_STRING), NULL);
+    type = purple_status_type_new_with_attrs(PURPLE_STATUS_AWAY, "unavailable", NULL, TRUE, 
+        TRUE, FALSE, "message", "Message", purple_value_new(PURPLE_TYPE_STRING), NULL);
     types = g_list_prepend(types, type);
 
     type = purple_status_type_new(PURPLE_STATUS_OFFLINE, NULL, NULL, TRUE);
@@ -562,145 +572,144 @@ static void tgprpl_send_file(PurpleConnection * gc, const char *who, const char 
 
 // SEE prpl.h
 static PurplePluginProtocolInfo prpl_info = {
-	OPT_PROTO_NO_PASSWORD,                    /* options */
-	NULL,			                              /* user_splits, initialized in tgprpl_init() */
-	NULL,			                              /* protocol_options, initialized in tgprpl_init() */
-
-	{                                         /* icon_spec, a PurpleBuddyIconSpec */
-		"png",		                           /* format */
-		1,			                              /* min_width */
-		1,			                              /* min_height */
-		512,		                              /* max_width */
-		512,		                              /* max_height */
-		64000,		                           /* max_filesize */
-		PURPLE_ICON_SCALE_SEND,	               /* scale_rules */
-	},
-	tgprpl_list_icon,
-	NULL,
-	NULL,
-	tgprpl_tooltip_text,
-	tgprpl_status_types,
-	NULL,                                     /* blist_node_menu */
+    OPT_PROTO_NO_PASSWORD,                    /* options */
+    NULL,                                          /* user_splits, initialized in tgprpl_init() */
+    NULL,                                          /* protocol_options, initialized in tgprpl_init() */
+    {                                         /* icon_spec, a PurpleBuddyIconSpec */
+        "png",                                   /* format */
+        1,                                          /* min_width */
+        1,                                          /* min_height */
+        512,                                      /* max_width */
+        512,                                      /* max_height */
+        64000,                                   /* max_filesize */
+        PURPLE_ICON_SCALE_SEND,                   /* scale_rules */
+    },
+    tgprpl_list_icon,
+    NULL,
+    NULL,
+    tgprpl_tooltip_text,
+    tgprpl_status_types,
+    NULL,                                     /* blist_node_menu */
     tgprpl_chat_join_info,
-    tgprpl_chat_info_defaults,	            /* chat_info_defaults */
-	tgprpl_login,                             /* login */
-	tgprpl_close,		                        /* close */
-	tgprpl_send_im,		                     /* send_im */
-	NULL,                                     /* set_info */
-	tgprpl_send_typing,	                     /* send_typing */
-	tgprpl_get_info,	                        /* get_info */
-	tgprpl_set_status,	                     /* set_status */
-	NULL,                                     /* set_idle */
-	NULL,                                     /* change_passwd */
-	tgprpl_add_buddy,	                        /* add_buddy */
-	tgprpl_add_buddies,	                     /* add_buddies */
-	tgprpl_remove_buddy,	                     /* remove_buddy */
-	tgprpl_remove_buddies,	                  /* remove_buddies */
-	NULL,                                     /* add_permit */
-	tgprpl_add_deny,	                        /* add_deny */
-	NULL,                                     /* rem_permit */
-	tgprpl_rem_deny,	                        /* rem_deny */
-	NULL,                                     /* set_permit_deny */
-	tgprpl_chat_join,	/* join_chat */
-	NULL,                                     /* reject_chat */
-	tgprpl_get_chat_name,	                  /* get_chat_name */
-	tgprpl_chat_invite,	                     /* chat_invite */
-	NULL,                                     /* chat_leave */
-	NULL,                                     /* chat_whisper */
-	tgprpl_send_chat,	                        /* chat_send */
-	NULL,                                     /* keepalive */
-	NULL,                                     /* register_user */
-	NULL,                                     /* get_cb_info */
-	NULL,                                     /* get_cb_away */
-	NULL,                                     /* alias_buddy */
-	tgprpl_group_buddy,	                     /* group_buddy */
-	tgprpl_rename_group,	                     /* rename_group */
-	NULL,                                     /* buddy_free */
-	tgprpl_convo_closed,	                     /* convo_closed */
-	purple_normalize_nocase,	               /* normalize */
-	tgprpl_set_buddy_icon,	                  /* set_buddy_icon */
-	NULL,                                     /* remove_group */
-	NULL,                                     /* get_cb_real_name */
-	NULL,                                     /* set_chat_topic */
-	NULL,                                     /* find_blist_chat */
-	NULL,                                     /* roomlist_get_list */
-	NULL,                                     /* roomlist_cancel */
-	NULL,                                     /* roomlist_expand_category */
-	tgprpl_can_receive_file,	               /* can_receive_file */
-	tgprpl_send_file,	                        /* send_file */
-	tgprpl_new_xfer,	                        /* new_xfer */
-	tgprpl_offline_message,	                  /* offline_message */
-	NULL,                                     /* whiteboard_prpl_ops */
-	NULL,                                     /* send_raw */
-	NULL,                                     /* roomlist_room_serialize */
-	NULL,                                     /* unregister_user */
-	NULL,                                     /* send_attention */
-	NULL,                                     /* get_attention_types */
-	sizeof(PurplePluginProtocolInfo),	      /* struct_size */
-	NULL,                                     /* get_account_text_table */
-	NULL,                                     /* initiate_media */
-	NULL,                                     /* get_media_caps */
-	NULL,                                     /* get_moods */
-	NULL,                                     /* set_public_alias */
-	NULL,                                     /* get_public_alias */
-	NULL,                                     /* add_buddy_with_invite */
-	NULL			                              /* add_buddies_with_invite */
+    tgprpl_chat_info_defaults,                /* chat_info_defaults */
+    tgprpl_login,                             /* login */
+    tgprpl_close,                                /* close */
+    tgprpl_send_im,                             /* send_im */
+    NULL,                                     /* set_info */
+    tgprpl_send_typing,                         /* send_typing */
+    tgprpl_get_info,                            /* get_info */
+    tgprpl_set_status,                         /* set_status */
+    NULL,                                     /* set_idle */
+    NULL,                                     /* change_passwd */
+    tgprpl_add_buddy,                            /* add_buddy */
+    tgprpl_add_buddies,                         /* add_buddies */
+    tgprpl_remove_buddy,                         /* remove_buddy */
+    tgprpl_remove_buddies,                      /* remove_buddies */
+    NULL,                                     /* add_permit */
+    tgprpl_add_deny,                            /* add_deny */
+    NULL,                                     /* rem_permit */
+    tgprpl_rem_deny,                            /* rem_deny */
+    NULL,                                     /* set_permit_deny */
+    tgprpl_chat_join,    /* join_chat */
+    NULL,                                     /* reject_chat */
+    tgprpl_get_chat_name,                      /* get_chat_name */
+    tgprpl_chat_invite,                         /* chat_invite */
+    NULL,                                     /* chat_leave */
+    NULL,                                     /* chat_whisper */
+    tgprpl_send_chat,                            /* chat_send */
+    NULL,                                     /* keepalive */
+    NULL,                                     /* register_user */
+    NULL,                                     /* get_cb_info */
+    NULL,                                     /* get_cb_away */
+    NULL,                                     /* alias_buddy */
+    tgprpl_group_buddy,                         /* group_buddy */
+    tgprpl_rename_group,                         /* rename_group */
+    NULL,                                     /* buddy_free */
+    tgprpl_convo_closed,                         /* convo_closed */
+    purple_normalize_nocase,                   /* normalize */
+    tgprpl_set_buddy_icon,                      /* set_buddy_icon */
+    NULL,                                     /* remove_group */
+    NULL,                                     /* get_cb_real_name */
+    NULL,                                     /* set_chat_topic */
+    NULL,                                     /* find_blist_chat */
+    NULL,                                     /* roomlist_get_list */
+    NULL,                                     /* roomlist_cancel */
+    NULL,                                     /* roomlist_expand_category */
+    tgprpl_can_receive_file,                   /* can_receive_file */
+    tgprpl_send_file,                            /* send_file */
+    tgprpl_new_xfer,                            /* new_xfer */
+    tgprpl_offline_message,                      /* offline_message */
+    NULL,                                     /* whiteboard_prpl_ops */
+    NULL,                                     /* send_raw */
+    NULL,                                     /* roomlist_room_serialize */
+    NULL,                                     /* unregister_user */
+    NULL,                                     /* send_attention */
+    NULL,                                     /* get_attention_types */
+    sizeof(PurplePluginProtocolInfo),          /* struct_size */
+    NULL,                                     /* get_account_text_table */
+    NULL,                                     /* initiate_media */
+    NULL,                                     /* get_media_caps */
+    NULL,                                     /* get_moods */
+    NULL,                                     /* set_public_alias */
+    NULL,                                     /* get_public_alias */
+    NULL,                                     /* add_buddy_with_invite */
+    NULL                                          /* add_buddies_with_invite */
 };
 
 static void tgprpl_init(PurplePlugin *plugin)
 {
     PurpleAccountOption *option;
-	PurpleAccountUserSplit *split;
-	GList *verification_values = NULL;
+    PurpleAccountUserSplit *split;
+    GList *verification_values = NULL;
 
-	// intialise logging
+    // intialise logging
     set_log_cb(&tg_cli_log_cb);
 
-	// Required Verification-Key
-//	split = purple_account_user_split_new("Verification key", NULL, '@');
-//	purple_account_user_split_set_reverse(split, FALSE);
-//	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
+    // Required Verification-Key
+//    split = purple_account_user_split_new("Verification key", NULL, '@');
+//    purple_account_user_split_set_reverse(split, FALSE);
+//    prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
 
-	// Extra Options
+    // Extra Options
  #define ADD_VALUE(list, desc, v) { \
      PurpleKeyValuePair *kvp = g_new0(PurpleKeyValuePair, 1); \
      kvp->key = g_strdup((desc)); \
      kvp->value = g_strdup((v)); \
      list = g_list_prepend(list, kvp); \
  }
-	ADD_VALUE(verification_values, "Phone", TELEGRAM_AUTH_MODE_PHONE);
-	ADD_VALUE(verification_values, "SMS", TELEGRAM_AUTH_MODE_SMS);
-	option = purple_account_option_list_new("Verification type", "verification_type", verification_values);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+    ADD_VALUE(verification_values, "Phone", TELEGRAM_AUTH_MODE_PHONE);
+    ADD_VALUE(verification_values, "SMS", TELEGRAM_AUTH_MODE_SMS);
+    option = purple_account_option_list_new("Verification type", "verification_type", verification_values);
+    prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	// option = purple_account_option_string_new("Server", "server", TELEGRAM_TEST_SERVER);
-	// prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+    // option = purple_account_option_string_new("Server", "server", TELEGRAM_TEST_SERVER);
+    // prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
     option = purple_account_option_string_new("Verification key", "verification_key", NULL);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+    prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
     option = purple_account_option_string_new("Verification hash", "verification_hash", NULL);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+    prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
     option = purple_account_option_string_new("First Name", "first_name", NULL);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+    prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
     option = purple_account_option_string_new("Last Name", "last_name", NULL);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+    prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	// TODO: Path to public key (When you can change the server hostname,
+    // TODO: Path to public key (When you can change the server hostname,
     //        you should also be able to change the public key)
 
-	option = purple_account_option_int_new("Port", "port", TELEGRAM_DEFAULT_PORT);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+    option = purple_account_option_int_new("Port", "port", TELEGRAM_DEFAULT_PORT);
+    prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	_telegram_protocol = plugin;
+    _telegram_protocol = plugin;
 }
 
 static GList *tgprpl_actions(PurplePlugin * plugin, gpointer context)
 {
     // return possible actions (See Libpurple doc)
-	return (GList *)NULL;
+    return (GList *)NULL;
 }
 
 static PurplePluginInfo info = {
