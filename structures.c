@@ -33,8 +33,6 @@
 #include "queries.h"
 #include "binlog.h"
 
-#include "tg-cli.h"
-
 #define sha1 SHA1
 
 static int id_cmp (struct message *M1, struct message *M2);

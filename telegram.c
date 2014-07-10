@@ -1,6 +1,6 @@
 #include <sys/types.h>
 #include "mtproto-common.h"
-#include "tg-cli.h"
+#include "telegram.h"
 #include "msglog.h"
 
 /* 
@@ -37,23 +37,39 @@ void event_user_allocated(peer_t *user) {
  * Chat allocated
  */
 void (*on_chat_allocated_handler)(peer_t *chat);
-void on_chat_allocated(void (*handler)(peer_t *chat)) {
+void on_chat_allocated(void (*handler)(peer_t *chat)) 
+{
   on_chat_allocated_handler = handler;
 }
-void event_chat_allocated(peer_t *chat) {
+void event_chat_allocated(peer_t *chat) 
+{
   if (on_chat_allocated_handler) {
     on_chat_allocated_handler(chat);
   }
 }
 
+/*
+ * Callback to create proxy connections
+ */
+void (*proxy_connection_source)(const char *host, int port, void (*on_connection_created)(int fd)) = NULL;
+void *proxy_connection_data = NULL;
+void set_proxy_connection_source (void (*connection_source)(const char *host, int port, 
+    void (*on_connection_created)(int fd)), void* data) 
+{
+    proxy_connection_source = connection_source;
+    proxy_connection_data = data;
+}
+
 // template
 //void (*on_blarg_handler)(type);
-//void on_blarg(void (*handler)(type)) {
+//void on_blarg(void (*handler)(type)) 
+//{
 //  on_blarg_handler = handler;
 //}
-//void event_blarg(type) {
-//  if (on_blarg_handler) {
+//void event_blarg(type) 
+//{
+//  if (on_blarg_handler) 
+//  {
 //    on_blarg_handler(type);
 //  }
 //}
-

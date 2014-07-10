@@ -44,7 +44,7 @@
 #include "util.h"
 
 // Telegram Includes
-#include <tg-cli.h>
+#include "telegram.h"
 #include "msglog.h"
 #include "mtproto-client.h"
 #include "mtproto-common.h"
@@ -90,7 +90,7 @@ void chat_allocated_handler(peer_t *chat);
  */
 static const char *tgprpl_list_icon(PurpleAccount * acct, PurpleBuddy * buddy)
 {
-    purple_debug_info(PLUGIN_ID, "tgrpl_list_icon()\n");
+    //purple_debug_info(PLUGIN_ID, "tgrpl_list_icon()\n");
     return "telegram";
 }
 
@@ -145,7 +145,7 @@ static void tgprpl_login(PurpleAccount * acct)
 
     const char *username = purple_account_get_username(acct);
     const char *code     = purple_account_get_string(acct, "verification_key", NULL);
-    const char *hash      = purple_account_get_string(acct, "verification_hash", NULL);
+    const char *hash     = purple_account_get_string(acct, "verification_hash", NULL);
     const char *hostname = purple_account_get_string(acct, "server", TELEGRAM_TEST_SERVER);
     // const char *verificationType = purple_account_get_string(acct, "verification_type", TELEGRAM_AUTH_MODE_SMS);
     // int port = purple_account_get_int(acct, "port", TELEGRAM_DEFAULT_PORT);
@@ -304,8 +304,11 @@ static void tgprpl_close(PurpleConnection * gc)
 static int tgprpl_send_im(PurpleConnection * gc, const char *who, const char *message, PurpleMessageFlags flags)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_send_im()\n");
-	
-    return -1;
+    PurpleBuddy *b = purple_find_buddy(_pa, who);
+    peer_id_t *peer = purple_buddy_get_protocol_data(b);
+    do_send_message(*peer, message, strlen(message));
+    // TODO: error handling
+    return 1;
 }
 
 /**
