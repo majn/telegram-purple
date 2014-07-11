@@ -48,6 +48,7 @@
 #include "msglog.h"
 #include "mtproto-client.h"
 #include "mtproto-common.h"
+#include "structures.h"
 
 // telegram-purple includes
 #include "loop.h"
@@ -77,8 +78,7 @@ void tg_cli_log_cb(const char* format, va_list ap)
 }
 
 void on_new_message(struct message *M);
-void user_allocated_handler(peer_t *user);
-void chat_allocated_handler(peer_t *chat);
+void peer_allocated_handler(peer_t *user);
 
 /**
  * Returns the base icon name for the given buddy and account.
@@ -227,22 +227,25 @@ static void tgprpl_login(PurpleAccount * acct)
         purple_blist_add_group(tggroup, NULL);
     }
 
-    purple_debug_info(PLUGIN_ID, "Fetching Network Info\n");
     on_update_new_message(on_new_message);
-    on_user_allocated(user_allocated_handler);
-    on_chat_allocated(chat_allocated_handler);
+    on_peer_allocated(peer_allocated_handler);
 
     // get all current contacts
     purple_debug_info(PLUGIN_ID, "Fetching all current contacts...\n");
-    session_update_contact_list();
+    do_update_contact_list();
+
+    purple_debug_info(PLUGIN_ID, "Fetching all current chats...\n");
+    do_get_dialog_list();
 
     // get new messages
-    session_get_difference();
+    purple_debug_info(PLUGIN_ID, "Fetching new messages...\n");
+    do_get_difference();
+    flush_queries();
 
     // Our protocol data, that will be delivered to us
     // through purple connection
     telegram_conn *conn = g_new0(telegram_conn, 1);
-    conn->gc       = gc;
+    conn->gc      = gc;
     conn->account = acct;
 
     purple_connection_set_protocol_data(gc, conn);
@@ -258,30 +261,113 @@ void on_new_message(struct message *M)
    g_free(who);
 }
 
-void user_allocated_handler(peer_t *user)
-{
-    gchar *name  = g_strdup_printf("%d", get_peer_id(user->id));
-    // TODO: this should probably be freed again somwhere
-    char *alias = malloc(BUDDYNAME_MAX_LENGTH);
 
-    if (user_get_alias(user, alias, BUDDYNAME_MAX_LENGTH) < 0) {
-        purple_debug_info(PLUGIN_ID, "Buddyalias of (%d) too long, not adding to buddy list.\n", 
-            get_peer_id(user->id));
-        return;
+/*
+ * Search chats in hash table
+ *
+ * TODO: There has to be an easier way to do this
+ */
+static PurpleChat *blist_find_chat_by_hasht_cond(PurpleConnection *gc, int (*fn)(GHashTable *hasht, void *data), void *data)
+{
+    PurpleAccount *account = purple_connection_get_account(gc);
+    PurpleBlistNode *node = purple_blist_get_root();
+    GHashTable *hasht;
+    while (node) {
+        if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
+            PurpleChat *ch = PURPLE_CHAT(node);
+            if (purple_chat_get_account(ch) == account) {
+                hasht = purple_chat_get_components(ch);
+                if (fn(hasht, data))
+                    return ch;
+            }
+        }
+        node = purple_blist_node_next(node, FALSE);
     }
-    PurpleBuddy *buddy = purple_find_buddy(_pa, name);
-    if (!buddy) { 
-        purple_debug_info(PLUGIN_ID, "Adding %s to buddy list ", name);
-        buddy = purple_buddy_new(_pa, name, alias);
-        purple_blist_add_buddy(buddy, NULL, tggroup, NULL);
-    }
-    purple_buddy_set_protocol_data(buddy, (gpointer)&user->id);
-    g_free(name);
+    return NULL;
+}
+static int hasht_cmp_id(GHashTable *hasht, void *data)
+{
+    return !strcmp(g_hash_table_lookup(hasht, "id"), *((char **)data));
+}
+static PurpleChat *blist_find_chat_by_id(PurpleConnection *gc, const char *id)
+{
+    return blist_find_chat_by_hasht_cond(gc, hasht_cmp_id, &id);
 }
 
-void chat_allocated_handler(peer_t *chat)
+
+void peer_allocated_handler(peer_t *user)
 {
-    purple_debug_info(PLUGIN_ID, "Chat Allocated: %s\n", chat->print_name);
+    gchar *name = g_strdup_printf("%d", get_peer_id(user->id));
+    logprintf("Allocated peer: %s\n", name);
+
+    switch (user->id.type) {
+        case PEER_USER: {
+            logprintf("Peer type: user.\n");
+            // TODO: this should probably be freed again somwhere
+            char *alias = malloc(BUDDYNAME_MAX_LENGTH);
+            if (user_get_alias(user, alias, BUDDYNAME_MAX_LENGTH) < 0) {
+                purple_debug_info(PLUGIN_ID, "Buddyalias of (%d) too long, not adding to buddy list.\n", 
+                    get_peer_id(user->id));
+                return;
+            }
+            PurpleBuddy *buddy = purple_find_buddy(_pa, name);
+            if (!buddy) { 
+                purple_debug_info(PLUGIN_ID, "Adding %s to buddy list\n", name);
+                buddy = purple_buddy_new(_pa, name, alias);
+                purple_blist_add_buddy(buddy, NULL, tggroup, NULL);
+            }
+            purple_buddy_set_protocol_data(buddy, (gpointer)&user->id);
+            g_free(name);
+        }
+        break;
+        case PEER_CHAT: {
+            logprintf("Peer type: chat.\n");
+            PurpleChat *ch = blist_find_chat_by_id(_gc, name);
+            if (!ch) {
+                gchar *admin = g_strdup_printf("%d", user->chat.admin_id);
+                GHashTable *htable = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+                g_hash_table_insert(htable, g_strdup("subject"), user->chat.title);
+                g_hash_table_insert(htable, g_strdup("id"), name);
+                g_hash_table_insert(htable, g_strdup("owner"), admin);
+                logprintf("Adding chat to blist: %s (%s, %s)\n", user->chat.title, name, admin);
+                ch = purple_chat_new(_pa, user->chat.title, htable);
+                purple_blist_add_chat(ch, NULL, NULL);
+            }
+            
+            GHashTable *gh = purple_chat_get_components(ch);
+            //char const *id = g_hash_table_lookup(gh, "id");
+            char const *owner = g_hash_table_lookup(gh, "owner");
+    
+            PurpleConversation *conv = purple_find_chat(_gc, atoi(name));
+
+            purple_conv_chat_clear_users(purple_conversation_get_chat_data(conv));
+            if (conv) {
+                struct chat_user *usr = user->chat.user_list;
+                int size = user->chat.user_list_size;
+                int i;
+                for (i = 0; i < size; i++) {
+                    struct chat_user *cu = (usr + i);
+                    // TODO: Inviter ID
+                    // peer_id_t u = MK_USER (cu->user_id);
+                    // peer_t *uchat = user_chat_get(u);
+                    const char *cuname = g_strdup_printf("%d", cu->user_id);
+                    logprintf("Adding user %s to chat %s\n", cuname, name);
+                    purple_conv_chat_add_user(purple_conversation_get_chat_data(conv), cuname, "", 
+                        PURPLE_CBFLAGS_NONE | (!strcmp(owner, cuname) ? PURPLE_CBFLAGS_FOUNDER : 0), FALSE);
+                }
+            }
+        }
+        break;
+        case PEER_GEO_CHAT:
+            logprintf("Peer type: geo-chat.\n");
+        break;
+        case PEER_ENCR_CHAT:
+            logprintf("Peer type: encrypted chat.\n");
+        break;
+        case PEER_UNKNOWN:
+            logprintf("Peer type: unknown.\n");
+        break;
+    }
 }
 
 /**

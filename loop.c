@@ -629,25 +629,6 @@ void network_export_registration()
     fflush (stderr);
 }
 
-/**
- * Fetch all unknown messages of the current session
- */
-void session_get_difference()
-{
-	do_get_difference();
-    net_loop (0, dgot);
-}
-
-extern int contacts_got;
-int cupdate_got() {
-  return contacts_got;
-}
-void session_update_contact_list()
-{
-  do_update_contact_list();
-  net_loop(0, cupdate_got);
-}
-
 int start_loop (char* code, char* auth_mode) {
   logprintf("Calling start_loop()\n");
   logprintf("auth_state %i\n", auth_state);

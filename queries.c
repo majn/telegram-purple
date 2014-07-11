@@ -2639,11 +2639,13 @@ int get_difference_on_answer (struct query *q UU) {
     }
     assert (fetch_int () == CODE_vector);
     n = fetch_int ();
+    logprintf("Found %d chats\n", n);
     for (i = 0; i < n; i++) {
       fetch_alloc_chat ();
     }
     assert (fetch_int () == CODE_vector);
     n = fetch_int ();
+    logprintf("Found %d users\n", n);
     for (i = 0; i < n; i++) {
       fetch_alloc_user ();
     }

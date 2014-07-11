@@ -1527,6 +1527,7 @@ static int id_cmp (struct message *M1, struct message *M2) {
 }
 
 struct user *fetch_alloc_user (void) {
+ logprintf("fetch_alloc_user()\n");
   int send_event = 0;
   int data[2];
   prefetch_data (data, 8);
@@ -1542,12 +1543,13 @@ struct user *fetch_alloc_user (void) {
   }
   fetch_user (&U->user);
   if (send_event) {
-    event_user_allocated(U);
+    event_peer_allocated(U);
   }
   return &U->user;
 }
 
 struct secret_chat *fetch_alloc_encrypted_chat (void) {
+  logprintf("fetch_alloc_encrypted_chat()\n");
   int data[2];
   prefetch_data (data, 8);
   peer_t *U = user_chat_get (MK_ENCR_CHAT (data[1]));
@@ -1560,6 +1562,7 @@ struct secret_chat *fetch_alloc_encrypted_chat (void) {
     Peers[peer_num ++] = U;
   }
   fetch_encrypted_chat (&U->encr_chat);
+  event_peer_allocated(U);
   return &U->encr_chat;
 }
 
@@ -1806,6 +1809,7 @@ void message_del_peer (struct message *M) {
 }
 
 struct message *fetch_alloc_message (void) {
+  logprintf("fetch_alloc_message()\n");
   int data[2];
   prefetch_data (data, 8);
   struct message *M = message_get (data[1]);
@@ -1821,6 +1825,7 @@ struct message *fetch_alloc_message (void) {
 }
 
 struct message *fetch_alloc_geo_message (void) {
+  logprintf("fetch_alloc_geo_message()\n");
   struct message *M = talloc (sizeof (*M));
   fetch_geo_message (M);
   struct message *M1 = tree_lookup_message (message_tree, M);
@@ -1844,6 +1849,7 @@ struct message *fetch_alloc_geo_message (void) {
 }
 
 struct message *fetch_alloc_encrypted_message (void) {
+  logprintf("fetch_alloc_encrypted_message()\n");
   int data[3];
   prefetch_data (data, 12);
   struct message *M = message_get (*(long long *)(data + 1));
@@ -1891,12 +1897,13 @@ struct message *fetch_alloc_message_short_chat (void) {
 }
 
 struct chat *fetch_alloc_chat (void) {
-  int send_event = 0;
+  logprintf("fetch_alloc_chat()\n");
   int data[2];
   prefetch_data (data, 8);
   peer_t *U = user_chat_get (MK_CHAT (data[1]));
+  logprintf("id %d\n", U->id.id);
+  logprintf("type %d\n", U->id.type);
   if (!U) {
-    send_event = 1;
     chats_allocated ++;
     U = talloc0 (sizeof (*U));
     U->id = MK_CHAT (data[1]);
@@ -1905,9 +1912,7 @@ struct chat *fetch_alloc_chat (void) {
     Peers[peer_num ++] = U;
   }
   fetch_chat (&U->chat);
-  if (send_event) {
-	event_chat_allocated(U);
-  }
+  event_peer_allocated(U);
   return &U->chat;
 }
 

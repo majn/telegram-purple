@@ -2,7 +2,7 @@
  *  libtelegram
  *  ===========
  *
- * Telegram library based on the telegram cli application by vysheng (see https://github.com/vysheng/tg)
+ * Telegram library based on the telegram cli application, that was originally made by vysheng (see https://github.com/vysheng/tg)
  */
 
 #define MAX_DC_NUM 9
@@ -140,19 +140,13 @@ void on_update_chat_participants();
 /*
  * Load known users and chats on connect
  */
-void on_user_allocated();
 
-void on_user_allocated(void (*handler)(peer_t *user));
-void event_user_allocated(peer_t *user);
-
-void on_chat_allocated(void (*handler)(peer_t *chat));
-void event_chat_allocated(peer_t *chat);
+void on_peer_allocated(void (*handler)(peer_t *peer));
+void event_peer_allocated(peer_t *peer);
 
 // template
 //void on_blarg(void (*on_msg)(struct message *M));
 //void event_blarg(struct message *M);
-
-void on_chat_allocated();
 
 /**
  * Set a function to use as a handle to read from a network resource
