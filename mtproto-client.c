@@ -66,7 +66,6 @@
 
 #include "mtproto-common.h"
 
-#include "tg-cli.h"
 
 #define MAX_NET_RES        (1L << 16)
 extern int log_level;

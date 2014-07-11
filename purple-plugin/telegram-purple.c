@@ -307,7 +307,7 @@ static int tgprpl_send_im(PurpleConnection * gc, const char *who, const char *me
     PurpleBuddy *b = purple_find_buddy(_pa, who);
     peer_id_t *peer = purple_buddy_get_protocol_data(b);
     do_send_message(*peer, message, strlen(message));
-    // TODO: error handling
+    flush_queries();
     return 1;
 }
 

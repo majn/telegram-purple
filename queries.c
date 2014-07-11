@@ -53,7 +53,6 @@
 
 #include "no-preview.h"
 #include "binlog.h"
-#include "tg-cli.h"
 
 #define sha1 SHA1
 
@@ -75,7 +74,22 @@ long long cur_downloaded_bytes;
 extern int binlog_enabled;
 extern int sync_from_start;
 
-int queries_num;
+int queries_num = 0;
+
+int all_queries_done() 
+{
+   if (queries_num > 0) {
+     logprintf("all_queries_done() == false\n");
+     return 0;
+   } else {
+     logprintf("all_queries_done() == true\n");
+     return 1;
+   }
+}
+
+void flush_queries () {
+  net_loop(0, all_queries_done);
+}
 
 void out_peer_id (peer_id_t id);
 #define QUERY_TIMEOUT 6.0
@@ -162,6 +176,7 @@ struct query *send_query (struct dc *DC, int ints, void *data, struct query_meth
 
   q->extra = extra;
   queries_num ++;
+  logprintf("queries_num: %d\n", queries_num);
   return q;
 }
 
@@ -201,6 +216,7 @@ void query_error (long long id) {
     tfree (q, sizeof (*q));
   }
   queries_num --;
+  logprintf("queries_num: %d\n", queries_num);
 }
 
 #define MAX_PACKED_SIZE (1 << 24)
@@ -255,6 +271,7 @@ void query_result (long long id UU) {
     in_end = eend;
   }
   queries_num --;
+  logprintf("queries_num: %d\n", queries_num);
 } 
 
 #define event_timer_cmp(a,b) ((a)->timeout > (b)->timeout ? 1 : ((a)->timeout < (b)->timeout ? -1 : (memcmp (a, b, sizeof (struct event_timer)))))
@@ -2907,3 +2924,4 @@ void do_update_status (int online UU) {
   out_int (online ? CODE_bool_false : CODE_bool_true);
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &update_status_methods, 0);
 }
+

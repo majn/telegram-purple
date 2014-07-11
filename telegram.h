@@ -73,6 +73,11 @@ void parse_config ();
 void store_config ();
 void read_auth_file ();
 
+/** 
+ * Read and write until all queries received a response or errored
+ */
+void flush_queries ();
+
 /**
  * Connect to the telegram network with the given configuration
  */
@@ -184,6 +189,6 @@ extern void *proxy_connection_data;
 void set_proxy_connection_source (void (*connection_source)(const char *host, int port, void (*on_connection_created)(int fd)), void* data);
 
 /**
- * ?
+ * 
  */
 void set_default_username ();
