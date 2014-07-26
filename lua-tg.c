@@ -3,6 +3,7 @@
 #endif
 
 #ifdef USE_LUA
+/*
 #include "lua-tg.h"
 
 #include "include.h"
@@ -16,7 +17,6 @@
 lua_State *luaState;
 
 #include "structures.h"
-#include "interface.h"
 #include "constants.h"
 #include "tools.h"
 #include "queries.h"
@@ -545,5 +545,6 @@ void lua_init (const char *file) {
     exit (1);
   }
 }
+*/
 
 #endif

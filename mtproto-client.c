@@ -50,7 +50,6 @@
 #include "include.h"
 #include "queries.h"
 #include "loop.h"
-#include "interface.h"
 #include "structures.h"
 #include "binlog.h"
 
@@ -69,6 +68,7 @@
 
 #define MAX_NET_RES        (1L << 16)
 extern int log_level;
+int log_level = 1;
 
 int verbosity;
 int auth_success;
@@ -78,12 +78,14 @@ char new_nonce[256];
 char server_nonce[256];
 extern int binlog_enabled;
 extern int disable_auto_accept;
+int disable_auto_accept = 0;
 extern int allow_weak_random;
+int allow_weak_random = 0;
 
 int total_packets_sent;
 long long total_data_sent;
 
-
+/*
 int rpc_execute (struct connection *c, int op, int len);
 int rpc_becomes_ready (struct connection *c);
 int rpc_close (struct connection *c);
@@ -93,6 +95,7 @@ struct connection_methods auth_methods = {
   .ready = rpc_becomes_ready,
   .close = rpc_close
 };
+*/
 
 long long precise_time;
 
@@ -218,7 +221,7 @@ int rpc_send_packet (struct connection *c) {
   }
   write_out (c, &unenc_msg_header, 20);
   write_out (c, packet_buffer, len);
-  flush_out (c);
+  //flush_out (c);
 
   total_packets_sent ++;
   total_data_sent += total_len;
@@ -674,7 +677,6 @@ int process_auth_complete (struct connection *c UU, char *packet, int len) {
   }
   auth_success ++;
   GET_DC(c)->flags |= 1;
-  write_auth_file ();
 
   return 1;
 }
@@ -778,7 +780,7 @@ int auth_work_start (struct connection *c UU) {
   return 1;
 }
 
-void rpc_execute_answer (struct connection *c, long long msg_id UU);
+void rpc_execute_answer (struct telegram *instance, long long msg_id UU);
 
 int unread_messages;
 int our_id;
@@ -905,19 +907,19 @@ void work_update_binlog (void) {
   }
 }
 
-void work_update (struct connection *c UU, long long msg_id UU) {
+void work_update (struct connection *c UU, long long msg_id UU, struct telegram *instance) {
   unsigned op = fetch_int ();
   logprintf("work_update(): OP:%d\n", op);
   switch (op) {
   case CODE_update_new_message:
     {
-      struct message *M = fetch_alloc_message ();
+      struct message *M = fetch_alloc_message (instance);
       assert (M);
       fetch_pts ();
       unread_messages ++;
 	  event_update_new_message(M);
-      //print_message (M);
-      update_prompt ();
+      ////print_message (M);
+      //update_prompt ();
       break;
     };
   case CODE_update_message_i_d:
@@ -944,12 +946,12 @@ void work_update (struct connection *c UU, long long msg_id UU) {
       }
       fetch_pts ();
       if (log_level >= 1) {
-        print_start ();
-        push_color (COLOR_YELLOW);
-        print_date (time (0));
+        //print_start ();
+        //push_color (COLOR_YELLOW);
+        //print_date (time (0));
         printf (" %d messages marked as read\n", n);
-        pop_color ();
-        print_end ();
+        //pop_color ();
+        //print_end ();
       }
     }
     break;
@@ -958,14 +960,14 @@ void work_update (struct connection *c UU, long long msg_id UU) {
       peer_id_t id = MK_USER (fetch_int ());
       peer_t *U = user_chat_get (id);
       if (log_level >= 2) {
-        print_start ();
-        push_color (COLOR_YELLOW);
-        print_date (time (0));
+        //print_start ();
+        //push_color (COLOR_YELLOW);
+        //print_date (time (0));
         printf (" User ");
-        print_user_name (id, U);
+        //print_user_name (id, U);
         printf (" is typing....\n");
-        pop_color ();
-        print_end ();
+        //pop_color ();
+        //print_end ();
       }
     }
     break;
@@ -976,16 +978,16 @@ void work_update (struct connection *c UU, long long msg_id UU) {
       peer_t *C = user_chat_get (chat_id);
       peer_t *U = user_chat_get (id);
       if (log_level >= 2) {
-        print_start ();
-        push_color (COLOR_YELLOW);
-        print_date (time (0));
+        //print_start ();
+        //push_color (COLOR_YELLOW);
+        //print_date (time (0));
         printf (" User ");
-        print_user_name (id, U);
+        //print_user_name (id, U);
         printf (" is typing in chat ");
-        print_chat_name (chat_id, C);
+        //print_chat_name (chat_id, C);
         printf ("....\n");
-        pop_color ();
-        print_end ();
+        //pop_color ();
+        //print_end ();
       }
     }
     break;
@@ -996,15 +998,15 @@ void work_update (struct connection *c UU, long long msg_id UU) {
       if (U) {
         fetch_user_status (&U->user.status);
         if (log_level >= 3) {
-          print_start ();
-          push_color (COLOR_YELLOW);
-          print_date (time (0));
+          //print_start ();
+          //push_color (COLOR_YELLOW);
+          //print_date (time (0));
           printf (" User ");
-          print_user_name (user_id, U);
+          //print_user_name (user_id, U);
           printf (" is now ");
           printf ("%s\n", (U->user.status.online > 0) ? "online" : "offline");
-          pop_color ();
-          print_end ();
+          //pop_color ();
+          //print_end ();
         }
       } else {
         struct user_status t;
@@ -1023,16 +1025,16 @@ void work_update (struct connection *c UU, long long msg_id UU) {
         char *l = fetch_str (l2);
         struct user *U = &UC->user;
         bl_do_set_user_real_name (U, f, l1, l, l2);
-        print_start ();
-        push_color (COLOR_YELLOW);
-        print_date (time (0));
+        //print_start ();
+        //push_color (COLOR_YELLOW);
+        //print_date (time (0));
         printf (" User ");
-        print_user_name (user_id, UC);
+        //print_user_name (user_id, UC);
         printf (" changed name to ");
-        print_user_name (user_id, UC);
+        //print_user_name (user_id, UC);
         printf ("\n");
-        pop_color ();
-        print_end ();
+        //pop_color ();
+        //print_end ();
       } else {
         fetch_skip_str ();
         fetch_skip_str ();
@@ -1064,14 +1066,14 @@ void work_update (struct connection *c UU, long long msg_id UU) {
         }
         bl_do_set_user_profile_photo (U, photo_id, &big, &small);
 
-        print_start ();
-        push_color (COLOR_YELLOW);
-        print_date (time (0));
+        //print_start ();
+        //push_color (COLOR_YELLOW);
+        //print_date (time (0));
         printf (" User ");
-        print_user_name (user_id, UC);
+        //print_user_name (user_id, UC);
         printf (" updated profile photo\n");
-        pop_color ();
-        print_end ();
+        //pop_color ();
+        //print_end ();
       } else {
         struct file_location t;
         unsigned y = fetch_int ();
@@ -1090,12 +1092,12 @@ void work_update (struct connection *c UU, long long msg_id UU) {
     {
       assert (fetch_int () == CODE_vector);
       int n = fetch_int ();
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" Restored %d messages\n", n);
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
       fetch_skip (n);
       fetch_pts ();
     }
@@ -1104,12 +1106,12 @@ void work_update (struct connection *c UU, long long msg_id UU) {
     {
       assert (fetch_int () == CODE_vector);
       int n = fetch_int ();
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" Deleted %d messages\n", n);
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
       fetch_skip (n);
       fetch_pts ();
     }
@@ -1146,18 +1148,18 @@ void work_update (struct connection *c UU, long long msg_id UU) {
           fetch_int (); // version
         }
       }
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" Chat ");
-      print_chat_name (chat_id, C);
+      //print_chat_name (chat_id, C);
       if (x == CODE_chat_participants) {
         printf (" changed list: now %d members\n", n);
       } else {
         printf (" changed list, but we are forbidden to know about it (Why this update even was sent to us?\n");
       }
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
     }
     break;
   case CODE_update_contact_registered:
@@ -1165,28 +1167,28 @@ void work_update (struct connection *c UU, long long msg_id UU) {
       peer_id_t user_id = MK_USER (fetch_int ());
       peer_t *U = user_chat_get (user_id);
       fetch_int (); // date
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" User ");
-      print_user_name (user_id, U);
+      //print_user_name (user_id, U);
       printf (" registered\n");
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
     }
     break;
   case CODE_update_contact_link:
     {
       peer_id_t user_id = MK_USER (fetch_int ());
       peer_t *U = user_chat_get (user_id);
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" Updated link with user ");
-      print_user_name (user_id, U);
+      //print_user_name (user_id, U);
       printf ("\n");
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
       unsigned t = fetch_int ();
       assert (t == CODE_contacts_my_link_empty || t == CODE_contacts_my_link_requested || t == CODE_contacts_my_link_contact);
       if (t == CODE_contacts_my_link_requested) {
@@ -1203,14 +1205,14 @@ void work_update (struct connection *c UU, long long msg_id UU) {
     {
       peer_id_t user_id = MK_USER (fetch_int ());
       peer_t *U = user_chat_get (user_id);
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" User ");
-      print_user_name (user_id, U);
+      //print_user_name (user_id, U);
       printf (" activated\n");
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
     }
     break;
   case CODE_update_new_authorization:
@@ -1219,31 +1221,31 @@ void work_update (struct connection *c UU, long long msg_id UU) {
       fetch_int (); // date
       char *s = fetch_str_dup ();
       char *location = fetch_str_dup ();
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" New autorization: device='%s' location='%s'\n",
         s, location);
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
       tfree_str (s);
       tfree_str (location);
     }
     break;
   case CODE_update_new_geo_chat_message:
     {
-      struct message *M = fetch_alloc_geo_message ();
+      struct message *M = fetch_alloc_geo_message (instance);
       unread_messages ++;
-      print_message (M);
-      update_prompt ();
+      //print_message (M);
+      //update_prompt ();
     }
     break;
   case CODE_update_new_encrypted_message:
     {
-      struct message *M = fetch_alloc_encrypted_message ();
+      struct message *M = fetch_alloc_encrypted_message (instance);
       unread_messages ++;
-      print_message (M);
-      update_prompt ();
+      //print_message (M);
+      //update_prompt ();
       fetch_qts ();
     }
     break;
@@ -1253,37 +1255,37 @@ void work_update (struct connection *c UU, long long msg_id UU) {
       if (verbosity >= 2) {
         logprintf ("Secret chat state = %d\n", E->state);
       }
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       switch (E->state) {
       case sc_none:
         break;
       case sc_waiting:
         printf (" Encrypted chat ");
-        print_encr_chat_name (E->id, (void *)E);
+        //print_encr_chat_name (E->id, (void *)E);
         printf (" is now in wait state\n");
         break;
       case sc_request:
         printf (" Encrypted chat ");
-        print_encr_chat_name (E->id, (void *)E);
+        //print_encr_chat_name (E->id, (void *)E);
         printf (" is now in request state. Sending request ok\n");
         break;
       case sc_ok:
         printf (" Encrypted chat ");
-        print_encr_chat_name (E->id, (void *)E);
+        //print_encr_chat_name (E->id, (void *)E);
         printf (" is now in ok state\n");
         break;
       case sc_deleted:
         printf (" Encrypted chat ");
-        print_encr_chat_name (E->id, (void *)E);
+        //print_encr_chat_name (E->id, (void *)E);
         printf (" is now in deleted state\n");
         break;
       }
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
       if (E->state == sc_request && !disable_auto_accept) {
-        do_accept_encr_chat_request (E);
+        do_accept_encr_chat_request (instance, E);
       }
       fetch_int (); // date
     }
@@ -1292,21 +1294,21 @@ void work_update (struct connection *c UU, long long msg_id UU) {
     {
       peer_id_t id = MK_ENCR_CHAT (fetch_int ());
       peer_t *P = user_chat_get (id);
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       if (P) {
         printf (" User ");
         peer_id_t user_id = MK_USER (P->encr_chat.user_id);
-        print_user_name (user_id, user_chat_get (user_id));
+        //print_user_name (user_id, user_chat_get (user_id));
         printf (" typing in secret chat ");
-        print_encr_chat_name (id, P);
+        //print_encr_chat_name (id, P);
         printf ("\n");
       } else {
         printf (" Some user is typing in unknown secret chat\n");
       }
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
     }
     break;
   case CODE_update_encrypted_messages_read:
@@ -1328,14 +1330,14 @@ void work_update (struct connection *c UU, long long msg_id UU) {
         }
       }
       if (log_level >= 1) {
-        print_start ();
-        push_color (COLOR_YELLOW);
-        print_date (time (0));
+        //print_start ();
+        //push_color (COLOR_YELLOW);
+        //print_date (time (0));
         printf (" Encrypted chat ");
-        print_encr_chat_name_full (id, user_chat_get (id));
+        //print_encr_chat_name_full (id, user_chat_get (id));
         printf (": %d messages marked read \n", x);
-        pop_color ();
-        print_end ();
+        //pop_color ();
+        //print_end ();
       }
     }
     break;
@@ -1351,18 +1353,18 @@ void work_update (struct connection *c UU, long long msg_id UU) {
         bl_do_chat_add_user (&C->chat, version, get_peer_id (user_id), get_peer_id (inviter_id), time (0));
       }
 
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" Chat ");
-      print_chat_name (chat_id, user_chat_get (chat_id));
+      //print_chat_name (chat_id, user_chat_get (chat_id));
       printf (": user ");
-      print_user_name (user_id, user_chat_get (user_id));
+      //print_user_name (user_id, user_chat_get (user_id));
       printf (" added by user ");
-      print_user_name (inviter_id, user_chat_get (inviter_id));
+      //print_user_name (inviter_id, user_chat_get (inviter_id));
       printf ("\n");
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
     }
     break;
   case CODE_update_chat_participant_delete:
@@ -1376,16 +1378,16 @@ void work_update (struct connection *c UU, long long msg_id UU) {
         bl_do_chat_del_user (&C->chat, version, get_peer_id (user_id));
       }
 
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" Chat ");
-      print_chat_name (chat_id, user_chat_get (chat_id));
+      //print_chat_name (chat_id, user_chat_get (chat_id));
       printf (": user ");
-      print_user_name (user_id, user_chat_get (user_id));
+      //print_user_name (user_id, user_chat_get (user_id));
       printf (" deleted\n");
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
     }
     break;
   case CODE_update_dc_options:
@@ -1395,7 +1397,7 @@ void work_update (struct connection *c UU, long long msg_id UU) {
       assert (n >= 0);
       int i;
       for (i = 0; i < n; i++) {
-        fetch_dc_option ();
+        fetch_dc_option (instance);
       }
     }
     break;
@@ -1405,19 +1407,21 @@ void work_update (struct connection *c UU, long long msg_id UU) {
   }
 }
 
-void work_update_short (struct connection *c, long long msg_id) {
+void work_update_short (struct telegram *instance, long long msg_id) {
+  struct connection *c = telegram_get_connection(instance);
   assert (fetch_int () == CODE_update_short);
-  work_update (c, msg_id);
+  work_update (c, msg_id, instance);
   fetch_date ();
 }
 
-void work_updates (struct connection *c, long long msg_id) {
+void work_updates (struct telegram *instance, long long msg_id) {
+  struct connection *c = telegram_get_connection(instance);
   assert (fetch_int () == CODE_updates);
   assert (fetch_int () == CODE_vector);
   int n = fetch_int ();
   int i;
   for (i = 0; i < n; i++) {
-    work_update (c, msg_id);
+    work_update (c, msg_id, instance);
   }
   assert (fetch_int () == CODE_vector);
   n = fetch_int ();
@@ -1433,29 +1437,30 @@ void work_updates (struct connection *c, long long msg_id) {
   bl_do_set_seq (fetch_int ());
 }
 
-void work_update_short_message (struct connection *c UU, long long msg_id UU) {
+void work_update_short_message (struct connection *c UU, long long msg_id UU, struct telegram *instance) {
   assert (fetch_int () == (int)CODE_update_short_message);
-  struct message *M = fetch_alloc_message_short ();
+  struct message *M = fetch_alloc_message_short (instance);
   unread_messages ++;
-  print_message (M);
-  update_prompt ();
+  //print_message (M);
+  //update_prompt ();
   if (M->date > last_date) {
     last_date = M->date;
   }
 }
 
-void work_update_short_chat_message (struct connection *c UU, long long msg_id UU) {
+void work_update_short_chat_message (struct connection *c UU, long long msg_id UU, struct telegram *instance) {
   assert (fetch_int () == CODE_update_short_chat_message);
-  struct message *M = fetch_alloc_message_short_chat ();
+  struct message *M = fetch_alloc_message_short_chat (instance);
   unread_messages ++;
-  print_message (M);
-  update_prompt ();
+  //print_message (M);
+  //update_prompt ();
   if (M->date > last_date) {
     last_date = M->date;
   }
 }
 
-void work_container (struct connection *c, long long msg_id UU) {
+void work_container (struct telegram *instance, long long msg_id UU) {
+  struct connection *c = telegram_get_connection(instance);
   if (verbosity) {
     logprintf ( "work_container: msg_id = %lld\n", msg_id);
   }
@@ -1472,7 +1477,7 @@ void work_container (struct connection *c, long long msg_id UU) {
     int bytes = fetch_int ();
     int *t = in_end;
     in_end = in_ptr + (bytes / 4);
-    rpc_execute_answer (c, id);
+    rpc_execute_answer (instance, id);
     assert (in_ptr == in_end);
     in_end = t;
   }
@@ -1487,7 +1492,6 @@ void work_new_session_created (struct connection *c, long long msg_id UU) {
   //DC->session_id = fetch_long ();
   fetch_long (); // unique_id
   GET_DC(c)->server_salt = fetch_long ();
-
 }
 
 void work_msgs_ack (struct connection *c UU, long long msg_id UU) {
@@ -1522,7 +1526,7 @@ void work_rpc_result (struct connection *c UU, long long msg_id UU) {
 }
 
 #define MAX_PACKED_SIZE (1 << 24)
-void work_packed (struct connection *c, long long msg_id) {
+void work_packed (struct telegram *instance, long long msg_id) {
   assert (fetch_int () == CODE_gzip_packed);
   static int in_gzip;
   static int buf[MAX_PACKED_SIZE >> 2];
@@ -1542,7 +1546,7 @@ void work_packed (struct connection *c, long long msg_id) {
     logprintf ( "Unzipped data: ");
     hexdump_in ();
   }
-  rpc_execute_answer (c, msg_id);
+  rpc_execute_answer (instance, msg_id);
   in_ptr = end;
   in_end = eend;
   in_gzip = 0;
@@ -1579,10 +1583,10 @@ void work_new_detailed_info (struct connection *c UU, long long msg_id UU) {
   fetch_int (); // status
 }
 
-void work_updates_to_long (struct connection *c UU, long long msg_id UU) {
+void work_updates_to_long (struct telegram *instance, struct connection *c UU, long long msg_id UU) {
   assert (fetch_int () == (int)CODE_updates_too_long);
   logprintf ("updates to long... Getting difference\n");
-  do_get_difference ();
+  do_get_difference (instance);
 }
 
 void work_bad_msg_notification (struct connection *c UU, long long msg_id UU) {
@@ -1593,7 +1597,8 @@ void work_bad_msg_notification (struct connection *c UU, long long msg_id UU) {
   logprintf ("bad_msg_notification: msg_id = %lld, seq = %d, error = %d\n", m1, s, e);
 }
 
-void rpc_execute_answer (struct connection *c, long long msg_id UU) {
+void rpc_execute_answer (struct telegram *instance, long long msg_id UU) {
+  struct connection *c = telegram_get_connection(instance);
   if (verbosity >= 5) {
     logprintf ("rpc_execute_answer: fd=%d\n", c->fd);
     hexdump_in ();
@@ -1601,7 +1606,7 @@ void rpc_execute_answer (struct connection *c, long long msg_id UU) {
   int op = prefetch_int ();
   switch (op) {
   case CODE_msg_container:
-    work_container (c, msg_id);
+    work_container (instance, msg_id);
     return;
   case CODE_new_session_created:
     work_new_session_created (c, msg_id);
@@ -1613,19 +1618,19 @@ void rpc_execute_answer (struct connection *c, long long msg_id UU) {
     work_rpc_result (c, msg_id);
     return;
   case CODE_update_short:
-    work_update_short (c, msg_id);
+    work_update_short (instance, msg_id);
     return;
   case CODE_updates:
-    work_updates (c, msg_id);
+    work_updates (instance, msg_id);
     return;
   case CODE_update_short_message:
-    work_update_short_message (c, msg_id);
+    work_update_short_message (c, msg_id, instance);
     return;
   case CODE_update_short_chat_message:
-    work_update_short_chat_message (c, msg_id);
+    work_update_short_chat_message (c, msg_id, instance);
     return;
   case CODE_gzip_packed:
-    work_packed (c, msg_id);
+    work_packed (instance, msg_id);
     return;
   case CODE_bad_server_salt:
     work_bad_server_salt (c, msg_id);
@@ -1640,7 +1645,7 @@ void rpc_execute_answer (struct connection *c, long long msg_id UU) {
     work_new_detailed_info (c, msg_id);
     return;
   case CODE_updates_too_long:
-    work_updates_to_long (c, msg_id);
+    work_updates_to_long (instance, c, msg_id);
     return;
   case CODE_bad_msg_notification:
     work_bad_msg_notification (c, msg_id);
@@ -1651,7 +1656,9 @@ void rpc_execute_answer (struct connection *c, long long msg_id UU) {
   in_ptr = in_end; // Will not fail due to assertion in_ptr == in_end
 }
 
-int process_rpc_message (struct connection *c UU, struct encrypted_message *enc, int len) {
+int process_rpc_message (struct telegram *instance, struct encrypted_message *enc, int len) {
+  struct connection *c UU = telegram_get_connection(instance);
+
   const int MINSZ = offsetof (struct encrypted_message, message);
   const int UNENCSZ = offsetof (struct encrypted_message, server_salt);
   if (verbosity) {
@@ -1672,7 +1679,7 @@ int process_rpc_message (struct connection *c UU, struct encrypted_message *enc,
   //assert (enc->server_salt == server_salt); //in fact server salt can change
   if (DC->server_salt != enc->server_salt) {
     DC->server_salt = enc->server_salt;
-    write_auth_file ();
+    //write_auth_file ();
   }
 
   int this_server_time = enc->msg_id >> 32LL;
@@ -1710,80 +1717,120 @@ int process_rpc_message (struct connection *c UU, struct encrypted_message *enc,
     insert_msg_id (c->session, enc->msg_id);
   }
   assert (c->session->session_id == enc->session_id);
-  rpc_execute_answer (c, enc->msg_id);
+  rpc_execute_answer (instance, enc->msg_id);
   assert (in_ptr == in_end);
   return 0;
 }
 
 
-int rpc_execute (struct connection *c, int op, int len) {
-  if (verbosity) {
-    logprintf ( "outbound rpc connection #%d : received rpc answer %d with %d content bytes\n", c->fd, op, len);
-  }
-  /*  
-  if (op < 0) {
-    assert (read_in (c, Response, Response_len) == Response_len);
-    return 0;
-  }
-  */
+//int rpc_execute (struct connection *c, int op, int len) {
+//  if (verbosity) {
+//    logprintf ( "outbound rpc connection #%d : received rpc answer %d with %d content bytes\n", c->fd, op, len);
+//  }
+//  if (op < 0) {
+//    assert (read_in (c, Response, Response_len) == Response_len);
+//    return 0;
+//  }
+//
+//  if (len >= MAX_RESPONSE_SIZE/* - 12*/ || len < 0/*12*/) {
+//    logprintf ( "answer too long (%d bytes), skipping\n", len);
+//    return 0;
+//  }
+//
+//  int Response_len = len;
+//
+//  if (verbosity >= 2) {
+//    logprintf ("Response_len = %d\n", Response_len);
+//  }
+//  assert (read_in (c, Response, Response_len) == Response_len);
+//  Response[Response_len] = 0;
+//  if (verbosity >= 2) {
+//    logprintf ( "have %d Response bytes\n", Response_len);
+//  }
+//
+//  int o = c_state;
+//  if (GET_DC(c)->flags & 1) { o = st_authorized;}
+//  switch (o) {
+//  case st_reqpq_sent:
+//    process_respq_answer (c, Response/* + 8*/, Response_len/* - 12*/);
+//    return 0;
+//  case st_reqdh_sent:
+//    process_dh_answer (c, Response/* + 8*/, Response_len/* - 12*/);
+//    return 0;
+//  case st_client_dh_sent:
+//    process_auth_complete (c, Response/* + 8*/, Response_len/* - 12*/);
+//    return 0;
+//  case st_authorized:
+//    if (op < 0 && op >= -999) {
+//      logprintf ("Server error %d\n", op);
+//    } else {
+//      process_rpc_message (c, (void *)(Response/* + 8*/), Response_len/* - 12*/);
+//    }
+//    return 0;
+//  default:
+//    logprintf ( "fatal: cannot receive answer in state %d\n", c_state);
+//    exit (2);
+//  }
+//
+//  return 0;
+//}
 
+int rpc_execute_req_pq (struct telegram *instance, int len) {
+  struct connection *c = telegram_get_connection(instance);
   if (len >= MAX_RESPONSE_SIZE/* - 12*/ || len < 0/*12*/) {
     logprintf ( "answer too long (%d bytes), skipping\n", len);
     return 0;
   }
-
   int Response_len = len;
-
-  if (verbosity >= 2) {
-    logprintf ("Response_len = %d\n", Response_len);
-  }
   assert (read_in (c, Response, Response_len) == Response_len);
   Response[Response_len] = 0;
-  if (verbosity >= 2) {
-    logprintf ( "have %d Response bytes\n", Response_len);
-  }
-
-#if !defined(__MACH__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined (__CYGWIN__)
-  setsockopt (c->fd, IPPROTO_TCP, TCP_QUICKACK, (int[]){0}, 4);
-#endif
-  int o = c_state;
-  if (GET_DC(c)->flags & 1) { o = st_authorized;}
-  switch (o) {
-  case st_reqpq_sent:
-    process_respq_answer (c, Response/* + 8*/, Response_len/* - 12*/);
-#if !defined(__MACH__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined (__CYGWIN__)
-    setsockopt (c->fd, IPPROTO_TCP, TCP_QUICKACK, (int[]){0}, 4);
-#endif
-    return 0;
-  case st_reqdh_sent:
-    process_dh_answer (c, Response/* + 8*/, Response_len/* - 12*/);
-#if !defined(__MACH__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined (__CYGWIN__)
-    setsockopt (c->fd, IPPROTO_TCP, TCP_QUICKACK, (int[]){0}, 4);
-#endif
-    return 0;
-  case st_client_dh_sent:
-    process_auth_complete (c, Response/* + 8*/, Response_len/* - 12*/);
-#if !defined(__MACH__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined (__CYGWIN__)
-    setsockopt (c->fd, IPPROTO_TCP, TCP_QUICKACK, (int[]){0}, 4);
-#endif
-    return 0;
-  case st_authorized:
-    if (op < 0 && op >= -999) {
-      logprintf ("Server error %d\n", op);
-    } else {
-      process_rpc_message (c, (void *)(Response/* + 8*/), Response_len/* - 12*/);
-    }
-#if !defined(__MACH__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined (__CYGWIN__)
-    setsockopt (c->fd, IPPROTO_TCP, TCP_QUICKACK, (int[]){0}, 4);
-#endif
-    return 0;
-  default:
-    logprintf ( "fatal: cannot receive answer in state %d\n", c_state);
-    exit (2);
-  }
-
+  process_respq_answer (c, Response/* + 8*/, Response_len/* - 12*/);
   return 0;
 }
+
+int rpc_execute_rq_dh (struct telegram *instance, int len) {
+  struct connection *c = telegram_get_connection(instance);
+  if (len >= MAX_RESPONSE_SIZE/* - 12*/ || len < 0/*12*/) {
+    logprintf ( "answer too long (%d bytes), skipping\n", len);
+    return 0;
+  }
+  int Response_len = len;
+  assert (read_in (c, Response, Response_len) == Response_len);
+  Response[Response_len] = 0;
+  process_dh_answer (c, Response/* + 8*/, Response_len/* - 12*/);
+  return 0;
+}
+
+int rpc_execute_cdh_sent (struct telegram *instance, int len) {
+  struct connection *c = telegram_get_connection(instance);
+  if (len >= MAX_RESPONSE_SIZE/* - 12*/ || len < 0/*12*/) {
+    logprintf ( "answer too long (%d bytes), skipping\n", len);
+    return 0;
+  }
+  int Response_len = len;
+  assert (read_in (c, Response, Response_len) == Response_len);
+  Response[Response_len] = 0;
+  process_auth_complete (c, Response/* + 8*/, Response_len/* - 12*/);
+  return 0;
+}
+
+int rpc_execute_authorized (struct telegram *instance, int op, int len) {
+  struct connection *c = telegram_get_connection(instance);
+  if (len >= MAX_RESPONSE_SIZE/* - 12*/ || len < 0/*12*/) {
+    logprintf ( "answer too long (%d bytes), skipping\n", len);
+    return 0;
+  }
+  int Response_len = len;
+  assert (read_in (c, Response, Response_len) == Response_len);
+  Response[Response_len] = 0;
+  if (op < 0 && op >= -999) {
+    logprintf ("Server error %d\n", op);
+  } else {
+    process_rpc_message (instance, (void *)(Response/* + 8*/), Response_len/* - 12*/);
+  }
+  return 0;
+}
+
 
 
 int tc_close (struct connection *c, int who) {
@@ -1799,11 +1846,7 @@ int tc_becomes_ready (struct connection *c) {
   }
   char byte = 0xef;
   assert (write_out (c, &byte, 1) == 1);
-  flush_out (c);
 
-#if !defined(__MACH__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined (__CYGWIN__)
-  setsockopt (c->fd, IPPROTO_TCP, TCP_QUICKACK, (int[]){0}, 4);
-#endif
   int o = c_state;
   if (GET_DC(c)->flags & 1) { o = st_authorized; }
   switch (o) {
@@ -1860,9 +1903,6 @@ int auth_ok (void) {
 void dc_authorize (struct dc *DC) {
   c_state = 0;
   auth_success = 0;
-  if (!DC->sessions[0]) {
-    dc_create_session (DC);
-  }
   if (verbosity) {
     logprintf ( "Starting authorization for DC #%d: %s:%d\n", DC->id, DC->ip, DC->port);
   }

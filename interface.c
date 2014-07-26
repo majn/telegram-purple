@@ -40,7 +40,6 @@
 #include "include.h"
 #include "queries.h"
 
-#include "interface.h"
 #include "telegram.h"
 #include "structures.h"
 
@@ -63,7 +62,7 @@ int safe_quit;
 int in_readline;
 int readline_active;
 
-int log_level;
+int log_level = 1;
 
 long long cur_uploading_bytes;
 long long cur_uploaded_bytes;
@@ -1183,13 +1182,6 @@ void print_end (void) {
   prompt_was = 0;
 }
 
-void hexdump (int *in_ptr, int *in_end) {
-  print_start ();
-  int *ptr = in_ptr;
-  while (ptr < in_end) { printf (" %08x", *(ptr ++)); }
-  printf ("\n");
-  print_end ();
-}
 
 /*
 void logprintf (const char *format, ...) {

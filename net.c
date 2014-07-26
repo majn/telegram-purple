@@ -1,12 +1,12 @@
 /*
     This file is part of telegram-client.
 
-    Telegram-client is free software: you can redistribute it and/or modify
+    struct telegram-client is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 2 of the License, or
     (at your option) any later version.
 
-    Telegram-client is distributed in the hope that it will be useful,
+    struct telegram-client is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
@@ -43,7 +43,7 @@
 #include "mtproto-client.h"
 #include "mtproto-common.h"
 #include "tree.h"
-#include "interface.h"
+#include "telegram.h"
 
 #ifndef POLLRDHUP
 #define POLLRDHUP 0
@@ -55,7 +55,8 @@ double get_utime (int clock_id);
 
 int verbosity;
 extern struct connection_methods auth_methods;
-extern FILE *log_net_f;
+extern FILE *log_net_f ; 
+FILE *log_net_f = NULL;
 
 void fail_connection (struct connection *c);
 
@@ -74,27 +75,6 @@ ssize_t (*netwrite)(int fd, const void *buff, size_t size) = write;
 void set_net_write_cb(ssize_t (*cb)(int fd, const void *buff, size_t size)) {
   netwrite = cb;
 }
-
-/*
- * Delegate the session creation to an external callback
- *
- * TODO: use dc_ensure_session instead of dc_create_session to create sessions,
- *		 to make this actually work
- */
-void dc_create_session (struct dc *DC);
-void dc_ensure_session_local (struct dc *DC, void (*on_session_ready)(void)) {
-  dc_create_session(DC);
-  on_session_ready();
-}
-void (*dc_ensure_session)(struct dc *DC, void (*on_session_ready)(void));
-void set_dc_ensure_session_cb (void (*dc_ens_sess)(struct dc *DC, void (*on_session_ready)(void)))
-{
-  dc_ensure_session = dc_ens_sess;
-}
-
-/*
- *
- */
 
 #define PING_TIMEOUT 10
 
@@ -254,8 +234,8 @@ void flush_out (struct connection *c UU) {
 }
 
 #define MAX_CONNECTIONS 100
-struct connection *Connections[MAX_CONNECTIONS];
-int max_connection_fd;
+//struct connection *Connections[MAX_CONNECTIONS];
+//int max_connection_fd;
 
 void rotate_port (struct connection *c) {
   switch (c->port) {
@@ -271,76 +251,23 @@ void rotate_port (struct connection *c) {
   }
 }
 
-struct connection *create_connection (const char *host, int port, struct session *session, struct connection_methods *methods) {
+struct connection *create_connection (const char *host, int port, int fd) {
   struct connection *c = talloc0 (sizeof (*c));
-  int fd = socket (AF_INET, SOCK_STREAM, 0);
-  if (fd == -1) {
-    logprintf ("Can not create socket: %m\n");
-    exit (1);
-  }
-  assert (fd >= 0 && fd < MAX_CONNECTIONS);
-  if (fd > max_connection_fd) {
-    max_connection_fd = fd;
-  }
-  int flags = -1;
-  setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof (flags));
-  setsockopt (fd, SOL_SOCKET, SO_KEEPALIVE, &flags, sizeof (flags));
-  setsockopt (fd, IPPROTO_TCP, TCP_NODELAY, &flags, sizeof (flags));
-
-  struct sockaddr_in addr;
-  addr.sin_family = AF_INET; 
-  addr.sin_port = htons (port);
-  addr.sin_addr.s_addr = inet_addr (host);
-
-
-  fcntl (fd, F_SETFL, O_NONBLOCK);
-
-  if (connect (fd, (struct sockaddr *) &addr, sizeof (addr)) == -1) {
-    if (errno != EINPROGRESS) {
-      logprintf ( "Can not connect to %s:%d %m\n", host, port);
-      close (fd);
-      tfree (c, sizeof (*c));
-      return 0;
-    }
-  }
-
-  struct pollfd s;
-  s.fd = fd;
-  s.events = POLLOUT | POLLERR | POLLRDHUP | POLLHUP;
-  errno = 0;
-  
-  while (poll (&s, 1, 10000) <= 0 || !(s.revents & POLLOUT)) {
-    if (errno == EINTR) { continue; }
-    if (errno) {
-      logprintf ("Problems in poll: %m\n");
-      exit (1);
-    }
-    logprintf ("Connect with %s:%d timeout\n", host, port);
-    close (fd);
-    tfree (c, sizeof (*c));
-    return 0;
-  }
-
-  c->session = session;
   c->fd = fd; 
   c->ip = tstrdup (host);
   c->flags = 0;
   c->state = conn_ready;
-  c->methods = methods;
   c->port = port;
-  assert (!Connections[fd]);
-  Connections[fd] = c;
   if (verbosity) {
     logprintf ( "connect to %s:%d successful\n", host, port);
   }
-  if (c->methods->ready) {
-    c->methods->ready (c);
-  }
   c->last_receive_time = get_double_time ();
-  start_ping_timer (c);
+  // Don't ping TODO: Really? Timeout callback functions of libpurple
+  //start_ping_timer (c);
   return c;
 }
 
+/*
 void restart_connection (struct connection *c) {
   if (c->last_connect_time == time (0)) {
     start_fail_timer (c);
@@ -415,9 +342,11 @@ void fail_connection (struct connection *c) {
   logprintf ("Lost connection to server... %s:%d\n", c->ip, c->port);
   restart_connection (c);
 }
+*/
 
 extern FILE *log_net_f;
-void try_write (struct connection *c) {
+void try_write (struct telegram *instance) {
+  struct connection *c = telegram_get_connection(instance);
   if (verbosity) {
     logprintf ( "try write: fd = %d\n", c->fd);
   }
@@ -494,7 +423,9 @@ void hexdump_buf (struct connection_buffer *b) {
     
 }
 
-void try_rpc_read (struct connection *c) {
+void try_rpc_read (struct telegram *instance) {
+  struct connection *c = instance->auth.DC_list[instance->auth.dc_working_num]->sessions[0]->c;
+
   assert (c->in_head);
   if (verbosity >= 3) {
     hexdump_buf (c->in_head);
@@ -528,11 +459,15 @@ void try_rpc_read (struct connection *c) {
     len *= 4;
     int op;
     assert (read_in_lookup (c, &op, 4) == 4);
-    c->methods->execute (c, op, len);
+    // read 
+    //c->methods->execute (c, op, len);
+    try_rpc_interpret(instance, op, len);
   }
 }
 
-void try_read (struct connection *c) {
+void try_read (struct telegram *instance) {
+  struct connection *c = instance->auth.DC_list[instance->auth.dc_working_num]->sessions[0]->c;
+
   if (verbosity) {
     logprintf ( "try read: fd = %d\n", c->fd);
   }
@@ -587,10 +522,11 @@ void try_read (struct connection *c) {
   }
   c->in_bytes += x;
   if (x) {
-    try_rpc_read (c);
+    try_rpc_read (instance);
   }
 }
 
+/*
 int connections_make_poll_array (struct pollfd *fds, int max) {
   int _max = max;
   int i;
@@ -615,7 +551,9 @@ int connections_make_poll_array (struct pollfd *fds, int max) {
   }
   return _max - max;
 }
+*/
 
+/*
 void connections_poll_result (struct pollfd *fds, int max) {
   if (verbosity >= 10) {
     logprintf ( "connections_poll_result: max = %d\n", max);
@@ -643,6 +581,7 @@ void connections_poll_result (struct pollfd *fds, int max) {
     }
   }
 }
+*/
 
 int send_all_acks (struct session *S) {
   clear_packet ();
@@ -672,7 +611,7 @@ void insert_msg_id (struct session *S, long long id) {
 
 extern struct dc *DC_list[];
 
-struct dc *alloc_dc (int id, char *ip, int port UU) {
+struct dc *alloc_dc (struct dc* DC_list[], int id, char *ip, int port UU) {
   assert (!DC_list[id]);
   struct dc *DC = talloc0 (sizeof (*DC));
   DC->id = id;
@@ -682,16 +621,12 @@ struct dc *alloc_dc (int id, char *ip, int port UU) {
   return DC;
 }
 
-void dc_create_session (struct dc *DC) {
+void dc_create_session (struct dc *DC, struct connection *c) {
   logprintf("dc_create_session(...)\n");
   struct session *S = talloc0 (sizeof (*S));
   assert (RAND_pseudo_bytes ((unsigned char *) &S->session_id, 8) >= 0);
   S->dc = DC;
-  S->c = create_connection (DC->ip, DC->port, S, &auth_methods);
-  if (!S->c) {
-    logprintf ("Can not create connection to DC. Is network down?\n");
-    exit (1);
-  }
+  S->c = c;
   assert (!DC->sessions[0]);
   DC->sessions[0] = S;
 }

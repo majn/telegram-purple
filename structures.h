@@ -318,6 +318,7 @@ struct message {
   int unread;
   int date;
   int service;
+  struct telegram *instance;
   union {
     struct message_action action;
     struct {
@@ -336,11 +337,11 @@ struct user *fetch_alloc_user_full (void);
 struct chat *fetch_alloc_chat (void);
 struct chat *fetch_alloc_chat_full (void);
 struct secret_chat *fetch_alloc_encrypted_chat (void);
-struct message *fetch_alloc_message (void);
-struct message *fetch_alloc_geo_message (void);
-struct message *fetch_alloc_message_short (void);
-struct message *fetch_alloc_message_short_chat (void);
-struct message *fetch_alloc_encrypted_message (void);
+struct message *fetch_alloc_message (struct telegram *instance);
+struct message *fetch_alloc_geo_message (struct telegram *instance);
+struct message *fetch_alloc_message_short (struct telegram *instance);
+struct message *fetch_alloc_message_short_chat (struct telegram *instance);
+struct message *fetch_alloc_encrypted_message (struct telegram *instance);
 void fetch_encrypted_message_file (struct message_media *M);
 void fetch_skip_encrypted_message_file (void);
 void fetch_encrypted_message_file (struct message_media *M);

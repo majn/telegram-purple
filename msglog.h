@@ -11,6 +11,8 @@ void set_log_cb(void (*cb)(const char*, va_list ap));
  */
 void logprintf(const char *format, ...);
 
+void hexdump (int *in_ptr, int *in_end);
+
 /*
 void log_debug(const char* format, ...);
 void log_warning(const char* format, ...);

@@ -21,9 +21,6 @@
 #include "config.h"
 #endif
 
-#ifdef USE_LUA
-# include "lua-tg.h"
-#endif
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -41,6 +38,7 @@
 #include "net.h"
 #include "include.h"
 #include "mtproto-client.h"
+#include "telegram.h"
 
 #include <openssl/sha.h>
 
@@ -48,6 +46,7 @@
 int binlog_buffer[BINLOG_BUFFER_SIZE];
 int *rptr;
 int *wptr;
+int test_dc = 0;
 extern int test_dc;
 
 extern int pts;
@@ -58,11 +57,11 @@ extern int seq;
 #define MAX_LOG_EVENT_SIZE (1 << 17)
 
 char *get_binlog_file_name (void);
-extern struct dc *DC_list[];
-extern struct dc *DC_working;
-extern int dc_working_num;
+//extern struct dc *DC_list[];
+//extern int dc_working_num;
 extern int our_id;
 extern int binlog_enabled;
+int binlog_enabled = 0;
 extern int encr_root;
 extern unsigned char *encr_prime;
 extern int encr_param_version;
@@ -76,7 +75,8 @@ void *alloc_log_event (int l UU) {
 
 long long binlog_pos;
 
-void replay_log_event (void) {
+void replay_log_event (struct telegram *instance) {
+
   int *start = rptr;
   in_replay_log = 1;
   assert (rptr < wptr);
@@ -104,7 +104,7 @@ void replay_log_event (void) {
       if (verbosity) {
         logprintf ( "id = %d, name = %.*s ip = %.*s port = %d\n", id, l1, name, l2, ip, port);
       }
-      alloc_dc (id, tstrndup (ip, l2), port);
+      alloc_dc (instance->auth.DC_list, id, tstrndup (ip, l2), port);
     }
     rptr = in_ptr;
     break;
@@ -113,12 +113,12 @@ void replay_log_event (void) {
     {
       int num = *(rptr ++);
       assert (num >= 0 && num <= MAX_DC_ID);
-      assert (DC_list[num]);
-      DC_list[num]->auth_key_id = *(long long *)rptr;
+      assert (instance->auth.DC_list[num]);
+      instance->auth.DC_list[num]->auth_key_id = *(long long *)rptr;
       rptr += 2;
-      memcpy (DC_list[num]->auth_key, rptr, 256);
+      memcpy (instance->auth.DC_list[num]->auth_key, rptr, 256);
       rptr += 64;
-      DC_list[num]->flags |= 1;
+      instance->auth.DC_list[num]->flags |= 1;
     };
     break;
   case LOG_DEFAULT_DC:
@@ -126,17 +126,13 @@ void replay_log_event (void) {
     { 
       int num = *(rptr ++);
       assert (num >= 0 && num <= MAX_DC_ID);
-      DC_working = DC_list[num];
-      dc_working_num = num;
+      instance->auth.dc_working_num = num;
     }
     break;
   case LOG_OUR_ID:
     rptr ++;
     {
       our_id = *(rptr ++);
-      #ifdef USE_LUA
-        lua_our_id (our_id);
-      #endif
     }
     break;
   case LOG_DC_SIGNED:
@@ -144,8 +140,8 @@ void replay_log_event (void) {
     {
       int num = *(rptr ++);
       assert (num >= 0 && num <= MAX_DC_ID);
-      assert (DC_list[num]);
-      DC_list[num]->has_auth = 1;
+      assert (instance->auth.DC_list[num]);
+      instance->auth.DC_list[num]->has_auth = 1;
     }
     break;
   case LOG_DC_SALT:
@@ -153,20 +149,20 @@ void replay_log_event (void) {
     {
       int num = *(rptr ++);
       assert (num >= 0 && num <= MAX_DC_ID);
-      assert (DC_list[num]);
-      DC_list[num]->server_salt = *(long long *)rptr;
+      assert (instance->auth.DC_list[num]);
+      instance->auth.DC_list[num]->server_salt = *(long long *)rptr;
       rptr += 2;
     };
     break;
-/*  case CODE_user_empty:
-  case CODE_user_self:
-  case CODE_user_contact:
-  case CODE_user_request:
-  case CODE_user_foreign:
+//  case CODE_user_empty:
+//  case CODE_user_self:
+//  case CODE_user_contact:
+//  case CODE_user_request:
+//  case CODE_user_foreign:
   case CODE_user_deleted:
     fetch_alloc_user ();
     rptr = in_ptr;
-    break;*/
+    break;
   case LOG_DH_CONFIG:
     get_dh_config_on_answer (0);
     rptr = in_ptr;
@@ -293,9 +289,6 @@ void replay_log_event (void) {
       struct secret_chat *U = (void *)user_chat_get (id);
       assert (U);
       U->state = sc_ok;
-      #ifdef USE_LUA
-        lua_secret_chat_created (U);
-      #endif
     }
     break;
   case CODE_binlog_new_user:
@@ -325,10 +318,6 @@ void replay_log_event (void) {
       if (fetch_int ()) {
         U->flags |= FLAG_USER_CONTACT;
       }
-      
-      #ifdef USE_LUA
-        lua_user_update (U);
-      #endif
     }
     rptr = in_ptr;
     break;
@@ -359,10 +348,6 @@ void replay_log_event (void) {
       assert (U);
       if (U->user.phone) { tfree_str (U->user.phone); }
       U->user.phone = fetch_str_dup ();
-      
-      #ifdef USE_LUA
-        lua_user_update (&U->user);
-      #endif
     }
     rptr = in_ptr;
     break;
@@ -409,10 +394,6 @@ void replay_log_event (void) {
       if (U->user.real_last_name) { tfree_str (U->user.real_last_name); }
       U->user.real_first_name = fetch_str_dup ();
       U->user.real_last_name = fetch_str_dup ();
-      
-      #ifdef USE_LUA
-        lua_user_update (&U->user);
-      #endif
     }
     rptr = in_ptr;
     break;
@@ -613,10 +594,6 @@ void replay_log_event (void) {
       C->version = fetch_int ();
       fetch_data (&C->photo_big, sizeof (struct file_location));
       fetch_data (&C->photo_small, sizeof (struct file_location));
-      
-      #ifdef USE_LUA
-        lua_chat_update (C);
-      #endif
     };
     rptr = in_ptr;
     break;
@@ -643,9 +620,6 @@ void replay_log_event (void) {
       }
       C->print_title = create_print_name (C->id, C->title, 0, 0, 0);
       peer_insert_name ((void *)C);
-      #ifdef USE_LUA
-        lua_chat_update (C);
-      #endif
     };
     rptr = in_ptr;
     break;
@@ -665,9 +639,6 @@ void replay_log_event (void) {
       peer_t *C = user_chat_get (MK_CHAT (*(rptr ++)));
       assert (C && (C->flags & FLAG_CREATED));
       C->chat.date = *(rptr ++);
-      #ifdef USE_LUA
-        lua_chat_update (&C->chat);
-      #endif
     };
     break;
   case CODE_binlog_set_chat_version:
@@ -677,9 +648,6 @@ void replay_log_event (void) {
       assert (C && (C->flags & FLAG_CREATED));
       C->chat.version = *(rptr ++);
       C->chat.users_num = *(rptr ++);
-      #ifdef USE_LUA
-        lua_chat_update (&C->chat);
-      #endif
     };
     break;
   case CODE_binlog_set_chat_admin:
@@ -688,9 +656,6 @@ void replay_log_event (void) {
       peer_t *C = user_chat_get (MK_CHAT (*(rptr ++)));
       assert (C && (C->flags & FLAG_CREATED));
       C->chat.admin_id = *(rptr ++);
-      #ifdef USE_LUA
-        lua_chat_update (&C->chat);
-      #endif
     };
     break;
   case CODE_binlog_set_chat_participants:
@@ -704,9 +669,6 @@ void replay_log_event (void) {
       C->chat.user_list = talloc (12 * C->chat.user_list_size);
       memcpy (C->chat.user_list, rptr, 12 * C->chat.user_list_size);
       rptr += 3 * C->chat.user_list_size;
-      #ifdef USE_LUA
-        lua_chat_update (&C->chat);
-      #endif
     };
     break;
   case CODE_binlog_chat_full_photo:
@@ -746,9 +708,6 @@ void replay_log_event (void) {
       C->user_list[C->user_list_size - 1].inviter_id = inviter;
       C->user_list[C->user_list_size - 1].date = date;
       C->user_list_version = version;
-      #ifdef USE_LUA
-        lua_chat_update (C);
-      #endif
     }
     break;
   case CODE_binlog_del_chat_participant:
@@ -776,9 +735,6 @@ void replay_log_event (void) {
       C->user_list_size --;
       C->user_list = trealloc (C->user_list, 12 * C->user_list_size + 12, 12 * C->user_list_size);
       C->user_list_version = version;
-      #ifdef USE_LUA
-        lua_chat_update (C);
-      #endif
     }
     break;
   case CODE_binlog_create_message_text:
@@ -828,10 +784,6 @@ void replay_log_event (void) {
         message_insert_unsent (M);
         M->flags |= FLAG_PENDING;
       }
-      
-      #ifdef USE_LUA
-        lua_new_msg (M);
-      #endif
     }
     rptr = in_ptr;
     break;
@@ -867,9 +819,6 @@ void replay_log_event (void) {
       M->out = get_peer_id (M->from_id) == our_id;
 
       message_insert (M);
-      #ifdef USE_LUA
-        lua_new_msg (M);
-      #endif
     }
     rptr = in_ptr;
     break;
@@ -903,9 +852,6 @@ void replay_log_event (void) {
       M->out = get_peer_id (M->from_id) == our_id;
 
       message_insert (M);
-      #ifdef USE_LUA
-        lua_new_msg (M);
-      #endif
     }
     rptr = in_ptr;
     break;
@@ -941,9 +887,6 @@ void replay_log_event (void) {
       M->out = get_peer_id (M->from_id) == our_id;
 
       message_insert (M);
-      #ifdef USE_LUA
-        lua_new_msg (M);
-      #endif
     }
     rptr = in_ptr;
     break;
@@ -979,9 +922,6 @@ void replay_log_event (void) {
       M->out = get_peer_id (M->from_id) == our_id;
 
       message_insert (M);
-      #ifdef USE_LUA
-        lua_new_msg (M);
-      #endif
     }
     rptr = in_ptr;
     break;
@@ -1010,9 +950,6 @@ void replay_log_event (void) {
       M->service = 1;
 
       message_insert (M);
-      #ifdef USE_LUA
-        lua_new_msg (M);
-      #endif
     }
     rptr = in_ptr;
     break;
@@ -1042,9 +979,6 @@ void replay_log_event (void) {
       M->service = 1;
 
       message_insert (M);
-      #ifdef USE_LUA
-        lua_new_msg (M);
-      #endif
     }
     rptr = in_ptr;
     break;
@@ -1074,9 +1008,6 @@ void replay_log_event (void) {
       M->service = 1;
 
       message_insert (M);
-      #ifdef USE_LUA
-        lua_new_msg (M);
-      #endif
     }
     rptr = in_ptr;
     break;
@@ -1176,7 +1107,7 @@ void create_new_binlog (void) {
 }
 
 
-void replay_log (void) {
+void replay_log (struct telegram *instance) {
   if (access (get_binlog_file_name (), F_OK) < 0) {
     printf ("No binlog found. Creating new one\n");
     create_new_binlog ();
@@ -1210,7 +1141,7 @@ void replay_log (void) {
       wptr += (k / 4);
     }
     if (wptr == rptr) { break; }
-    replay_log_event ();
+    replay_log_event (instance);
   }
   close (fd);
 }
@@ -1240,7 +1171,8 @@ void add_log_event (const int *data, int len) {
   wptr = rptr + (len / 4);
   int *in = in_ptr;
   int *end = in_end;
-  replay_log_event ();
+  // TODO: 
+  //replay_log_event ();
   if (rptr != wptr) {
     logprintf ("Unread %lld ints. Len = %d\n", (long long)(wptr - rptr), len);
     assert (rptr == wptr);
@@ -1381,8 +1313,8 @@ void bl_do_set_user_friend (struct user *U, int friend) {
   add_log_event (ev, 12);
 }
 
-void bl_do_dc_option (int id, int l1, const char *name, int l2, const char *ip, int port) {
-  struct dc *DC = DC_list[id];
+void bl_do_dc_option (int id, int l1, const char *name, int l2, const char *ip, int port, struct telegram *instance) {
+  struct dc *DC = instance->auth.DC_list[id];
   if (DC) { return; }
   
   clear_packet ();

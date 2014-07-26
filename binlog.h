@@ -20,6 +20,7 @@
 #define __BINLOG_H__
 
 #include "structures.h"
+#include "telegram.h"
 
 #define LOG_START 0x8948329a
 #define LOG_AUTH_KEY 0x984932aa
@@ -84,12 +85,12 @@
 #define CODE_binlog_delete_msg 0xa1d6ab6d
 
 void *alloc_log_event (int l);
-void replay_log (void);
+void replay_log (struct telegram *instance);
 void add_log_event (const int *data, int l);
 void write_binlog (void);
 void bl_do_set_auth_key_id (int num, unsigned char *buf);
 
-void bl_do_dc_option (int id, int l1, const char *name, int l2, const char *ip, int port);
+void bl_do_dc_option (int id, int l1, const char *name, int l2, const char *ip, int port, struct telegram *instance);
 
 void bl_do_set_our_id (int id);
 void bl_do_new_user (int id, const char *f, int fl, const char *l, int ll, long long access_token, const char *p, int pl, int contact);

@@ -30,4 +30,13 @@ int check_g (unsigned char p[256], BIGNUM *g);
 int check_g_bn (BIGNUM *p, BIGNUM *g);
 int check_DH_params (BIGNUM *p, int g);
 void secure_random (void *s, int l);
+
+
+int send_req_pq_packet (struct telegram *instance);
+
+int rpc_execute_req_pq (struct telegram *instance, int len);
+int rpc_execute_rq_dh (struct telegram *instance, int len);
+int rpc_execute_cdh_sent (struct telegram *instance, int len);
+int rpc_execute_authorized (struct telegram *instance, int op, int len);
+
 #endif

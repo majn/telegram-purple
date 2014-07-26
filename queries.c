@@ -1,12 +1,12 @@
 /*
     This file is part of telegram-client.
 
-    Telegram-client is free software: you can redistribute it and/or modify
+    struct telegram-client is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 2 of the License, or
     (at your option) any later version.
 
-    Telegram-client is distributed in the hope that it will be useful,
+    struct telegram-client is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
@@ -40,10 +40,8 @@
 #include "queries.h"
 #include "tree.h"
 #include "mtproto-common.h"
-#include "telegram.h"
 #include "loop.h"
 #include "structures.h"
-#include "interface.h"
 #include "net.h"
 #include <openssl/bn.h>
 #include <openssl/rand.h>
@@ -53,6 +51,8 @@
 
 #include "no-preview.h"
 #include "binlog.h"
+#include "telegram.h"
+#include "msglog.h"
 
 #define sha1 SHA1
 
@@ -65,6 +65,7 @@
 char *get_downloads_directory (void);
 int verbosity;
 extern int offline_mode;
+int offline_mode = 0;
 
 long long cur_uploading_bytes;
 long long cur_uploaded_bytes;
@@ -73,6 +74,7 @@ long long cur_downloaded_bytes;
 
 extern int binlog_enabled;
 extern int sync_from_start;
+int sync_from_start = 0;
 
 int queries_num = 0;
 
@@ -87,8 +89,8 @@ int all_queries_done()
    }
 }
 
-void flush_queries () {
-  net_loop(0, all_queries_done);
+void telegram_flush_queries (struct telegram *instance) {
+   instance->on_output(instance);
 }
 
 void out_peer_id (peer_id_t id);
@@ -142,11 +144,11 @@ void query_restart (long long id) {
 
 struct query *send_query (struct dc *DC, int ints, void *data, struct query_methods *methods, void *extra) {
   logprintf("send_query(...)\n");
-  assert (DC);
-  assert (DC->auth_key_id);
+  /*
   if (!DC->sessions[0]) {
     dc_create_session (DC);
   }
+  */
   if (verbosity) {
     logprintf ( "Sending query of size %d to DC (%s:%d)\n", 4 * ints, DC->ip, DC->port);
   }
@@ -316,8 +318,8 @@ int max_chat_size;
 int max_bcast_size;
 int want_dc_num;
 int new_dc_num;
-extern struct dc *DC_list[];
-extern struct dc *DC_working;
+//extern struct dc *DC_list[];
+//extern struct dc *DC_working;
 
 void out_random (int n) {
   assert (n <= 32);
@@ -350,7 +352,7 @@ void do_insert_header (void) {
 
 /* {{{ Get config */
 
-void fetch_dc_option (void) {
+void fetch_dc_option (struct telegram *instance) {
   assert (fetch_int () == CODE_dc_option);
   int id = fetch_int ();
   int l1 = prefetch_strlen ();
@@ -362,10 +364,12 @@ void fetch_dc_option (void) {
     logprintf ( "id = %d, name = %.*s ip = %.*s port = %d\n", id, l1, name, l2, ip, port);
   }
 
-  bl_do_dc_option (id, l1, name, l2, ip, port);
+  bl_do_dc_option (id, l1, name, l2, ip, port, instance);
 }
 
 int help_get_config_on_answer (struct query *q UU) {
+  struct telegram *instance = q->extra;
+
   unsigned op = fetch_int ();
   assert (op == CODE_config || op == CODE_config_old);
   fetch_int ();
@@ -382,7 +386,7 @@ int help_get_config_on_answer (struct query *q UU) {
   assert (n <= 10);
   int i;
   for (i = 0; i < n; i++) {
-    fetch_dc_option ();
+    fetch_dc_option (instance);
   }
   max_chat_size = fetch_int ();
   if (op == CODE_config) {
@@ -391,6 +395,7 @@ int help_get_config_on_answer (struct query *q UU) {
   if (verbosity >= 2) {
     logprintf ( "chat_size = %d\n", max_chat_size);
   }
+  telegram_change_state(instance, STATE_CONNECTED, 0);
   return 0;
 }
 
@@ -398,16 +403,19 @@ struct query_methods help_get_config_methods  = {
   .on_answer = help_get_config_on_answer
 };
 
-void do_help_get_config (void) {
+void do_help_get_config (struct telegram *instance) {
   clear_packet ();  
   out_int (CODE_help_get_config);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &help_get_config_methods, 0);
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &help_get_config_methods, instance);
 }
 /* }}} */
 
 /* {{{ Send code */
 char *phone_code_hash;
 int send_code_on_answer (struct query *q UU) {
+  struct telegram *instance = q->extra;
+
   assert (fetch_int () == (int)CODE_auth_sent_code);
   fetch_bool ();
   int l = prefetch_strlen ();
@@ -420,18 +428,30 @@ int send_code_on_answer (struct query *q UU) {
   fetch_int (); 
   fetch_bool ();
   want_dc_num = -1;
+  if (instance->session_state == STATE_PHONE_CODE_REQUESTED) {
+    telegram_change_state(instance, STATE_PHONE_CODE_NOT_ENTERED, phone_code_hash); 
+  } else if (instance->session_state == STATE_CLIENT_CODE_REQUESTED) {
+    telegram_change_state(instance, STATE_CLIENT_CODE_NOT_ENTERED, phone_code_hash); 
+  } else {
+    logprintf("send_code_on_answer(): Invalid State %d ", instance->session_state);
+    telegram_change_state(instance, STATE_ERROR, NULL);
+  }
   return 0;
 }
 
 int send_code_on_error (struct query *q UU, int error_code, int l, char *error) {
+  struct telegram *tg = q->extra;
+
   int s = strlen ("PHONE_MIGRATE_");
   int s2 = strlen ("NETWORK_MIGRATE_");
   if (l >= s && !memcmp (error, "PHONE_MIGRATE_", s)) {
-    int i = error[s] - '0';
-    want_dc_num = i;
+    int want_dc_num = error[s] - '0';
+    tg->auth.dc_working_num = want_dc_num;
+    telegram_change_state(tg, STATE_ERROR, error);
   } else if (l >= s2 && !memcmp (error, "NETWORK_MIGRATE_", s2)) {
-    int i = error[s2] - '0';
-    want_dc_num = i;
+    int want_dc_num = error[s2] - '0';
+    tg->auth.dc_working_num = want_dc_num;
+    telegram_change_state(tg, STATE_ERROR, error);
   } else {
     logprintf ( "error_code = %d, error = %.*s\n", error_code, l, error);
     assert (0);
@@ -448,13 +468,8 @@ int code_is_sent (void) {
   return want_dc_num;
 }
 
-int config_got (void) {
-  return DC_list[want_dc_num] != 0;
-}
-
 char *suser;
-extern int dc_working_num;
-char* do_send_code (const char *user) {
+void do_send_code (struct telegram *instance, const char *user) {
   logprintf ("sending code\n");
   suser = tstrdup (user);
   want_dc_num = 0;
@@ -467,17 +482,21 @@ char* do_send_code (const char *user) {
   out_string (TG_APP_HASH);
   out_string ("en");
 
-  logprintf ("send_code: dc_num = %d\n", dc_working_num);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_code_methods, 0);
-  net_loop (0, code_is_sent);
-  if (want_dc_num == -1) { return phone_code_hash; }
-
-  DC_working = DC_list[want_dc_num];
-  if (!DC_working->sessions[0]) {
-    dc_create_session (DC_working);
+  logprintf ("send_code: dc_num = %d\n", instance->auth.dc_working_num);
+  send_query (telegram_get_working_dc(instance), packet_ptr - packet_buffer, packet_buffer, &send_code_methods, instance);
+  if (instance->session_state == STATE_PHONE_NOT_REGISTERED) {
+    telegram_change_state(instance, STATE_PHONE_CODE_REQUESTED, NULL);
+  } else if (instance->session_state == STATE_CLIENT_NOT_REGISTERED) {
+    telegram_change_state(instance, STATE_CLIENT_CODE_REQUESTED, NULL);
+  } else {
+    logprintf("do_send_code() Invalid State %d, erroring\n", instance->session_state);
+    telegram_change_state(instance, STATE_ERROR, NULL);
   }
-  dc_working_num = want_dc_num;
+  // TODO: Phone Code Hash
+  /*
+  net_loop (0, code_is_sent);
 
+  if (want_dc_num == -1) { return phone_code_hash; }
   bl_do_set_working_dc (dc_working_num);
 
   logprintf ("send_code: dc_num = %d\n", dc_working_num);
@@ -491,11 +510,12 @@ char* do_send_code (const char *user) {
   out_string (TG_APP_HASH);
   out_string ("en");
 
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_code_methods, 0);
+  send_query (telegram_get_working_dc(instance), packet_ptr - packet_buffer, packet_buffer, &send_code_methods, 0);
   net_loop (0, code_is_sent);
   assert (want_dc_num == -1);
 
   return phone_code_hash;
+  */
 }
 
 
@@ -515,7 +535,7 @@ struct query_methods phone_call_methods  = {
   .on_error = phone_call_on_error
 };
 
-void do_phone_call (const char *user) {
+void do_phone_call (struct telegram *instance, const char *user) {
   logprintf ("calling user\n");
   suser = tstrdup (user);
   want_dc_num = 0;
@@ -525,8 +545,8 @@ void do_phone_call (const char *user) {
   out_string (user);
   out_string (phone_code_hash);
 
-  logprintf ("do_phone_call: dc_num = %d\n", dc_working_num);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &phone_call_methods, 0);
+  logprintf ("do_phone_call: dc_num = %d\n", instance->auth.dc_working_num);
+  send_query (telegram_get_working_dc(instance), packet_ptr - packet_buffer, packet_buffer, &phone_call_methods, 0);
 }
 /* }}} */
 
@@ -546,31 +566,26 @@ int check_phone_on_answer (struct query *q UU) {
 int check_phone_on_error (struct query *q UU, int error_code, int l, char *error) {
   int s = strlen ("PHONE_MIGRATE_");
   int s2 = strlen ("NETWORK_MIGRATE_");
+  struct telegram* instance = q->extra;
+
   if (l >= s && !memcmp (error, "PHONE_MIGRATE_", s)) {
+    // update used data centre
     int i = error[s] - '0';
-    assert (DC_list[i]);
+    instance->auth.dc_working_num = i;
 
-    dc_working_num = i;
-    DC_working = DC_list[i];
-    write_auth_file ();
-
-    bl_do_set_working_dc (i);
-
-    check_phone_result = 1;
+    //bl_do_set_working_dc (i);
+    //check_phone_result = 1;
   } else if (l >= s2 && !memcmp (error, "NETWORK_MIGRATE_", s2)) {
+    // update used data centre
     int i = error[s2] - '0';
-    assert (DC_list[i]);
-    dc_working_num = i;
+    instance->auth.dc_working_num = i;
+    //bl_do_set_working_dc (i);
 
-    bl_do_set_working_dc (i);
-
-    DC_working = DC_list[i];
-    write_auth_file ();
-    check_phone_result = 1;
+    //check_phone_result = 1;
   } else {
     logprintf ( "error_code = %d, error = %.*s\n", error_code, l, error);
-    assert (0);
   }
+  telegram_change_state(instance, STATE_ERROR, error);
   return 0;
 }
 
@@ -579,17 +594,20 @@ struct query_methods check_phone_methods = {
   .on_error = check_phone_on_error
 };
 
-int do_auth_check_phone (const char *user) {
+int do_auth_check_phone (struct telegram *instance, const char *user) {
   suser = tstrdup (user);
   clear_packet ();
   out_int (CODE_auth_check_phone);
   out_string (user);
   check_phone_result = -1;
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &check_phone_methods, 0);
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &check_phone_methods, instance);
+  /*
   net_loop (0, cr_f);
   check_phone_result = -1;
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &check_phone_methods, 0);
+  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &check_phone_methods, instance);
   net_loop (0, cr_f);
+  */
   return check_phone_result;
 }
 /* }}} */
@@ -623,7 +641,8 @@ struct query_methods nearest_dc_methods = {
   .on_error = fail_on_error
 };
 
-int do_get_nearest_dc (void) {
+int do_get_nearest_dc (struct telegram *instance) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_help_get_nearest_dc);
   nearest_dc_num = -1;
@@ -643,6 +662,7 @@ int sign_in_is_ok (void) {
 struct user User;
 
 int sign_in_on_answer (struct query *q UU) {
+  struct dc *DC_working = telegram_get_working_dc(q->extra);
   assert (fetch_int () == (int)CODE_auth_authorization);
   int expires = fetch_int ();
   fetch_user (&User);
@@ -682,19 +702,21 @@ struct query_methods sign_in_methods  = {
   .on_error = sign_in_on_error
 };
 
-int do_send_code_result (const char *code, const char *sms_hash) {
+int do_send_code_result (struct telegram *instance, const char *code, const char *sms_hash) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_auth_sign_in);
   out_string (suser);
   out_string(sms_hash);
   out_string (code);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &sign_in_methods, 0);
+  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &sign_in_methods, instance);
   sign_in_ok = 0;
   net_loop (0, sign_in_is_ok);
   return sign_in_ok;
 }
 
-int do_send_code_result_auth (const char *code, const char *sms_hash, const char *first_name, const char *last_name) {
+int do_send_code_result_auth (struct telegram *instance, const char *code, const char *sms_hash, const char *first_name, const char *last_name) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_auth_sign_up);
   out_string (suser);
@@ -702,7 +724,7 @@ int do_send_code_result_auth (const char *code, const char *sms_hash, const char
   out_string (code);
   out_string (first_name);
   out_string (last_name);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &sign_in_methods, 0);
+  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &sign_in_methods, instance);
   sign_in_ok = 0;
   net_loop (0, sign_in_is_ok);
   return sign_in_ok;
@@ -728,11 +750,11 @@ int get_contacts_on_answer (struct query *q UU) {
   for (i = 0; i < n; i++) {
     fetch_alloc_user ();
 	/*
-    print_start ();
-    push_color (COLOR_YELLOW);
+    //print_start ();
+    //push_color (COLOR_YELLOW);
     logprintf ("User #%d: ", get_peer_id (U->id));
-    print_user_name (U->id, (peer_t *)U);
-    push_color (COLOR_GREEN);
+    //print_user_name (U->id, (peer_t *)U);
+    //push_color (COLOR_GREEN);
     logprintf (" (");
     logprintf ("%s", U->print_name);
     if (U->phone) {
@@ -740,20 +762,20 @@ int get_contacts_on_answer (struct query *q UU) {
       logprintf ("%s", U->phone);
     }
     logprintf (") ");
-    pop_color ();
+    //pop_color ();
     if (U->status.online > 0) {
       logprintf ("online\n");
     } else {
       if (U->status.online < 0) {
         logprintf ("offline. Was online ");
-        print_date_full (U->status.when);
+        //print_date_full (U->status.when);
       } else {
         logprintf ("offline permanent");
       }
       logprintf ("\n");
     }
-    pop_color ();
-    print_end ();
+    //pop_color ();
+    //print_end ();
 	*/
   }
   contacts_got = 1;
@@ -765,7 +787,8 @@ struct query_methods get_contacts_methods = {
 };
 
 
-void do_update_contact_list (void) {
+void do_update_contact_list (struct telegram *instance) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   contacts_got = 0;
   clear_packet ();
   out_int (CODE_contacts_get_contacts);
@@ -860,7 +883,7 @@ void encr_finish (struct secret_chat *E) {
 /* {{{ Seng msg (plain text) */
 int msg_send_encr_on_answer (struct query *q UU) {
   assert (fetch_int () == CODE_messages_sent_encrypted_message);
-  rprintf ("Sent\n");
+  logprintf ("Sent\n");
   struct message *M = q->extra;
   //M->date = fetch_int ();
   fetch_int ();
@@ -907,16 +930,16 @@ int msg_send_on_answer (struct query *q UU) {
       if (b == CODE_contacts_foreign_link_requested) {
         U->flags |= FLAG_USER_OUT_CONTACT;
       }
-      print_start ();
-      push_color (COLOR_YELLOW);
+      //print_start ();
+      //push_color (COLOR_YELLOW);
       logprintf ("Link with user ");
-      print_user_name (U->id, (void *)U);
+      //print_user_name (U->id, (void *)U);
       logprintf (" changed\n");
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
     }
   }
-  rprintf ("Sent: id = %d\n", id);
+  logprintf ("Sent: id = %d\n", id);
   bl_do_set_message_sent (M);
   return 0;
 }
@@ -940,7 +963,8 @@ struct query_methods msg_send_encr_methods = {
 int out_message_num;
 int our_id;
 
-void do_send_encr_msg (struct message *M) {
+void do_send_encr_msg (struct telegram *instance, struct message *M) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   peer_t *P = user_chat_get (M->to_id);
   if (!P || P->encr_chat.state != sc_ok) { return; }
   
@@ -963,9 +987,10 @@ void do_send_encr_msg (struct message *M) {
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &msg_send_encr_methods, M);
 }
 
-void do_send_msg (struct message *M) {
+void do_send_msg (struct telegram *instance, struct message *M) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   if (get_peer_type (M->to_id) == PEER_ENCR_CHAT) {
-    do_send_encr_msg (M);
+    do_send_encr_msg (instance ,M);
     return;
   }
   clear_packet ();
@@ -976,7 +1001,7 @@ void do_send_msg (struct message *M) {
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &msg_send_methods, M);
 }
 
-void do_send_message (peer_id_t id, const char *msg, int len) {
+void do_send_message (struct telegram *instance, peer_id_t id, const char *msg, int len) {
   if (get_peer_type (id) == PEER_ENCR_CHAT) {
     peer_t *P = user_chat_get (id);
     if (!P) {
@@ -994,16 +1019,16 @@ void do_send_message (peer_id_t id, const char *msg, int len) {
   bl_do_send_message_text (t, our_id, get_peer_type (id), get_peer_id (id), time (0), len, msg);
   struct message *M = message_get (t);
   assert (M);
-  do_send_msg (M);
-  print_message (M);
+  do_send_msg (instance, M);
+  //print_message (M);
 }
 /* }}} */
 
 /* {{{ Send text file */
-void do_send_text (peer_id_t id, char *file_name) {
+void do_send_text (struct telegram *instance, peer_id_t id, char *file_name) {
   int fd = open (file_name, O_RDONLY);
   if (fd < 0) {
-    rprintf ("No such file '%s'\n", file_name);
+    logprintf ("No such file '%s'\n", file_name);
     tfree_str (file_name);
     return;
   }
@@ -1011,12 +1036,12 @@ void do_send_text (peer_id_t id, char *file_name) {
   int x = read (fd, buf, (1 << 20) + 1);
   assert (x >= 0);
   if (x == (1 << 20) + 1) {
-    rprintf ("Too big file '%s'\n", file_name);
+    logprintf ("Too big file '%s'\n", file_name);
     tfree_str (file_name);
     close (fd);
   } else {
     buf[x] = 0;
-    do_send_message (id, buf, x);
+    do_send_message (instance, id, buf, x);
     tfree_str (file_name);
     close (fd);
   }
@@ -1045,7 +1070,8 @@ struct query_methods mark_read_encr_methods = {
   .on_answer = mark_read_encr_on_receive
 };
 
-void do_messages_mark_read (peer_id_t id, int max_id) {
+void do_messages_mark_read (struct telegram *instance, peer_id_t id, int max_id) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_messages_read_history);
   out_peer_id (id);
@@ -1054,7 +1080,8 @@ void do_messages_mark_read (peer_id_t id, int max_id) {
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &mark_read_methods, 0);
 }
 
-void do_messages_mark_read_encr (peer_id_t id, long long access_hash, int last_time) {
+void do_messages_mark_read_encr (struct telegram *instance, peer_id_t id, long long access_hash, int last_time) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_messages_read_encrypted_history);
   out_int (CODE_input_encrypted_chat);
@@ -1064,45 +1091,54 @@ void do_messages_mark_read_encr (peer_id_t id, long long access_hash, int last_t
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &mark_read_encr_methods, 0);
 }
 
-void do_mark_read (peer_id_t id) {
+void do_mark_read (struct telegram *instance, peer_id_t id) {
   peer_t *P = user_chat_get (id);
   if (!P) {
-    rprintf ("Unknown peer\n");
+    logprintf ("Unknown peer\n");
     return;
   }
   if (get_peer_type (id) == PEER_USER || get_peer_type (id) == PEER_CHAT) {
     if (!P->last) {
-      rprintf ("Unknown last peer message\n");
+      logprintf ("Unknown last peer message\n");
       return;
     }
-    do_messages_mark_read (id, P->last->id);
+    do_messages_mark_read (instance, id, P->last->id);
     return;
   }
   assert (get_peer_type (id) == PEER_ENCR_CHAT);
   if (P->last) {
-    do_messages_mark_read_encr (id, P->encr_chat.access_hash, P->last->date);
+    do_messages_mark_read_encr (instance, id, P->encr_chat.access_hash, P->last->date);
   } else {
-    do_messages_mark_read_encr (id, P->encr_chat.access_hash, time (0) - 10);
+    do_messages_mark_read_encr (instance, id, P->encr_chat.access_hash, time (0) - 10);
     
   }
 }
 /* }}} */
 
+struct get_hist_extra {
+  struct telegram *instance;
+  peer_id_t peer_id;
+};
+
 /* {{{ Get history */
 int get_history_on_answer (struct query *q UU) {
+  struct get_hist_extra *extra = q->extra;
+  struct telegram *instance = extra->instance;
+  peer_id_t peer_id = extra->peer_id;
+
   static struct message *ML[10000];
   int i;
   int x = fetch_int ();
   if (x == (int)CODE_messages_messages_slice) {
     fetch_int ();
-    rprintf ("...\n");
+    logprintf ("...\n");
   } else {
     assert (x == (int)CODE_messages_messages);
   }
   assert (fetch_int () == CODE_vector);
   int n = fetch_int ();
   for (i = 0; i < n; i++) {
-    struct message *M = fetch_alloc_message ();
+    struct message *M = fetch_alloc_message (instance);
     if (i <= 9999) {
       ML[i] = M;
     }
@@ -1110,7 +1146,7 @@ int get_history_on_answer (struct query *q UU) {
   if (n > 10000) { n = 10000; }
   int sn = n;
   for (i = n - 1; i >= 0; i--) {
-    print_message (ML[i]);
+    //print_message (ML[i]);
   }
   assert (fetch_int () == CODE_vector);
   n = fetch_int ();
@@ -1122,9 +1158,11 @@ int get_history_on_answer (struct query *q UU) {
   for (i = 0; i < n; i++) {
     fetch_alloc_user ();
   }
+
   if (sn > 0 && q->extra) {
-    do_messages_mark_read (*(peer_id_t *)&(q->extra), ML[0]->id);
+    do_messages_mark_read (instance, peer_id, ML[0]->id);
   }
+  free(extra);
   return 0;
 }
 
@@ -1143,15 +1181,16 @@ void do_get_local_history (peer_id_t id, int limit) {
     count ++;
   }
   while (M) {
-    print_message (M);
+    //print_message (M);
     M = M->prev;
   }
 }
 
-void do_get_history (peer_id_t id, int limit) {
+void do_get_history (struct telegram *instance, peer_id_t id, int limit) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   if (get_peer_type (id) == PEER_ENCR_CHAT || offline_mode) {
     do_get_local_history (id, limit);
-    do_mark_read (id);
+    do_mark_read (instance, id);
     return;
   }
   clear_packet ();
@@ -1160,13 +1199,19 @@ void do_get_history (peer_id_t id, int limit) {
   out_int (0);
   out_int (0);
   out_int (limit);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_history_methods, (void *)*(long *)&id);
+
+  struct get_hist_extra *extra = malloc(sizeof(struct get_hist_extra));
+  extra->instance = instance;
+  extra->peer_id = id;
+
+  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_history_methods, extra);
 }
 /* }}} */
 
 /* {{{ Get dialogs */
 int dialog_list_got;
 int get_dialogs_on_answer (struct query *q UU) {
+  struct telegram *instance = q->extra;
   unsigned x = fetch_int (); 
   assert (x == CODE_messages_dialogs || x == CODE_messages_dialogs_slice);
   if (x == CODE_messages_dialogs_slice) {
@@ -1193,7 +1238,7 @@ int get_dialogs_on_answer (struct query *q UU) {
   assert (fetch_int () == CODE_vector);
   n = fetch_int ();
   for (i = 0; i < n; i++) {
-    fetch_alloc_message ();
+    fetch_alloc_message (instance);
   }
   assert (fetch_int () == CODE_vector);
   n = fetch_int ();
@@ -1205,27 +1250,27 @@ int get_dialogs_on_answer (struct query *q UU) {
   for (i = 0; i < n; i++) {
     fetch_alloc_user ();
   }
-  print_start ();
-  push_color (COLOR_YELLOW);
+  //print_start ();
+  //push_color (COLOR_YELLOW);
   for (i = dl_size - 1; i >= 0; i--) {
     peer_t *UC;
     switch (get_peer_type (plist[i])) {
     case PEER_USER:
       UC = user_chat_get (plist[i]);
       logprintf ("User ");
-      print_user_name (plist[i], UC);
+      //print_user_name (plist[i], UC);
       logprintf (": %d unread\n", dlist[2 * i + 1]);
       break;
     case PEER_CHAT:
       UC = user_chat_get (plist[i]);
       logprintf ("Chat ");
-      print_chat_name (plist[i], UC);
+      //print_chat_name (plist[i], UC);
       logprintf (": %d unread\n", dlist[2 * i + 1]);
       break;
     }
   }
-  pop_color ();
-  print_end ();
+  //pop_color ();
+  //print_end ();
 
   dialog_list_got = 1;
   return 0;
@@ -1236,13 +1281,14 @@ struct query_methods get_dialogs_methods = {
 };
 
 
-void do_get_dialog_list (void) {
+void do_get_dialog_list (struct telegram *instance) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_messages_get_dialogs);
   out_int (0);
   out_int (0);
   out_int (1000);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_dialogs_methods, 0);
+  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_dialogs_methods, instance);
 }
 /* }}} */
 
@@ -1289,16 +1335,23 @@ void out_peer_id (peer_id_t id) {
   }
 }
 
-void send_part (struct send_file *f);
+struct send_file_extra {
+  struct telegram *instance;
+  struct send_file *file;
+};
+
+void send_part (struct telegram *instance, struct send_file *f);
 int send_file_part_on_answer (struct query *q) {
+  struct send_file_extra *extra = q->extra;
   assert (fetch_int () == (int)CODE_bool_true);
-  send_part (q->extra);
+  send_part (extra->instance, extra->file);
   return 0;
 }
 
 int send_file_on_answer (struct query *q UU) {
+  struct telegram *instance = q->extra; 
   assert (fetch_int () == (int)CODE_messages_stated_message);
-  struct message *M = fetch_alloc_message ();
+  struct message *M = fetch_alloc_message (instance);
   assert (fetch_int () == CODE_vector);
   int n, i;
   n = fetch_int ();
@@ -1312,7 +1365,7 @@ int send_file_on_answer (struct query *q UU) {
   }
   fetch_pts ();
   fetch_seq ();
-  print_message (M);
+  //print_message (M);
   return 0;
 }
 
@@ -1330,7 +1383,7 @@ int send_encr_file_on_answer (struct query *q UU) {
   fetch_int ();
   M->media.encr_photo.dc_id = fetch_int ();
   assert (fetch_int () == M->media.encr_photo.key_fingerprint);
-  print_message (M);
+  //print_message (M);
   message_insert (M);
   return 0;
 }
@@ -1347,7 +1400,9 @@ struct query_methods send_encr_file_methods = {
   .on_answer = send_encr_file_on_answer
 };
 
-void send_part (struct send_file *f) {
+void send_part (struct telegram *instance, struct send_file *f) {
+
+  struct dc *DC_working = telegram_get_working_dc(instance);
   if (f->fd >= 0) {
     if (!f->part_num) {
       cur_uploading_bytes += f->size;
@@ -1391,12 +1446,16 @@ void send_part (struct send_file *f) {
     } else {
       assert (f->part_size == x);
     }
-    update_prompt ();
-    send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_file_part_methods, f);
+    //update_prompt ();
+
+    struct send_file_extra *extra = malloc(sizeof(struct send_file_extra));
+    extra->instance = instance;
+    extra->file = f;
+    send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_file_part_methods, extra);
   } else {
     cur_uploaded_bytes -= f->size;
     cur_uploading_bytes -= f->size;
-    update_prompt ();
+    //update_prompt ();
     clear_packet ();
     assert (f->media_type == CODE_input_media_uploaded_photo || f->media_type == CODE_input_media_uploaded_video || f->media_type == CODE_input_media_uploaded_thumb_video || f->media_type == CODE_input_media_uploaded_audio || f->media_type == CODE_input_media_uploaded_document || f->media_type == CODE_input_media_uploaded_thumb_document);
     if (!f->encr) {
@@ -1437,7 +1496,7 @@ void send_part (struct send_file *f) {
       }
 
       out_long (-lrand48 () * (1ll << 32) - lrand48 ());
-      send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_file_methods, 0);
+      send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_file_methods, instance);
     } else {
       struct message *M = talloc0 (sizeof (*M));
 
@@ -1527,14 +1586,14 @@ void send_part (struct send_file *f) {
       M->date = time (0);
       
       send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_encr_file_methods, M);
-
     }
     tfree_str (f->file_name);
     tfree (f, sizeof (*f));
   }
 }
 
-void send_file_thumb (struct send_file *f) {
+void send_file_thumb (struct telegram *instance, struct send_file *f) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   f->thumb_id = lrand48 () * (1ll << 32) + lrand48 ();
   out_int (CODE_upload_save_file_part);
@@ -1544,10 +1603,10 @@ void send_file_thumb (struct send_file *f) {
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_file_part_methods, f);
 }
 
-void do_send_photo (int type, peer_id_t to_id, char *file_name) {
+void do_send_photo (struct telegram *instance, int type, peer_id_t to_id, char *file_name) {
   int fd = open (file_name, O_RDONLY);
   if (fd < 0) {
-    rprintf ("No such file '%s'\n", file_name);
+    logprintf ("No such file '%s'\n", file_name);
     tfree_str (file_name);
     return;
   }
@@ -1555,7 +1614,7 @@ void do_send_photo (int type, peer_id_t to_id, char *file_name) {
   fstat (fd, &buf);
   long long size = buf.st_size;
   if (size <= 0) {
-    rprintf ("File has zero length\n");
+    logprintf ("File has zero length\n");
     tfree_str (file_name);
     close (fd);
     return;
@@ -1573,7 +1632,7 @@ void do_send_photo (int type, peer_id_t to_id, char *file_name) {
 
   if (f->part_size > (512 << 10)) {
     close (fd);
-    rprintf ("Too big file. Maximal supported size is %d.\n", (512 << 10) * 1000);
+    logprintf ("Too big file. Maximal supported size is %d.\n", (512 << 10) * 1000);
     tfree (f, sizeof (*f));
     tfree_str (file_name);
     return;
@@ -1594,20 +1653,21 @@ void do_send_photo (int type, peer_id_t to_id, char *file_name) {
   }
   if (f->media_type == CODE_input_media_uploaded_video && !f->encr) {
     f->media_type = CODE_input_media_uploaded_thumb_video;
-    send_file_thumb (f);
+    send_file_thumb (instance, f);
   } else if (f->media_type == CODE_input_media_uploaded_document && !f->encr) {
     f->media_type = CODE_input_media_uploaded_thumb_document;
-    send_file_thumb (f);
+    send_file_thumb (instance, f);
   } else {
-    send_part (f);
+    send_part (instance, f);
   }
 }
 /* }}} */
 
 /* {{{ Forward */
 int fwd_msg_on_answer (struct query *q UU) {
+  struct telegram *instance = q->extra;
   assert (fetch_int () == (int)CODE_messages_stated_message);
-  struct message *M = fetch_alloc_message ();
+  struct message *M = fetch_alloc_message (instance);
   assert (fetch_int () == CODE_vector);
   int n, i;
   n = fetch_int ();
@@ -1621,7 +1681,7 @@ int fwd_msg_on_answer (struct query *q UU) {
   }
   fetch_pts ();
   fetch_seq ();
-  print_message (M);
+  //print_message (M);
   return 0;
 }
 
@@ -1629,9 +1689,10 @@ struct query_methods fwd_msg_methods = {
   .on_answer = fwd_msg_on_answer
 };
 
-void do_forward_message (peer_id_t id, int n) {
+void do_forward_message (struct telegram *instance, peer_id_t id, int n) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   if (get_peer_type (id) == PEER_ENCR_CHAT) {
-    rprintf ("Can not forward messages from secret chat\n");
+    logprintf ("Can not forward messages from secret chat\n");
     return;
   }
   clear_packet ();
@@ -1639,14 +1700,16 @@ void do_forward_message (peer_id_t id, int n) {
   out_peer_id (id);
   out_int (n);
   out_long (lrand48 () * (1ll << 32) + lrand48 ());
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &fwd_msg_methods, 0);
+  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &fwd_msg_methods, instance);
 }
 /* }}} */
 
 /* {{{ Rename chat */
 int rename_chat_on_answer (struct query *q UU) {
+  struct telegram *instance = q->extra; 
+
   assert (fetch_int () == (int)CODE_messages_stated_message);
-  struct message *M = fetch_alloc_message ();
+  struct message *M = fetch_alloc_message (instance);
   assert (fetch_int () == CODE_vector);
   int n, i;
   n = fetch_int ();
@@ -1660,7 +1723,7 @@ int rename_chat_on_answer (struct query *q UU) {
   }
   fetch_pts ();
   fetch_seq ();
-  print_message (M);
+  //print_message (M);
   return 0;
 }
 
@@ -1668,44 +1731,45 @@ struct query_methods rename_chat_methods = {
   .on_answer = rename_chat_on_answer
 };
 
-void do_rename_chat (peer_id_t id, char *name UU) {
+void do_rename_chat (struct telegram *instance, peer_id_t id, char *name UU) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_messages_edit_chat_title);
   assert (get_peer_type (id) == PEER_CHAT);
   out_int (get_peer_id (id));
   out_string (name);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &rename_chat_methods, 0);
+  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &rename_chat_methods, instance);
 }
 /* }}} */
 
 /* {{{ Chat info */
 void print_chat_info (struct chat *C) {
   peer_t *U = (void *)C;
-  print_start ();
-  push_color (COLOR_YELLOW);
+  //print_start ();
+  //push_color (COLOR_YELLOW);
   logprintf ("Chat ");
-  print_chat_name (U->id, U);
+  //print_chat_name (U->id, U);
   logprintf (" members:\n");
   int i;
   for (i = 0; i < C->user_list_size; i++) {
     logprintf ("\t\t");
-    print_user_name (MK_USER (C->user_list[i].user_id), user_chat_get (MK_USER (C->user_list[i].user_id)));
+    //print_user_name (MK_USER (C->user_list[i].user_id), user_chat_get (MK_USER (C->user_list[i].user_id)));
     logprintf (" invited by ");
-    print_user_name (MK_USER (C->user_list[i].inviter_id), user_chat_get (MK_USER (C->user_list[i].inviter_id)));
+    //print_user_name (MK_USER (C->user_list[i].inviter_id), user_chat_get (MK_USER (C->user_list[i].inviter_id)));
     logprintf (" at ");
-    print_date_full (C->user_list[i].date);
+    //print_date_full (C->user_list[i].date);
     if (C->user_list[i].user_id == C->admin_id) {
       logprintf (" admin");
     }
     logprintf ("\n");
   }
-  pop_color ();
-  print_end ();
+  //pop_color ();
+  //print_end ();
 }
 
 int chat_info_on_answer (struct query *q UU) {
   struct chat *C = fetch_alloc_chat_full ();
-  print_chat_info (C);
+  //print_chat_info (C);
   return 0;
 }
 
@@ -1713,13 +1777,14 @@ struct query_methods chat_info_methods = {
   .on_answer = chat_info_on_answer
 };
 
-void do_get_chat_info (peer_id_t id) {
+void do_get_chat_info (struct telegram *instance, peer_id_t id) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   if (offline_mode) {
     peer_t *C = user_chat_get (id);
     if (!C) {
-      rprintf ("No such chat\n");
+      logprintf ("No such chat\n");
     } else {
-      print_chat_info (&C->chat);
+      //print_chat_info (&C->chat);
     }
     return;
   }
@@ -1735,10 +1800,10 @@ void do_get_chat_info (peer_id_t id) {
 
 void print_user_info (struct user *U) {
   peer_t *C = (void *)U;
-  print_start ();
-  push_color (COLOR_YELLOW);
+  //print_start ();
+  //push_color (COLOR_YELLOW);
   logprintf ("User ");
-  print_user_name (U->id, C);
+  //print_user_name (U->id, C);
   logprintf (":\n");
   logprintf ("\treal name: %s %s\n", U->real_first_name, U->real_last_name);
   logprintf ("\tphone: %s\n", U->phone);
@@ -1746,16 +1811,16 @@ void print_user_info (struct user *U) {
     logprintf ("\tonline\n");
   } else {
     logprintf ("\toffline (was online ");
-    print_date_full (U->status.when);
+    //print_date_full (U->status.when);
     logprintf (")\n");
   }
-  pop_color ();
-  print_end ();
+  //pop_color ();
+  //print_end ();
 }
 
 int user_info_on_answer (struct query *q UU) {
   struct user *U = fetch_alloc_user_full ();
-  print_user_info (U);
+  //print_user_info (U);
   return 0;
 }
 
@@ -1763,13 +1828,14 @@ struct query_methods user_info_methods = {
   .on_answer = user_info_on_answer
 };
 
-void do_get_user_info (peer_id_t id) {
+void do_get_user_info (struct telegram *instance, peer_id_t id) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   if (offline_mode) {
     peer_t *C = user_chat_get (id);
     if (!C) {
-      rprintf ("No such user\n");
+      logprintf ("No such user\n");
     } else {
-      print_user_info (&C->user);
+      //print_user_info (&C->user);
     }
     return;
   }
@@ -1804,7 +1870,8 @@ struct query_methods user_list_info_silent_methods = {
   .on_answer = user_list_info_silent_on_answer
 };
 
-void do_get_user_list_info_silent (int num, int *list) {
+void do_get_user_list_info_silent (struct telegram *instance, int num, int *list) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_users_get_users);
   out_int (CODE_vector);
@@ -1841,7 +1908,7 @@ struct download {
 void end_load (struct download *D) {
   cur_downloading_bytes -= D->size;
   cur_downloaded_bytes -= D->size;
-  update_prompt ();
+  //update_prompt ();
   close (D->fd);
   if (D->next == 1) {
     logprintf ("Done: %s\n", D->name);
@@ -1864,12 +1931,21 @@ void end_load (struct download *D) {
   tfree (D, sizeof (*D));
 }
 
-void load_next_part (struct download *D);
+struct download_extra {
+  struct telegram *instance;
+  struct download *dl;
+};
+
+void load_next_part (struct telegram *instance, struct download *D);
 int download_on_answer (struct query *q) {
+  struct download_extra *extra = q->extra;
+  struct telegram *instance = extra->instance;
+  struct download *D = extra->dl;
+  free(extra);
+
   assert (fetch_int () == (int)CODE_upload_file);
   unsigned x = fetch_int ();
   assert (x);
-  struct download *D = q->extra;
   if (D->fd == -1) {
     D->fd = open (D->name, O_CREAT | O_WRONLY, 0640);
   }
@@ -1877,7 +1953,7 @@ int download_on_answer (struct query *q) {
   int len = prefetch_strlen ();
   assert (len >= 0);
   cur_downloaded_bytes += len;
-  update_prompt ();
+  //update_prompt ();
   if (D->iv) {
     unsigned char *ptr = (void *)fetch_str (len);
     assert (!(len & 15));
@@ -1894,7 +1970,7 @@ int download_on_answer (struct query *q) {
   }
   D->offset += len;
   if (D->offset < D->size) {
-    load_next_part (D);
+    load_next_part (instance, D);
     return 0;
   } else {
     end_load (D);
@@ -1906,7 +1982,7 @@ struct query_methods download_methods = {
   .on_answer = download_on_answer
 };
 
-void load_next_part (struct download *D) {
+void load_next_part (struct telegram *instance, struct download *D) {
   if (!D->offset) {
     static char buf[PATH_MAX];
     int l;
@@ -1926,7 +2002,7 @@ void load_next_part (struct download *D) {
       if (D->offset >= D->size) {
         cur_downloading_bytes += D->size;
         cur_downloaded_bytes += D->offset;
-        rprintf ("Already downloaded\n");
+        logprintf ("Already downloaded\n");
         end_load (D);
         return;
       }
@@ -1934,7 +2010,7 @@ void load_next_part (struct download *D) {
     
     cur_downloading_bytes += D->size;
     cur_downloaded_bytes += D->offset;
-    update_prompt ();
+    //update_prompt ();
   }
   clear_packet ();
   out_int (CODE_upload_get_file);
@@ -1954,13 +2030,18 @@ void load_next_part (struct download *D) {
   }
   out_int (D->offset);
   out_int (1 << 14);
-  send_query (DC_list[D->dc], packet_ptr - packet_buffer, packet_buffer, &download_methods, D);
+
+  struct download_extra *extra = malloc(sizeof(struct download_extra));
+  extra->instance = instance;
+  extra->dl = D;
+
+  send_query (instance->auth.DC_list[D->dc], packet_ptr - packet_buffer, packet_buffer, &download_methods, extra);
   //send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &download_methods, D);
 }
 
-void do_load_photo_size (struct photo_size *P, int next) {
+void do_load_photo_size (struct telegram *instance, struct photo_size *P, int next) {
   if (!P->loc.dc) {
-    rprintf ("Bad video thumb\n");
+    logprintf ("Bad video thumb\n");
     return;
   }
   
@@ -1977,10 +2058,10 @@ void do_load_photo_size (struct photo_size *P, int next) {
   D->next = next;
   D->name = 0;
   D->fd = -1;
-  load_next_part (D);
+  load_next_part (instance, D);
 }
 
-void do_load_photo (struct photo *photo, int next) {
+void do_load_photo (struct telegram *instance, struct photo *photo, int next) {
   if (!photo->sizes_num) { return; }
   int max = -1;
   int maxi = 0;
@@ -1991,18 +2072,18 @@ void do_load_photo (struct photo *photo, int next) {
       maxi = i;
     }
   }
-  do_load_photo_size (&photo->sizes[maxi], next);
+  do_load_photo_size (instance, &photo->sizes[maxi], next);
 }
 
-void do_load_video_thumb (struct video *video, int next) {
-  do_load_photo_size (&video->thumb, next);
+void do_load_video_thumb (struct telegram *instance, struct video *video, int next) {
+  do_load_photo_size (instance, &video->thumb, next);
 }
 
-void do_load_document_thumb (struct document *video, int next) {
-  do_load_photo_size (&video->thumb, next);
+void do_load_document_thumb (struct telegram *instance, struct document *video, int next) {
+  do_load_photo_size (instance, &video->thumb, next);
 }
 
-void do_load_video (struct video *V, int next) {
+void do_load_video (struct telegram *instance, struct video *V, int next) {
   assert (V);
   assert (next);
   struct download *D = talloc0 (sizeof (*D));
@@ -2015,10 +2096,10 @@ void do_load_video (struct video *V, int next) {
   D->name = 0;
   D->fd = -1;
   D->type = CODE_input_video_file_location;
-  load_next_part (D);
+  load_next_part (instance, D);
 }
 
-void do_load_audio (struct video *V, int next) {
+void do_load_audio (struct telegram *instance, struct video *V, int next) {
   assert (V);
   assert (next);
   struct download *D = talloc0 (sizeof (*D));
@@ -2031,10 +2112,10 @@ void do_load_audio (struct video *V, int next) {
   D->name = 0;
   D->fd = -1;
   D->type = CODE_input_audio_file_location;
-  load_next_part (D);
+  load_next_part (instance, D);
 }
 
-void do_load_document (struct document *V, int next) {
+void do_load_document (struct telegram *instance, struct document *V, int next) {
   assert (V);
   assert (next);
   struct download *D = talloc0 (sizeof (*D));
@@ -2047,10 +2128,10 @@ void do_load_document (struct document *V, int next) {
   D->name = 0;
   D->fd = -1;
   D->type = CODE_input_document_file_location;
-  load_next_part (D);
+  load_next_part (instance, D);
 }
 
-void do_load_encr_video (struct encr_video *V, int next) {
+void do_load_encr_video (struct telegram *instance, struct encr_video *V, int next) {
   assert (V);
   assert (next);
   struct download *D = talloc0 (sizeof (*D));
@@ -2065,7 +2146,7 @@ void do_load_encr_video (struct encr_video *V, int next) {
   D->key = V->key;
   D->iv = talloc (32);
   memcpy (D->iv, V->iv, 32);
-  load_next_part (D);
+  load_next_part (instance, D);
       
   unsigned char md5[16];
   unsigned char str[64];
@@ -2107,7 +2188,8 @@ struct query_methods export_auth_methods = {
   .on_error = fail_on_error
 };
 
-void do_export_auth (int num) {
+void do_export_auth (struct telegram *instance, int num) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   export_auth_str = 0;
   clear_packet ();
   out_int (CODE_auth_export_authorization);
@@ -2132,12 +2214,12 @@ struct query_methods import_auth_methods = {
   .on_error = fail_on_error
 };
 
-void do_import_auth (int num) {
+void do_import_auth (struct telegram *instance, int num) {
   clear_packet ();
   out_int (CODE_auth_import_authorization);
   out_int (our_id);
   out_cstring (export_auth_str, export_auth_str_len);
-  send_query (DC_list[num], packet_ptr - packet_buffer, packet_buffer, &import_auth_methods, 0);
+  send_query (instance->auth.DC_list[num], packet_ptr - packet_buffer, packet_buffer, &import_auth_methods, 0);
   net_loop (0, isn_export_auth_str);
 }
 /* }}} */
@@ -2162,11 +2244,11 @@ int add_contact_on_answer (struct query *q UU) {
   n = fetch_int ();
   for (i = 0; i < n ; i++) {
     struct user *U = fetch_alloc_user ();
-    print_start ();
-    push_color (COLOR_YELLOW);
+    //print_start ();
+    //push_color (COLOR_YELLOW);
     logprintf ("User #%d: ", get_peer_id (U->id));
-    print_user_name (U->id, (peer_t *)U);
-    push_color (COLOR_GREEN);
+    //print_user_name (U->id, (peer_t *)U);
+    //push_color (COLOR_GREEN);
     logprintf (" (");
     logprintf ("%s", U->print_name);
     if (U->phone) {
@@ -2174,20 +2256,20 @@ int add_contact_on_answer (struct query *q UU) {
       logprintf ("%s", U->phone);
     }
     logprintf (") ");
-    pop_color ();
+    //pop_color ();
     if (U->status.online > 0) {
       logprintf ("online\n");
     } else {
       if (U->status.online < 0) {
         logprintf ("offline. Was online ");
-        print_date_full (U->status.when);
+        //print_date_full (U->status.when);
       } else {
         logprintf ("offline permanent");
       }
       logprintf ("\n");
     }
-    pop_color ();
-    print_end ();
+    //pop_color ();
+    //print_end ();
 
   }
   return 0;
@@ -2197,7 +2279,8 @@ struct query_methods add_contact_methods = {
   .on_answer = add_contact_on_answer,
 };
 
-void do_add_contact (const char *phone, int phone_len, const char *first_name, int first_name_len, const char *last_name, int last_name_len, int force) {
+void do_add_contact (struct telegram *instance, const char *phone, int phone_len, const char *first_name, int first_name_len, const char *last_name, int last_name_len, int force) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_contacts_import_contacts);
   out_int (CODE_vector);
@@ -2221,9 +2304,10 @@ struct query_methods msg_search_methods = {
   .on_answer = msg_search_on_answer
 };
 
-void do_msg_search (peer_id_t id, int from, int to, int limit, const char *s) {
+void do_msg_search (struct telegram *instance, peer_id_t id, int from, int to, int limit, const char *s) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   if (get_peer_type (id) == PEER_ENCR_CHAT) {
-    rprintf ("Can not search in secure chat\n");
+    logprintf ("Can not search in secure chat\n");
     return;
   }
   clear_packet ();
@@ -2256,18 +2340,18 @@ int contacts_search_on_answer (struct query *q UU) {
   }
   assert (fetch_int () == CODE_vector);
   n = fetch_int ();
-  print_start ();
-  push_color (COLOR_YELLOW);
+  //print_start ();
+  //push_color (COLOR_YELLOW);
   for (i = 0; i < n; i++) {
     struct user *U = fetch_alloc_user ();
     logprintf ("User ");
-    push_color  (COLOR_RED);
+    //push_color  (COLOR_RED);
     logprintf ("%s %s", U->first_name, U->last_name); 
-    pop_color ();
+    //pop_color ();
     logprintf (". Phone %s\n", U->phone);
   }
-  pop_color ();
-  print_end ();
+  //pop_color ();
+  //print_end ();
   return 0;
 }
 
@@ -2275,7 +2359,8 @@ struct query_methods contacts_search_methods = {
   .on_answer = contacts_search_on_answer
 };
 
-void do_contacts_search (int limit, const char *s) {
+void do_contacts_search (struct telegram *instance, int limit, const char *s) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_contacts_search);
   out_string (s);
@@ -2289,21 +2374,21 @@ int send_encr_accept_on_answer (struct query *q UU) {
   struct secret_chat *E = fetch_alloc_encrypted_chat ();
 
   if (E->state == sc_ok) {
-    print_start ();
-    push_color (COLOR_YELLOW);
+    //print_start ();
+    //push_color (COLOR_YELLOW);
     logprintf ("Encrypted connection with ");
-    print_encr_chat_name (E->id, (void *)E);
+    ////print_encr_chat_name (E->id, (void *)E);
     logprintf (" established\n");
-    pop_color ();
-    print_end ();
+    //pop_color ();
+    //print_end ();
   } else {
-    print_start ();
-    push_color (COLOR_YELLOW);
+    //print_start ();
+    //push_color (COLOR_YELLOW);
     logprintf ("Encrypted connection with ");
-    print_encr_chat_name (E->id, (void *)E);
+    ////print_encr_chat_name (E->id, (void *)E);
     logprintf (" failed\n");
-    pop_color ();
-    print_end ();
+    //pop_color ();
+    //print_end ();
   }
   return 0;
 }
@@ -2311,21 +2396,21 @@ int send_encr_accept_on_answer (struct query *q UU) {
 int send_encr_request_on_answer (struct query *q UU) {
   struct secret_chat *E = fetch_alloc_encrypted_chat ();
   if (E->state == sc_deleted) {
-    print_start ();
-    push_color (COLOR_YELLOW);
+    //print_start ();
+    //push_color (COLOR_YELLOW);
     logprintf ("Encrypted connection with ");
-    print_encr_chat_name (E->id, (void *)E);
+    //print_encr_chat_name (E->id, (void *)E);
     logprintf (" can not be established\n");
-    pop_color ();
-    print_end ();
+    //pop_color ();
+    //print_end ();
   } else {
-    print_start ();
-    push_color (COLOR_YELLOW);
+    //print_start ();
+    //push_color (COLOR_YELLOW);
     logprintf ("Establishing connection with ");
-    print_encr_chat_name (E->id, (void *)E);
+    //print_encr_chat_name (E->id, (void *)E);
     logprintf ("\n");
-    pop_color ();
-    print_end ();
+    //pop_color ();
+    //print_end ();
 
     assert (E->state == sc_waiting);
   }
@@ -2345,7 +2430,8 @@ unsigned char *encr_prime;
 int encr_param_version;
 BN_CTX *ctx;
 
-void do_send_accept_encr_chat (struct secret_chat *E, unsigned char *random) {
+void do_send_accept_encr_chat (struct telegram *instance, struct secret_chat *E, unsigned char *random) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   int i;
   int ok = 0;
   for (i = 0; i < 64; i++) {
@@ -2456,7 +2542,8 @@ void do_create_keys_end (struct secret_chat *U) {
   BN_clear_free (a);
 }
 
-void do_send_create_encr_chat (void *x, unsigned char *random) {
+void do_send_create_encr_chat (struct telegram *instance, void *x, unsigned char *random) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   int user_id = (long)x;
   int i;
   unsigned char random_here[256];
@@ -2514,7 +2601,8 @@ void do_send_create_encr_chat (void *x, unsigned char *random) {
   }
   out_int (get_peer_id (E->id));
   out_cstring (g_a, 256);
-  write_secret_chat_file ();
+  // TODO: properly...
+  write_secret_chat_file ("/home/dev-jessie/.telegram/+4915736384600/secret");
   
   BN_clear_free (g);
   BN_clear_free (p);
@@ -2522,6 +2610,12 @@ void do_send_create_encr_chat (void *x, unsigned char *random) {
 
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_encr_request_methods, E);
 }
+
+struct create_encr_chat_extra {
+   void (*callback) (struct telegram *instance, struct secret_chat *E, unsigned char *random);
+   void *data;
+   struct telegram *instance;
+};
 
 int get_dh_config_on_answer (struct query *q UU) {
   unsigned x = fetch_int ();
@@ -2545,9 +2639,13 @@ int get_dh_config_on_answer (struct query *q UU) {
   unsigned char *random = talloc (256);
   memcpy (random, fetch_str (256), 256);
   if (q->extra) {
-    void **x = q->extra;
-    ((void (*)(void *, void *))(*x))(x[1], random);
-    tfree (x, 2 * sizeof (void *));
+    //((void (*)(void *, void *))(*x))(x[1], random);
+
+    struct create_encr_chat_extra *extra = q->extra;
+    extra->callback(extra->instance, extra->data, random);
+    free(extra);
+    //tfree (x, 2 * sizeof (void *));
+
     tfree_secure (random, 256);
   } else {
     tfree_secure (random, 256);
@@ -2559,28 +2657,34 @@ struct query_methods get_dh_config_methods  = {
   .on_answer = get_dh_config_on_answer
 };
 
-void do_accept_encr_chat_request (struct secret_chat *E) {
+void do_accept_encr_chat_request (struct telegram *instance, struct secret_chat *E) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   assert (E->state == sc_request);
   
   clear_packet ();
   out_int (CODE_messages_get_dh_config);
   out_int (encr_param_version);
   out_int (256);
-  void **x = talloc (2 * sizeof (void *));
-  x[0] = do_send_accept_encr_chat;
-  x[1] = E;
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_dh_config_methods, x);
+
+  struct create_encr_chat_extra *extra = malloc(sizeof(struct create_encr_chat_extra));
+  extra->callback = do_send_accept_encr_chat;
+  extra->instance = instance;
+  extra->data = (void*)E;
+  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_dh_config_methods, extra);
 }
 
-void do_create_encr_chat_request (int user_id) {
+void do_create_encr_chat_request (struct telegram *instance, int user_id) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_messages_get_dh_config);
   out_int (encr_param_version);
   out_int (256);
-  void **x = talloc (2 * sizeof (void *));
-  x[0] = do_send_create_encr_chat;
-  x[1] = (void *)(long)(user_id);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_dh_config_methods, x);
+
+  struct create_encr_chat_extra *extra = malloc(sizeof(struct create_encr_chat_extra));
+  extra->callback = do_send_accept_encr_chat;
+  extra->instance = instance;
+  extra->data = (void *)(long)user_id;
+  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_dh_config_methods, extra);
 }
 /* }}} */
 
@@ -2596,13 +2700,15 @@ int get_state_on_answer (struct query *q UU) {
   bl_do_set_date (fetch_int ());
   bl_do_set_seq (fetch_int ());
   unread_messages = fetch_int ();
-  write_state_file ();
+  //write_state_file ();
   difference_got = 1;
   return 0;
 }
 
 int get_difference_active;
 int get_difference_on_answer (struct query *q UU) {
+  struct telegram *instance = q->extra;
+
   logprintf("get_difference_on_answer()\n");
   get_difference_active = 0;
   unsigned x = fetch_int ();
@@ -2618,18 +2724,18 @@ int get_difference_on_answer (struct query *q UU) {
     int ml_pos = 0;
     for (i = 0; i < n; i++) {
       if (ml_pos < 10000) {
-        ML[ml_pos ++] = fetch_alloc_message ();
+        ML[ml_pos ++] = fetch_alloc_message (instance);
       } else {
-        fetch_alloc_message ();
+        fetch_alloc_message (instance);
       }
     }
     assert (fetch_int () == CODE_vector);
     n = fetch_int ();
     for (i = 0; i < n; i++) {
       if (ml_pos < 10000) {
-        ML[ml_pos ++] = fetch_alloc_encrypted_message ();
+        ML[ml_pos ++] = fetch_alloc_encrypted_message (instance);
       } else {
-        fetch_alloc_encrypted_message ();
+        fetch_alloc_encrypted_message (instance);
       }
     }
     assert (fetch_int () == CODE_vector);
@@ -2655,13 +2761,13 @@ int get_difference_on_answer (struct query *q UU) {
     bl_do_set_date (fetch_int ());
     bl_do_set_seq (fetch_int ());
     unread_messages = fetch_int ();
-    write_state_file ();
+    //write_state_file ();
     for (i = 0; i < ml_pos; i++) {
 	  event_update_new_message(ML[i]);
-      //print_message (ML[i]);
+      ////print_message (ML[i]);
     }
     if (x == CODE_updates_difference_slice) {
-      do_get_difference ();
+      do_get_difference (instance);
     } else {
       difference_got = 1;
     }
@@ -2679,7 +2785,8 @@ struct query_methods get_difference_methods = {
   .on_answer = get_difference_on_answer
 };
 
-void do_get_difference (void) {
+void do_get_difference (struct telegram *instance) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   logprintf("do_get_difference()\n");
   get_difference_active = 1;
   difference_got = 0;
@@ -2693,7 +2800,7 @@ void do_get_difference (void) {
     out_int (pts);
     out_int (last_date);
     out_int (qts);
-    send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_difference_methods, 0);
+    send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_difference_methods, instance);
   } else {
     out_int (CODE_updates_get_state);
     send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_state_methods, 0);
@@ -2702,34 +2809,34 @@ void do_get_difference (void) {
 /* }}} */
 
 /* {{{ Visualize key */
-char *colors[4] = {COLOR_GREY, COLOR_CYAN, COLOR_BLUE, COLOR_GREEN};
+//char *colors[4] = {COLOR_GREY, COLOR_CYAN, COLOR_BLUE, COLOR_GREEN};
 
 void do_visualize_key (peer_id_t id) {
   assert (get_peer_type (id) == PEER_ENCR_CHAT);
   peer_t *P = user_chat_get (id);
   assert (P);
   if (P->encr_chat.state != sc_ok) {
-    rprintf ("Chat is not initialized yet\n");
+    logprintf ("Chat is not initialized yet\n");
     return;
   }
   unsigned char buf[20];
   SHA1 ((void *)P->encr_chat.key, 256, buf);
-  print_start ();
+  //print_start ();
   int i;
   for (i = 0; i < 16; i++) {
     int x = buf[i];
     int j;
     for (j = 0; j < 4; j ++) {    
-      push_color (colors[x & 3]);
-      push_color (COLOR_INVERSE);
-      logprintf ("  ");
-      pop_color ();
-      pop_color ();
+      ////push_color (colors[x & 3]);
+      ////push_color (COLOR_INVERSE);
+      //logprintf ("  ");
+      ////pop_color ();
+      ////pop_color ();
       x = x >> 2;
     }
     if (i & 1) { logprintf ("\n"); }
   }
-  print_end ();
+  //print_end ();
 }
 /* }}} */
 
@@ -2750,16 +2857,16 @@ int get_suggested_on_answer (struct query *q UU) {
   assert (fetch_int () == CODE_vector);
   int m = fetch_int ();
   assert (n == m);
-  print_start ();
-  push_color (COLOR_YELLOW);
+  //print_start ();
+  //push_color (COLOR_YELLOW);
   for (i = 0; i < m; i++) {
     peer_t *U = (void *)fetch_alloc_user ();
     assert (get_peer_id (U->id) == l[2 * i]);
-    print_user_name (U->id, U);
+    //print_user_name (U->id, U);
     logprintf (" phone %s: %d mutual friends\n", U->user.phone, l[2 * i + 1]);
   }
-  pop_color ();
-  print_end ();
+  //pop_color ();
+  //print_end ();
   return 0;
 }
 
@@ -2767,7 +2874,8 @@ struct query_methods get_suggested_methods = {
   .on_answer = get_suggested_on_answer
 };
 
-void do_get_suggested (void) {
+void do_get_suggested (struct telegram *instance) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_contacts_get_suggested);
   out_int (100);
@@ -2781,7 +2889,8 @@ struct query_methods add_user_to_chat_methods = {
   .on_answer = fwd_msg_on_answer
 };
 
-void do_add_user_to_chat (peer_id_t chat_id, peer_id_t id, int limit) {
+void do_add_user_to_chat (struct telegram *instance, peer_id_t chat_id, peer_id_t id, int limit) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_messages_add_chat_user);
   out_int (get_peer_id (chat_id));
@@ -2800,7 +2909,8 @@ void do_add_user_to_chat (peer_id_t chat_id, peer_id_t id, int limit) {
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &add_user_to_chat_methods, 0);
 }
 
-void do_del_user_from_chat (peer_id_t chat_id, peer_id_t id) {
+void do_del_user_from_chat (struct telegram *instance, peer_id_t chat_id, peer_id_t id) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_messages_delete_chat_user);
   out_int (get_peer_id (chat_id));
@@ -2822,15 +2932,15 @@ void do_del_user_from_chat (peer_id_t chat_id, peer_id_t id) {
 /* {{{ Create secret chat */
 char *create_print_name (peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4);
 
-void do_create_secret_chat (peer_id_t id) {
+void do_create_secret_chat (struct telegram *instance, peer_id_t id) {
   assert (get_peer_type (id) == PEER_USER);
   peer_t *U = user_chat_get (id);
   if (!U) { 
-    rprintf ("Can not create chat with unknown user\n");
+    logprintf ("Can not create chat with unknown user\n");
     return;
   }
 
-  do_create_encr_chat_request (get_peer_id (id)); 
+  do_create_encr_chat_request (instance, get_peer_id (id)); 
 }
 /* }}} */
 
@@ -2839,11 +2949,11 @@ struct query_methods create_group_chat_methods = {
   .on_answer = fwd_msg_on_answer
 };
 
-void do_create_group_chat (peer_id_t id, char *chat_topic) {
+void do_create_group_chat (struct telegram *instance, peer_id_t id, char *chat_topic) {
   assert (get_peer_type (id) == PEER_USER);
   peer_t *U = user_chat_get (id);
   if (!U) { 
-    rprintf ("Can not create chat with unknown user\n");
+    logprintf ("Can not create chat with unknown user\n");
     return;
   }
   clear_packet ();
@@ -2859,7 +2969,7 @@ void do_create_group_chat (peer_id_t id, char *chat_topic) {
     out_int (get_peer_id (id));
   }
   out_string (chat_topic);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &create_group_chat_methods, 0);
+  send_query (telegram_get_working_dc(instance), packet_ptr - packet_buffer, packet_buffer, &create_group_chat_methods, 0);
 }
 /* }}} */
 
@@ -2878,7 +2988,8 @@ struct query_methods delete_msg_methods = {
   .on_answer = delete_msg_on_answer
 };
 
-void do_delete_msg (long long id) {
+void do_delete_msg (struct telegram *instance, long long id) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_messages_delete_messages);
   out_int (CODE_vector);
@@ -2902,7 +3013,8 @@ struct query_methods restore_msg_methods = {
   .on_answer = restore_msg_on_answer
 };
 
-void do_restore_msg (long long id) {
+void do_restore_msg (struct telegram *instance, long long id) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_messages_restore_messages);
   out_int (CODE_vector);
@@ -2920,7 +3032,8 @@ struct query_methods update_status_methods = {
   .on_answer = update_status_on_answer
 };
 
-void do_update_status (int online UU) {
+void do_update_status (struct telegram *instance, int online UU) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_account_update_status);
   out_int (online ? CODE_bool_false : CODE_bool_true);

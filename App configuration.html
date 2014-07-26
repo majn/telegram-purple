@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>App configuration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-itunes-app" content="app-id=686449807">
+    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
+
+    <link rel="shortcut icon" href="/favicon.ico?3" type="image/x-icon" />
+    
+    <link href="/css/telegram.css?22" rel="stylesheet" media="screen">
+    <style>
+    </style>
+  </head>
+  <body>
+    <div id="fb-root"></div>
+    <div class="tl_page_wrap">
+      <div class="tl_page_head navbar navbar-static-top navbar-inverse">
+        <div class="navbar-inner">
+          <div class="container">
+            <ul class="nav pull-right"><li class="hidden-phone"><a href="/dl/android" target="_blank" data-track="AppDownload/Android">Android</a></li><li class="hidden-phone"><a href="/dl/ios" target="_blank" data-track="AppDownload/iOS">iPhone</a></li><li><a href="https://twitter.com/telegram" target="_blank" data-track="Follow/Twitter"><i class="icon icon-twitter"></i> Twitter</a></li></ul>
+<ul class="nav">
+  <li><a href="//telegram.org/">Home</a></li>
+  <li><a href="//telegram.org/faq">FAQ</a></li>
+  <li><a href="//telegram.org/apps">Apps</a></li>
+  <li class="hidden-phone"><a href="//core.telegram.org/api">API</a></li>
+  <li class="hidden-phone"><a href="//core.telegram.org/mtproto">Protocol</a></li>
+</ul>
+          </div>
+        </div>
+      </div>
+      <div class="container tl_page_container">
+        <div class="tl_page">
+          <div class="app_edit_page">
+  <form class="form-horizontal" id="app_edit_form">
+    <h2>App configuration</h2>
+    <div class="control-group">
+      <label class="control-label" for="app_id">App api_id:</label>
+      <div class="controls">
+        <span class="input-xlarge uneditable-input" onclick="this.select();"><strong>16154</strong></span>
+        <div class="app_lock_tt"><i class="icon icon-lock"></i></div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label" for="app_hash">App api_hash:</label>
+      <div class="controls">
+        <span class="input-xlarge uneditable-input" onclick="this.select();">99428c722d0ed59b9cd844e4577cb4bb</span>
+        <div class="app_lock_tt"><i class="icon icon-lock"></i></div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label" for="app_title">App title:</label>
+      <div class="controls">
+        <input id="app_title" name="app_title" type="text" class="input-xlarge" value="Telegram Libpurple" />
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label" for="app_shortname">Short name:</label>
+      <div class="controls">
+        <input id="app_shortname" name="app_shortname" type="text" class="input-xlarge" value="telerampurple" />
+        <p class="help-block"><span class="muted">alphanumeric, 5-32 characters</span></p>
+      </div>
+    </div>
+
+    <div style="display: none;">
+      <h3>PUSH-notifications settings</h3>
+
+      <div class="control-group">
+        <label class="control-label" for="app_gcm_api_key">GCM API key:</label>
+        <div class="controls">
+          <input id="app_gcm_api_key" name="app_gcm_api_key" type="text" class="input-xlarge" value="" />
+          <p class="help-block"><a href="http://developer.android.com/google/gcm/gs.html#access-key" target="_blank">How do I get this?</a></p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: none;">
+      <h3>
+        APNS certificates
+        <small>
+          &nbsp;<a href="/apps/apns_cert">Update</a>
+          &nbsp;<a href="/apps/apns_cert_delete" onclick="return confirm('Are you sure to delete certificates?');" style="display: none;">Delete</a>
+        </small>
+      </h3>
+
+      <div class="control-group" style="display: none;">
+        <label class="control-label" for="app_apns_production_pem">APNS production certificate:</label>
+        <div class="controls">
+          <span class="input-xlarge uneditable-input"></span>
+        </div>
+      </div>
+
+      <div class="control-group" style="display: none;">
+        <label class="control-label" for="app_apns_dev_pem">APNS development certificate:</label>
+        <div class="controls">
+          <span class="input-xlarge uneditable-input"></span>
+        </div>
+      </div>
+    </div>
+
+    <h3>Available MTProto servers</h3>
+
+    <div class="control-group">
+      <label class="control-label">Test configuration:</label>
+      <div class="controls">
+        <span class="input-xlarge uneditable-input"><strong>173.240.5.253:443</strong></span>
+        <p class="help-block">First DC</p>
+      </div>
+    </div>
+    <div class="control-group">
+      <label class="control-label">Production configuration</label>
+      <div class="controls">
+        <span class="input-xlarge uneditable-input"><strong>173.240.5.1:443</strong></span>
+        <p class="help-block">First DC</p>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label">Public keys:</label>
+      <div class="controls">
+        <pre><code>-----BEGIN RSA PUBLIC KEY-----
+MIIBCgKCAQEAwVACPi9w23mF3tBkdZz+zwrzKOaaQdr01vAbU4E1pvkfj4sqDsm6
+lyDONS789sVoD/xCS9Y0hkkC3gtL1tSfTlgCMOOul9lcixlEKzwKENj1Yz/s7daS
+an9tqw3bfUV/nqgbhGX81v/+7RFAEd+RwFnK7a+XYl9sluzHRyVVaTTveB2GazTw
+Efzk2DWgkBluml8OREmvfraX3bkHZJTKX4EQSjBbbdJ2ZXIsRrYOXfaA+xayEGB+
+8hdlLmAjbCVfaigxX0CDqWeR1yFL9kwd9P0NsZRPsmoqVwMbMu7mStFai6aIhc3n
+Slv8kg9qv1m6XHVQY3PnEw+QQtqSIXklHwIDAQAB
+-----END RSA PUBLIC KEY-----</code></pre>
+      </div>
+    </div>
+
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-primary" data-loading-text="Saving..." id="app_save_btn" onclick="saveApp(); return false;">Save changes</button>
+      <a href="/" class="btn">Cancel</a>
+    </div>
+  </form>
+</div>
+          
+        </div>
+      </div>
+    </div>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/main.js?4"></script>
+    
+    <script>$('#app_save_btn').button();
+$('.app_lock_tt').tooltip({html: true, title: '<div class="app_lock_text">It is forbidden to pass this value to third parties.</div>'});
+
+function saveApp() {
+  $('#app_save_btn').button('loading');
+
+  $.ajax({
+    type: 'POST',
+    url: '/apps/save',
+    data: $('#app_edit_form').serialize(),
+    success: function (error) {
+      $('#app_save_btn').button('reset');
+      if (error) {
+        alert(error);
+      }
+    },
+    error: function (error) {
+      $('#app_save_btn').button('reset');
+      if (error) {
+        alert(error);
+      }
+    }
+  });
+}
+</script>
+  </body>
+</html>

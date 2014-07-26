@@ -21,6 +21,7 @@
 #include "version.h"
 #include "account.h"
 #include "connection.h"
+#include "telegram.h"
 
 #define PLUGIN_ID "prpl-telegram"
 
@@ -35,7 +36,7 @@
 #define TELEGRAM_AUTH_MODE_SMS "sms"
 
 typedef struct {
-	PurpleAccount *account;
+    struct telegram *tg;
+	PurpleAccount *pa;
 	PurpleConnection *gc;
-	PurpleSslConnection *gsc;
 } telegram_conn;

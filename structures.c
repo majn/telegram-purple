@@ -231,7 +231,8 @@ int fetch_user (struct user *U) {
     assert (!our_id || (our_id == get_peer_id (U->id)));
     if (!our_id) {
       bl_do_set_our_id (get_peer_id (U->id));
-      write_auth_file ();
+      // TODO: What to do here?
+      //write_auth_file ();
     }
   }
   
@@ -323,7 +324,9 @@ void fetch_encrypted_chat (struct secret_chat *U) {
       return;
     }
     bl_do_encr_chat_delete (U);
-    write_secret_chat_file ();
+
+    // TODO: properly
+    write_secret_chat_file ("/home/dev-jessie/.telegram/+4915736384600/secret");
     return;
   }
 
@@ -372,7 +375,7 @@ void fetch_encrypted_chat (struct secret_chat *U) {
     }
 
     bl_do_encr_chat_requested (U, access_hash, date, admin_id, user_id, (void *)g_key, (void *)nonce);
-    write_secret_chat_file ();
+    write_secret_chat_file ("/home/dev-jessie/.telegram/+4915736384600/secret");
   } else {
     bl_do_set_encr_chat_access_hash (U, fetch_long ());
     bl_do_set_encr_chat_date (U, fetch_int ());
@@ -386,7 +389,7 @@ void fetch_encrypted_chat (struct secret_chat *U) {
     }
     if (x == CODE_encrypted_chat_waiting) {
       bl_do_set_encr_chat_state (U, sc_waiting);
-      write_secret_chat_file ();
+      write_secret_chat_file ("/home/dev-jessie/.telegram/+4915736384600/secret");
       return; // We needed only access hash from here
     }
     
@@ -418,7 +421,7 @@ void fetch_encrypted_chat (struct secret_chat *U) {
     }
     bl_do_encr_chat_accepted (U, (void *)g_key, (void *)nonce, fetch_long ());
   }
-  write_secret_chat_file ();
+  write_secret_chat_file ("/home/dev-jessie/.telegram/+4915736384600/secret");
 }
 
 void fetch_notify_settings (void);
@@ -1808,11 +1811,12 @@ void message_del_peer (struct message *M) {
   }
 }
 
-struct message *fetch_alloc_message (void) {
+struct message *fetch_alloc_message (struct telegram *instance) {
   logprintf("fetch_alloc_message()\n");
   int data[2];
   prefetch_data (data, 8);
   struct message *M = message_get (data[1]);
+  M->instance = instance;
 
   if (!M) {
     M = talloc0 (sizeof (*M));
@@ -1824,9 +1828,10 @@ struct message *fetch_alloc_message (void) {
   return M;
 }
 
-struct message *fetch_alloc_geo_message (void) {
+struct message *fetch_alloc_geo_message (struct telegram *instance) {
   logprintf("fetch_alloc_geo_message()\n");
   struct message *M = talloc (sizeof (*M));
+  M->instance = instance;
   fetch_geo_message (M);
   struct message *M1 = tree_lookup_message (message_tree, M);
   messages_allocated ++;
@@ -1848,11 +1853,12 @@ struct message *fetch_alloc_geo_message (void) {
   }
 }
 
-struct message *fetch_alloc_encrypted_message (void) {
+struct message *fetch_alloc_encrypted_message (struct telegram *instance) {
   logprintf("fetch_alloc_encrypted_message()\n");
   int data[3];
   prefetch_data (data, 12);
   struct message *M = message_get (*(long long *)(data + 1));
+  M->instance = instance;
 
   if (!M) {
     M = talloc0 (sizeof (*M));
@@ -1866,10 +1872,11 @@ struct message *fetch_alloc_encrypted_message (void) {
   return M;
 }
 
-struct message *fetch_alloc_message_short (void) {
+struct message *fetch_alloc_message_short (struct telegram *instance) {
   int data[1];
   prefetch_data (data, 4);
   struct message *M = message_get (data[0]);
+  M->instance = instance;
 
   if (!M) {
     M = talloc0 (sizeof (*M));
@@ -1881,10 +1888,11 @@ struct message *fetch_alloc_message_short (void) {
   return M;
 }
 
-struct message *fetch_alloc_message_short_chat (void) {
+struct message *fetch_alloc_message_short_chat (struct telegram *instance) {
   int data[1];
   prefetch_data (data, 4);
   struct message *M = message_get (data[0]);
+  M->instance = instance;
 
   if (!M) {
     M = talloc0 (sizeof (*M));
@@ -1998,9 +2006,10 @@ void message_remove_unsent (struct message *M) {
 
 void __send_msg (struct message *M) {
   logprintf ("Resending message...\n");
-  print_message (M);
-
-  do_send_msg (M);
+  //print_message (M);
+  
+  assert(M->instance);
+  do_send_msg (M->instance, M);
 }
 
 void send_all_unsent (void ) {

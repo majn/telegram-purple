@@ -39,7 +39,6 @@
 #include <openssl/sha.h>
 
 #include "mtproto-common.h"
-#include "interface.h"
 #include "include.h"
 
 #ifdef __MACH__

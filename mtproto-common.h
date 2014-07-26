@@ -26,9 +26,10 @@
 #include <openssl/aes.h>
 #include <stdio.h>
 
-#include "interface.h"
 #include "tools.h"
 #include "constants.h"
+#include "msglog.h"
+
 /* DH key exchange protocol data structures */
 #define	CODE_req_pq			0x60469778
 #define CODE_resPQ			0x05162463
