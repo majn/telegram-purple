@@ -196,14 +196,10 @@ void query_error (long long id) {
   int error_code = fetch_int ();
   int error_len = prefetch_strlen ();
   char *error = fetch_str (error_len);
-  if (verbosity) {
-    logprintf ( "error for query #%lld: #%d :%.*s\n", id, error_code, error_len, error);
-  }
+  logprintf ( "error for query #%lld: #%d :%.*s\n", id, error_code, error_len, error);
   struct query *q = query_get (id);
   if (!q) {
-    if (verbosity) {
-      logprintf ( "No such query\n");
-    }
+    logprintf ( "No such query\n");
   } else {
     if (!(q->flags & QUERY_ACK_RECEIVED)) {
       remove_event_timer (&q->ev);
@@ -281,16 +277,12 @@ DEFINE_TREE (timer, struct event_timer *, event_timer_cmp, 0)
 struct tree_timer *timer_tree;
 
 void insert_event_timer (struct event_timer *ev) {
-  if (verbosity > 2) {
-    logprintf ( "INSERT: %lf %p %p\n", ev->timeout, ev->self, ev->alarm);
-  }
+  logprintf ( "INSERT: %lf %p %p\n", ev->timeout, ev->self, ev->alarm);
   timer_tree = tree_insert_timer (timer_tree, ev, lrand48 ());
 }
 
 void remove_event_timer (struct event_timer *ev) {
-  if (verbosity > 2) {
-    logprintf ( "REMOVE: %lf %p %p\n", ev->timeout, ev->self, ev->alarm);
-  }
+  logprintf ( "REMOVE: %lf %p %p\n", ev->timeout, ev->self, ev->alarm);
   timer_tree = tree_delete_timer (timer_tree, ev);
 }
 
@@ -641,14 +633,14 @@ struct query_methods nearest_dc_methods = {
   .on_error = fail_on_error
 };
 
-int do_get_nearest_dc (struct telegram *instance) {
+void do_get_nearest_dc (struct telegram *instance) {
   struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_help_get_nearest_dc);
   nearest_dc_num = -1;
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &nearest_dc_methods, 0);
-  net_loop (0, nr_f);
-  return nearest_dc_num;
+  //net_loop (0, nr_f);
+  //return nearest_dc_num;
 }
 /* }}} */
 
@@ -702,7 +694,7 @@ struct query_methods sign_in_methods  = {
   .on_error = sign_in_on_error
 };
 
-int do_send_code_result (struct telegram *instance, const char *code, const char *sms_hash) {
+void do_send_code_result (struct telegram *instance, const char *code, const char *sms_hash) {
   struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_auth_sign_in);
@@ -710,12 +702,14 @@ int do_send_code_result (struct telegram *instance, const char *code, const char
   out_string(sms_hash);
   out_string (code);
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &sign_in_methods, instance);
+  /*
   sign_in_ok = 0;
-  net_loop (0, sign_in_is_ok);
+  //net_loop (0, sign_in_is_ok);
   return sign_in_ok;
+  */
 }
 
-int do_send_code_result_auth (struct telegram *instance, const char *code, const char *sms_hash, const char *first_name, const char *last_name) {
+void do_send_code_result_auth (struct telegram *instance, const char *code, const char *sms_hash, const char *first_name, const char *last_name) {
   struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet ();
   out_int (CODE_auth_sign_up);
@@ -725,9 +719,11 @@ int do_send_code_result_auth (struct telegram *instance, const char *code, const
   out_string (first_name);
   out_string (last_name);
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &sign_in_methods, instance);
+  /*
   sign_in_ok = 0;
   net_loop (0, sign_in_is_ok);
   return sign_in_ok;
+  */
 }
 /* }}} */
 
@@ -1987,9 +1983,9 @@ void load_next_part (struct telegram *instance, struct download *D) {
     static char buf[PATH_MAX];
     int l;
     if (!D->id) {
-      l = tsnprintf (buf, sizeof (buf), "%s/download_%lld_%d", get_downloads_directory (), D->volume, D->local_id);
+      l = tsnprintf (buf, sizeof (buf), "%s/download_%lld_%d", instance->download_path, D->volume, D->local_id);
     } else {
-      l = tsnprintf (buf, sizeof (buf), "%s/download_%lld", get_downloads_directory (), D->id);
+      l = tsnprintf (buf, sizeof (buf), "%s/download_%lld", instance->download_path, D->id);
     }
     if (l >= (int) sizeof (buf)) {
       logprintf ("Download filename is too long");
@@ -2195,7 +2191,6 @@ void do_export_auth (struct telegram *instance, int num) {
   out_int (CODE_auth_export_authorization);
   out_int (num);
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &export_auth_methods, 0);
-  net_loop (0, is_export_auth_str);
 }
 /* }}} */
 
@@ -2220,7 +2215,6 @@ void do_import_auth (struct telegram *instance, int num) {
   out_int (our_id);
   out_cstring (export_auth_str, export_auth_str_len);
   send_query (instance->auth.DC_list[num], packet_ptr - packet_buffer, packet_buffer, &import_auth_methods, 0);
-  net_loop (0, isn_export_auth_str);
 }
 /* }}} */
 

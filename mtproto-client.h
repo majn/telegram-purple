@@ -23,7 +23,7 @@
 #include <openssl/bn.h>
 void on_start (void);
 long long encrypt_send_message (struct connection *c, int *msg, int msg_ints, int useful);
-void dc_authorize (struct dc *DC);
+//void dc_authorize (struct dc *DC);
 void work_update (struct connection *c, long long msg_id);
 void work_update_binlog (void);
 int check_g (unsigned char p[256], BIGNUM *g);
@@ -32,7 +32,7 @@ int check_DH_params (BIGNUM *p, int g);
 void secure_random (void *s, int l);
 
 
-int send_req_pq_packet (struct telegram *instance);
+int send_req_pq_packet (struct connection *c);
 
 int rpc_execute_req_pq (struct telegram *instance, int len);
 int rpc_execute_rq_dh (struct telegram *instance, int len);

@@ -148,6 +148,7 @@ int is_got_it (void) {
   return got_it_ok;
 }
 
+/*
 int net_getline (char **s, size_t *l) {
   fflush (stdout);
 //  rl_already_prompted = 1;
@@ -155,16 +156,19 @@ int net_getline (char **s, size_t *l) {
   _s = s;
   _l = l;
 //  rl_callback_handler_install (0, got_it);
-  net_loop (2, is_got_it);
+  //net_loop (2, is_got_it);
   return 0;
 }
+*/
 
 int ret1 (void) { return 0; }
 
+/*
 int main_loop (void) {
   net_loop (1, ret1);
   return 0;
 }
+*/
 
 
 //struct dc *DC_list[MAX_DC_ID + 1];
@@ -177,6 +181,7 @@ int zero[512];
 
 
 void write_dc (int auth_file_fd, struct dc *DC) {
+  logprintf("writing to auth_file: auth_file_fd: %d, port: %d, ip: %s\n", auth_file_fd, DC->port, DC->ip);
   assert (write (auth_file_fd, &DC->port, 4) == 4);
   int l = strlen (DC->ip);
   assert (write (auth_file_fd, &l, 4) == 4);
@@ -194,28 +199,28 @@ void write_dc (int auth_file_fd, struct dc *DC) {
 
 int our_id;
 
-void write_auth_file (struct authorization_state state, const char *filename) {
-  if (binlog_enabled) { return; }
-  int auth_file_fd = open (filename /*get_auth_key_filename ()*/, O_CREAT | O_RDWR, 0600);
+void write_auth_file (struct authorization_state *state, const char *filename) {
+  logprintf("Writing to auth_file: %s\n", filename);
+  int auth_file_fd = open (filename, O_CREAT | O_RDWR, 0600);
   assert (auth_file_fd >= 0);
   int x = DC_SERIALIZED_MAGIC_V2;
   assert (write (auth_file_fd, &x, 4) == 4);
   x = MAX_DC_ID;
   assert (write (auth_file_fd, &x, 4) == 4);
-  assert (write (auth_file_fd, &state.dc_working_num, 4) == 4);
-  assert (write (auth_file_fd, &state.auth_state, 4) == 4);
+  assert (write (auth_file_fd, &state->dc_working_num, 4) == 4);
+  assert (write (auth_file_fd, &state->auth_state, 4) == 4);
   int i;
   for (i = 0; i <= MAX_DC_ID; i++) {
-    if (state.DC_list[i]) {
+    if (state->DC_list[i]) {
       x = 1;
       assert (write (auth_file_fd, &x, 4) == 4);
-      write_dc (auth_file_fd, state.DC_list[i]);
+      write_dc (auth_file_fd, state->DC_list[i]);
     } else {
       x = 0;
       assert (write (auth_file_fd, &x, 4) == 4);
     }
   }
-  assert (write (auth_file_fd, &state.our_id, 4) == 4);
+  assert (write (auth_file_fd, &state->our_id, 4) == 4);
   close (auth_file_fd);
 }
 
@@ -232,9 +237,6 @@ void read_dc (int auth_file_fd, int id, unsigned ver, struct dc *DC_list[]) {
   assert (read (auth_file_fd, &DC->auth_key_id, 8) == 8);
   assert (read (auth_file_fd, &DC->auth_key, 256) == 256);
   assert (read (auth_file_fd, &DC->server_salt, 8) == 8);
-  logprintf("auth_key_id: %lli \n", DC->auth_key_id);
-  logprintf("auth_key_id: ?");
-  logprintf("server_salt: %lli \n", DC->server_salt);
   if (DC->auth_key_id) {
     DC->flags |= 1;
   }
@@ -247,23 +249,33 @@ void read_dc (int auth_file_fd, int id, unsigned ver, struct dc *DC_list[]) {
 
 
 void empty_auth_file (struct authorization_state *state, const char *filename) {
+  logprintf("empty_auth_file()\n");
   alloc_dc (state->DC_list, 1, tstrdup (test_dc ? TG_SERVER_TEST : TG_SERVER), 443);
   state->dc_working_num = 1;
   state->auth_state = 0;
-  write_auth_file (*state, filename);
+  write_auth_file (state, filename);
 }
 
+/**
+ * Read the auth-file and return the read authorization state
+ *
+ * When the given file doesn't exist, create a new empty 
+ * file containing the default authorization state at this
+ * path
+ */
 struct authorization_state read_auth_file (const char *filename) {
-  struct authorization_state state;
-  state.dc_working_num = 0;
-  state.auth_state = 0;
-  state.our_id = 0;
+  logprintf("read_auth_file()\n");
 
-  if (binlog_enabled) { return state; }
-  int auth_file_fd = open (filename /*get_auth_key_filename ()*/, O_CREAT | O_RDWR, 0600);
+  struct authorization_state state;
+  memset(state.DC_list, 0, 11 * sizeof(void *));
+
+  int auth_file_fd = open (filename, O_RDWR, 0600);
+  logprintf("fd: %d\n", auth_file_fd);
   if (auth_file_fd < 0) {
+    logprintf("auth_file does not exist, creating empty...\n");
     empty_auth_file (&state, filename);
   }
+  auth_file_fd = open (filename, O_RDWR, 0600);
   assert (auth_file_fd >= 0);
 
   // amount of data centers
@@ -271,6 +283,7 @@ struct authorization_state read_auth_file (const char *filename) {
   // magic number of file
   unsigned m;
   if (read (auth_file_fd, &m, 4) < 4 || (m != DC_SERIALIZED_MAGIC && m != DC_SERIALIZED_MAGIC_V2)) {
+    logprintf("Invalid File content, wrong Magic numebr\n");
     close (auth_file_fd);
     empty_auth_file (&state, filename);
     return state;
@@ -288,6 +301,10 @@ struct authorization_state read_auth_file (const char *filename) {
     assert (read (auth_file_fd, &y, 4) == 4);
     if (y) {
       read_dc (auth_file_fd, i, m, state.DC_list);
+      logprintf("loaded dc[%d] - port: %d, ip: %s, auth_key_id: %lli, server_salt: %lli, has_auth: %d\n", 
+          i, state.DC_list[i]->port, state.DC_list[i]->ip, state.DC_list[i]->auth_key_id, state.DC_list[i]->server_salt, state.DC_list[i]->has_auth);
+    } else {
+      logprintf("loaded dc[%d] - NULL\n", i);
     }
   }
   int l = read (auth_file_fd, &state.our_id, 4);
@@ -299,20 +316,17 @@ struct authorization_state read_auth_file (const char *filename) {
   if (m == DC_SERIALIZED_MAGIC) {
     DC_working->has_auth = 1;
   }
+  logprintf("loaded authorization state - our_id: %d, auth_state: %d, dc_working_num: %d \n", state.our_id, state.auth_state, state.dc_working_num);
   return state;
 }
 
 int pts, qts, seq, last_date;
 
 struct protocol_state read_state_file (const char *filename) {
-  struct protocol_state state;
-  state.last_date = 0;
-  state.qts = 0;
-  state.pts = 0;
-  state.seq = 0;
+  logprintf("read_state_file()\n");
+  struct protocol_state state = {0, 0, 0, 0};
 
-  if (binlog_enabled) { return state; }
-  int state_file_fd = open (filename/*get_state_filename ()*/, O_CREAT | O_RDWR, 0600);
+  int state_file_fd = open (filename, O_CREAT | O_RDWR, 0600);
   if (state_file_fd < 0) {
     return state;
   }
@@ -331,11 +345,12 @@ struct protocol_state read_state_file (const char *filename) {
   state.seq = x[2];
   state.last_date = x[3];
   close (state_file_fd);
+  logprintf("loaded session state - pts: %d, qts: %d, seq: %d, last_date: %d.\n", state.pts, 
+    state.qts, state.seq, state.last_date);
   return state;
 }
 
-void write_state_file (struct protocol_state state, const char* filename) {
-  if (binlog_enabled) { return; }
+void write_state_file (struct protocol_state *state, const char* filename) {
   /*
   static int wseq;
   static int wpts;
@@ -350,10 +365,10 @@ void write_state_file (struct protocol_state state, const char* filename) {
   int x[6];
   x[0] = STATE_FILE_MAGIC;
   x[1] = 0;
-  x[2] = state.pts;
-  x[3] = state.qts;
-  x[4] = state.seq;
-  x[5] = state.last_date;
+  x[2] = state->pts;
+  x[3] = state->qts;
+  x[4] = state->seq;
+  x[5] = state->last_date;
   assert (write (state_file_fd, x, 24) == 24);
   close (state_file_fd);
   //wseq = seq; wpts = pts; wqts = qts; wdate = last_date;
@@ -569,29 +584,7 @@ int network_verify_phone_registration(const char* code, const char *sms_hash,
 {
     logprintf("Registering with code:%s, hash:%s, first:%s, last:%s\n", code, sms_hash, 
 		first, last);
-    if (do_send_code_result_auth (code, sms_hash, first, last) >= 0) {
-      logprintf ("Authentication successfull, state = 300\n");
-      auth_state = 300;
-	  return 1;
-    }
 	return 0;
-}
-*/
-
-/**
- * Verify the current client by providing the given code 
- */
- /*
-int network_verify_registration(const char *code, const char *sms_hash) 
-{
-  logprintf("Verifying with hash:%s, code:%s\n", code, sms_hash);
-  int state;
-  if ((state = do_send_code_result (code, sms_hash)) >= 0) {
-    logprintf ("Authentication successfull, state = 300\n");
-    auth_state = 300;
-	return 1;
-  }
-  return 0;
 }
 */
 

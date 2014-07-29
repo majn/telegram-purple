@@ -130,6 +130,7 @@ struct connection {
   void *extra;
   struct event_timer ev;
   double last_receive_time;
+  struct telegram *instance;
 };
 
 extern struct connection *Connections[];
@@ -140,7 +141,7 @@ int read_in (struct connection *c, void *data, int len);
 
 void create_all_outbound_connections (void);
 
-struct connection *create_connection (const char *host, int port, int fd);
+struct connection *create_connection (const char *host, int port, int fd, struct telegram *instance);
 int connections_make_poll_array (struct pollfd *fds, int max);
 void connections_poll_result (struct pollfd *fds, int max);
 void insert_msg_id (struct session *S, long long id);
@@ -151,8 +152,8 @@ void dc_create_session (struct dc *DC, struct connection *c);
 void try_read (struct telegram *instance);
 void try_rpc_read (struct telegram *instance);
 
-void try_write (struct telegram *instance);
+int try_write (struct telegram *instance);
 
-#define GET_DC(c) (c->session->dc)
+#define GET_DC(c) (telegram_get_working_dc(c->instance))
 #endif
 

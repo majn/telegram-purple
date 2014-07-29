@@ -70,8 +70,14 @@
 struct telegram {
     void *protocol_data; 
     int curr_dc;
+
     char *login;
-    const char *config_path;
+    char *config_path;
+    char *download_path;
+    char *auth_path;
+    char *state_path;
+    char *secret_path;
+
     int session_state;
     
     /*
@@ -81,6 +87,10 @@ struct telegram {
     struct authorization_state auth;
 
     GList *change_state_listeners;
+
+    /*
+     * Callbacks
+     */
     void (*on_output)(struct telegram *instance);
 
     void *extra;
@@ -89,12 +99,15 @@ struct telegram {
 /**
  * Constructor
  */
-struct telegram *telegram_new(struct dc *DC, const char* login, const char* config_path);
+struct telegram *telegram_new(struct dc *DC, const char* login, 
+            const char* config_path);
 
 /**
  * Resume the session to 
  */
 void telegram_restore_session(struct telegram *instance);
+
+char *telegram_get_config(struct telegram *instance, char *config);
 
 /**
  * Store
@@ -176,7 +189,12 @@ void telegram_read_input (struct telegram *instance);
 /**
  * Write all available output to the network
  */
-void telegram_write_output (struct telegram *instance);
+int telegram_write_output (struct telegram *instance);
+
+/**
+ * Return whether there is pending output.
+ */
+int telegram_has_output (struct telegram *instance);
 
 /**
  * Try to interpret RPC calls and apply the changes to the current telegram state

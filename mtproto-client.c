@@ -85,6 +85,8 @@ int allow_weak_random = 0;
 int total_packets_sent;
 long long total_data_sent;
 
+extern int queries_num;
+
 /*
 int rpc_execute (struct connection *c, int op, int len);
 int rpc_becomes_ready (struct connection *c);
@@ -224,6 +226,8 @@ int rpc_send_packet (struct connection *c) {
   //flush_out (c);
 
   total_packets_sent ++;
+  queries_num++;
+  logprintf("pending queries: %d\n", queries_num);
   total_data_sent += total_len;
   return 1;
 }
@@ -248,6 +252,9 @@ int rpc_send_message (struct connection *c, void *data, int len) {
 }
 
 int send_req_pq_packet (struct connection *c) {
+  char byte = 0xef;
+  assert (write_out (c, &byte, 1) == 1);
+
   assert (c_state == st_init);
   secure_random (nonce, 16);
   unenc_msg_header.out_msg_id = 0;
@@ -255,6 +262,7 @@ int send_req_pq_packet (struct connection *c) {
   out_int (CODE_req_pq);
   out_ints ((int *)nonce, 4);
   rpc_send_packet (c);
+
   c_state = st_reqpq_sent;
   return 1;
 }
@@ -539,9 +547,7 @@ int check_g_bn (BIGNUM *p, BIGNUM *g) {
 }
 
 int process_dh_answer (struct connection *c, char *packet, int len) {
-  if (verbosity) {
-    logprintf ( "process_dh_answer(), len=%d\n", len);
-  }
+  logprintf ( "process_dh_answer(), len=%d\n", len);
   if (len < 116) {
     logprintf ( "%u * %u = %llu", p1, p2, what);
   }
@@ -633,15 +639,13 @@ int process_dh_answer (struct connection *c, char *packet, int len) {
   out_cstring ((char *) encrypt_buffer, l);
 
   c_state = st_client_dh_sent;
-
   return rpc_send_packet (c);
 }
 
 
 int process_auth_complete (struct connection *c UU, char *packet, int len) {
-  if (verbosity) {
-    logprintf ( "process_dh_answer(), len=%d\n", len);
-  }
+
+  logprintf ( "process_dh_answer(), len=%d\n", len);
   assert (len == 72);
   assert (!*(long long *) packet);
   assert (*(int *) (packet + 16) == len - 20);
@@ -654,7 +658,8 @@ int process_auth_complete (struct connection *c UU, char *packet, int len) {
   tmp[32] = 1;
   //GET_DC(c)->auth_key_id = *(long long *)(sha1_buffer + 12);
 
-  bl_do_set_auth_key_id (GET_DC(c)->id, (unsigned char *)GET_DC(c)->auth_key);
+  bl_do_set_auth_key_id (c->instance, GET_DC(c)->id, (unsigned char *)GET_DC(c)->auth_key);
+
   sha1 ((unsigned char *)GET_DC(c)->auth_key, 256, sha1_buffer);
 
   memcpy (tmp + 33, sha1_buffer, 8);
@@ -662,9 +667,8 @@ int process_auth_complete (struct connection *c UU, char *packet, int len) {
   assert (!memcmp (packet + 56, sha1_buffer + 4, 16));
   GET_DC(c)->server_salt = *(long long *)server_nonce ^ *(long long *)new_nonce;
 
-  if (verbosity >= 3) {
-    logprintf ( "auth_key_id=%016llx\n", GET_DC(c)->auth_key_id);
-  }
+  logprintf ( "auth_key_id=%016llx\n", GET_DC(c)->auth_key_id);
+  //logprintf ( "auth_key=%s\n", GET_DC(c)->auth_key);
   //kprintf ("OK\n");
 
   //c->status = conn_error;
@@ -672,9 +676,7 @@ int process_auth_complete (struct connection *c UU, char *packet, int len) {
 
   c_state = st_authorized;
   //return 1;
-  if (verbosity) {
-    logprintf ( "Auth success\n");
-  }
+  logprintf ( "Auth success\n");
   auth_success ++;
   GET_DC(c)->flags |= 1;
 
@@ -804,7 +806,7 @@ void fetch_pts (void) {
   } else {
     pts ++;
   }
-  bl_do_set_pts (pts);
+  //bl_do_set_pts (pts);
 }
 
 void fetch_qts (void) {
@@ -821,14 +823,14 @@ void fetch_qts (void) {
   } else {
     qts ++;
   }
-  bl_do_set_qts (qts);
+  //bl_do_set_qts (qts);
 }
 
 void fetch_date (void) {
   int p = fetch_int ();
   if (p > last_date) {
     last_date = p;
-    bl_do_set_date (last_date);
+    //bl_do_set_date (last_date);
   }
 }
 
@@ -1252,9 +1254,7 @@ void work_update (struct connection *c UU, long long msg_id UU, struct telegram 
   case CODE_update_encryption:
     {
       struct secret_chat *E = fetch_alloc_encrypted_chat ();
-      if (verbosity >= 2) {
-        logprintf ("Secret chat state = %d\n", E->state);
-      }
+      logprintf ("Secret chat state = %d\n", E->state);
       //print_start ();
       //push_color (COLOR_YELLOW);
       //print_date (time (0));
@@ -1776,48 +1776,59 @@ int process_rpc_message (struct telegram *instance, struct encrypted_message *en
 //}
 
 int rpc_execute_req_pq (struct telegram *instance, int len) {
+  logprintf("rpc_execute_rq_dh()\n");
   struct connection *c = telegram_get_connection(instance);
   if (len >= MAX_RESPONSE_SIZE/* - 12*/ || len < 0/*12*/) {
     logprintf ( "answer too long (%d bytes), skipping\n", len);
+    queries_num--;
     return 0;
   }
   int Response_len = len;
   assert (read_in (c, Response, Response_len) == Response_len);
   Response[Response_len] = 0;
   process_respq_answer (c, Response/* + 8*/, Response_len/* - 12*/);
+  queries_num--;
   return 0;
 }
 
 int rpc_execute_rq_dh (struct telegram *instance, int len) {
+  logprintf("rpc_execute_rq_dh()\n");
   struct connection *c = telegram_get_connection(instance);
   if (len >= MAX_RESPONSE_SIZE/* - 12*/ || len < 0/*12*/) {
     logprintf ( "answer too long (%d bytes), skipping\n", len);
+    queries_num--;
     return 0;
   }
   int Response_len = len;
   assert (read_in (c, Response, Response_len) == Response_len);
   Response[Response_len] = 0;
   process_dh_answer (c, Response/* + 8*/, Response_len/* - 12*/);
+  queries_num--;
   return 0;
 }
 
 int rpc_execute_cdh_sent (struct telegram *instance, int len) {
+  logprintf("rpc_execute_cdh()\n");
   struct connection *c = telegram_get_connection(instance);
   if (len >= MAX_RESPONSE_SIZE/* - 12*/ || len < 0/*12*/) {
     logprintf ( "answer too long (%d bytes), skipping\n", len);
+    queries_num--;
     return 0;
   }
   int Response_len = len;
   assert (read_in (c, Response, Response_len) == Response_len);
   Response[Response_len] = 0;
   process_auth_complete (c, Response/* + 8*/, Response_len/* - 12*/);
+  queries_num--;
   return 0;
 }
 
 int rpc_execute_authorized (struct telegram *instance, int op, int len) {
+  logprintf("rpc_execute_authorized()\n");
   struct connection *c = telegram_get_connection(instance);
   if (len >= MAX_RESPONSE_SIZE/* - 12*/ || len < 0/*12*/) {
     logprintf ( "answer too long (%d bytes), skipping\n", len);
+    queries_num--;
     return 0;
   }
   int Response_len = len;
@@ -1828,10 +1839,9 @@ int rpc_execute_authorized (struct telegram *instance, int op, int len) {
   } else {
     process_rpc_message (instance, (void *)(Response/* + 8*/), Response_len/* - 12*/);
   }
+  queries_num--;
   return 0;
 }
-
-
 
 int tc_close (struct connection *c, int who) {
   if (verbosity) {
@@ -1900,11 +1910,13 @@ int auth_ok (void) {
   return auth_success;
 }
 
+/*
 void dc_authorize (struct dc *DC) {
   c_state = 0;
   auth_success = 0;
   if (verbosity) {
     logprintf ( "Starting authorization for DC #%d: %s:%d\n", DC->id, DC->ip, DC->port);
   }
-  net_loop (0, auth_ok);
+  //net_loop (0, auth_ok);
 }
+*/

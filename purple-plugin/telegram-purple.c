@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <assert.h>
 
 // test
 
@@ -42,6 +43,7 @@
 #include "prpl.h"
 #include "prefs.h"
 #include "util.h"
+#include "eventloop.h"
 
 // struct telegram Includes
 #include "telegram.h"
@@ -105,7 +107,6 @@ static void tgprpl_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo * info
 /**
  * Request a verification key, save the returned verification_hash in the account settings
  *  for later usage and inform the user.
- */
 static void login_request_verification(PurpleAccount *acct)
 {
     // TODO: we should find a way to request the key
@@ -119,6 +120,7 @@ static void login_request_verification(PurpleAccount *acct)
          "You need to verify this device, please enter the code struct telegram has sent to you by SMS.", 
          NULL, NULL, NULL);
 }
+ */
 
 /**
  * Handle a failed verification, by removing the invalid sms code and
@@ -135,25 +137,52 @@ static void login_verification_fail(PurpleAccount *acct)
 static void tgprpl_output_cb(gpointer data, gint source, PurpleInputCondition cond)
 {
     logprintf("tgprpl_output_cb()\n");
-    PurpleConnection *c = data;
-    telegram_conn *conn = purple_connection_get_protocol_data(c);
-    telegram_write_output(conn->tg);
+    struct telegram *tg = data;
+    telegram_conn *conn = tg->extra;
+
+    int written = telegram_write_output(tg);
+    logprintf("written(%d): %d.\n", telegram_get_connection(tg)->fd, written);
+    if (written == 0) {
+        logprintf("no output, removing output...\n");
+        purple_input_remove(conn->wh);
+        conn->wh = 0;
+    }
+}
+
+static void tgprpl_has_output(struct telegram *tg)
+{
+    logprintf("tgprpl_has_output()\n");
+    telegram_conn *conn = tg->extra;
+    if (! conn->wh) {
+        conn->wh = purple_input_add(telegram_get_connection(tg)->fd, PURPLE_INPUT_WRITE, 
+            tgprpl_output_cb, tg);
+        logprintf("Attached write handle: %u ", conn->wh);
+    }
 }
 
 static void tgprpl_input_cb(gpointer data, gint source, PurpleInputCondition cond)
 {
+    struct telegram *tg = data;
+    //telegram_conn *conn = tg->extra;
     logprintf("tgprpl_input_cb()\n");
-    PurpleConnection *c = data;
-    telegram_conn *conn = purple_connection_get_protocol_data(c);
-    telegram_read_input(conn->tg);
+
+    // TODO: remove input handler when no more input
+    telegram_read_input(tg);
+    if (telegram_has_output(tg)) {
+        tgprpl_has_output(tg);
+    }
 }
 
-/*
-static void tgprpl_on_input(struct telegram *tg)
+static void tgprpl_has_input(struct telegram *tg)
 {
-    PurpleConnection *c = data;
+    logprintf("tgprpl_has_input()\n");
+    telegram_conn *conn = tg->extra;
+    if (! conn->rh) {
+        conn->rh = purple_input_add(telegram_get_connection(tg)->fd, PURPLE_INPUT_READ, 
+            tgprpl_input_cb, tg);
+        logprintf("Attached read handle: %u ", conn->rh);
+    }
 }
-*/
 
 static void tgprpl_on_state_change(struct telegram *instance, int state, void *data)
 {
@@ -175,7 +204,8 @@ static void tgprpl_on_state_change(struct telegram *instance, int state, void *d
                     NULL, NULL, NULL);
                 return;
             }
-            network_verify_phone_registration(code, hash, first_name, last_name);
+
+            do_send_code_result_auth (instance, code, hash, first_name, last_name);
         break;
 
         case STATE_PHONE_CODE_NOT_ENTERED:
@@ -190,7 +220,7 @@ static void tgprpl_on_state_change(struct telegram *instance, int state, void *d
         case STATE_CLIENT_CODE_NOT_ENTERED: {
             const char *code = purple_account_get_string(conn->pa, "verification_key", NULL);
             const char *hash = purple_account_get_string(conn->pa, "verification_hash", NULL);
-            network_verify_registration(code, hash);
+            do_send_code_result(instance, code, hash);
             // enter SMS code
         }
         break;
@@ -270,14 +300,13 @@ static void tgprpl_login(PurpleAccount * acct)
 
     purple_connection_set_state(gc, PURPLE_CONNECTING);
     purple_proxy_connect(gc, acct, DC.ip, DC.port, tgprpl_login_on_connected, tg);
-    purple_debug_info(PLUGIN_ID, "username: %s\n", username);
-    purple_debug_info(PLUGIN_ID, "hostname: %s\n", DC.ip);
 }
 
 void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_message)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_login_on_connected()\n");
     struct telegram *tg = (struct telegram*) data;
+    telegram_conn *conn = tg->extra;
     //running_for_first_time();
 
     if (fd == -1) {
@@ -286,9 +315,10 @@ void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_messa
         return;
     }
 
-    purple_debug_info(PLUGIN_ID, "Connecting to the struct telegram network...\n");
-    purple_input_add(fd, PURPLE_INPUT_WRITE, tgprpl_output_cb, telegram_get_connection(tg));
-    purple_input_add(fd, PURPLE_INPUT_READ, tgprpl_input_cb, telegram_get_connection(tg));
+
+    purple_debug_info(PLUGIN_ID, "Connecting to the telegram network...\n");
+    conn->wh = purple_input_add(fd, PURPLE_INPUT_WRITE, tgprpl_output_cb, tg);
+    conn->rh = purple_input_add(fd, PURPLE_INPUT_READ, tgprpl_input_cb, tg);
     telegram_network_connect(tg, fd);
 
     // // load all settings: the known network topology, secret keys, logs and configuration file paths
@@ -896,10 +926,10 @@ static PurplePluginInfo info = {
     NULL,
     PURPLE_PRIORITY_DEFAULT,
     PLUGIN_ID,
-    "struct telegram",
+    "Telegram",
     "0.1",
-    "struct telegram integration.",
-    "Adds support for the struct telegram protocol to libpurple.",
+    "Telegram protocol",
+    "Adds support for the telegram protocol to libpurple.",
     "Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>, Matthias Jentsch <mtthsjntsch@gmail.com>",
     "https://bitbucket.org/telegrampurple/telegram-purple",
     NULL,           // on load

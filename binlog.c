@@ -56,7 +56,13 @@ extern int seq;
 
 #define MAX_LOG_EVENT_SIZE (1 << 17)
 
+// TODO: remove this completely
 char *get_binlog_file_name (void);
+char *get_binlog_file_name()
+{
+   return "/home/dev-jessie/.telegram/binlog";
+}
+
 //extern struct dc *DC_list[];
 //extern int dc_working_num;
 extern int our_id;
@@ -1162,9 +1168,9 @@ void write_binlog (void) {
 }
 
 void add_log_event (const int *data, int len) {
-  if (verbosity) {
-    logprintf ("Add log event: magic = 0x%08x, len = %d\n", data[0], len);
-  }
+  logprintf ("Add log event: magic = 0x%08x, len = %d\n", data[0], len);
+  assert(0);
+  // TODO: Mit add_log_event_i austauschen
   assert (!(len & 3));
   if (in_replay_log) { return; }
   rptr = (void *)data;
@@ -1185,7 +1191,29 @@ void add_log_event (const int *data, int len) {
   in_end = end;
 }
 
-void bl_do_set_auth_key_id (int num, unsigned char *buf) {
+void add_log_event_i (struct telegram *instance, const int *data, int len) {
+  logprintf ("Add log event: magic = 0x%08x, len = %d\n", data[0], len);
+  assert (!(len & 3));
+  if (in_replay_log) { return; }
+  rptr = (void *)data;
+  wptr = rptr + (len / 4);
+  int *in = in_ptr;
+  int *end = in_end;
+  // TODO: 
+  replay_log_event (instance);
+  if (rptr != wptr) {
+    logprintf ("Unread %lld ints. Len = %d\n", (long long)(wptr - rptr), len);
+    assert (rptr == wptr);
+  }
+  if (binlog_enabled) {
+    assert (binlog_fd > 0);
+    assert (write (binlog_fd, data, len) == len);
+  }
+  in_ptr = in;
+  in_end = end;
+}
+
+void bl_do_set_auth_key_id (struct telegram *instance, int num, unsigned char *buf) {
   static unsigned char sha1_buffer[20];
   SHA1 (buf, 256, sha1_buffer);
   long long fingerprint = *(long long *)(sha1_buffer + 12);
@@ -1194,7 +1222,7 @@ void bl_do_set_auth_key_id (int num, unsigned char *buf) {
   ev[1] = num;
   *(long long *)(ev + 2) = fingerprint;
   memcpy (ev + 4, buf, 256);
-  add_log_event (ev, 8 + 8 + 256);
+  add_log_event_i (instance, ev, 8 + 8 + 256);
 }
 
 void bl_do_set_our_id (int id) {

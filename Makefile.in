@@ -53,6 +53,7 @@ PRPL_CFLAGS = \
 	-fPIC \
 	-DPURPLE_PLUGINS \
 	-DPIC \
+    -DDEBUG \
 	-g \
 	$(CFLAGS_PURPLE)
 
@@ -84,10 +85,6 @@ plugin: $(PRPL_LIBNAME)
 strip: $(PRPL_LIBNAME)
 	$(STRIP) --strip-unneeded $(PRPL_LIBNAME)
 
-debug: PRPL_CFLAGS += -g -DDEBUG
-debug: $(PRPL_LIBNAME)
-	gdb -tui -ex 'break telegram-purple.c:tgprpl_login' pidgin
-
 # TODO: Find a better place for server.pub
 install: $(PRPL_LIBNAME)
 	install -D $(PRPL_LIBNAME) $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_LIBNAME)
@@ -107,6 +104,10 @@ uninstall: $(PRPL_LIBNAME)
 .PHONY: run
 run: install
 	pidgin -d | grep 'telegram\|plugin\|proxy'
+
+.PHONY: debug
+debug: install
+	gdb -tui -ex "$(shell echo $$GDB_BPOINTS )" pidgin
 
 clean:
 	rm -rf *.so *.a *.o telegram config.log config.status $(PRPL_C_OBJS) $(PRPL_LIBNAME) > /dev/null || echo "all clean"

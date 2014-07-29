@@ -39,4 +39,14 @@ typedef struct {
     struct telegram *tg;
 	PurpleAccount *pa;
 	PurpleConnection *gc;
+
+    /**
+     * Write handler returned by purple_input_add
+     */
+    guint wh;
+
+    /**
+     * Read handler returned by purple_input_add
+     */
+    guint rh;
 } telegram_conn;

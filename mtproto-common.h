@@ -20,6 +20,7 @@
 #ifndef __MTPROTO_COMMON_H__
 #define __MTPROTO_COMMON_H__
 
+#include <assert.h>
 #include <string.h>
 #include <openssl/rsa.h>
 #include <openssl/bn.h>

@@ -113,10 +113,11 @@ void start_ping_timer (struct connection *c) {
   insert_event_timer (&c->ev);
 }
 
-void restart_connection (struct connection *c);
 int fail_alarm (void *ev) {
-  ((struct connection *)ev)->in_fail_timer = 0;
-  restart_connection (ev);
+  struct connection *c = ev;
+  c->in_fail_timer = 0;
+  logprintf("Connection %d FAILED.", c->fd);
+  telegram_change_state(c->instance, STATE_ERROR, NULL);
   return 0;
 }
 void start_fail_timer (struct connection *c) {
@@ -251,13 +252,14 @@ void rotate_port (struct connection *c) {
   }
 }
 
-struct connection *create_connection (const char *host, int port, int fd) {
+struct connection *create_connection (const char *host, int port, int fd, struct telegram *instance) {
   struct connection *c = talloc0 (sizeof (*c));
   c->fd = fd; 
   c->ip = tstrdup (host);
   c->flags = 0;
   c->state = conn_ready;
   c->port = port;
+  c->instance = instance;
   if (verbosity) {
     logprintf ( "connect to %s:%d successful\n", host, port);
   }
@@ -316,12 +318,11 @@ void restart_connection (struct connection *c) {
   assert (write_out (c, &byte, 1) == 1);
   flush_out (c);
 }
-
+*/
 void fail_connection (struct connection *c) {
   if (c->state == conn_ready || c->state == conn_connecting) {
     stop_ping_timer (c);
   }
-  rotate_port (c);
   struct connection_buffer *b = c->out_head;
   while (b) {
     struct connection_buffer *d = b;
@@ -338,18 +339,15 @@ void fail_connection (struct connection *c) {
   c->state = conn_failed;
   c->out_bytes = c->in_bytes = 0;
   close (c->fd);
-  Connections[c->fd] = 0;
   logprintf ("Lost connection to server... %s:%d\n", c->ip, c->port);
-  restart_connection (c);
+  telegram_change_state(c->instance, STATE_ERROR, NULL);
 }
-*/
 
 extern FILE *log_net_f;
-void try_write (struct telegram *instance) {
+int try_write (struct telegram *instance) {
   struct connection *c = telegram_get_connection(instance);
-  if (verbosity) {
-    logprintf ( "try write: fd = %d\n", c->fd);
-  }
+  logprintf ("try write: fd = %d\n", c->fd);
+
   int x = 0;
   while (c->out_head) {
     int r = netwrite (c->fd, c->out_head->rptr, c->out_head->wptr - c->out_head->rptr);
@@ -359,7 +357,6 @@ void try_write (struct telegram *instance) {
       fprintf (log_net_f, "%.02lf %d OUT %s:%d", get_utime (CLOCK_REALTIME), r, c->ip, c->port);
       int i;
       for (i = 0; i < r; i++) {
-	    
         fprintf (log_net_f, " %02x", *(unsigned char *)(c->out_head->rptr + i));
       }
       fprintf (log_net_f, "\n");
@@ -387,16 +384,15 @@ void try_write (struct telegram *instance) {
           logprintf ("fail_connection: write_error %m\n");
         }
         fail_connection (c);
-        return;
+        return 0;
       } else {
         break;
       }
     }
   }
-  if (verbosity) {
-    logprintf ( "Sent %d bytes to %d\n", x, c->fd);
-  }
+  logprintf ( "Sent %d bytes to %d\n", x, c->fd);
   c->out_bytes -= x;
+  return x;
 }
 
 void hexdump_buf (struct connection_buffer *b) {
@@ -423,6 +419,9 @@ void hexdump_buf (struct connection_buffer *b) {
     
 }
 
+/**
+ * Read all rpc responses from the current connection
+ */
 void try_rpc_read (struct telegram *instance) {
   struct connection *c = instance->auth.DC_list[instance->auth.dc_working_num]->sessions[0]->c;
 
@@ -467,10 +466,7 @@ void try_rpc_read (struct telegram *instance) {
 
 void try_read (struct telegram *instance) {
   struct connection *c = instance->auth.DC_list[instance->auth.dc_working_num]->sessions[0]->c;
-
-  if (verbosity) {
-    logprintf ( "try read: fd = %d\n", c->fd);
-  }
+  logprintf ( "try read: fd = %d\n", c->fd);
   if (!c->in_tail) {
     c->in_head = c->in_tail = new_connection_buffer (1 << 20);
   }
@@ -489,9 +485,11 @@ void try_read (struct telegram *instance) {
     }
     if (r > 0) {
       c->last_receive_time = get_double_time ();
+
+      // TODO: Implement the Ping-Timer
 	  // reset ping timer
-      stop_ping_timer (c);
-      start_ping_timer (c);
+      //stop_ping_timer (c);
+      //start_ping_timer (c);
     }
     if (r >= 0) {
 	  // write pointer nach vorne setzen
@@ -507,9 +505,7 @@ void try_read (struct telegram *instance) {
       c->in_tail = b;
     } else {
       if (errno != EAGAIN && errno != EWOULDBLOCK) {
-        if (verbosity) {
-          logprintf ("fail_connection: read_error %m\n");
-        }
+        logprintf ("fail_connection: read_error %m\n");
         fail_connection (c);
         return;
       } else {
@@ -517,9 +513,7 @@ void try_read (struct telegram *instance) {
       }
     }
   }
-  if (verbosity) {
-    logprintf ( "Received %d bytes from %d\n", x, c->fd);
-  }
+  logprintf ( "Received %d bytes from %d\n", x, c->fd);
   c->in_bytes += x;
   if (x) {
     try_rpc_read (instance);
@@ -609,10 +603,7 @@ void insert_msg_id (struct session *S, long long id) {
   }
 }
 
-extern struct dc *DC_list[];
-
 struct dc *alloc_dc (struct dc* DC_list[], int id, char *ip, int port UU) {
-  assert (!DC_list[id]);
   struct dc *DC = talloc0 (sizeof (*DC));
   DC->id = id;
   DC->ip = ip;

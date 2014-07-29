@@ -105,6 +105,32 @@ void tfree (void *ptr, int size __attribute__ ((unused))) {
 #endif
 }
 
+/**
+ * Add a variable amount of strings together
+ */
+//char *stradd(const char *strs, ...)
+//{
+//   va_list args;
+//   size_t size = 0; 
+//   char *result;
+//
+//   // count strlen
+//   va_start(args, strs);
+//   for (int i = 0; strs[i] != '\0'; i++) {
+//      size += strlen(va_arg(args, char*));
+//   }
+//   va_end(args);
+//
+//   // create the new string
+//   result = talloc0(size + 1);
+//   va_start(args, strs);
+//   for (int i = 0; strs[i] != '\0'; i++) {
+//      strcat(result, va_arg(args, char*));
+//   }
+//   va_end(args);
+//   return result;
+//}
+
 void tfree_str (void *ptr) {
   if (!ptr) { return; }
   tfree (ptr, strlen (ptr) + 1);

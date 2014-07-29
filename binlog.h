@@ -87,8 +87,9 @@
 void *alloc_log_event (int l);
 void replay_log (struct telegram *instance);
 void add_log_event (const int *data, int l);
+void add_log_event_i (struct telegram *instance, const int *data, int l);
 void write_binlog (void);
-void bl_do_set_auth_key_id (int num, unsigned char *buf);
+void bl_do_set_auth_key_id (struct telegram *instance, int num, unsigned char *buf);
 
 void bl_do_dc_option (int id, int l1, const char *name, int l2, const char *ip, int port, struct telegram *instance);
 
