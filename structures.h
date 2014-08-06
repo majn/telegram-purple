@@ -18,9 +18,13 @@
 */
 #ifndef __STRUCTURES_H__
 #define __STRUCTURES_H__
+#pragma once
+
+// forward-declrataions
+struct mtproto_connection;
+typedef struct { int type; int id; } peer_id_t;
 
 #include <assert.h>
-typedef struct { int type; int id; } peer_id_t;
 
 //#define FLAG_EMPTY 1
 #define FLAG_MESSAGE_EMPTY 1
@@ -329,28 +333,27 @@ struct message {
   };
 };
 
-int fetch_file_location (struct file_location *loc);
-int fetch_user_status (struct user_status *S);
-int fetch_user (struct user *U);
-struct user *fetch_alloc_user (void);
-struct user *fetch_alloc_user_full (void);
-struct chat *fetch_alloc_chat (void);
-struct chat *fetch_alloc_chat_full (void);
-struct secret_chat *fetch_alloc_encrypted_chat (void);
-struct message *fetch_alloc_message (struct telegram *instance);
-struct message *fetch_alloc_geo_message (struct telegram *instance);
-struct message *fetch_alloc_message_short (struct telegram *instance);
-struct message *fetch_alloc_message_short_chat (struct telegram *instance);
-struct message *fetch_alloc_encrypted_message (struct telegram *instance);
-void fetch_encrypted_message_file (struct message_media *M);
-void fetch_skip_encrypted_message_file (void);
-void fetch_encrypted_message_file (struct message_media *M);
-void fetch_message_action_encrypted (struct message_action *M);
-peer_id_t fetch_peer_id (void);
+int fetch_file_location (struct mtproto_connection *mtp, struct file_location *loc);
+int fetch_user_status (struct mtproto_connection *mtp, struct user_status *S);
+int fetch_user (struct mtproto_connection *mtp, struct user *U);
+struct user *fetch_alloc_user (struct mtproto_connection *mtp);
+struct user *fetch_alloc_user_full (struct mtproto_connection *mtp);
+struct chat *fetch_alloc_chat (struct mtproto_connection *mtp);
+struct chat *fetch_alloc_chat_full (struct mtproto_connection *mtp);
+struct secret_chat *fetch_alloc_encrypted_chat (struct mtproto_connection *mtp);
+struct message *fetch_alloc_message (struct mtproto_connection *self, struct telegram *instance);
+struct message *fetch_alloc_geo_message (struct mtproto_connection *mtp, struct telegram *instance);
+struct message *fetch_alloc_message_short (struct mtproto_connection *mtp, struct telegram *instance);
+struct message *fetch_alloc_message_short_chat (struct mtproto_connection *self, struct telegram *instance);
+struct message *fetch_alloc_encrypted_message (struct mtproto_connection *mtp, struct telegram *instance);
+void fetch_encrypted_message_file (struct mtproto_connection *mtp, struct message_media *M);
+void fetch_skip_encrypted_message_file (struct mtproto_connection *mtp);
+void fetch_message_action_encrypted (struct mtproto_connection *mtp, struct message_action *M);
+peer_id_t fetch_peer_id (struct mtproto_connection *mtp);
 
-void fetch_message_media (struct message_media *M);
-void fetch_message_media_encrypted (struct message_media *M);
-void fetch_message_action (struct message_action *M);
+void fetch_message_media (struct mtproto_connection *mtp, struct message_media *M);
+void fetch_message_media_encrypted (struct mtproto_connection *mtp, struct message_media *M);
+void fetch_message_action (struct mtproto_connection *mtp, struct message_action *M);
 void message_insert_tree (struct message *M);
 
 void free_user (struct user *U);
@@ -363,12 +366,10 @@ peer_t *user_chat_get (peer_id_t id);
 struct message *message_get (long long id);
 void update_message_id (struct message *M, long long id);
 void message_insert (struct message *M);
-void free_photo (struct photo *P);
-void fetch_photo (struct photo *P);
+void fetch_photo (struct mtproto_connection *mtp, struct photo *P);
 void insert_encrypted_chat (peer_t *P);
 void insert_user (peer_t *P);
 void insert_chat (peer_t *P);
-void fetch_photo (struct photo *P);
 void free_photo (struct photo *P);
 void message_insert_unsent (struct message *M);
 void message_remove_unsent (struct message *M);

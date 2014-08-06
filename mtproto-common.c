@@ -1,59 +1,13 @@
+#include "mtproto-client.h"
+
 /*
-    This file is part of telegram-client.
+ * struct mtproto_connection-Common.c
+ */
 
-    Telegram-client is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 2 of the License, or
-    (at your option) any later version.
-
-    Telegram-client is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this telegram-client.  If not, see <http://www.gnu.org/licenses/>.
-
-    Copyright Nikolay Durov, Andrey Lopatin 2012-2013
-    Copyright Vitaly Valtman 2013
-*/
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#define	_FILE_OFFSET_BITS	64
-
-#include <assert.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <netdb.h>
-#include <openssl/bn.h>
-#include <openssl/rand.h>
-#include <openssl/pem.h>
-#include <openssl/aes.h>
-#include <openssl/sha.h>
-
-#include "mtproto-common.h"
-#include "include.h"
-
-#ifdef __MACH__
-#include <mach/clock.h>
-#include <mach/mach.h>
-#endif
-
-
-int __packet_buffer[PACKET_BUFFER_SIZE], *packet_ptr;
-int *packet_buffer = __packet_buffer + 16;
-
-long long rsa_encrypted_chunks, rsa_decrypted_chunks;
-
-BN_CTX *BN_ctx;
 int verbosity;
+
+#ifndef __MTPROTO_COMMON_C__
+#define __MTPROTO_COMMON_C__
 
 int get_random_bytes (unsigned char *buf, int n) {
   int r = 0, h = open ("/dev/random", O_RDONLY | O_NONBLOCK);
@@ -121,7 +75,7 @@ static __inline__ unsigned long long rdtsc (void) {
 }
 #endif
 
-void prng_seed (const char *password_filename, int password_length) {
+void prng_seed (struct mtproto_connection *self, const char *password_filename, int password_length) {
   struct timespec T;
   my_clock_gettime (CLOCK_REALTIME, &T);
   RAND_add (&T, sizeof (T), 4.0);
@@ -158,8 +112,8 @@ void prng_seed (const char *password_filename, int password_length) {
       tfree_secure (a, password_length);
     }
   }
-  BN_ctx = BN_CTX_new ();
-  ensure_ptr (BN_ctx);
+  self->BN_ctx = BN_CTX_new ();
+  ensure_ptr (self->BN_ctx);
 }
 
 int serialize_bignum (BIGNUM *b, char *buffer, int maxlen) {
@@ -204,14 +158,14 @@ long long compute_rsa_key_fingerprint (RSA *key) {
   return *(long long *)(sha + 12);
 }
 
-void out_cstring (const char *str, long len) {
+void out_cstring (struct mtproto_connection *self, const char *str, long len) {
   assert (len >= 0 && len < (1 << 24));
-  assert ((char *) packet_ptr + len + 8 < (char *) (packet_buffer + PACKET_BUFFER_SIZE));
-  char *dest = (char *) packet_ptr;
+  assert ((char *) self->packet_ptr + len + 8 < (char *) (self->packet_buffer + PACKET_BUFFER_SIZE));
+  char *dest = (char *) self->packet_ptr;
   if (len < 254) {
     *dest++ = len;
   } else {
-    *packet_ptr = (len << 8) + 0xfe;
+    *self->packet_ptr = (len << 8) + 0xfe;
     dest += 4;
   }
   memcpy (dest, str, len);
@@ -219,13 +173,13 @@ void out_cstring (const char *str, long len) {
   while ((long) dest & 3) {
     *dest++ = 0;
   }
-  packet_ptr = (int *) dest;
+  self->packet_ptr = (int *) dest;
 }
 
-void out_cstring_careful (const char *str, long len) {
+void out_cstring_careful (struct mtproto_connection *self, const char *str, long len) {
   assert (len >= 0 && len < (1 << 24));
-  assert ((char *) packet_ptr + len + 8 < (char *) (packet_buffer + PACKET_BUFFER_SIZE));
-  char *dest = (char *) packet_ptr;
+  assert ((char *) self->packet_ptr + len + 8 < (char *) (self->packet_buffer + PACKET_BUFFER_SIZE));
+  char *dest = (char *) self->packet_ptr;
   if (len < 254) {
     dest++;
     if (dest != str) {
@@ -237,36 +191,35 @@ void out_cstring_careful (const char *str, long len) {
     if (dest != str) {
       memmove (dest, str, len);
     }
-    *packet_ptr = (len << 8) + 0xfe;
+    *self->packet_ptr = (len << 8) + 0xfe;
   }
   dest += len;
   while ((long) dest & 3) {
     *dest++ = 0;
   }
-  packet_ptr = (int *) dest;
+  self->packet_ptr = (int *) dest;
 }
 
 
-void out_data (const void *data, long len) {
+void out_data (struct mtproto_connection *self, const void *data, long len) {
   assert (len >= 0 && len < (1 << 24) && !(len & 3));
-  assert ((char *) packet_ptr + len + 8 < (char *) (packet_buffer + PACKET_BUFFER_SIZE));
-  memcpy (packet_ptr, data, len);
-  packet_ptr += len >> 2;
+  assert ((char *) self->packet_ptr + len + 8 < (char *) (self->packet_buffer + PACKET_BUFFER_SIZE));
+  memcpy (self->packet_ptr, data, len);
+  self->packet_ptr += len >> 2;
 }
 
-int *in_ptr, *in_end;
 
-int fetch_bignum (BIGNUM *x) {
-  int l = prefetch_strlen ();
+int fetch_bignum (struct mtproto_connection *self, BIGNUM *x) {
+  int l = prefetch_strlen (self);
   if (l < 0) {
     return l;
   }
-  char *str = fetch_str (l);
+  char *str = fetch_str (self, l);
   assert (BN_bin2bn ((unsigned char *) str, l, x) == x);
   return l;
 }
 
-int pad_rsa_encrypt (char *from, int from_len, char *to, int size, BIGNUM *N, BIGNUM *E) {
+int pad_rsa_encrypt (struct mtproto_connection *self, char *from, int from_len, char *to, int size, BIGNUM *N, BIGNUM *E) {
   int pad = (255000 - from_len - 32) % 255 + 32;
   int chunks = (from_len + pad) / 255;
   int bits = BN_num_bits (N);
@@ -278,10 +231,10 @@ int pad_rsa_encrypt (char *from, int from_len, char *to, int size, BIGNUM *N, BI
   BIGNUM x, y;
   BN_init (&x);
   BN_init (&y);
-  rsa_encrypted_chunks += chunks;
+  self->rsa_encrypted_chunks += chunks;
   for (i = 0; i < chunks; i++) {
     BN_bin2bn ((unsigned char *) from, 255, &x);
-    assert (BN_mod_exp (&y, &x, E, N, BN_ctx) == 1);
+    assert (BN_mod_exp (&y, &x, E, N, self->BN_ctx) == 1);
     unsigned l = 256 - BN_num_bytes (&y);
     assert (l <= 256);
     memset (to, 0, l);
@@ -293,7 +246,7 @@ int pad_rsa_encrypt (char *from, int from_len, char *to, int size, BIGNUM *N, BI
   return chunks * 256;
 }
 
-int pad_rsa_decrypt (char *from, int from_len, char *to, int size, BIGNUM *N, BIGNUM *D) {
+int pad_rsa_decrypt (struct mtproto_connection *self, char *from, int from_len, char *to, int size, BIGNUM *N, BIGNUM *D) {
   if (from_len < 0 || from_len > 0x1000 || (from_len & 0xff)) {
     return -1;
   }
@@ -306,9 +259,9 @@ int pad_rsa_decrypt (char *from, int from_len, char *to, int size, BIGNUM *N, BI
   BN_init (&x);
   BN_init (&y);
   for (i = 0; i < chunks; i++) {
-    ++rsa_decrypted_chunks;
+    ++self->rsa_decrypted_chunks;
     BN_bin2bn ((unsigned char *) from, 256, &x);
-    assert (BN_mod_exp (&y, &x, D, N, BN_ctx) == 1);
+    assert (BN_mod_exp (&y, &x, D, N, self->BN_ctx) == 1);
     int l = BN_num_bytes (&y);
     if (l > 255) {
       BN_free (&x);
@@ -325,31 +278,28 @@ int pad_rsa_decrypt (char *from, int from_len, char *to, int size, BIGNUM *N, BI
   return chunks * 255;
 }
 
-unsigned char aes_key_raw[32], aes_iv[32];
-AES_KEY aes_key;
-
-void init_aes_unauth (const char server_nonce[16], const char hidden_client_nonce[32], int encrypt) {
+void init_aes_unauth (struct mtproto_connection *self, const char server_nonce[16], const char hidden_client_nonce[32], int encrypt) {
   static unsigned char buffer[64], hash[20];
   memcpy (buffer, hidden_client_nonce, 32);
   memcpy (buffer + 32, server_nonce, 16);
-  SHA1 (buffer, 48, aes_key_raw);
+  SHA1 (buffer, 48, self->aes_key_raw);
   memcpy (buffer + 32, hidden_client_nonce, 32);
-  SHA1 (buffer, 64, aes_iv + 8);
+  SHA1 (buffer, 64, self->aes_iv + 8);
   memcpy (buffer, server_nonce, 16);
   memcpy (buffer + 16, hidden_client_nonce, 32);
   SHA1 (buffer, 48, hash);
-  memcpy (aes_key_raw + 20, hash, 12);
-  memcpy (aes_iv, hash + 12, 8);
-  memcpy (aes_iv + 28, hidden_client_nonce, 4);
+  memcpy (self->aes_key_raw + 20, hash, 12);
+  memcpy (self->aes_iv, hash + 12, 8);
+  memcpy (self->aes_iv + 28, hidden_client_nonce, 4);
   if (encrypt == AES_ENCRYPT) {
-    AES_set_encrypt_key (aes_key_raw, 32*8, &aes_key);
+    AES_set_encrypt_key (self->aes_key_raw, 32*8, &self->aes_key);
   } else {
-    AES_set_decrypt_key (aes_key_raw, 32*8, &aes_key);
+    AES_set_decrypt_key (self->aes_key_raw, 32*8, &self->aes_key);
   }
-  memset (aes_key_raw, 0, sizeof (aes_key_raw));
+  memset (self->aes_key_raw, 0, sizeof (self->aes_key_raw));
 }
 
-void init_aes_auth (char auth_key[192], char msg_key[16], int encrypt) {
+void init_aes_auth (struct mtproto_connection *self, char auth_key[192], char msg_key[16], int encrypt) {
   static unsigned char buffer[48], hash[20];
   //  sha1_a = SHA1 (msg_key + substr (auth_key, 0, 32));
   //  sha1_b = SHA1 (substr (auth_key, 32, 16) + msg_key + substr (auth_key, 48, 16));
@@ -360,51 +310,50 @@ void init_aes_auth (char auth_key[192], char msg_key[16], int encrypt) {
   memcpy (buffer, msg_key, 16);
   memcpy (buffer + 16, auth_key, 32);
   SHA1 (buffer, 48, hash);
-  memcpy (aes_key_raw, hash, 8);
-  memcpy (aes_iv, hash + 8, 12);
+  memcpy (self->aes_key_raw, hash, 8);
+  memcpy (self->aes_iv, hash + 8, 12);
 
   memcpy (buffer, auth_key + 32, 16);
   memcpy (buffer + 16, msg_key, 16);
   memcpy (buffer + 32, auth_key + 48, 16);
   SHA1 (buffer, 48, hash);
-  memcpy (aes_key_raw + 8, hash + 8, 12);
-  memcpy (aes_iv + 12, hash, 8);
+  memcpy (self->aes_key_raw + 8, hash + 8, 12);
+  memcpy (self->aes_iv + 12, hash, 8);
 
   memcpy (buffer, auth_key + 64, 32);
   memcpy (buffer + 32, msg_key, 16);
   SHA1 (buffer, 48, hash);
-  memcpy (aes_key_raw + 20, hash + 4, 12);
-  memcpy (aes_iv + 20, hash + 16, 4);
+  memcpy (self->aes_key_raw + 20, hash + 4, 12);
+  memcpy (self->aes_iv + 20, hash + 16, 4);
 
   memcpy (buffer, msg_key, 16);
   memcpy (buffer + 16, auth_key + 96, 32);
   SHA1 (buffer, 48, hash);
-  memcpy (aes_iv + 24, hash, 8);
+  memcpy (self->aes_iv + 24, hash, 8);
   
   if (encrypt == AES_ENCRYPT) {
-    AES_set_encrypt_key (aes_key_raw, 32*8, &aes_key);
+    AES_set_encrypt_key (self->aes_key_raw, 32*8, &self->aes_key);
   } else {
-    AES_set_decrypt_key (aes_key_raw, 32*8, &aes_key);
+    AES_set_decrypt_key (self->aes_key_raw, 32*8, &self->aes_key);
   }
-  memset (aes_key_raw, 0, sizeof (aes_key_raw));
+  memset (self->aes_key_raw, 0, sizeof (self->aes_key_raw));
 }
 
-int pad_aes_encrypt (char *from, int from_len, char *to, int size) {
+int pad_aes_encrypt (struct mtproto_connection *self, char *from, int from_len, char *to, int size) {
   int padded_size = (from_len + 15) & -16;
   assert (from_len > 0 && padded_size <= size);
   if (from_len < padded_size) {
     assert (RAND_pseudo_bytes ((unsigned char *) from + from_len, padded_size - from_len) >= 0);
   }
-  AES_ige_encrypt ((unsigned char *) from, (unsigned char *) to, padded_size, &aes_key, aes_iv, AES_ENCRYPT);
+  AES_ige_encrypt ((unsigned char *) from, (unsigned char *) to, padded_size, &self->aes_key, self->aes_iv, AES_ENCRYPT);
   return padded_size;
 }
 
-int pad_aes_decrypt (char *from, int from_len, char *to, int size) {
+int pad_aes_decrypt (struct mtproto_connection *self, char *from, int from_len, char *to, int size) {
   if (from_len <= 0 || from_len > size || (from_len & 15)) {
     return -1;
   }
-  AES_ige_encrypt ((unsigned char *) from, (unsigned char *) to, from_len, &aes_key, aes_iv, AES_DECRYPT); 
+  AES_ige_encrypt ((unsigned char *) from, (unsigned char *) to, from_len, &self->aes_key, self->aes_iv, AES_DECRYPT); 
   return from_len;
 }
-
-
+#endif

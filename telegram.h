@@ -5,7 +5,9 @@
  * struct telegram library based on the telegram cli application, that was originally made by vysheng (see https://github.com/vysheng/tg)
  */
 
-#pragma once
+#ifndef __TELEGRAM_H__
+#define __TELEGRAM_H__
+
 #define MAX_DC_NUM 9
 #define MAX_PEER_NUM 100000
 
@@ -14,12 +16,14 @@
 #endif
 
 #include <sys/types.h>
-#include "net.h"
-#include "mtproto-common.h"
-#include "structures.h"
 #include "glib.h"
 #include "loop.h"
+//#include "mtproto-client.h"
 
+// forward declarations
+struct message;
+struct protocol_state;
+struct authorization_state;
 
 /*
  * Libtelegram states
@@ -69,7 +73,7 @@
  */
 struct telegram {
     void *protocol_data; 
-    int curr_dc;
+    //int curr_dc;
 
     char *login;
     char *config_path;
@@ -81,7 +85,7 @@ struct telegram {
     int session_state;
     
     /*
-     * MtProto state
+     * protocol state
      */
     struct protocol_state proto;
     struct authorization_state auth;
@@ -89,7 +93,12 @@ struct telegram {
     GList *change_state_listeners;
 
     /*
-     * Callbacks
+     * connection
+     */
+    struct mtproto_connection *connection;
+
+    /*
+     * callbacks
      */
     void (*on_output)(struct telegram *instance);
 
@@ -97,7 +106,7 @@ struct telegram {
 };
 
 /**
- * Constructor
+ * constructor
  */
 struct telegram *telegram_new(struct dc *DC, const char* login, 
             const char* config_path);
@@ -170,16 +179,6 @@ void telegram_network_connect (struct telegram *instance, int fd);
 
 // Export functions for plugins
 void running_for_first_time ();
-
-/* TODO: Remove?
-void parse_config ();
-void store_config ();
-*/
-
-/** 
- * Read and write until all queries received a response or errored
- */
-void telegram_flush_queries (struct telegram *instance);
 
 /**
  * Read and process all available input from the network
@@ -255,12 +254,8 @@ void event_update_new_message(struct message *M);
 /*
  * Load known users and chats on connect
  */
-void on_peer_allocated(void (*handler)(peer_t *peer));
-void event_peer_allocated(peer_t *peer);
-
-// template
-//void on_blarg(void (*on_msg)(struct message *M));
-//void event_blarg(struct message *M);
+void on_peer_allocated(void (*handler)(void *peer));
+void event_peer_allocated(void *peer);
 
 /**
  * Set a function to use as a handle to read from a network resource
@@ -274,8 +269,4 @@ void set_net_read_cb(ssize_t (*cb)(int fd, void *buff, size_t size));
  */
 void set_net_write_cb(ssize_t (*cb)(int fd, const void *buff, size_t size));
 
-/**
- * 
- */
-void set_default_username ();
-
+#endif

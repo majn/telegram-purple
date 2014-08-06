@@ -17,8 +17,7 @@
     Copyright Vitaly Valtman 2013
 */
 
-#ifndef __TOOLS_H__
-#define __TOOLS_H__
+#pragma once
 
 void *talloc (size_t size);
 void *trealloc (void *ptr, size_t old_size, size_t size);
@@ -41,5 +40,4 @@ int tasprintf (char **res, const char *format, ...) __attribute__ ((format (prin
 #ifdef DEBUG
 void tcheck (void);
 void texists (void *ptr, int size);
-#endif
 #endif

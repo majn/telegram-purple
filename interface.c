@@ -43,7 +43,6 @@
 #include "telegram.h"
 #include "structures.h"
 
-#include "mtproto-common.h"
 
 // libpurple debugging-messages
 #include "debug.h"

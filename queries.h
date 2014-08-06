@@ -16,14 +16,17 @@
 
     Copyright Vitaly Valtman 2013
 */
-#include "net.h"
-#include "telegram.h"
 #ifndef __QUERIES_H__
 #define __QUERIES_H__
+
+#pragma once
 #include "structures.h"
 
 // forward declare telegram
 struct telegram;
+struct encr_video;
+struct document;
+struct secret_chat;
 
 #define QUERY_ACK_RECEIVED 1
 

@@ -45,7 +45,6 @@
 
 #include "net.h"
 #include "mtproto-client.h"
-#include "mtproto-common.h"
 #include "queries.h"
 #include "telegram.h"
 #include "loop.h"
@@ -68,7 +67,6 @@ extern int unknown_user_list_pos;
 extern int unknown_user_list[];
 int register_mode;
 extern int safe_quit;
-extern int queries_num;
 
 int unread_messages;
 void got_it (char *line, int len);
@@ -248,12 +246,15 @@ void read_dc (int auth_file_fd, int id, unsigned ver, struct dc *DC_list[]) {
 }
 
 
-void empty_auth_file (struct authorization_state *state, const char *filename) {
+void empty_auth_file (const char *filename) {
+  struct authorization_state state;
+  memset(state.DC_list, 0, 11 * sizeof(void *));
+
   logprintf("empty_auth_file()\n");
-  alloc_dc (state->DC_list, 1, tstrdup (test_dc ? TG_SERVER_TEST : TG_SERVER), 443);
-  state->dc_working_num = 1;
-  state->auth_state = 0;
-  write_auth_file (state, filename);
+  alloc_dc (state.DC_list, 1, tstrdup (test_dc ? TG_SERVER_TEST : TG_SERVER), 443);
+  state.dc_working_num = 1;
+  state.auth_state = 0;
+  write_auth_file (&state, filename);
 }
 
 /**
@@ -273,7 +274,7 @@ struct authorization_state read_auth_file (const char *filename) {
   logprintf("fd: %d\n", auth_file_fd);
   if (auth_file_fd < 0) {
     logprintf("auth_file does not exist, creating empty...\n");
-    empty_auth_file (&state, filename);
+    empty_auth_file (filename);
   }
   auth_file_fd = open (filename, O_RDWR, 0600);
   assert (auth_file_fd >= 0);
@@ -285,7 +286,7 @@ struct authorization_state read_auth_file (const char *filename) {
   if (read (auth_file_fd, &m, 4) < 4 || (m != DC_SERIALIZED_MAGIC && m != DC_SERIALIZED_MAGIC_V2)) {
     logprintf("Invalid File content, wrong Magic numebr\n");
     close (auth_file_fd);
-    empty_auth_file (&state, filename);
+    empty_auth_file (filename);
     return state;
   }
   assert (read (auth_file_fd, &x, 4) == 4);
@@ -302,7 +303,8 @@ struct authorization_state read_auth_file (const char *filename) {
     if (y) {
       read_dc (auth_file_fd, i, m, state.DC_list);
       logprintf("loaded dc[%d] - port: %d, ip: %s, auth_key_id: %lli, server_salt: %lli, has_auth: %d\n", 
-          i, state.DC_list[i]->port, state.DC_list[i]->ip, state.DC_list[i]->auth_key_id, state.DC_list[i]->server_salt, state.DC_list[i]->has_auth);
+          i, state.DC_list[i]->port, state.DC_list[i]->ip, state.DC_list[i]->auth_key_id, 
+          state.DC_list[i]->server_salt, state.DC_list[i]->has_auth);
     } else {
       logprintf("loaded dc[%d] - NULL\n", i);
     }

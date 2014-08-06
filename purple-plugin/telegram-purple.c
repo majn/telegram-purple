@@ -22,8 +22,6 @@
 #include <time.h>
 #include <assert.h>
 
-// test
-
 // Libpurple Plugin Includes
 #include "notify.h"
 #include "plugin.h"
@@ -46,17 +44,13 @@
 #include "eventloop.h"
 
 // struct telegram Includes
-#include "telegram.h"
-#include "msglog.h"
-#include "mtproto-client.h"
-#include "mtproto-common.h"
-#include "structures.h"
 
 // telegram-purple includes
-#include "loop.h"
-#include "queries.h"
+#include "telegram.h"
 #include "telegram-purple.h"
-#include "request.h"
+
+// telegram-cli
+#include "net.h"
 
 #define BUDDYNAME_MAX_LENGTH 128
 
@@ -80,7 +74,7 @@ void tg_cli_log_cb(const char* format, va_list ap)
 }
 
 void on_new_message(struct message *M);
-void peer_allocated_handler(peer_t *user);
+void peer_allocated_handler(void *user);
 
 /**
  * Returns the base icon name for the given buddy and account.
@@ -141,6 +135,7 @@ static void tgprpl_output_cb(gpointer data, gint source, PurpleInputCondition co
     telegram_conn *conn = tg->extra;
 
     int written = telegram_write_output(tg);
+    
     logprintf("written(%d): %d.\n", telegram_get_connection(tg)->fd, written);
     if (written == 0) {
         logprintf("no output, removing output...\n");
@@ -413,8 +408,9 @@ static PurpleChat *blist_find_chat_by_id(PurpleConnection *gc, const char *id)
 }
 
 
-void peer_allocated_handler(peer_t *user)
+void peer_allocated_handler(void *usr)
 {
+    peer_t *user = usr;
     gchar *name = g_strdup_printf("%d", get_peer_id(user->id));
     logprintf("Allocated peer: %s\n", name);
 

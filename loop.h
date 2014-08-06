@@ -17,15 +17,19 @@
     Copyright Vitaly Valtman 2013
 */
 
-#pragma once
-
-#include "net.h"
-
 #ifndef __LOOP_H__
 #define __LOOP_H__
+// forward declarations
+
+struct dc;
+
+#ifndef __TELEGRAM_H__
+struct authorization_state;
+struct protocol_state;
+#endif
+
 int loop();
 void write_secret_chat_file (const char *filename);
-#endif
 
 struct protocol_state {
   int pts;
@@ -48,3 +52,5 @@ void write_state_file (struct protocol_state *state, const char *filename);
 struct protocol_state read_state_file (const char *filename);
 
 void on_start();
+
+#endif

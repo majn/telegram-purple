@@ -6,7 +6,6 @@
 #include <sys/stat.h>
 #include <assert.h>
 
-#include "mtproto-common.h"
 #include "telegram.h"
 #include "msglog.h"
 #include "glib.h"
@@ -31,12 +30,12 @@ void event_update_new_message(struct message *M)
 /*
  * Peer allocated
  */
-void (*on_peer_allocated_handler)(peer_t *peer);
-void on_peer_allocated(void (*handler)(peer_t *peer)) 
+void (*on_peer_allocated_handler)(void *peer);
+void on_peer_allocated(void (*handler)(void *peer)) 
 {
     on_peer_allocated_handler = handler;
 }
-void event_peer_allocated(peer_t *peer) 
+void event_peer_allocated(void *peer) 
 {
     if (on_peer_allocated_handler) {
         on_peer_allocated_handler(peer);
@@ -63,10 +62,9 @@ void telegram_change_state(struct telegram *instance, int state, void *data)
 
 struct telegram *telegram_new(struct dc *DC, const char* login, const char *config_path)
 {
-    on_start ();
     struct telegram *this = malloc(sizeof(struct telegram));
     this->protocol_data = NULL;
-    this->curr_dc = 0;
+    //this->curr_dc = 0;
     this->auth.DC_list[0] = DC;
     this->change_state_listeners = NULL;
 
@@ -173,6 +171,7 @@ char *telegram_get_config(struct telegram *instance, char *config)
     return g_strdup_printf("%s/%s", instance->config_path, config);
 }
 
+void on_connected(struct mtproto_connection *c, void* data);
 void telegram_network_connect(struct telegram *instance, int fd)
 {
     logprintf("telegram_network_connect()\n");
@@ -181,29 +180,16 @@ void telegram_network_connect(struct telegram *instance, int fd)
        assert(0);
     }
     struct dc *DC_working = telegram_get_working_dc(instance);
-
-    // check whether authentication is needed
-    if (!DC_working->auth_key_id) {
-        logprintf("No working DC, authenticating.\n");
-     
-        // init a new connection
-        struct connection *c = create_connection (DC_working->ip, DC_working->port, fd, instance);
-        // init a new session with random session id
-        dc_create_session(DC_working, c);
-
-        // Request PQ
-        send_req_pq_packet (c);
-        telegram_change_state(instance, STATE_PQ_REQUESTED, NULL);
-    } else {
-        logprintf("Already working session, setting state to connected.\n");
-        telegram_change_state(instance, STATE_CONNECTED, NULL);
-    }
+    instance->connection = mtproto_new(DC_working, fd, instance);
+    instance->connection->on_ready = on_connected;
+    instance->connection->on_ready_data = instance;
+    mtproto_connect(instance->connection);
 }
 
-void on_connected(struct telegram *instance)
+void on_connected(struct mtproto_connection *c, void *data)
 {
-    assert (telegram_get_working_dc(instance)->auth_key_id);
-    logprintf("Done...\n");
+    struct telegram *instance = data;
+    logprintf("Authorized... storing current session.\n");
     telegram_store_session(instance);
 }
 
@@ -211,7 +197,6 @@ void on_state_change(struct telegram *instance, int state, void *data)
 {
     switch (state) {
         case STATE_CONNECTED:
-            on_connected(instance);
             break;
 
         case STATE_ERROR: {
@@ -233,47 +218,18 @@ void on_state_change(struct telegram *instance, int state, void *data)
     }
 }
 
-
-/**
- * Read newest rpc response and update state
- */
-void try_rpc_interpret(struct telegram *instance, int op, int len)
-{
-    switch (instance->session_state) {
-        case STATE_PQ_REQUESTED:
-            logprintf("switch: pq_requested\n");
-            rpc_execute_req_pq(instance, len);
-            telegram_change_state(instance, STATE_DH_REQUESTED, NULL);
-        break;
-        case STATE_DH_REQUESTED:
-            logprintf("switch: dh_requested\n");
-            rpc_execute_rq_dh(instance, len);
-            telegram_change_state(instance, STATE_CDH_REQUESTED, NULL);
-        break;
-        case STATE_CDH_REQUESTED:
-            logprintf("switch: cdh_requested\n");
-            rpc_execute_cdh_sent(instance, len);
-            telegram_change_state(instance, STATE_AUTH_DONE, NULL);
-        break;
-        case STATE_AUTH_DONE:
-            logprintf("switch: auth_done\n");
-            rpc_execute_authorized(instance, op, len);
-        break;
-    }
-}
-
 void telegram_read_input (struct telegram *instance)
 {
-    return try_read(instance);
+    return try_read(instance->connection->connection);
 }
 
 int telegram_write_output (struct telegram *instance)
 {
-    return try_write(instance);
+    return try_write(instance->connection->connection);
 }
 
 int telegram_has_output (struct telegram *instance)
 {
-    return !all_queries_done();
+    return instance->connection->queries_num > 0;
 }
 

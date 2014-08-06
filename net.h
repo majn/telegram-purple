@@ -19,11 +19,14 @@
 #ifndef __NET_H__
 #define __NET_H__
 
-#define MAX_DC_ID 10
+#pragma once
+
 #include <poll.h>
 struct dc;
-#include "queries.h"
+#include "mtproto-client.h"
 #include "telegram.h"
+#include "queries.h"
+
 #define TG_SERVER "173.240.5.1"
 #define TG_SERVER_TEST "173.240.5.253"
 #define TG_APP_HASH "36722c72256a24c1225de00eb6a1ca74"
@@ -33,15 +36,10 @@ struct dc;
 #define TG_VERSION "0.01-beta"
 
 #define ACK_TIMEOUT 1
+#define MAX_DC_ID 10
 
-enum dc_state {
-  st_init,
-  st_reqpq_sent,
-  st_reqdh_sent,
-  st_client_dh_sent,
-  st_authorized,
-  st_error
-};
+// typedef struct mtproto_connection not available right now
+struct mtproto_connection;
 
 struct connection;
 struct connection_methods {
@@ -126,11 +124,15 @@ struct connection {
   int out_packet_num;
   int last_connect_time;
   int in_fail_timer;
+  struct connection_methods *methods;
   struct session *session;
   void *extra;
   struct event_timer ev;
   double last_receive_time;
+  
+  // backreference to corrent telegram instance
   struct telegram *instance;
+  struct mtproto_connection *mtconnection;
 };
 
 extern struct connection *Connections[];
@@ -141,19 +143,22 @@ int read_in (struct connection *c, void *data, int len);
 
 void create_all_outbound_connections (void);
 
-struct connection *create_connection (const char *host, int port, int fd, struct telegram *instance);
+struct connection *create_connection (const char *host, int port, struct session *session, struct connection_methods *methods);
 int connections_make_poll_array (struct pollfd *fds, int max);
 void connections_poll_result (struct pollfd *fds, int max);
+void dc_create_session (struct dc *DC);
 void insert_msg_id (struct session *S, long long id);
 struct dc *alloc_dc (struct dc* DC_list[], int id, char *ip, int port);
 
-void dc_create_session (struct dc *DC, struct connection *c);
-
-void try_read (struct telegram *instance);
-void try_rpc_read (struct telegram *instance);
-
-int try_write (struct telegram *instance);
-
 #define GET_DC(c) (telegram_get_working_dc(c->instance))
-#endif
 
+// export read and write methods to redirect network control
+void try_read (struct connection *c);
+void try_rpc_read (struct connection *c);
+int try_write (struct connection *c);
+
+struct connection *fd_create_connection (struct dc *DC, int fd, struct telegram *instance, 
+    struct connection_methods *methods, struct mtproto_connection *mtp);
+void fd_close_connection(struct connection *c);
+
+#endif
