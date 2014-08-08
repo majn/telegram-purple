@@ -203,18 +203,18 @@ static void tgprpl_on_state_change(struct telegram *instance, int state, void *d
             do_send_code_result_auth (instance, code, hash, first_name, last_name);
         break;
 
-        case STATE_PHONE_CODE_NOT_ENTERED:
-            purple_connection_set_state(_gc, PURPLE_CONNECTED);
+        case STATE_PHONE_CODE_NOT_ENTERED: {
+            char *hash = data;
+            const char *code = purple_account_get_string(conn->pa, "verification_key", NULL);
+            do_send_code_result(instance, code, hash);
             // TODO: Request SMS code
-        break;
-        
-        case STATE_CLIENT_NOT_REGISTERED:
-            // ask for registration type
+        }
         break;
 
         case STATE_CLIENT_CODE_NOT_ENTERED: {
+            char *hash = data;
             const char *code = purple_account_get_string(conn->pa, "verification_key", NULL);
-            const char *hash = purple_account_get_string(conn->pa, "verification_hash", NULL);
+            //const char *hash = purple_account_get_string(conn->pa, "verification_hash", NULL);
             do_send_code_result(instance, code, hash);
             // enter SMS code
         }
@@ -248,7 +248,9 @@ static void tgprpl_on_state_change(struct telegram *instance, int state, void *d
             // get new messages
             purple_debug_info(PLUGIN_ID, "Fetching new messages...\n");
             do_get_difference(instance);
-            telegram_flush_queries(instance);
+
+            tgprpl_has_output(instance);
+            //telegram_flush_queries(instance);
         break;
 
         case STATE_ERROR: {
@@ -302,14 +304,11 @@ void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_messa
     purple_debug_info(PLUGIN_ID, "tgprpl_login_on_connected()\n");
     struct telegram *tg = (struct telegram*) data;
     telegram_conn *conn = tg->extra;
-    //running_for_first_time();
-
     if (fd == -1) {
         logprintf("purple_proxy_connect failed: %s\n", error_message);
         telegram_free(tg);
         return;
     }
-
 
     purple_debug_info(PLUGIN_ID, "Connecting to the telegram network...\n");
     conn->wh = purple_input_add(fd, PURPLE_INPUT_WRITE, tgprpl_output_cb, tg);

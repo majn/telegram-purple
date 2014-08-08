@@ -1535,7 +1535,7 @@ static int id_cmp (struct message *M1, struct message *M2) {
 }
 
 struct user *fetch_alloc_user (struct mtproto_connection *mtp) {
- logprintf("fetch_alloc_user()\n");
+  logprintf("fetch_alloc_user()\n");
   int send_event = 0;
   int data[2];
   prefetch_data (mtp, data, 8);

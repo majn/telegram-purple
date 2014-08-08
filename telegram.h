@@ -26,7 +26,7 @@ struct protocol_state;
 struct authorization_state;
 
 /*
- * Libtelegram states
+ * telegram states
  */
 
 #define STATE_INITIALISED 0
@@ -35,35 +35,35 @@ struct authorization_state;
 // Error
 #define STATE_ERROR 2
 
-// Authentication
-#define STATE_PQ_REQUESTED 3
-#define STATE_DH_REQUESTED 4
-#define STATE_CDH_REQUESTED 5
-#define STATE_AUTH_DONE 6
+// intermediate authorization states already present and handled in mtproto-client.c
+//#define STATE_PQ_REQUESTED 3
+//#define STATE_DH_REQUESTED 4
+//#define STATE_CDH_REQUESTED 5
+#define STATE_AUTHORIZED 6
+
+// dc discovery
 #define STATE_CONFIG_REQUESTED 7
 #define STATE_EXPORTING_CONFIG 8
 #define STATE_DISCONNECTED_SWITCH_DC 9
+#define STATE_CONFIG_RECEIVED 11
 
-// Login
-#define STATE_CONNECTED 10
+// login
 
 // - Phone Registration
-#define STATE_PHONE_IS_REGISTERED_SENT 11
-#define STATE_PHONE_IS_REGISTERED_SENT_2 12
 #define STATE_PHONE_NOT_REGISTERED 13
 #define STATE_PHONE_CODE_REQUESTED 14
 #define STATE_PHONE_CODE_NOT_ENTERED 15
 #define STATE_PHONE_CODE_ENTERED 16
 
 // - Client Registration
-#define STATE_CLIENT_IS_REGISTERED_SENT 16
-#define STATE_CLIENT_NOT_REGISTERED 17
-#define STATE_CLIENT_CODE_REQUESTED 18
-#define STATE_CLIENT_CODE_NOT_ENTERED 19
-#define STATE_CLIENT_CODE_ENTERED 20
+#define STATE_CLIENT_IS_REGISTERED_SENT 17
+#define STATE_CLIENT_NOT_REGISTERED 18
+#define STATE_CLIENT_CODE_REQUESTED 19
+#define STATE_CLIENT_CODE_NOT_ENTERED 20
+#define STATE_CLIENT_CODE_ENTERED 21
 
 // Ready for sending and receiving messages
-#define STATE_READY 21
+#define STATE_READY 22
 
 /**
  * A telegram session
@@ -172,6 +172,8 @@ void telegram_change_state(struct telegram *instance, int state, void *data);
  * Connect to the telegram network with the given configuration
  */
 void telegram_network_connect (struct telegram *instance, int fd);
+
+int telegram_login (struct telegram *instance);
 
 /**
  * Read the authorization_state stored in the given file

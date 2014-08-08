@@ -238,6 +238,9 @@ int rpc_send_message (struct connection *c, void *data, int len) {
 
   self->total_packets_sent ++;
   self->total_data_sent += total_len;
+
+  self->queries_num ++;
+  logprintf("queries_num=%d\n", self->queries_num);
   return 1;
 }
 
@@ -1787,6 +1790,7 @@ int tc_becomes_ready (struct connection *c) {
     break;
   case st_authorized:
     auth_work_start (c);
+    telegram_change_state(c->instance, STATE_AUTHORIZED, NULL);
     break;
   default:
     logprintf ( "c_state = %d\n", c->mtconnection->c_state);
@@ -1890,3 +1894,4 @@ void mtproto_close(struct mtproto_connection *c)
     // stop_ping_timer (c->connection);
     fd_close_connection(c->connection);
 }
+

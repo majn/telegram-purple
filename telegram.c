@@ -55,8 +55,57 @@ void telegram_change_state(struct telegram *instance, int state, void *data)
     logprintf("telegram connection state changed to: %d\n", state);
     instance->session_state = state;
     GList *curr = instance->change_state_listeners; 
-    while ((curr = g_list_next(change_listeners)) != NULL) {
+    do {
        ((state_listener_t)curr->data)(instance, state, data);
+    } while ((curr = g_list_next(change_listeners)) != NULL);
+}
+
+void on_state_change(struct telegram *instance, int state, void *data) 
+{
+    logprintf("on_state_change: %d\n", state);
+    switch (state) {
+        case STATE_ERROR: {
+            const char* err = data;
+            logprintf("Telegram errored: %s \n", err);
+        }
+        break;
+
+        case STATE_AUTHORIZED:
+            logprintf("requesting configuration");
+            telegram_change_state(instance, STATE_CONFIG_REQUESTED, NULL);
+            do_help_get_config (instance);
+        break;
+
+        case STATE_CONFIG_RECEIVED:
+            logprintf("received network configuration, checking whether phone is registered.");
+            telegram_store_session(instance);
+            do_auth_check_phone(instance, instance->login);
+        break;
+
+        case STATE_PHONE_NOT_REGISTERED:
+            logprintf("phone is not registered, need to register phone number.\n");
+            do_send_code(instance, instance->login);
+        break;
+
+        case STATE_PHONE_CODE_REQUESTED:
+            logprintf("phone authenticion, user needs to enter code, first and last name.\n");
+            // wait for user input ...
+            break;
+
+        case STATE_CLIENT_NOT_REGISTERED:
+            logprintf("phone is already registered, need to register client.\n");
+            do_send_code(instance, instance->login);
+        break;
+
+        case STATE_CLIENT_CODE_NOT_ENTERED:
+            logprintf("client authentication, user needs to enter code");
+            // wait for user input ...
+        break;
+
+        case STATE_DISCONNECTED_SWITCH_DC:
+            logprintf("Have to migrate to other DC");
+            instance->connection
+        break;
     }
 }
 
@@ -81,6 +130,7 @@ struct telegram *telegram_new(struct dc *DC, const char* login, const char *conf
     logprintf("%s\n", this->auth_path);
     logprintf("%s\n", this->state_path);
 
+    telegram_add_state_change_listener(this, on_state_change);
     telegram_change_state(this, STATE_INITIALISED, NULL);
     return this;
 }
@@ -125,7 +175,6 @@ struct connection *telegram_get_connection(struct telegram *instance)
     assert(DC);
     assert(DC->sessions[0]);
     assert(DC->sessions[0]->c);
-    //logprintf("get_connection() -> fd: %d\n", DC->sessions[0]->c->fd);
     return DC->sessions[0]->c;
 }
 
@@ -171,51 +220,45 @@ char *telegram_get_config(struct telegram *instance, char *config)
     return g_strdup_printf("%s/%s", instance->config_path, config);
 }
 
-void on_connected(struct mtproto_connection *c, void* data);
+void on_authorized(struct mtproto_connection *c, void* data);
+
+/**
+ * Connect to the currently active data center
+ */
 void telegram_network_connect(struct telegram *instance, int fd)
 {
     logprintf("telegram_network_connect()\n");
     if (!instance->auth.DC_list) {
-       logprintf("telegram_network_connect(): cannot connect, restore / initialise a session first.\n");
+       logprintf("telegram_network_connect(): cannot connect, restore / init a session first.\n");
        assert(0);
     }
     struct dc *DC_working = telegram_get_working_dc(instance);
     instance->connection = mtproto_new(DC_working, fd, instance);
-    instance->connection->on_ready = on_connected;
+    instance->connection->on_ready = on_authorized;
     instance->connection->on_ready_data = instance;
     mtproto_connect(instance->connection);
 }
 
-void on_connected(struct mtproto_connection *c, void *data)
+/**
+ * Login, and perform a registration when needed
+ */
+int telegram_login(struct telegram *instance)
 {
-    struct telegram *instance = data;
-    logprintf("Authorized... storing current session.\n");
-    telegram_store_session(instance);
+    if (instance->session_state != STATE_AUTHORIZED) {
+        logprintf("Cannot log in, invalid state: %d \n", instance->session_state);
+        return -1;
+    }
+    do_help_get_config(instance);
+    telegram_change_state(instance, STATE_CONFIG_REQUESTED, NULL);
+    return 0;
 }
 
-void on_state_change(struct telegram *instance, int state, void *data) 
+void on_authorized(struct mtproto_connection *c, void *data)
 {
-    switch (state) {
-        case STATE_CONNECTED:
-            break;
-
-        case STATE_ERROR: {
-            const char* err = data;
-            logprintf("Telegram errored: %s \n", err);
-        }
-        break;
-
-        case STATE_AUTH_DONE:
-            logprintf("requesting configuration");
-            telegram_change_state(instance, STATE_CONFIG_REQUESTED, NULL);
-            do_help_get_config (instance);
-        break;
-
-        case STATE_CONFIG_REQUESTED:
-            logprintf("switch: config_requested\n");
-            telegram_store_session(instance);
-        break;
-    }
+    struct telegram *instance = data;
+    logprintf("Authorized... storing current session %d.\n", c->connection->session[0]);
+    telegram_store_session(instance);
+    telegram_change_state(instance, STATE_AUTHORIZED, NULL);
 }
 
 void telegram_read_input (struct telegram *instance)

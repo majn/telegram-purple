@@ -140,11 +140,6 @@ void query_restart (long long id) {
 
 struct query *send_query (struct dc *DC, int ints, void *data, struct query_methods *methods, void *extra) {
   logprintf("send_query(...)\n");
-  /*
-  if (!DC->sessions[0]) {
-    dc_create_session (DC);
-  }
-  */
   if (verbosity) {
     logprintf ( "Sending query of size %d to DC (%s:%d)\n", 4 * ints, DC->ip, DC->port);
   }
@@ -173,8 +168,10 @@ struct query *send_query (struct dc *DC, int ints, void *data, struct query_meth
   insert_event_timer (&q->ev);
 
   q->extra = extra;
-  //queries_num ++;
-  //logprintf("queries_num: %d\n", queries_num);
+
+  struct mtproto_connection *mtp = DC->sessions[0]->c->mtconnection;
+  mtp->queries_num ++;
+  logprintf("queries_num: %d\n", mtp->queries_num);
   return q;
 }
 
@@ -211,8 +208,9 @@ void query_error (long long id) {
     tfree (q->data, q->data_len * 4);
     tfree (q, sizeof (*q));
   }
-  //queries_num --;
-  //logprintf("queries_num: %d\n", queries_num);
+
+  mtp->queries_num --;
+  logprintf("queries_num: %d\n", mtp->queries_num);
 }
 
 #define MAX_PACKED_SIZE (1 << 24)
@@ -355,9 +353,7 @@ void fetch_dc_option (struct telegram *instance) {
   int l2 = prefetch_strlen (mtp);
   char *ip = fetch_str (mtp, l2);
   int port = fetch_int (mtp);
-  if (verbosity) {
-    logprintf ( "id = %d, name = %.*s ip = %.*s port = %d\n", id, l1, name, l2, ip, port);
-  }
+  logprintf ( "id = %d, name = %.*s ip = %.*s port = %d\n", id, l1, name, l2, ip, port);
 
   bl_do_dc_option (mtp, id, l1, name, l2, ip, port, instance);
 }
@@ -374,9 +370,7 @@ int help_get_config_on_answer (struct query *q UU) {
   assert (test_mode == CODE_bool_true || test_mode == CODE_bool_false);
   assert (test_mode == CODE_bool_false || test_mode == CODE_bool_true);
   int this_dc = fetch_int (mtp);
-  if (verbosity) {
-    logprintf ( "this_dc = %d\n", this_dc);
-  }
+  logprintf ( "this_dc = %d\n", this_dc);
   assert (fetch_int (mtp) == CODE_vector);
   int n = fetch_int (mtp);
   assert (n <= 10);
@@ -388,10 +382,9 @@ int help_get_config_on_answer (struct query *q UU) {
   if (op == CODE_config) {
     max_bcast_size = fetch_int (mtp);
   }
-  if (verbosity >= 2) {
-    logprintf ( "chat_size = %d\n", max_chat_size);
-  }
-  telegram_change_state(instance, STATE_CONNECTED, 0);
+  logprintf ( "max_chat_size = %d\n", max_chat_size);
+
+  telegram_change_state(instance, STATE_CONFIG_RECEIVED, NULL);
   return 0;
 }
 
@@ -405,7 +398,8 @@ void do_help_get_config (struct telegram *instance) {
   clear_packet (mtp);  
   out_int (mtp, CODE_help_get_config);
   struct dc *DC_working = telegram_get_working_dc(instance);
-  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &help_get_config_methods, instance);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, 
+    mtp->packet_buffer, &help_get_config_methods, instance);
 }
 /* }}} */
 
@@ -567,6 +561,18 @@ int check_phone_on_answer (struct query *q UU) {
   assert (fetch_int (mtp) == (int)CODE_auth_checked_phone);
   check_phone_result = fetch_bool (mtp);
   fetch_bool (mtp);
+
+  if (mtp->connection->instance->session_state != STATE_CONFIG_RECEIVED) {
+     logprintf("check_phone_on_answer(): invalid state: %d\n", mtp->connection->instance->session_state);
+     telegram_change_state(mtp->connection->instance, STATE_ERROR, NULL);
+     return -1;
+  }
+  logprintf("check_phone_result=%d\n", check_phone_result);
+  if (check_phone_result) { 
+    telegram_change_state(mtp->connection->instance, STATE_CLIENT_NOT_REGISTERED, NULL);
+  } else {
+    telegram_change_state(mtp->connection->instance, STATE_PHONE_NOT_REGISTERED, NULL);
+  } 
   return 0;
 }
 
@@ -592,7 +598,7 @@ int check_phone_on_error (struct query *q UU, int error_code, int l, char *error
   } else {
     logprintf ( "error_code = %d, error = %.*s\n", error_code, l, error);
   }
-  telegram_change_state(instance, STATE_ERROR, error);
+  telegram_change_state(instance, STATE_DISCONNECTED_SWITCH_DC, error);
   return 0;
 }
 
@@ -601,7 +607,7 @@ struct query_methods check_phone_methods = {
   .on_error = check_phone_on_error
 };
 
-int do_auth_check_phone (struct telegram *instance, const char *user) {
+void do_auth_check_phone (struct telegram *instance, const char *user) {
   struct mtproto_connection *mtp = instance->connection;
 
   suser = tstrdup (user);
@@ -617,7 +623,6 @@ int do_auth_check_phone (struct telegram *instance, const char *user) {
   send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &check_phone_methods, instance);
   net_loop (0, cr_f);
   */
-  return check_phone_result;
 }
 /* }}} */
 

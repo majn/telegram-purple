@@ -722,10 +722,11 @@ struct connection *fd_create_connection (struct dc *DC, int fd,
     S->c = c;
     DC->sessions[0] = S;
   }
+  // add backreference to session
+  c->session = DC->sessions[0];
 
   // add backreference to used mtproto-connection
   c->mtconnection = mtp;
-
   return c;
 }
 

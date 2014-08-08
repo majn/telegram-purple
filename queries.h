@@ -103,7 +103,7 @@ void do_load_video (struct telegram *instance, struct video *V, int next);
 void do_load_document (struct telegram *instance, struct document *V, int next);
 void do_load_document_thumb (struct telegram *instance, struct document *video, int next);
 void do_help_get_config (struct telegram *instance);
-int do_auth_check_phone (struct telegram *instance, const char *user);
+void do_auth_check_phone (struct telegram *instance, const char *user);
 void do_get_nearest_dc (struct telegram*);
 void do_send_code_result_auth (struct telegram *instance, const char *code, const char *sms_hash, const char *first_name, const char *last_name);
 void do_import_auth (struct telegram *instance, int num);
