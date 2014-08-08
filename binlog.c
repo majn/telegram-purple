@@ -1170,32 +1170,6 @@ void write_binlog (void) {
 }
 
 void add_log_event (struct mtproto_connection *self, const int *data, int len) {
-
-  logprintf ("Add log event: magic = 0x%08x, len = %d\n", data[0], len);
-  assert(0);
-  // TODO: Mit add_log_event_i austauschen
-  assert (!(len & 3));
-  if (in_replay_log) { return; }
-  rptr = (void *)data;
-  wptr = rptr + (len / 4);
-  int *in = self->in_ptr;
-  int *end = self->in_end;
-  // TODO: 
-  //replay_log_event ();
-  if (rptr != wptr) {
-    logprintf ("Unread %lld ints. Len = %d\n", (long long)(wptr - rptr), len);
-    assert (rptr == wptr);
-  }
-  if (binlog_enabled) {
-    assert (binlog_fd > 0);
-    assert (write (binlog_fd, data, len) == len);
-  }
-  self->in_ptr = in;
-  self->in_end = end;
-}
-
-void add_log_event_i (struct mtproto_connection *self, struct telegram *instance, 
-        const int *data, int len) {
   logprintf ("Add log event: magic = 0x%08x, len = %d\n", data[0], len);
   assert (!(len & 3));
   if (in_replay_log) { return; }
@@ -1203,8 +1177,7 @@ void add_log_event_i (struct mtproto_connection *self, struct telegram *instance
   wptr = rptr + (len / 4);
   int *in = self->in_ptr;
   int *end = self->in_end;
-  // TODO: 
-  replay_log_event (instance);
+  replay_log_event (self->connection->instance);
   if (rptr != wptr) {
     logprintf ("Unread %lld ints. Len = %d\n", (long long)(wptr - rptr), len);
     assert (rptr == wptr);
@@ -1228,7 +1201,7 @@ void bl_do_set_auth_key_id (struct telegram *instance, int num, unsigned char *b
   ev[1] = num;
   *(long long *)(ev + 2) = fingerprint;
   memcpy (ev + 4, buf, 256);
-  add_log_event_i (self, instance, ev, 8 + 8 + 256);
+  add_log_event (self, ev, 8 + 8 + 256);
 }
 
 void bl_do_set_our_id (struct mtproto_connection *self, int id) {
