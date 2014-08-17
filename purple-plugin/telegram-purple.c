@@ -73,6 +73,8 @@ void message_allocated_handler (struct telegram *instance, struct message *M);
 void peer_allocated_handler (struct telegram *instance, void *user);
 void telegram_on_phone_registration (struct telegram *instance);
 void elegram_on_client_registration (struct telegram *instance);
+void on_new_user_status(struct telegram *instance, void *user);
+void on_user_typing(struct telegram *instance, void *user);
 
 /**
  * Returns the base icon name for the given buddy and account.
@@ -94,7 +96,23 @@ static const char *tgprpl_list_icon(PurpleAccount * acct, PurpleBuddy * buddy)
 static void tgprpl_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo * info, gboolean full)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_tooltip_text()\n");
+    const char *status;
+    peer_id_t *peer = purple_buddy_get_protocol_data(buddy);
+    peer_t *P = user_chat_get (*peer);
+
+    if (P->user.status.online == 1)
+        status = "Online";
+    else
+        status = "Offline";
+        
+    purple_notify_user_info_add_pair_plaintext(info, "Status", status);
+
+    struct tm *tm = localtime ((void *)&P->user.status.when);
+    char buffer [21];
+    sprintf  (buffer, "[%04d/%02d/%02d %02d:%02d:%02d]", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+    purple_notify_user_info_add_pair_plaintext(info, "Last seen: ", buffer);
 }
+
 
 /**
  * Handle a failed verification by removing the invalid sms code and notifying the user
@@ -318,8 +336,25 @@ struct telegram_config tgconf = {
     telegram_on_disconnected,
 
     message_allocated_handler,
-    peer_allocated_handler
+    peer_allocated_handler,
+    on_new_user_status,
+    on_user_typing
 };
+
+gboolean queries_timerfunc (gpointer data) {
+   logprintf ("queries_timerfunc()\n");
+   telegram_conn *conn = data;
+   work_timers ();
+   // TODO: work pending timers
+
+   if (conn->updated) {
+       logprintf ("State updated, storing current session...\n");
+       conn->updated = 0;
+       telegram_store_session (conn->tg);
+   }
+   return 1;
+}
+
 
 /**
  * This must be implemented.
@@ -346,7 +381,9 @@ static void tgprpl_login(PurpleAccount * acct)
     tg->extra = conn;
 
     purple_connection_set_state (conn->gc, PURPLE_CONNECTING);
-    telegram_network_connect(tg);
+    telegram_network_connect (tg);
+
+    purple_timeout_add (2000, queries_timerfunc, conn);
 }
 
 void message_allocated_handler(struct telegram *tg, struct message *M)
@@ -367,11 +404,40 @@ void message_allocated_handler(struct telegram *tg, struct message *M)
            logprintf ("service message, skipping...\n");
            return;
         }
-        serv_got_im(gc, who, M->message, PURPLE_MESSAGE_RECV, time(NULL));
+        logprintf ("fwd_date: %d\n", M->date);
+        serv_got_im(gc, who, M->message, PURPLE_MESSAGE_RECV, time((time_t *) &M->date));
         g_free(who);
     }
+
+    conn->updated = 1;
 }
 
+void on_new_user_status(struct telegram *tg, void *peer)
+{
+    telegram_conn *conn = tg->extra;
+    peer_t *p = peer;
+
+    //  purple_debug_info(PLUGIN_ID, "New User Status: %s\n", peer->user.status.online);
+    // TODO: this should probably be freed again somwhere
+    char *who = g_strdup_printf("%d", get_peer_id(p->user.id));
+   
+    PurpleAccount *account = purple_connection_get_account(conn->gc);
+    if (p->user.status.online == 1) 
+        purple_prpl_got_user_status(account, who, "available", "message", "", NULL);
+    else
+        purple_prpl_got_user_status(account, who, "unavailable", "message", "", NULL);
+    g_free(who);
+}
+
+void on_user_typing(struct telegram *tg, void *peer)
+{
+    telegram_conn *conn = tg->extra;
+    peer_t *p = peer;
+
+    char *who = g_strdup_printf("%d", get_peer_id(p->user.id));
+    serv_got_typing(conn->gc, who, 2, PURPLE_TYPING);
+    g_free(who);
+}
 
 /*
  * Search chats in hash table
@@ -415,7 +481,6 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
     peer_t *user = usr;
     gchar *name = g_strdup_printf("%d", get_peer_id(user->id));
     logprintf("Allocated peer: %s\n", name);
-
     switch (user->id.type) {
         case PEER_USER: {
             logprintf("Peer type: user.\n");
@@ -433,6 +498,13 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
                 purple_blist_add_buddy(buddy, NULL, tggroup, NULL);
             }
             purple_buddy_set_protocol_data(buddy, (gpointer)&user->id);
+            
+            PurpleAccount *account = purple_connection_get_account(gc);
+            if (user->user.status.online == 1)
+                purple_prpl_got_user_status(account, name, "available", "message", "", NULL);
+            else
+                purple_prpl_got_user_status(account, name, "unavailable", "message", "", NULL);
+        
             g_free(name);
         }
         break;
@@ -508,10 +580,11 @@ static int tgprpl_send_im(PurpleConnection * gc, const char *who, const char *me
     telegram_conn *conn = purple_connection_get_protocol_data(gc);
     PurpleAccount *pa = conn->pa;
 
-    purple_debug_info(PLUGIN_ID, "tgprpl_send_im()\n");
-    PurpleBuddy *b = purple_find_buddy(pa, who);
-    peer_id_t *peer = purple_buddy_get_protocol_data(b);
-    do_send_message(conn->tg, *peer, message, strlen(message));
+    purple_debug_info (PLUGIN_ID, "tgprpl_send_im()\n");
+    PurpleBuddy *b = purple_find_buddy (pa, who);
+    peer_id_t *peer = purple_buddy_get_protocol_data (b);
+    do_send_message (conn->tg, *peer, message, strlen(message));
+    tgprpl_has_output (conn->tg);
     return 1;
 }
 
@@ -596,7 +669,14 @@ static void tgprpl_rem_deny(PurpleConnection * gc, const char *name)
  */
 static unsigned int tgprpl_send_typing(PurpleConnection * gc, const char *who, PurpleTypingState typing)
 {
+    telegram_conn *conn = purple_connection_get_protocol_data(gc);
+
     purple_debug_info(PLUGIN_ID, "tgprpl_send_typing()\n");
+    PurpleBuddy *b = purple_find_buddy(conn->pa, who);
+    if (b) {
+        peer_id_t *peer = purple_buddy_get_protocol_data(b);
+        do_update_typing (conn->tg, *peer);
+    }
     return 0;
 }
 
@@ -932,8 +1012,8 @@ static PurplePluginInfo info = {
     "Adds support for the telegram protocol to libpurple.",
     "Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>, Matthias Jentsch <mtthsjntsch@gmail.com>",
     "https://bitbucket.org/telegrampurple/telegram-purple",
-    NULL,           // on load
-    NULL,           // on unload
+    NULL,    // on load
+    NULL,  // on unload
     NULL,           // on destroy
     NULL,           // ui specific struct
     &prpl_info,     // plugin info struct

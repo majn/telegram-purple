@@ -40,6 +40,8 @@ typedef struct {
 	PurpleAccount *pa;
 	PurpleConnection *gc;
 
+    int updated;
+
     /**
      * Write handler returned by purple_input_add
      */
