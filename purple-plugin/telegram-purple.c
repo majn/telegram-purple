@@ -96,21 +96,6 @@ static const char *tgprpl_list_icon(PurpleAccount * acct, PurpleBuddy * buddy)
 static void tgprpl_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo * info, gboolean full)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_tooltip_text()\n");
-    const char *status;
-    peer_id_t *peer = purple_buddy_get_protocol_data(buddy);
-    peer_t *P = user_chat_get (*peer);
-
-    if (P->user.status.online == 1)
-        status = "Online";
-    else
-        status = "Offline";
-        
-    purple_notify_user_info_add_pair_plaintext(info, "Status", status);
-
-    struct tm *tm = localtime ((void *)&P->user.status.when);
-    char buffer [21];
-    sprintf  (buffer, "[%04d/%02d/%02d %02d:%02d:%02d]", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
-    purple_notify_user_info_add_pair_plaintext(info, "Last seen: ", buffer);
 }
 
 
@@ -174,6 +159,7 @@ static void tgprpl_has_input(struct telegram *tg)
             tgprpl_input_cb, tg);
         logprintf("Attached read handle: %u ", conn->rh);
     }
+
 }
 
 static void init_dc_settings(PurpleAccount *acc, struct dc *DC)
@@ -344,7 +330,7 @@ struct telegram_config tgconf = {
 gboolean queries_timerfunc (gpointer data) {
    logprintf ("queries_timerfunc()\n");
    telegram_conn *conn = data;
-   work_timers ();
+   // work_timers ();
    // TODO: work pending timers
 
    if (conn->updated) {
@@ -427,6 +413,44 @@ void on_new_user_status(struct telegram *tg, void *peer)
     else
         purple_prpl_got_user_status(account, who, "unavailable", "message", "", NULL);
     g_free(who);
+
+/*
+<<<<<<< HEAD
+    const char *status;
+    peer_id_t *peer = purple_buddy_get_protocol_data(buddy);
+    peer_t *P = user_chat_get (*peer);
+
+    if (P->user.status.online == 1)
+        status = "Online";
+    else
+        status = "Offline";
+        
+    purple_notify_user_info_add_pair_plaintext(info, "Status", status);
+
+    struct tm *tm = localtime ((void *)&P->user.status.when);
+    char buffer [21];
+    sprintf  (buffer, "[%04d/%02d/%02d %02d:%02d:%02d]", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+    purple_notify_user_info_add_pair_plaintext(info, "Last seen: ", buffer);
+	const char *status;
+	peer_id_t *peer = purple_buddy_get_protocol_data(buddy);
+	if(peer == NULL)
+	{
+		purple_notify_user_info_add_pair_plaintext(info, "Status", "Offline");
+		return;
+	}
+	peer_t *P = user_chat_get (*peer);
+
+	if (P->user.status.online == 1)
+		status = "Online";
+	else
+		status = "Offline";
+		
+	purple_notify_user_info_add_pair_plaintext(info, "Status", status);
+	struct tm *tm = localtime ((void *)&P->user.status.when);
+	char buffer [21];
+	sprintf  (buffer, "[%04d/%02d/%02d %02d:%02d:%02d]", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+	purple_notify_user_info_add_pair_plaintext(info, "Last seen: ", buffer);
+    */
 }
 
 void on_user_typing(struct telegram *tg, void *peer)
@@ -739,6 +763,7 @@ static GList *tgprpl_status_types(PurpleAccount * acct)
 static void tgprpl_set_status(PurpleAccount * acct, PurpleStatus * status)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_set_status()\n");
+
 }
 
 /**
