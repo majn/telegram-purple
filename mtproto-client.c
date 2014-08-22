@@ -1706,6 +1706,7 @@ int process_rpc_message (struct connection *c UU, struct encrypted_message *enc,
 int rpc_execute (struct connection *c, int op, int len) {
   logprintf ("outbound rpc connection #%d : received rpc answer %d with %d content bytes\n", c->fd, op, len);
   struct mtproto_connection *self = c->mtconnection;
+  struct telegram *instance = c->instance;
   
   /*  
   if (op < 0) {

@@ -119,9 +119,8 @@ struct telegram *telegram_new(struct dc *DC, const char* login, const char *conf
     void (*proxy_request_cb)(struct telegram *instance, const char *ip, int port),
     void (*proxy_close_cb)(struct telegram *instance, int fd))
 {
-    struct telegram *this = malloc(sizeof(struct telegram));
+    struct telegram *this = talloc0(sizeof(struct telegram));
     this->protocol_data = NULL;
-    //this->curr_dc = 0;
     this->auth.DC_list[0] = DC;
     this->change_state_listeners = NULL;
     this->bl = talloc0 (sizeof(struct binlog));
@@ -156,8 +155,8 @@ void telegram_free(struct telegram *this)
     g_free(this->auth_path);
     g_free(this->state_path);
     g_free(this->secret_path);
-    free(this);
     tfree(this->bl, sizeof(struct binlog));
+    tfree(this, sizeof(struct telegram));
 }
 
 void assert_file_usable(const char *file)
