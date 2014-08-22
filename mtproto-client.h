@@ -156,6 +156,8 @@ enum dc_state {
 // forward-declarations
 struct timespec;
 struct telegram;
+struct mtproto_connection;
+void mtproto_destroy (struct mtproto_connection *self);
 
 #define DECRYPT_BUFFER_INTS 16384
 #define ENCRYPT_BUFFER_INTS 16384
@@ -501,4 +503,7 @@ static inline void hexdump_out (struct mtproto_connection *self) {
 #endif
 void my_clock_gettime (int clock_id, struct timespec *T);
 
+void mtproto_free_closed ();
+
 #endif
+

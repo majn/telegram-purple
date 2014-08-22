@@ -1855,14 +1855,18 @@ struct connection_methods mtproto_methods = {
   .close = rpc_close
 };
 
+// TODO: use a list or tree instead
+struct mtproto_connection *Cs[100]; 
+
 /**
  * Create a new struct mtproto_connection connection using the giving datacenter for authorization and 
  *  session handling
  */
 struct mtproto_connection *mtproto_new(struct dc *DC, int fd, struct telegram *tg)
 {
-    // init
+    static int cs = 0;
     struct mtproto_connection *mtp = talloc(sizeof(struct mtproto_connection));
+    Cs[cs++] = mtp;
     memset(mtp, 0, sizeof(struct mtproto_connection));
     mtp->packet_buffer = mtp->__packet_buffer + 16;
     mtp->connection = fd_create_connection(DC, fd, tg, &mtproto_methods, mtp);
@@ -1888,10 +1892,43 @@ void mtproto_connect(struct mtproto_connection *c)
 /**
  * Free all used resources and close the connection
  */
-void mtproto_close(struct mtproto_connection *c)
-{
+void mtproto_close(struct mtproto_connection *mtp) {
+    logprintf ("closing mtproto_connection...\n");
+    mtp->destroy = 1;
+
     // TODO: Use Pings?
     // stop_ping_timer (c->connection);
-    fd_close_connection(c->connection);
+
+    // TODO: Set destruction timeout?
+    // add_destruction_timer (c, 5000)
+    /* 
+        Timout:
+        - alle queries und acks löschen?
+        - was passiert wenn eine antwort auf eine query 
+            in einer neuen instanz ankommt?
+    */
+}
+
+void mtproto_destroy (struct mtproto_connection *self) {
+    logprintf("destroying mtproto_connection: %p\n", self);
+
+    // TODO: Remove all pending timers, queries, acks
+    // TODO: Call destruction callback
+    fd_close_connection(self->connection);
+    tfree(self->connection, sizeof(struct connection));
+}
+
+void mtproto_free_closed () {
+    int i;
+    for (i = 0; i < 100; i++) {
+        if (Cs[i] == NULL) continue; 
+        struct mtproto_connection *c = Cs[i];
+        logprintf ("checking mtproto_connection %d: c_state:%d destroy:%d, quries_num:%d\n", 
+            i, c->c_state, c->destroy, c->queries_num);
+        if (c->destroy == 0) continue;
+        if (c->queries_num > 0) continue;
+        mtproto_destroy (c);
+        Cs[i] = NULL;
+    }
 }
 

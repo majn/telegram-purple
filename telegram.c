@@ -274,7 +274,12 @@ void on_authorized(struct mtproto_connection *c, void *data)
 
 void telegram_read_input (struct telegram *instance)
 {
-    return try_read(instance->connection->connection);
+    try_read(instance->connection->connection);
+    mtproto_free_closed();
+    // free all mtproto_connections that may have errored through
+    // a received query
+}
+
 void telegram_set_proxy(struct telegram *instance, int fd)
 {
     struct dc *DC_working = telegram_get_working_dc (instance);
