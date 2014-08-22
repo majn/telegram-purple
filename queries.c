@@ -71,11 +71,8 @@ long long cur_uploaded_bytes;
 long long cur_downloading_bytes;
 long long cur_downloaded_bytes;
 
-extern int binlog_enabled;
 extern int sync_from_start;
 int sync_from_start = 0;
-
-//int queries_num = 0;
 
 void telegram_flush_queries (struct telegram *instance) {
    instance->on_output(instance);

@@ -89,7 +89,7 @@ char *secret_chat_file_name;
 char *downloads_directory;
 char *config_directory;
 char *binlog_file_name;
-int binlog_enabled;
+extern int binlog_enabled;
 extern int log_level;
 int log_level = 1;
 int sync_from_start;

@@ -65,7 +65,6 @@ int our_id;
 int verbosity;
 
 peer_t *Peers[MAX_PEER_NUM];
-extern int binlog_enabled;
 
 
 void fetch_skip_photo (struct mtproto_connection *mtp);

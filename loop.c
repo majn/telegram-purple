@@ -59,7 +59,7 @@
 
 
 extern char *auth_token;
-extern int test_dc;
+int test_dc = 0;
 int default_dc_num;
 extern int binlog_enabled;
 
