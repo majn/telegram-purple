@@ -154,9 +154,7 @@ static int rsa_load_public_key (const char *public_key_name) {
     return -1;
   }
 
-  if (verbosity) {
-    logprintf ( "public key '%s' loaded successfully\n", rsa_public_key_name);
-  }
+  logprintf ( "public key '%s' loaded successfully\n", rsa_public_key_name);
 
   return 0;
 }
@@ -1441,9 +1439,7 @@ void work_update_short_chat_message (struct connection *c, long long msg_id UU) 
 }
 
 void work_container (struct connection *c, long long msg_id UU) {
-  if (verbosity) {
-    logprintf ( "work_container: msg_id = %lld\n", msg_id);
-  }
+  logprintf ( "work_container: msg_id = %lld\n", msg_id);
   assert (fetch_int (c->mtconnection) == CODE_msg_container);
   int n = fetch_int (c->mtconnection);
   int i;
@@ -1464,38 +1460,47 @@ void work_container (struct connection *c, long long msg_id UU) {
 }
 
 void work_new_session_created (struct connection *c, long long msg_id UU) {
-  if (verbosity) {
-    logprintf ( "work_new_session_created: msg_id = %lld\n", msg_id);
-  }
+  logprintf ( "work_new_session_created: msg_id = %lld\n", msg_id);
   assert (fetch_int (c->mtconnection) == (int)CODE_new_session_created);
   fetch_long (c->mtconnection); // first message id
   //DC->session_id = fetch_long ();
   fetch_long (c->mtconnection); // unique_id
   GET_DC(c)->server_salt = fetch_long (c->mtconnection);
+  logprintf ("new server_salt = %lld\n", GET_DC(c)->server_salt);
+    
+  
+  /*
+  // create a new empty session
+  assert (DC->working_sess + 1 < 3);
+  assert (!DC->sessions[++ DC->working_sess]);
+  struct session *s = DC->sessions[DC->working_sess] = alloc_session();
 
+  // DC->session_id = fetch_long ();
+  // long las_id = fetch_long (c->mtconnection);
+  long ses_id = fetch_long (c->mtconnection);
+  //s->session_id = ses_id;
+  logprintf ("new sess_id = %ld\n", ses_id);
+
+  // fetch_long (c->mtconnection); // unique_id
+  DC->server_salt = fetch_long (c->mtconnection);
+  */
 }
 
 void work_msgs_ack (struct connection *c UU, long long msg_id UU) {
-  if (verbosity) {
-    logprintf ( "work_msgs_ack: msg_id = %lld\n", msg_id);
-  }
+  logprintf ( "work_msgs_ack: msg_id = %lld\n", msg_id);
   assert (fetch_int (c->mtconnection) == CODE_msgs_ack);
   assert (fetch_int (c->mtconnection) == CODE_vector);
   int n = fetch_int (c->mtconnection);
   int i;
   for (i = 0; i < n; i++) {
     long long id = fetch_long (c->mtconnection);
-    if (verbosity) {
-      logprintf ("ack for %lld\n", id);
-    }
+    logprintf ("ack for %lld\n", id);
     query_ack (id);
   }
 }
 
 void work_rpc_result (struct connection *c UU, long long msg_id UU) {
-  if (verbosity) {
-    logprintf ( "work_rpc_result: msg_id = %lld\n", msg_id);
-  }
+  logprintf ( "work_rpc_result: msg_id = %lld\n", msg_id);
   assert (fetch_int (c->mtconnection) == (int)CODE_rpc_result);
   long long id = fetch_long (c->mtconnection);
   int op = prefetch_int (c->mtconnection);
@@ -1639,9 +1644,7 @@ void rpc_execute_answer (struct connection *c, long long msg_id UU) {
 int process_rpc_message (struct connection *c UU, struct encrypted_message *enc, int len) {
   const int MINSZ = offsetof (struct encrypted_message, message);
   const int UNENCSZ = offsetof (struct encrypted_message, server_salt);
-  if (verbosity) {
-    logprintf ( "process_rpc_message(), len=%d\n", len);
-  }
+  logprintf ( "process_rpc_message(), len=%d\n", len);
   assert (len >= MINSZ && (len & 15) == (UNENCSZ & 15));
   struct dc *DC = GET_DC(c);
   assert (enc->auth_key_id == DC->auth_key_id);
@@ -1676,10 +1679,8 @@ int process_rpc_message (struct connection *c UU, struct encrypted_message *enc,
 
   assert (this_server_time >= st - 300 && this_server_time <= st + 30);
   //assert (enc->msg_id > server_last_msg_id && (enc->msg_id & 3) == 1);
-  if (verbosity >= 1) {
-    logprintf ( "received mesage id %016llx\n", enc->msg_id);
-    hexdump_in (c->mtconnection);
-  }
+  logprintf ( "received mesage id %016llx\n", enc->msg_id);
+  hexdump_in (c->mtconnection);
   c->mtconnection->server_last_msg_id = enc->msg_id;
 
   //*(long long *)(longpoll_query + 3) = *(long long *)((char *)(&enc->msg_id) + 0x3c);
@@ -1763,9 +1764,7 @@ int rpc_execute (struct connection *c, int op, int len) {
 
 
 int tc_close (struct connection *c, int who) {
-  if (verbosity) {
-    logprintf ( "outbound http connection #%d : closing by %d\n", c->fd, who);
-  }
+  logprintf ( "outbound http connection #%d : closing by %d\n", c->fd, who);
   return 0;
 }
 

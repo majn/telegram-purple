@@ -96,9 +96,7 @@ void replay_log_event (struct telegram *instance) {
       int l2 = prefetch_strlen (self);
       char *ip = fetch_str (self, l2);
       int port = fetch_int (self);
-      if (verbosity) {
-        logprintf ( "id = %d, name = %.*s ip = %.*s port = %d\n", id, l1, name, l2, ip, port);
-      }
+      logprintf ( "id = %d, name = %.*s ip = %.*s port = %d\n", id, l1, name, l2, ip, port);
       alloc_dc (instance->auth.DC_list, id, tstrndup (ip, l2), port);
     }
     bl->rptr = self->in_ptr;

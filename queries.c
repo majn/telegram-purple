@@ -137,9 +137,7 @@ void query_restart (long long id) {
 
 struct query *send_query (struct dc *DC, int ints, void *data, struct query_methods *methods, void *extra) {
   logprintf("send_query(...)\n");
-  if (verbosity) {
-    logprintf ( "Sending query of size %d to DC (%s:%d)\n", 4 * ints, DC->ip, DC->port);
-  }
+  logprintf ( "Sending query of size %d to DC (%s:%d)\n", 4 * ints, DC->ip, DC->port);
   struct query *q = talloc0 (sizeof (*q));
   q->data_len = ints;
   q->data = talloc (4 * ints);
@@ -147,9 +145,7 @@ struct query *send_query (struct dc *DC, int ints, void *data, struct query_meth
   q->msg_id = encrypt_send_message (DC->sessions[0]->c->mtconnection, data, ints, 1);
   q->session = DC->sessions[0];
   q->seq_no = DC->sessions[0]->seq_no - 1; 
-  if (verbosity) {
-    logprintf ( "Msg_id is %lld %p\n", q->msg_id, q);
-  }
+  logprintf ( "Msg_id is %lld %p\n", q->msg_id, q);
   q->methods = methods;
   q->DC = DC;
   if (queries_tree) {
@@ -219,9 +215,7 @@ void query_result (long long id UU) {
   struct query *q = query_get (id);
   struct mtproto_connection *mtp = query_get_mtproto(q);
 
-  if (verbosity) {
-    logprintf ( "result for query #%lld\n", id);
-  }
+  logprintf ( "result for query #%lld\n", id);
   if (verbosity  >= 4) {
     logprintf ( "result: ");
     hexdump_in (mtp);
@@ -246,9 +240,7 @@ void query_result (long long id UU) {
     }
   }
   if (!q) {
-    if (verbosity) {
-      logprintf ( "No such query\n");
-    }
+    logprintf ( "No such query\n");
     mtp->in_ptr = mtp->in_end;
   } else {
     if (!(q->flags & QUERY_ACK_RECEIVED)) {
@@ -297,9 +289,7 @@ void work_timers (void) {
     if (ev->timeout > t) { break; }
     remove_event_timer (ev);
     assert (ev->alarm);
-    if (verbosity) {
-      logprintf ("Alarm\n");
-    }
+    logprintf ("Alarm\n");
     ev->alarm (ev->self);
   }
 }
@@ -394,6 +384,7 @@ struct query_methods help_get_config_methods  = {
 void do_help_get_config (struct telegram *instance) {
   struct mtproto_connection *mtp = instance->connection;
 
+  logprintf ("mtp: %p:%p\n", mtp->packet_ptr, mtp->packet_buffer);
   clear_packet (mtp);  
   out_int (mtp, CODE_help_get_config);
   struct dc *DC_working = telegram_get_working_dc(instance);
@@ -636,9 +627,7 @@ int nearest_dc_on_answer (struct query *q UU) {
 
   assert (fetch_int (mtp) == (int)CODE_nearest_dc);
   char *country = fetch_str_dup (mtp);
-  if (verbosity > 0) {
-    logprintf ("Server thinks that you are in %s\n", country);
-  }
+  logprintf ("Server thinks that you are in %s\n", country);
   fetch_int (mtp); // this_dc
   nearest_dc_num = fetch_int (mtp);
   assert (nearest_dc_num >= 0);
@@ -688,9 +677,7 @@ int sign_in_on_answer (struct query *q UU) {
     bl_do_set_our_id (mtp->bl, mtp, our_id);
   }
   sign_in_ok = 1;
-  if (verbosity) {
-    logprintf ( "telegram: authorized successfully: name = '%s %s', phone = '%s', expires = %d\n", User.first_name, User.last_name, User.phone, (int)(expires - get_double_time ()));
-  }
+  logprintf ( "telegram: authorized successfully: name = '%s %s', phone = '%s', expires = %d\n", User.first_name, User.last_name, User.phone, (int)(expires - get_double_time ()));
   DC_working->has_auth = 1;
 
   bl_do_dc_signed (mtp->bl, mtp, DC_working->id);

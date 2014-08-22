@@ -103,9 +103,7 @@ void prng_seed (struct mtproto_connection *self, const char *password_filename, 
       if (l < 0) {
         logprintf ( "Warning: fail to read password file - \"%s\", %m.\n", password_filename);
       } else {
-        if (verbosity > 0) {
-          logprintf ( "read %d bytes from password file.\n", l);
-        }
+        logprintf ( "read %d bytes from password file.\n", l);
         RAND_add (a, l, l);
       }
       close (fd);

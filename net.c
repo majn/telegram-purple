@@ -105,9 +105,7 @@ int ping_alarm (struct connection *c) {
   }
   assert (c->state == conn_ready || c->state == conn_connecting);
   if (get_double_time () - c->last_receive_time > 20 * PING_TIMEOUT) {
-    if (verbosity) {
-      logprintf ( "fail connection: reason: ping timeout\n");
-    }
+    logprintf ( "fail connection: reason: ping timeout\n");
     c->state = conn_failed;
     fail_connection (c);
   } else if (get_double_time () - c->last_receive_time > 5 * PING_TIMEOUT && c->state == conn_ready) {
@@ -330,9 +328,7 @@ struct connection *create_connection (const char *host, int port, struct session
   c->port = port;
   assert (!Connections[fd]);
   Connections[fd] = c;
-  if (verbosity) {
-    logprintf ( "connect to %s:%d successful\n", host, port);
-  }
+  logprintf ( "connect to %s:%d successful\n", host, port);
   if (c->methods->ready) {
     c->methods->ready (c);
   }
@@ -418,9 +414,7 @@ void fail_connection (struct connection *c) {
 
 extern FILE *log_net_f;
 int try_write (struct connection *c) {
-  if (verbosity) {
-    logprintf ( "try write: fd = %d\n", c->fd);
-  }
+  logprintf ( "try write: fd = %d\n", c->fd);
   int x = 0;
   while (c->out_head) {
     int r = netwrite (c->fd, c->out_head->rptr, c->out_head->wptr - c->out_head->rptr);
@@ -454,9 +448,7 @@ int try_write (struct connection *c) {
       delete_connection_buffer (b);
     } else {
       if (errno != EAGAIN && errno != EWOULDBLOCK) {
-        if (verbosity) {
-          logprintf ("fail_connection: write_error %m\n");
-        }
+        logprintf ("fail_connection: write_error %m\n");
         fail_connection (c);
         return 0;
       } else {
@@ -464,9 +456,7 @@ int try_write (struct connection *c) {
       }
     }
   }
-  if (verbosity) {
-    logprintf ( "Sent %d bytes to %d\n", x, c->fd);
-  }
+  logprintf ( "Sent %d bytes to %d\n", x, c->fd);
   c->out_bytes -= x;
   return x;
 }
@@ -534,9 +524,7 @@ void try_rpc_read (struct connection *c) {
 }
 
 void try_read (struct connection *c) {
-  if (verbosity) {
-    logprintf ( "try read: fd = %d\n", c->fd);
-  }
+  logprintf ( "try read: fd = %d\n", c->fd);
   if (!c->in_tail) {
     c->in_head = c->in_tail = new_connection_buffer (1 << 20);
   }
@@ -569,9 +557,7 @@ void try_read (struct connection *c) {
       c->in_tail = b;
     } else {
       if (errno != EAGAIN && errno != EWOULDBLOCK) {
-        if (verbosity) {
-          logprintf ("fail_connection: read_error %m\n");
-        }
+        logprintf ("fail_connection: read_error %m\n");
         fail_connection (c);
         return;
       } else {
@@ -579,9 +565,7 @@ void try_read (struct connection *c) {
       }
     }
   }
-  if (verbosity) {
-    logprintf ( "Received %d bytes from %d\n", x, c->fd);
-  }
+  logprintf ( "Received %d bytes from %d\n", x, c->fd);
   c->in_bytes += x;
   if (x) {
     try_rpc_read (c);
@@ -624,9 +608,7 @@ void connections_poll_result (struct pollfd *fds, int max) {
       try_read (c);
     }
     if (fds[i].revents & (POLLHUP | POLLERR | POLLRDHUP)) {
-      if (verbosity) {
-        logprintf ("fail_connection: events_mask=0x%08x\n", fds[i].revents);
-      }
+      logprintf ("fail_connection: events_mask=0x%08x\n", fds[i].revents);
       fail_connection (c);
     } else if (fds[i].revents & POLLOUT) {
       if (c->state == conn_connecting) {

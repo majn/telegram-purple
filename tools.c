@@ -239,7 +239,7 @@ int tinflate (void *input, int ilen, void *output, int olen) {
       logprintf ( "inflated %d bytes\n", (int) strm.total_out);
     }
   }
-  if (verbosity && err != Z_STREAM_END) {
+  if (err != Z_STREAM_END) {
     logprintf ( "inflate error = %d\n", err);
     logprintf ( "inflated %d bytes\n", (int) strm.total_out);
   }

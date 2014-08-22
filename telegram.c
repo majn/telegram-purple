@@ -69,18 +69,21 @@ void on_state_change(struct telegram *instance, int state, void *data)
     switch (state) {
         case STATE_ERROR: {
             const char* err = data;
-            logprintf("Telegram errored: %s \n", err);
+            if (err == NULL) {
+                err = "<no description>";
+            }
+            logprintf("telegram errored: %s\n", err);
         }
         break;
 
         case STATE_AUTHORIZED:
-            logprintf("requesting configuration");
+            logprintf("requesting configuration\n");
             telegram_change_state(instance, STATE_CONFIG_REQUESTED, NULL);
             do_help_get_config (instance);
         break;
 
         case STATE_CONFIG_RECEIVED:
-            logprintf("received network configuration, checking whether phone is registered.");
+            logprintf("received network configuration, checking whether phone is registered.\n");
             telegram_store_session(instance);
             do_auth_check_phone(instance, instance->login);
         break;
@@ -133,6 +136,7 @@ struct telegram *telegram_new(struct dc *DC, const char* login, const char *conf
     logprintf("%s\n", this->download_path);
     logprintf("%s\n", this->auth_path);
     logprintf("%s\n", this->state_path);
+    logprintf("%s\n", this->secret_path);
 
     telegram_add_state_change_listener(this, on_state_change);
     telegram_change_state(this, STATE_INITIALISED, NULL);
