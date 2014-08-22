@@ -73,6 +73,9 @@ void on_state_change(struct telegram *instance, int state, void *data)
                 err = "<no description>";
             }
             logprintf("telegram errored: %s\n", err);
+
+            // close the connection
+            mtproto_close (instance->connection);
         }
         break;
 
@@ -108,9 +111,26 @@ void on_state_change(struct telegram *instance, int state, void *data)
             // wait for user input ...
         break;
 
-        case STATE_DISCONNECTED_SWITCH_DC:
-            logprintf("Have to migrate to other DC");
-            instance->connection
+        case STATE_DISCONNECTED_SWITCH_DC: {
+            // telegram demands that we use a different data center, which caused
+            // the current mtproto_connection to be disconnected
+            
+            int target_dc = *(int*) data;
+            logprintf ("Disconnected: Migrate to data center %d\n", target_dc);
+
+            // close old connection and mark it for destruction
+            mtproto_close (instance->connection);
+            if (instance->proxy_request_cb) {
+                // tell the proxy to close all connections
+                instance->proxy_close_cb (instance, 
+                    instance->connection->connection->fd);
+            }
+            
+            // start a new connection to the demanded data center. The pointer to the
+            // currently working dc should have already been updated by the 
+            // on_error function of the query
+            telegram_network_connect (instance);
+        }
         break;
     }
 }

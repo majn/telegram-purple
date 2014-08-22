@@ -583,8 +583,10 @@ int check_phone_on_error (struct query *q UU, int error_code, int l, char *error
     //check_phone_result = 1;
   } else {
     logprintf ( "error_code = %d, error = %.*s\n", error_code, l, error);
+    telegram_change_state(instance, STATE_ERROR, error);
   }
-  telegram_change_state(instance, STATE_DISCONNECTED_SWITCH_DC, error);
+  telegram_change_state(instance,
+    STATE_DISCONNECTED_SWITCH_DC, &instance->auth.dc_working_num);
   return 0;
 }
 

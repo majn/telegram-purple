@@ -1751,6 +1751,10 @@ int rpc_execute (struct connection *c, int op, int len) {
   case st_authorized:
     if (op < 0 && op >= -999) {
       logprintf ("Server error %d\n", op);
+      char code[12] = {0};
+      snprintf (code, 12, "%d", op);
+      c->mtconnection->c_state = st_error;
+      telegram_change_state (instance, STATE_ERROR, code);
     } else {
       process_rpc_message (c, (void *)(Response/* + 8*/), Response_len/* - 12*/);
     }
