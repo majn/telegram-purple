@@ -151,8 +151,6 @@ struct telegram *telegram_new(struct dc *DC, const char* login, const char* conf
  */
 void telegram_restore_session(struct telegram *instance);
 
-char *telegram_get_config(struct telegram *instance, char *config);
-
 /**
  * Store
  */

@@ -64,6 +64,18 @@ void telegram_change_state(struct telegram *instance, int state, void *data)
 }
 
 /**
+ * Calculate the configuration path for the given config file and the given instance
+ *
+ * @returns The full path to the configuration. 
+ *
+ * NOTE: the returned string must be freed manually using gfree
+ */
+char *telegram_get_config(struct telegram *instance, char *config)
+{
+    return g_strdup_printf("%s/%s", instance->config_path, config);
+}
+
+/**
  * Handle state changes of the telegram instance
  *
  * Execute all actions necessary when a certain state is reached. The state machine executes
@@ -252,11 +264,6 @@ void telegram_store_session(struct telegram *instance)
     assure_file_exists(instance->config_path, "state");
     write_auth_file(&instance->auth, instance->auth_path);
     write_state_file(&instance->proto, instance->state_path);
-}
-
-char *telegram_get_config(struct telegram *instance, char *config)
-{
-    return g_strdup_printf("%s/%s", instance->config_path, config);
 }
 
 void on_authorized(struct mtproto_connection *c, void* data);
