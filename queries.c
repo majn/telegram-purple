@@ -162,10 +162,6 @@ struct query *send_query (struct dc *DC, int ints, void *data, struct query_meth
   insert_event_timer (&q->ev);
 
   q->extra = extra;
-
-  struct mtproto_connection *mtp = DC->sessions[0]->c->mtconnection;
-  mtp->queries_num ++;
-  logprintf("queries_num: %d\n", mtp->queries_num);
   return q;
 }
 
