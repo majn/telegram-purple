@@ -63,6 +63,13 @@ void telegram_change_state(struct telegram *instance, int state, void *data)
     } while ((curr = g_list_next(change_listeners)) != NULL);
 }
 
+/**
+ * Handle state changes of the telegram instance
+ *
+ * Execute all actions necessary when a certain state is reached. The state machine executes
+ * the authorization and registration steps needed to connect the client to the telegram network, 
+ * and will either trigger RPC queries or callbacks to the GUI to request input from the user.
+ */
 void on_state_change(struct telegram *instance, int state, void *data) 
 {
     logprintf("on_state_change: %d\n", state);
@@ -259,8 +266,8 @@ void on_authorized(struct mtproto_connection *c, void* data);
  */
 void telegram_network_connect(struct telegram *instance)
 {
-    logprintf("telegram_network_connect()\n");
-    if (!instance->auth.DC_list) {
+    logprintf ("telegram_network_connect()\n");
+    if (! instance->auth.DC_list) {
        logprintf("telegram_network_connect(): cannot connect, restore / init a session first.\n");
        assert(0);
     }

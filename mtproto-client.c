@@ -1791,7 +1791,7 @@ int tc_becomes_ready (struct connection *c) {
     break;
   case st_authorized:
     auth_work_start (c);
-    telegram_change_state(c->instance, STATE_AUTHORIZED, NULL);
+    telegram_change_state (c->instance, STATE_AUTHORIZED, NULL);
     break;
   default:
     logprintf ( "c_state = %d\n", c->mtconnection->c_state);
