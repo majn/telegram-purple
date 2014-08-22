@@ -115,7 +115,9 @@ void on_state_change(struct telegram *instance, int state, void *data)
     }
 }
 
-struct telegram *telegram_new(struct dc *DC, const char* login, const char *config_path)
+struct telegram *telegram_new(struct dc *DC, const char* login, const char *config_path, 
+    void (*proxy_request_cb)(struct telegram *instance, const char *ip, int port),
+    void (*proxy_close_cb)(struct telegram *instance, int fd))
 {
     struct telegram *this = malloc(sizeof(struct telegram));
     this->protocol_data = NULL;
@@ -123,6 +125,8 @@ struct telegram *telegram_new(struct dc *DC, const char* login, const char *conf
     this->auth.DC_list[0] = DC;
     this->change_state_listeners = NULL;
     this->bl = talloc0 (sizeof(struct binlog));
+    this->proxy_request_cb = proxy_request_cb;
+    this->proxy_close_cb = proxy_close_cb;
 
     this->login = g_strdup(login);
     this->config_path = g_strdup_printf("%s/%s", config_path, login);
@@ -234,18 +238,16 @@ void on_authorized(struct mtproto_connection *c, void* data);
 /**
  * Connect to the currently active data center
  */
-void telegram_network_connect(struct telegram *instance, int fd)
+void telegram_network_connect(struct telegram *instance)
 {
     logprintf("telegram_network_connect()\n");
     if (!instance->auth.DC_list) {
        logprintf("telegram_network_connect(): cannot connect, restore / init a session first.\n");
        assert(0);
     }
-    struct dc *DC_working = telegram_get_working_dc(instance);
-    instance->connection = mtproto_new(DC_working, fd, instance);
-    instance->connection->on_ready = on_authorized;
-    instance->connection->on_ready_data = instance;
-    mtproto_connect(instance->connection);
+    struct dc *DC_working = telegram_get_working_dc (instance);
+    assert (instance->proxy_request_cb);
+    instance->proxy_request_cb (instance, DC_working->ip, DC_working->port);
 }
 
 /**
@@ -273,6 +275,13 @@ void on_authorized(struct mtproto_connection *c, void *data)
 void telegram_read_input (struct telegram *instance)
 {
     return try_read(instance->connection->connection);
+void telegram_set_proxy(struct telegram *instance, int fd)
+{
+    struct dc *DC_working = telegram_get_working_dc (instance);
+    instance->connection = mtproto_new (DC_working, fd, instance);
+    instance->connection->on_ready = on_authorized;
+    instance->connection->on_ready_data = instance;
+    mtproto_connect (instance->connection);
 }
 
 int telegram_write_output (struct telegram *instance)

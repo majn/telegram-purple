@@ -124,15 +124,27 @@ struct telegram {
      * callbacks
      */
     void (*on_output)(struct telegram *instance);
+    void (*proxy_request_cb)(struct telegram *instance, const char *ip, int port);
+    void (*proxy_close_cb)(struct telegram *instance, int fd);
 
     void *extra;
 };
 
 /**
- * constructor
+ * Create a new telegram application
+ *
+ * @param DC               The initial data center to use
+ * @param login            The phone number to use as login name
+ * @param config_path      The configuration path used to store the content
+ * @param proxy_request_cb A callback function that delivers a connections to the given hostname
+ *                         and port by calling telegram_set_proxy. This is useful for tunelling
+ *                         the connection through a proxy server
+ * @param proxy_close_cb   A callback function that is called once the proxy connection is no longer
+ *                         needed. This is useful for freeing all used resources
  */
-struct telegram *telegram_new(struct dc *DC, const char* login, 
-            const char* config_path);
+struct telegram *telegram_new(struct dc *DC, const char* login, const char* config_path, 
+    void (*proxy_request_cb)(struct telegram *instance, const char *ip, int port),
+    void (*proxy_close_cb)(struct telegram *instance, int fd));
 
 /**
  * Resume the session to 
@@ -194,7 +206,7 @@ void telegram_change_state(struct telegram *instance, int state, void *data);
 /**
  * Connect to the telegram network with the given configuration
  */
-void telegram_network_connect (struct telegram *instance, int fd);
+void telegram_network_connect(struct telegram *instance);
 
 int telegram_login (struct telegram *instance);
 
@@ -293,5 +305,12 @@ void set_net_read_cb(ssize_t (*cb)(int fd, void *buff, size_t size));
  * instead of the regular socket write function
  */
 void set_net_write_cb(ssize_t (*cb)(int fd, const void *buff, size_t size));
+
+/**
+ * Set the proxy-connection to use
+ *
+ * NOTE: you may only call this function from the 
+ */
+void telegram_set_proxy(struct telegram *instance, int fd);
 
 #endif

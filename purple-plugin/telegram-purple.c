@@ -270,35 +270,34 @@ static void init_dc_settings(PurpleAccount *acc, struct dc *DC)
 }
 
 /**
- * This must be implemented.
+ * Handle a proxy-request of telegram 
+ *
+ * Request a new proxy connection from purple, and execute tgprpl_login_on_connected 
+ * as callback once the connection is ready
  */
-static void tgprpl_login(PurpleAccount * acct)
+void telegram_on_proxy_request(struct telegram *instance, const char *ip, int port)
 {
-    purple_debug_info(PLUGIN_ID, "tgprpl_login()\n");
-    PurpleConnection *gc = purple_account_get_connection(acct);
-    char const *username = purple_account_get_username(acct);
-    _gc = gc;
-    _pa = acct;
-
-    struct dc DC;
-    init_dc_settings(acct, &DC);
-    // TODO: fetch current home directory
-    // use this as root
-    struct telegram *tg = telegram_new(&DC, username, "/home/dev-jessie/.telegram");
-    telegram_add_state_change_listener(tg, tgprpl_on_state_change);
-    telegram_restore_session(tg);
-
-    telegram_conn *conn = g_new0(telegram_conn, 1);
-    conn->tg = tg;
-    conn->gc = gc;
-    conn->pa = acct;
-    purple_connection_set_protocol_data(gc, conn);
-    tg->extra = conn;
-
-    purple_connection_set_state(gc, PURPLE_CONNECTING);
-    purple_proxy_connect(gc, acct, DC.ip, DC.port, tgprpl_login_on_connected, tg);
+    telegram_conn *conn = instance->extra; 
+    purple_proxy_connect (conn->gc, conn->pa, ip, port, tgprpl_login_on_connected, conn->tg);
 }
 
+/**
+ * Handle a proxy-close of telegram
+ * 
+ * Remove all open inputs added to purple
+ */
+void telegram_on_proxy_close(struct telegram *instance, int fd UU)
+{
+    telegram_conn *conn = instance->extra; 
+    purple_input_remove (conn->rh);
+    purple_input_remove (conn->wh);
+}
+
+/**
+ * A proxy connection was created by purple
+ *
+ * Set the proxy to the current telegram-instance, and add callbacks to monitor 
+ */
 void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_message)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_login_on_connected()\n");
@@ -313,7 +312,8 @@ void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_messa
     purple_debug_info(PLUGIN_ID, "Connecting to the telegram network...\n");
     conn->wh = purple_input_add(fd, PURPLE_INPUT_WRITE, tgprpl_output_cb, tg);
     conn->rh = purple_input_add(fd, PURPLE_INPUT_READ, tgprpl_input_cb, tg);
-    telegram_network_connect(tg, fd);
+
+    telegram_set_proxy(tg, fd);
 
     // // load all settings: the known network topology, secret keys, logs and configuration file paths
     // purple_debug_info(PLUGIN_ID, "parse_config()\n");
@@ -362,6 +362,38 @@ void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_messa
         }
     } 
     */
+}
+
+/**
+ * This must be implemented.
+ */
+static void tgprpl_login(PurpleAccount * acct)
+{
+    purple_debug_info(PLUGIN_ID, "tgprpl_login()\n");
+    PurpleConnection *gc = purple_account_get_connection(acct);
+    char const *username = purple_account_get_username(acct);
+    _gc = gc;
+    _pa = acct;
+
+    struct dc DC;
+    init_dc_settings(acct, &DC);
+
+    // TODO: fetch current home directory
+    // use this as root
+    struct telegram *tg = telegram_new(&DC, username, "/home/dev-jessie/.telegram", 
+        telegram_on_proxy_request, telegram_on_proxy_close);
+    telegram_add_state_change_listener(tg, tgprpl_on_state_change);
+    telegram_restore_session(tg);
+
+    telegram_conn *conn = g_new0(telegram_conn, 1);
+    conn->tg = tg;
+    conn->gc = gc;
+    conn->pa = acct;
+    purple_connection_set_protocol_data(gc, conn);
+    tg->extra = conn;
+
+    purple_connection_set_state (conn->gc, PURPLE_CONNECTING);
+    telegram_network_connect(tg);
 }
 
 void on_new_message(struct message *M)
