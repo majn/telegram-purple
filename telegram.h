@@ -116,6 +116,11 @@ struct telegram {
     struct mtproto_connection *connection;
 
     /*
+     * binlog
+     */
+    struct binlog *bl;
+
+    /*
      * callbacks
      */
     void (*on_output)(struct telegram *instance);
