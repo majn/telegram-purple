@@ -215,8 +215,6 @@ int rpc_send_packet (struct connection *c) {
 
   self->total_packets_sent ++;
   self->total_data_sent += total_len;
-  self->queries_num ++;
-  logprintf("queries_num=%d\n", self->queries_num);
   return 1;
 }
 
@@ -238,9 +236,6 @@ int rpc_send_message (struct connection *c, void *data, int len) {
 
   self->total_packets_sent ++;
   self->total_data_sent += total_len;
-
-  self->queries_num ++;
-  logprintf("queries_num=%d\n", self->queries_num);
   return 1;
 }
 
@@ -1711,8 +1706,6 @@ int rpc_execute (struct connection *c, int op, int len) {
   logprintf ("outbound rpc connection #%d : received rpc answer %d with %d content bytes\n", c->fd, op, len);
   struct mtproto_connection *self = c->mtconnection;
   
-  self->queries_num --;
-  logprintf ("queries_num=%d\n", c->mtconnection->queries_num);
   /*  
   if (op < 0) {
     assert (read_in (c, Response, Response_len) == Response_len);
@@ -1747,6 +1740,8 @@ int rpc_execute (struct connection *c, int op, int len) {
     return 0;
   case st_client_dh_sent:
     process_auth_complete (c, Response/* + 8*/, Response_len/* - 12*/);
+    self->queries_num --;
+    logprintf ("queries_num=%d\n", c->mtconnection->queries_num);
     if (self->on_ready) {
       self->on_ready(self, self->on_ready_data);
     }
@@ -1786,6 +1781,8 @@ int tc_becomes_ready (struct connection *c) {
   }
   switch (o) {
   case st_init:
+    c->mtconnection->queries_num ++;
+    logprintf ("queries_num=%d\n", c->mtconnection->queries_num);
     send_req_pq_packet (c);
     break;
   case st_authorized:

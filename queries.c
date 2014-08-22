@@ -158,6 +158,7 @@ struct query *send_query (struct dc *DC, int ints, void *data, struct query_meth
     }
   }
   queries_tree = tree_insert_query (queries_tree, q, lrand48 ());
+  logprintf("queries_num: %d\n", ++ mtc->queries_num);
 
   q->ev.alarm = (void *)alarm_query;
   q->ev.timeout = get_double_time () + QUERY_TIMEOUT;
@@ -197,6 +198,8 @@ void query_error (long long id) {
       remove_event_timer (&q->ev);
     }
     queries_tree = tree_delete_query (queries_tree, q);
+    logprintf("queries_num: %d\n", -- mtp->queries_num);
+
     if (q->methods && q->methods->on_error) {
       q->methods->on_error (q, error_code, error_len, error);
     } else {
@@ -204,10 +207,9 @@ void query_error (long long id) {
     }
     tfree (q->data, q->data_len * 4);
     tfree (q, sizeof (*q));
+    return;
   }
 
-  mtp->queries_num --;
-  logprintf("queries_num: %d\n", mtp->queries_num);
 }
 
 #define MAX_PACKED_SIZE (1 << 24)
@@ -253,6 +255,8 @@ void query_result (long long id UU) {
       remove_event_timer (&q->ev);
     }
     queries_tree = tree_delete_query (queries_tree, q);
+    logprintf("queries_num: %d\n", -- mtp->queries_num);
+
     if (q->methods && q->methods->on_answer) {
       q->methods->on_answer (q);
       assert (mtp->in_ptr == mtp->in_end);
@@ -264,8 +268,6 @@ void query_result (long long id UU) {
     mtp->in_ptr = end;
     mtp->in_end = eend;
   }
-  //queries_num --;
-  //logprintf("queries_num: %d\n", queries_num);
 } 
 
 #define event_timer_cmp(a,b) ((a)->timeout > (b)->timeout ? 1 : ((a)->timeout < (b)->timeout ? -1 : (memcmp (a, b, sizeof (struct event_timer)))))
