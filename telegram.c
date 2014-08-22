@@ -11,6 +11,9 @@
 #include "glib.h"
 #include "tools.h"
 #include "mtproto-client.h"
+#include "binlog.h"
+
+
 
 /*
  * New message received
@@ -116,6 +119,7 @@ struct telegram *telegram_new(struct dc *DC, const char* login, const char *conf
     //this->curr_dc = 0;
     this->auth.DC_list[0] = DC;
     this->change_state_listeners = NULL;
+    this->bl = talloc0 (sizeof(struct binlog));
 
     this->login = g_strdup(login);
     this->config_path = g_strdup_printf("%s/%s", config_path, login);
@@ -145,6 +149,7 @@ void telegram_free(struct telegram *this)
     g_free(this->state_path);
     g_free(this->secret_path);
     free(this);
+    tfree(this->bl, sizeof(struct binlog));
 }
 
 void assert_file_usable(const char *file)

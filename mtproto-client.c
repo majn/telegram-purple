@@ -781,7 +781,7 @@ void fetch_pts (struct mtproto_connection *self) {
   } else {
     self->pts ++;
   }
-  bl_do_set_pts (self, self->pts);
+  bl_do_set_pts (self->bl, self, self->pts);
 }
 
 void fetch_qts (struct mtproto_connection *self) {
@@ -798,14 +798,14 @@ void fetch_qts (struct mtproto_connection *self) {
   } else {
     self->qts ++;
   }
-  bl_do_set_qts (self, self->qts);
+  bl_do_set_qts (self->bl, self, self->qts);
 }
 
 void fetch_date (struct mtproto_connection *self) {
   int p = fetch_int (self);
   if (p > self->last_date) {
     self->last_date = p;
-    bl_do_set_date (self, self->last_date);
+    bl_do_set_date (self->bl, self, self->last_date);
   }
 }
 
@@ -817,7 +817,7 @@ void fetch_seq (struct mtproto_connection *self) {
     //seq = x;
   } else if (x == self->seq + 1) {
     self->seq = x;
-    bl_do_set_seq (self, self->seq);
+    bl_do_set_seq (self->bl, self, self->seq);
   }
 }
 
@@ -908,7 +908,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       int new = fetch_long (self); // random_id
       struct message *M = message_get (new);
       if (M) {
-        bl_do_set_msg_id (self, M, id);
+        bl_do_set_msg_id (self->bl, self, M, id);
       }
     }
     break;
@@ -921,7 +921,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
         int id = fetch_int (self);
         struct message *M = message_get (id);
         if (M) {
-          bl_do_set_unread (self, M, 0);
+          bl_do_set_unread (self->bl, self, M, 0);
         }
       }
       fetch_pts (self);
@@ -1004,7 +1004,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
         int l2 = prefetch_strlen (self);
         char *l = fetch_str (self, l2);
         struct user *U = &UC->user;
-        bl_do_set_user_real_name (self, U, f, l1, l, l2);
+        bl_do_set_user_real_name (self->bl, self, U, f, l1, l, l2);
         //print_start ();
         //push_color (COLOR_YELLOW);
         //print_date (time (0));
@@ -1044,7 +1044,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
           fetch_file_location (self, &small);
           fetch_file_location (self, &big);
         }
-        bl_do_set_user_profile_photo (self, U, photo_id, &big, &small);
+        bl_do_set_user_profile_photo (self->bl, self, U, photo_id, &big, &small);
 
         //print_start ();
         //push_color (COLOR_YELLOW);
@@ -1105,7 +1105,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       peer_t *C = user_chat_get (chat_id);
       if (C && (C->flags & FLAG_CREATED)) {
         if (x == CODE_chat_participants) {
-          bl_do_set_chat_admin (self, &C->chat, fetch_int (self));
+          bl_do_set_chat_admin (self->bl, self, &C->chat, fetch_int (self));
           assert (fetch_int (self) == CODE_vector);
           n = fetch_int (self);
           struct chat_user *users = talloc (12 * n);
@@ -1117,7 +1117,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
             users[i].date = fetch_int (self);
           }
           int version = fetch_int (self);
-          bl_do_set_chat_participants (self, &C->chat, version, n, users);
+          bl_do_set_chat_participants (self->bl, self, &C->chat, version, n, users);
         }
       } else {
         if (x == CODE_chat_participants) {
@@ -1330,7 +1330,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
 
       peer_t *C = user_chat_get (chat_id);
       if (C && (C->flags & FLAG_CREATED)) {
-        bl_do_chat_add_user (self, &C->chat, version, get_peer_id (user_id), get_peer_id (inviter_id), time (0));
+        bl_do_chat_add_user (self->bl, self, &C->chat, version, get_peer_id (user_id), get_peer_id (inviter_id), time (0));
       }
 
       //print_start ();
@@ -1355,7 +1355,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
 
       peer_t *C = user_chat_get (chat_id);
       if (C && (C->flags & FLAG_CREATED)) {
-        bl_do_chat_del_user (self, &C->chat, version, get_peer_id (user_id));
+        bl_do_chat_del_user (self->bl, self, &C->chat, version, get_peer_id (user_id));
       }
 
       //print_start ();
@@ -1415,8 +1415,8 @@ void work_updates (struct connection *c, long long msg_id) {
   for (i = 0; i < n; i++) {
     fetch_alloc_chat (self);
   }
-  bl_do_set_date (self, fetch_int (c->mtconnection));
-  bl_do_set_seq (self, fetch_int (c->mtconnection));
+  bl_do_set_date (self->bl, self, fetch_int (c->mtconnection));
+  bl_do_set_seq (self->bl, self, fetch_int (c->mtconnection));
 }
 
 void work_update_short_message (struct connection *c UU, long long msg_id UU) {
@@ -1870,6 +1870,10 @@ struct mtproto_connection *mtproto_new(struct dc *DC, int fd, struct telegram *t
     memset(mtp, 0, sizeof(struct mtproto_connection));
     mtp->packet_buffer = mtp->__packet_buffer + 16;
     mtp->connection = fd_create_connection(DC, fd, tg, &mtproto_methods, mtp);
+
+    // binlog must exist
+    assert (tg->bl);
+    mtp->bl = tg->bl;
     return mtp;
 }
 

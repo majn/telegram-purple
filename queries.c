@@ -355,7 +355,7 @@ void fetch_dc_option (struct telegram *instance) {
   int port = fetch_int (mtp);
   logprintf ( "id = %d, name = %.*s ip = %.*s port = %d\n", id, l1, name, l2, ip, port);
 
-  bl_do_dc_option (mtp, id, l1, name, l2, ip, port, instance);
+  bl_do_dc_option (mtp->bl, mtp, id, l1, name, l2, ip, port, instance);
 }
 
 int help_get_config_on_answer (struct query *q UU) {
@@ -686,7 +686,7 @@ int sign_in_on_answer (struct query *q UU) {
   fetch_user (mtp, &User);
   if (!our_id) {
     our_id = get_peer_id (User.id);
-    bl_do_set_our_id (mtp, our_id);
+    bl_do_set_our_id (mtp->bl, mtp, our_id);
   }
   sign_in_ok = 1;
   if (verbosity) {
@@ -694,7 +694,7 @@ int sign_in_on_answer (struct query *q UU) {
   }
   DC_working->has_auth = 1;
 
-  bl_do_dc_signed (mtp, DC_working->id);
+  bl_do_dc_signed (mtp->bl, mtp, DC_working->id);
 
   return 0;
 }
@@ -914,7 +914,7 @@ int msg_send_encr_on_answer (struct query *q UU) {
   struct message *M = q->extra;
   //M->date = fetch_int (mtp);
   fetch_int (mtp);
-  bl_do_set_message_sent (mtp, M);
+  bl_do_set_message_sent (mtp->bl, mtp, M);
   return 0;
 }
 
@@ -925,7 +925,7 @@ int msg_send_on_answer (struct query *q UU) {
   assert (x == CODE_messages_sent_message || x == CODE_messages_sent_message_link);
   int id = fetch_int (mtp); // id
   struct message *M = q->extra;
-  bl_do_set_msg_id (mtp, M, id);
+  bl_do_set_msg_id (mtp->bl, mtp, M, id);
   fetch_date (mtp);
   fetch_pts (mtp);
   fetch_seq (mtp);
@@ -969,7 +969,7 @@ int msg_send_on_answer (struct query *q UU) {
     }
   }
   logprintf ("Sent: id = %d\n", id);
-  bl_do_set_message_sent (mtp, M);
+  bl_do_set_message_sent (mtp->bl, mtp, M);
   return 0;
 }
 
@@ -978,7 +978,7 @@ int msg_send_on_error (struct query *q, int error_code, int error_len, char *err
 
   logprintf ( "error for query #%lld: #%d :%.*s\n", q->msg_id, error_code, error_len, error);
   struct message *M = q->extra;
-  bl_do_delete_msg (mtp, M);
+  bl_do_delete_msg (mtp->bl, mtp, M);
   return 0;
 }
 
@@ -1053,7 +1053,7 @@ void do_send_message (struct telegram *instance, peer_id_t id, const char *msg, 
   long long t;
   secure_random (&t, 8);
   logprintf ("t = %lld, len = %d\n", t, len);
-  bl_do_send_message_text (mtp, t, our_id, get_peer_type (id), get_peer_id (id), time (0), len, msg);
+  bl_do_send_message_text (mtp->bl, mtp, t, our_id, get_peer_type (id), get_peer_id (id), time (0), len, msg);
   struct message *M = message_get (t);
   assert (M);
   do_send_msg (instance, M);
@@ -2570,7 +2570,7 @@ void do_send_accept_encr_chat (struct telegram *instance, struct secret_chat *E,
   static unsigned char sha_buffer[20];
   sha1 (kk, 256, sha_buffer);
 
-  bl_do_set_encr_chat_key (mtp, E, kk, *(long long *)(sha_buffer + 12));
+  bl_do_set_encr_chat_key (mtp->bl, mtp, E, kk, *(long long *)(sha_buffer + 12));
 
   clear_packet (mtp);
   out_int (mtp, CODE_messages_accept_encryption);
@@ -2685,7 +2685,7 @@ void do_send_create_encr_chat (struct telegram *instance, void *x, unsigned char
     t = lrand48 ();
   }
 
-  bl_do_encr_chat_init (mtp, t, user_id, (void *)random, (void *)g_a);
+  bl_do_encr_chat_init (mtp->bl, mtp, t, user_id, (void *)random, (void *)g_a);
   peer_t *_E = user_chat_get (MK_ENCR_CHAT (t));
   assert (_E);
   struct secret_chat *E = &_E->encr_chat;
@@ -2731,7 +2731,7 @@ int get_dh_config_on_answer (struct query *q UU) {
     assert (l == 256);
     char *s = fetch_str (mtp, l);
     int v = fetch_int (mtp);
-    bl_do_set_dh_params (mtp, a, (void *)s, v);
+    bl_do_set_dh_params (mtp->bl, mtp, a, (void *)s, v);
 
     BIGNUM *p = BN_bin2bn ((void *)s, 256, 0);
     ensure_ptr (p);
@@ -2805,10 +2805,10 @@ int get_state_on_answer (struct query *q UU) {
 
   logprintf("get_state_on_answer()\n");
   assert (fetch_int (mtp) == (int)CODE_updates_state);
-  bl_do_set_pts (mtp, fetch_int (mtp));
-  bl_do_set_qts (mtp, fetch_int (mtp));
-  bl_do_set_date (mtp, fetch_int (mtp));
-  bl_do_set_seq (mtp, fetch_int (mtp));
+  bl_do_set_pts (mtp->bl, mtp, fetch_int (mtp));
+  bl_do_set_qts (mtp->bl, mtp, fetch_int (mtp));
+  bl_do_set_date (mtp->bl, mtp, fetch_int (mtp));
+  bl_do_set_seq (mtp->bl, mtp, fetch_int (mtp));
   unread_messages = fetch_int (mtp);
   //write_state_file ();
   difference_got = 1;
@@ -2824,8 +2824,8 @@ int get_difference_on_answer (struct query *q UU) {
   get_difference_active = 0;
   unsigned x = fetch_int (mtp);
   if (x == CODE_updates_difference_empty) {
-    bl_do_set_date (mtp, fetch_int (mtp));
-    bl_do_set_seq (mtp, fetch_int (mtp));
+    bl_do_set_date (mtp->bl, mtp, fetch_int (mtp));
+    bl_do_set_seq (mtp->bl, mtp, fetch_int (mtp));
     difference_got = 1;
   } else if (x == CODE_updates_difference || x == CODE_updates_difference_slice) {
     int n, i;
@@ -2867,10 +2867,10 @@ int get_difference_on_answer (struct query *q UU) {
       fetch_alloc_user (mtp);
     }
     assert (fetch_int (mtp) == (int)CODE_updates_state);
-    bl_do_set_pts (mtp, fetch_int (mtp));
-    bl_do_set_qts (mtp, fetch_int (mtp));
-    bl_do_set_date (mtp, fetch_int (mtp));
-    bl_do_set_seq (mtp, fetch_int (mtp));
+    bl_do_set_pts (mtp->bl, mtp, fetch_int (mtp));
+    bl_do_set_qts (mtp->bl, mtp, fetch_int (mtp));
+    bl_do_set_date (mtp->bl, mtp, fetch_int (mtp));
+    bl_do_set_seq (mtp->bl, mtp, fetch_int (mtp));
     unread_messages = fetch_int (mtp);
     //write_state_file ();
     for (i = 0; i < ml_pos; i++) {

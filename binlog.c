@@ -41,13 +41,6 @@
 
 #include <openssl/sha.h>
 
-#define BINLOG_BUFFER_SIZE (1 << 20)
-int binlog_buffer[BINLOG_BUFFER_SIZE];
-int *rptr;
-int *wptr;
-int test_dc = 0;
-extern int test_dc;
-
 extern int pts;
 extern int qts;
 extern int last_date;
@@ -65,38 +58,34 @@ char *get_binlog_file_name()
 //extern struct dc *DC_list[];
 //extern int dc_working_num;
 extern int our_id;
-extern int binlog_enabled;
 int binlog_enabled = 0;
 extern int encr_root;
 extern unsigned char *encr_prime;
 extern int encr_param_version;
 extern int messages_allocated;
 
-int in_replay_log;
-
-void *alloc_log_event (int l UU) {
-  return binlog_buffer;
+void *alloc_log_event (struct binlog *bl, int l UU) {
+  return bl->binlog_buffer;
 }
-
-long long binlog_pos;
 
 void replay_log_event (struct telegram *instance) {
   struct mtproto_connection *self = instance->connection;
+  struct binlog *bl = instance->bl;
 
-  int *start = rptr;
-  in_replay_log = 1;
-  assert (rptr < wptr);
-  int op = *rptr;
+  int *start = bl->rptr;
+  bl->in_replay_log = 1;
+  assert (bl->rptr < bl->wptr);
+  int op = *bl->rptr;
 
   if (verbosity >= 2) {
-    logprintf ("log_pos %lld, op 0x%08x\n", binlog_pos, op);
+    logprintf ("log_pos %lld, op 0x%08x\n", bl->binlog_pos, op);
   }
 
-  self->in_ptr = rptr;
-  self->in_end = wptr;
+  self->in_ptr = bl->rptr;
+  self->in_end = bl->wptr;
   switch (op) {
   case LOG_START:
-    rptr ++;
+    bl->rptr ++;
     break;
   case CODE_binlog_dc_option:
     self->in_ptr ++;
@@ -112,52 +101,52 @@ void replay_log_event (struct telegram *instance) {
       }
       alloc_dc (instance->auth.DC_list, id, tstrndup (ip, l2), port);
     }
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case LOG_AUTH_KEY:
-    rptr ++;
+    bl->rptr ++;
     {
-      int num = *(rptr ++);
+      int num = *(bl->rptr ++);
       assert (num >= 0 && num <= MAX_DC_ID);
       assert (instance->auth.DC_list[num]);
-      instance->auth.DC_list[num]->auth_key_id = *(long long *)rptr;
-      rptr += 2;
-      memcpy (instance->auth.DC_list[num]->auth_key, rptr, 256);
-      rptr += 64;
+      instance->auth.DC_list[num]->auth_key_id = *(long long *)bl->rptr;
+      bl->rptr += 2;
+      memcpy (instance->auth.DC_list[num]->auth_key, bl->rptr, 256);
+      bl->rptr += 64;
       instance->auth.DC_list[num]->flags |= 1;
     };
     break;
   case LOG_DEFAULT_DC:
-    rptr ++;
+    bl->rptr ++;
     { 
-      int num = *(rptr ++);
+      int num = *(bl->rptr ++);
       assert (num >= 0 && num <= MAX_DC_ID);
       instance->auth.dc_working_num = num;
     }
     break;
   case LOG_OUR_ID:
-    rptr ++;
+    bl->rptr ++;
     {
-      our_id = *(rptr ++);
+      our_id = *(bl->rptr ++);
     }
     break;
   case LOG_DC_SIGNED:
-    rptr ++;
+    bl->rptr ++;
     {
-      int num = *(rptr ++);
+      int num = *(bl->rptr ++);
       assert (num >= 0 && num <= MAX_DC_ID);
       assert (instance->auth.DC_list[num]);
       instance->auth.DC_list[num]->has_auth = 1;
     }
     break;
   case LOG_DC_SALT:
-    rptr ++;
+    bl->rptr ++;
     {
-      int num = *(rptr ++);
+      int num = *(bl->rptr ++);
       assert (num >= 0 && num <= MAX_DC_ID);
       assert (instance->auth.DC_list[num]);
-      instance->auth.DC_list[num]->server_salt = *(long long *)rptr;
-      rptr += 2;
+      instance->auth.DC_list[num]->server_salt = *(long long *)bl->rptr;
+      bl->rptr += 2;
     };
     break;
 //  case CODE_user_empty:
@@ -167,45 +156,45 @@ void replay_log_event (struct telegram *instance) {
 //  case CODE_user_foreign:
   case CODE_user_deleted:
     fetch_alloc_user (self);
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case LOG_DH_CONFIG:
     get_dh_config_on_answer (0);
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case LOG_ENCR_CHAT_KEY:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_ENCR_CHAT (*(rptr ++));
+      peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
       struct secret_chat *U = (void *)user_chat_get (id);
       assert (U);
-      U->key_fingerprint = *(long long *)rptr;
-      rptr += 2;
-      memcpy (U->key, rptr, 256);
-      rptr += 64;
+      U->key_fingerprint = *(long long *)bl->rptr;
+      bl->rptr += 2;
+      memcpy (U->key, bl->rptr, 256);
+      bl->rptr += 64;
     };
     break;
   case LOG_ENCR_CHAT_SEND_ACCEPT:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_ENCR_CHAT (*(rptr ++));
+      peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
       struct secret_chat *U = (void *)user_chat_get (id);
       assert (U);
-      U->key_fingerprint = *(long long *)rptr;
-      rptr += 2;
-      memcpy (U->key, rptr, 256);
-      rptr += 64;
+      U->key_fingerprint = *(long long *)bl->rptr;
+      bl->rptr += 2;
+      memcpy (U->key, bl->rptr, 256);
+      bl->rptr += 64;
       if (!U->g_key) {
         U->g_key = talloc (256);
       }
-      memcpy (U->g_key, rptr, 256);
-      rptr += 64;
+      memcpy (U->g_key, bl->rptr, 256);
+      bl->rptr += 64;
     };
     break;
   case LOG_ENCR_CHAT_SEND_CREATE:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_ENCR_CHAT (*(rptr ++));
+      peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
       struct secret_chat *U = (void *)user_chat_get (id);
       assert (!U || !(U->flags & FLAG_CREATED));
       if (!U) {
@@ -214,9 +203,9 @@ void replay_log_event (struct telegram *instance) {
         insert_encrypted_chat ((void *)U);
       }
       U->flags |= FLAG_CREATED;
-      U->user_id = *(rptr ++);
-      memcpy (U->key, rptr, 256);
-      rptr += 64;
+      U->user_id = *(bl->rptr ++);
+      memcpy (U->key, bl->rptr, 256);
+      bl->rptr += 64;
       if (!U->print_name) {  
         peer_t *P = user_chat_get (MK_USER (U->user_id));
         if (P) {
@@ -231,9 +220,9 @@ void replay_log_event (struct telegram *instance) {
     };
     break;
   case LOG_ENCR_CHAT_DELETED:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_ENCR_CHAT (*(rptr ++));
+      peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
       struct secret_chat *U = (void *)user_chat_get (id);
       if (!U) {
         U = talloc0 (sizeof (peer_t));
@@ -245,23 +234,23 @@ void replay_log_event (struct telegram *instance) {
     };
     break;
   case LOG_ENCR_CHAT_WAITING:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_ENCR_CHAT (*(rptr ++));
+      peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
       struct secret_chat *U = (void *)user_chat_get (id);
       assert (U);
       U->state = sc_waiting;
-      U->date = *(rptr ++);
-      U->admin_id = *(rptr ++);
-      U->user_id = *(rptr ++);
-      U->access_hash = *(long long *)rptr;
-      rptr += 2;
+      U->date = *(bl->rptr ++);
+      U->admin_id = *(bl->rptr ++);
+      U->user_id = *(bl->rptr ++);
+      U->access_hash = *(long long *)bl->rptr;
+      bl->rptr += 2;
     };
     break;
   case LOG_ENCR_CHAT_REQUESTED:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_ENCR_CHAT (*(rptr ++));
+      peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
       struct secret_chat *U = (void *)user_chat_get (id);
       if (!U) {
         U = talloc0 (sizeof (peer_t));
@@ -270,10 +259,10 @@ void replay_log_event (struct telegram *instance) {
       }
       U->flags |= FLAG_CREATED;
       U->state = sc_request;
-      U->date = *(rptr ++);
-      U->admin_id = *(rptr ++);
-      U->user_id = *(rptr ++);
-      U->access_hash = *(long long *)rptr;
+      U->date = *(bl->rptr ++);
+      U->admin_id = *(bl->rptr ++);
+      U->user_id = *(bl->rptr ++);
+      U->access_hash = *(long long *)bl->rptr;
       if (!U->print_name) {  
         peer_t *P = user_chat_get (MK_USER (U->user_id));
         if (P) {
@@ -285,13 +274,13 @@ void replay_log_event (struct telegram *instance) {
         }
         peer_insert_name ((void *)U);
       }
-      rptr += 2;
+      bl->rptr += 2;
     };
     break;
   case LOG_ENCR_CHAT_OK:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_ENCR_CHAT (*(rptr ++));
+      peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
       struct secret_chat *U = (void *)user_chat_get (id);
       assert (U);
       U->state = sc_ok;
@@ -325,25 +314,25 @@ void replay_log_event (struct telegram *instance) {
         U->flags |= FLAG_USER_CONTACT;
       }
     }
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_user_delete:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_USER (*(rptr ++));
+      peer_id_t id = MK_USER (*(bl->rptr ++));
       peer_t *U = user_chat_get (id);
       assert (U);
       U->flags |= FLAG_DELETED;
     }
     break;
   case CODE_binlog_set_user_access_token:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_USER (*(rptr ++));
+      peer_id_t id = MK_USER (*(bl->rptr ++));
       peer_t *U = user_chat_get (id);
       assert (U);
-      U->user.access_hash = *(long long *)rptr;
-      rptr += 2;
+      U->user.access_hash = *(long long *)bl->rptr;
+      bl->rptr += 2;
     }
     break;
   case CODE_binlog_set_user_phone:
@@ -355,15 +344,15 @@ void replay_log_event (struct telegram *instance) {
       if (U->user.phone) { tfree_str (U->user.phone); }
       U->user.phone = fetch_str_dup (self);
     }
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_set_user_friend:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_USER (*(rptr ++));
+      peer_id_t id = MK_USER (*(bl->rptr ++));
       peer_t *U = user_chat_get (id);
       assert (U);
-      int friend = *(rptr ++);
+      int friend = *(bl->rptr ++);
       if (friend) { U->flags |= FLAG_USER_CONTACT; }
       else { U->flags &= ~FLAG_USER_CONTACT; }
     }
@@ -379,15 +368,15 @@ void replay_log_event (struct telegram *instance) {
       }
       fetch_photo (self, &U->user.photo);
     }
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_user_blocked:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_USER (*(rptr ++));
+      peer_id_t id = MK_USER (*(bl->rptr ++));
       peer_t *U = user_chat_get (id);
       assert (U);
-      U->user.blocked = *(rptr ++);
+      U->user.blocked = *(bl->rptr ++);
     }
     break;
   case CODE_binlog_set_user_full_name:
@@ -401,12 +390,12 @@ void replay_log_event (struct telegram *instance) {
       U->user.real_first_name = fetch_str_dup (self);
       U->user.real_last_name = fetch_str_dup (self);
     }
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_encr_chat_delete:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_ENCR_CHAT (*(rptr ++));
+      peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
       peer_t *_U = user_chat_get (id);
       assert (_U);
       struct secret_chat *U = &_U->encr_chat;
@@ -424,9 +413,9 @@ void replay_log_event (struct telegram *instance) {
     }
     break;
   case CODE_binlog_encr_chat_requested:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_ENCR_CHAT (*(rptr ++));
+      peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
       peer_t *_U = user_chat_get (id);
       if (!_U) {
         _U = talloc0 (sizeof (*_U));
@@ -436,11 +425,11 @@ void replay_log_event (struct telegram *instance) {
         assert (!(_U->flags & FLAG_CREATED));
       }
       struct secret_chat *U = (void *)_U;
-      U->access_hash = *(long long *)rptr;
-      rptr += 2;
-      U->date = *(rptr ++);
-      U->admin_id = *(rptr ++);
-      U->user_id = *(rptr ++);
+      U->access_hash = *(long long *)bl->rptr;
+      bl->rptr += 2;
+      U->date = *(bl->rptr ++);
+      U->admin_id = *(bl->rptr ++);
+      U->user_id = *(bl->rptr ++);
 
       peer_t *Us = user_chat_get (MK_USER (U->user_id));
       assert (!U->print_name);
@@ -454,47 +443,47 @@ void replay_log_event (struct telegram *instance) {
       peer_insert_name ((void *)U);
       U->g_key = talloc (256);
       U->nonce = talloc (256);
-      memcpy (U->g_key, rptr, 256);
-      rptr += 64;
-      memcpy (U->nonce, rptr, 256);
-      rptr += 64;
+      memcpy (U->g_key, bl->rptr, 256);
+      bl->rptr += 64;
+      memcpy (U->nonce, bl->rptr, 256);
+      bl->rptr += 64;
 
       U->flags |= FLAG_CREATED;
       U->state = sc_request;
     }
     break;
   case CODE_binlog_set_encr_chat_access_hash:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_ENCR_CHAT (*(rptr ++));
+      peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
       peer_t *U = user_chat_get (id);
       assert (U);
-      U->encr_chat.access_hash = *(long long *)rptr;
-      rptr += 2;
+      U->encr_chat.access_hash = *(long long *)bl->rptr;
+      bl->rptr += 2;
     }
     break;
   case CODE_binlog_set_encr_chat_date:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_ENCR_CHAT (*(rptr ++));
+      peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
       peer_t *U = user_chat_get (id);
       assert (U);
-      U->encr_chat.date = *(rptr ++);
+      U->encr_chat.date = *(bl->rptr ++);
     }
     break;
   case CODE_binlog_set_encr_chat_state:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_ENCR_CHAT (*(rptr ++));
+      peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
       peer_t *U = user_chat_get (id);
       assert (U);
-      U->encr_chat.state = *(rptr ++);
+      U->encr_chat.state = *(bl->rptr ++);
     }
     break;
   case CODE_binlog_encr_chat_accepted:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_ENCR_CHAT (*(rptr ++));
+      peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
       peer_t *_U = user_chat_get (id);
       assert (_U);
       struct secret_chat *U = &_U->encr_chat;
@@ -504,12 +493,12 @@ void replay_log_event (struct telegram *instance) {
       if (!U->nonce) {
         U->nonce = talloc (256);
       }
-      memcpy (U->g_key, rptr, 256);
-      rptr += 64;
-      memcpy (U->nonce, rptr, 256);
-      rptr += 64;
-      U->key_fingerprint = *(long long *)rptr;
-      rptr += 2;
+      memcpy (U->g_key, bl->rptr, 256);
+      bl->rptr += 64;
+      memcpy (U->nonce, bl->rptr, 256);
+      bl->rptr += 64;
+      U->key_fingerprint = *(long long *)bl->rptr;
+      bl->rptr += 2;
       if (U->state == sc_waiting) {
         do_create_keys_end (U);
       }
@@ -517,65 +506,65 @@ void replay_log_event (struct telegram *instance) {
     }
     break;
   case CODE_binlog_set_encr_chat_key:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_ENCR_CHAT (*(rptr ++));
+      peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
       peer_t *_U = user_chat_get (id);
       assert (_U);
       struct secret_chat *U = &_U->encr_chat;
-      memcpy (U->key, rptr, 256);
-      rptr += 64;
-      U->key_fingerprint = *(long long *)rptr;
-      rptr += 2;
+      memcpy (U->key, bl->rptr, 256);
+      bl->rptr += 64;
+      U->key_fingerprint = *(long long *)bl->rptr;
+      bl->rptr += 2;
     }
     break;
   case CODE_binlog_set_dh_params:
-    rptr ++;
+    bl->rptr ++;
     {
       if (encr_prime) { tfree (encr_prime, 256); }
-      encr_root = *(rptr ++);
+      encr_root = *(bl->rptr ++);
       encr_prime = talloc (256);
-      memcpy (encr_prime, rptr, 256);
-      rptr += 64;
-      encr_param_version = *(rptr ++);
+      memcpy (encr_prime, bl->rptr, 256);
+      bl->rptr += 64;
+      encr_param_version = *(bl->rptr ++);
     }
     break;
   case CODE_binlog_encr_chat_init:
-    rptr ++;
+    bl->rptr ++;
     {
       peer_t *P = talloc0 (sizeof (*P));
-      P->id = MK_ENCR_CHAT (*(rptr ++));
+      P->id = MK_ENCR_CHAT (*(bl->rptr ++));
       assert (!user_chat_get (P->id));
-      P->encr_chat.user_id = *(rptr ++);
+      P->encr_chat.user_id = *(bl->rptr ++);
       P->encr_chat.admin_id = our_id;
       insert_encrypted_chat (P);
       peer_t *Us = user_chat_get (MK_USER (P->encr_chat.user_id));
       assert (Us);
       P->print_name = create_print_name (P->id, "!", Us->user.first_name, Us->user.last_name, 0);
       peer_insert_name (P);
-      memcpy (P->encr_chat.key, rptr, 256);
-      rptr += 64;
+      memcpy (P->encr_chat.key, bl->rptr, 256);
+      bl->rptr += 64;
       P->encr_chat.g_key = talloc (256);
-      memcpy (P->encr_chat.g_key, rptr, 256);
-      rptr += 64;
+      memcpy (P->encr_chat.g_key, bl->rptr, 256);
+      bl->rptr += 64;
       P->flags |= FLAG_CREATED;
     }
     break;
   case CODE_binlog_set_pts:
-    rptr ++;
-    pts = *(rptr ++);
+    bl->rptr ++;
+    pts = *(bl->rptr ++);
     break;
   case CODE_binlog_set_qts:
-    rptr ++;
-    qts = *(rptr ++);
+    bl->rptr ++;
+    qts = *(bl->rptr ++);
     break;
   case CODE_binlog_set_date:
-    rptr ++;
-    last_date = *(rptr ++);
+    bl->rptr ++;
+    last_date = *(bl->rptr ++);
     break;
   case CODE_binlog_set_seq:
-    rptr ++;
-    seq = *(rptr ++);
+    bl->rptr ++;
+    seq = *(bl->rptr ++);
     break;
   case CODE_binlog_chat_create:
     self->in_ptr ++;
@@ -601,15 +590,15 @@ void replay_log_event (struct telegram *instance) {
       fetch_data (self, &C->photo_big, sizeof (struct file_location));
       fetch_data (self, &C->photo_small, sizeof (struct file_location));
     };
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_chat_change_flags:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_t *C = user_chat_get (MK_CHAT (*(rptr ++)));
+      peer_t *C = user_chat_get (MK_CHAT (*(bl->rptr ++)));
       assert (C && (C->flags & FLAG_CREATED));
-      C->flags |= *(rptr ++);
-      C->flags &= ~*(rptr ++);
+      C->flags |= *(bl->rptr ++);
+      C->flags &= ~*(bl->rptr ++);
     };
     break;
   case CODE_binlog_set_chat_title:
@@ -627,7 +616,7 @@ void replay_log_event (struct telegram *instance) {
       C->print_title = create_print_name (C->id, C->title, 0, 0, 0);
       peer_insert_name ((void *)C);
     };
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_set_chat_photo:
     self->in_ptr ++;
@@ -637,44 +626,44 @@ void replay_log_event (struct telegram *instance) {
       fetch_data (self, &C->photo_big, sizeof (struct file_location));
       fetch_data (self, &C->photo_small, sizeof (struct file_location));
     };
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_set_chat_date:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_t *C = user_chat_get (MK_CHAT (*(rptr ++)));
+      peer_t *C = user_chat_get (MK_CHAT (*(bl->rptr ++)));
       assert (C && (C->flags & FLAG_CREATED));
-      C->chat.date = *(rptr ++);
+      C->chat.date = *(bl->rptr ++);
     };
     break;
   case CODE_binlog_set_chat_version:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_t *C = user_chat_get (MK_CHAT (*(rptr ++)));
+      peer_t *C = user_chat_get (MK_CHAT (*(bl->rptr ++)));
       assert (C && (C->flags & FLAG_CREATED));
-      C->chat.version = *(rptr ++);
-      C->chat.users_num = *(rptr ++);
+      C->chat.version = *(bl->rptr ++);
+      C->chat.users_num = *(bl->rptr ++);
     };
     break;
   case CODE_binlog_set_chat_admin:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_t *C = user_chat_get (MK_CHAT (*(rptr ++)));
+      peer_t *C = user_chat_get (MK_CHAT (*(bl->rptr ++)));
       assert (C && (C->flags & FLAG_CREATED));
-      C->chat.admin_id = *(rptr ++);
+      C->chat.admin_id = *(bl->rptr ++);
     };
     break;
   case CODE_binlog_set_chat_participants:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_t *C = user_chat_get (MK_CHAT (*(rptr ++)));
+      peer_t *C = user_chat_get (MK_CHAT (*(bl->rptr ++)));
       assert (C && (C->flags & FLAG_CREATED));
-      C->chat.user_list_version = *(rptr ++);
+      C->chat.user_list_version = *(bl->rptr ++);
       if (C->chat.user_list) { tfree (C->chat.user_list, 12 * C->chat.user_list_size); }
-      C->chat.user_list_size = *(rptr ++);
+      C->chat.user_list_size = *(bl->rptr ++);
       C->chat.user_list = talloc (12 * C->chat.user_list_size);
-      memcpy (C->chat.user_list, rptr, 12 * C->chat.user_list_size);
-      rptr += 3 * C->chat.user_list_size;
+      memcpy (C->chat.user_list, bl->rptr, 12 * C->chat.user_list_size);
+      bl->rptr += 3 * C->chat.user_list_size;
     };
     break;
   case CODE_binlog_chat_full_photo:
@@ -688,20 +677,20 @@ void replay_log_event (struct telegram *instance) {
       }
       fetch_photo (self, &U->chat.photo);
     }
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_add_chat_participant:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_CHAT (*(rptr ++));
+      peer_id_t id = MK_CHAT (*(bl->rptr ++));
       peer_t *_C = user_chat_get (id);
       assert (_C && (_C->flags & FLAG_CREATED));
       struct chat *C = &_C->chat;
 
-      int version = *(rptr ++);
-      int user = *(rptr ++);
-      int inviter = *(rptr ++);
-      int date = *(rptr ++);
+      int version = *(bl->rptr ++);
+      int user = *(bl->rptr ++);
+      int inviter = *(bl->rptr ++);
+      int date = *(bl->rptr ++);
       assert (C->user_list_version < version);
 
       int i;
@@ -717,15 +706,15 @@ void replay_log_event (struct telegram *instance) {
     }
     break;
   case CODE_binlog_del_chat_participant:
-    rptr ++;
+    bl->rptr ++;
     {
-      peer_id_t id = MK_CHAT (*(rptr ++));
+      peer_id_t id = MK_CHAT (*(bl->rptr ++));
       peer_t *_C = user_chat_get (id);
       assert (_C && (_C->flags & FLAG_CREATED));
       struct chat *C = &_C->chat;
 
-      int version = *(rptr ++);
-      int user = *(rptr ++);
+      int version = *(bl->rptr ++);
+      int user = *(bl->rptr ++);
       assert (C->user_list_version < version);
 
       int i;
@@ -791,7 +780,7 @@ void replay_log_event (struct telegram *instance) {
         M->flags |= FLAG_PENDING;
       }
     }
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_create_message_text_fwd:
     self->in_ptr ++;
@@ -826,7 +815,7 @@ void replay_log_event (struct telegram *instance) {
 
       message_insert (M);
     }
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_create_message_media:
     self->in_ptr ++;
@@ -859,7 +848,7 @@ void replay_log_event (struct telegram *instance) {
 
       message_insert (M);
     }
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_create_message_media_encr:
     self->in_ptr ++;
@@ -894,7 +883,7 @@ void replay_log_event (struct telegram *instance) {
 
       message_insert (M);
     }
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_create_message_media_fwd:
     self->in_ptr ++;
@@ -929,7 +918,7 @@ void replay_log_event (struct telegram *instance) {
 
       message_insert (M);
     }
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_create_message_service:
     self->in_ptr ++;
@@ -957,7 +946,7 @@ void replay_log_event (struct telegram *instance) {
 
       message_insert (M);
     }
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_create_message_service_encr:
     self->in_ptr ++;
@@ -986,7 +975,7 @@ void replay_log_event (struct telegram *instance) {
 
       message_insert (M);
     }
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_create_message_service_fwd:
     self->in_ptr ++;
@@ -1015,31 +1004,31 @@ void replay_log_event (struct telegram *instance) {
 
       message_insert (M);
     }
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_set_unread:
-    rptr ++;
+    bl->rptr ++;
     {
-      struct message *M = message_get (*(rptr ++));
+      struct message *M = message_get (*(bl->rptr ++));
       assert (M);
       M->unread = 0;
     }
     break;
   case CODE_binlog_set_message_sent:
-    rptr ++;
+    bl->rptr ++;
     {
-      struct message *M = message_get (*(long long *)rptr);
-      rptr += 2;
+      struct message *M = message_get (*(long long *)bl->rptr);
+      bl->rptr += 2;
       assert (M);
       message_remove_unsent (M);
       M->flags &= ~FLAG_PENDING;
     }
     break;
   case CODE_binlog_set_msg_id:
-    rptr ++;
+    bl->rptr ++;
     {
-      struct message *M = message_get (*(long long *)rptr);
-      rptr += 2;
+      struct message *M = message_get (*(long long *)bl->rptr);
+      bl->rptr += 2;
       assert (M);
       if (M->flags & FLAG_PENDING) {
         message_remove_unsent (M);
@@ -1047,7 +1036,7 @@ void replay_log_event (struct telegram *instance) {
       }
       message_remove_tree (M);
       message_del_peer (M);
-      M->id = *(rptr ++);
+      M->id = *(bl->rptr ++);
       if (message_get (M->id)) {
         free_message (M);
         tfree (M, sizeof (*M));
@@ -1058,10 +1047,10 @@ void replay_log_event (struct telegram *instance) {
     }
     break;
   case CODE_binlog_delete_msg:
-    rptr ++;
+    bl->rptr ++;
     {
-      struct message *M = message_get (*(long long *)rptr);
-      rptr += 2;
+      struct message *M = message_get (*(long long *)bl->rptr);
+      bl->rptr += 2;
       assert (M);
       if (M->flags & FLAG_PENDING) {
         message_remove_unsent (M);
@@ -1077,28 +1066,31 @@ void replay_log_event (struct telegram *instance) {
   case CODE_update_user_photo:
   case CODE_update_user_name:
     work_update_binlog (self);
-    rptr = self->in_ptr;
+    bl->rptr = self->in_ptr;
     break;
   default:
-    logprintf ("Unknown logevent [0x%08x] 0x%08x [0x%08x] at %lld\n", *(rptr - 1), op, *(rptr + 1), binlog_pos);
+    logprintf ("Unknown logevent [0x%08x] 0x%08x [0x%08x] at %lld\n", *(bl->rptr - 1), op, *(bl->rptr + 1), bl->binlog_pos);
 
     assert (0);
   }
   if (verbosity >= 2) {
     logprintf ("Event end\n");
   }
-  in_replay_log = 0;
-  binlog_pos += (rptr - start) * 4;
+  bl->in_replay_log = 0;
+  bl->binlog_pos += (bl->rptr - start) * 4;
 }
 
-void create_new_binlog (struct mtproto_connection *self) {
+void create_new_binlog (struct binlog *bl, struct mtproto_connection *self) {
+  logprintf("create_new_binlog()");
+
   static int s[1000];
   self->packet_ptr = s;
+  //self->packet_ptr = self->packet_buffer; // (int *)&bl->s; 
   out_int (self, LOG_START);
   out_int (self, CODE_binlog_dc_option);
   out_int (self, 1);
   out_string (self, "");
-  out_string (self, test_dc ? TG_SERVER_TEST : TG_SERVER);
+  out_string (self, bl->test_dc ? TG_SERVER_TEST : TG_SERVER);
   out_int (self, 443);
   out_int (self, LOG_DEFAULT_DC);
   out_int (self, 1);
@@ -1112,13 +1104,19 @@ void create_new_binlog (struct mtproto_connection *self) {
   close (fd);
 }
 
-
+/**
+ * Loag the logfile and replay all stored log events
+ */
 void replay_log (struct telegram *instance) {
+  assert(instance->connection);
+  assert(instance->bl);
   struct mtproto_connection *self = instance->connection;
+  struct binlog *bl = instance->bl;
 
+  logprintf("replaying binlog...\n");
   if (access (get_binlog_file_name (), F_OK) < 0) {
     printf ("No binlog found. Creating new one\n");
-    create_new_binlog (self);
+    create_new_binlog (bl, self);
   }
   int fd = open (get_binlog_file_name (), O_RDONLY);
   if (fd < 0) {
@@ -1127,64 +1125,90 @@ void replay_log (struct telegram *instance) {
   }
   int end = 0;
   while (1) {
-    if (!end && wptr - rptr < MAX_LOG_EVENT_SIZE / 4) {
-      if (wptr == rptr) {
-        wptr = rptr = binlog_buffer;
+    if (!end && bl->wptr - bl->rptr < MAX_LOG_EVENT_SIZE / 4) {
+      if (bl->wptr == bl->rptr) {
+        // nothing to read,
+        // reset read and write pointer to start of buffer
+        bl->wptr = bl->rptr = bl->binlog_buffer;
       } else {
-        int x = wptr - rptr;
-        memcpy (binlog_buffer, rptr, 4 * x);
-        wptr -= (rptr - binlog_buffer);
-        rptr = binlog_buffer;
+        // get difference between read and write pointer
+        int x = bl->wptr - bl->rptr;
+
+        // copy everything between read and write pointer 
+        // to the start of the binlog buffer
+        memcpy (bl->binlog_buffer, bl->rptr, 4 * x);
+
+        // reset binlog buffer position
+        //    +-----------+------+------+
+        //    ^           ^      ^      ^
+        // bl_buffer     rptr   wptr    BUFFER_SIZE
+        //
+        //    +------+------------------+
+        //    ^      ^                  ^ 
+        //  rptr    wptr                BUFFER_SIZE
+        // bl_buffer
+        //
+        bl->wptr -= (bl->rptr - bl->binlog_buffer);
+        bl->rptr = bl->binlog_buffer;
       }
-      int l = (binlog_buffer + BINLOG_BUFFER_SIZE - wptr) * 4;
-      int k = read (fd, wptr, l);
+      // calculate the remaining space in the binlog buffer
+      int l = (bl->binlog_buffer + BINLOG_BUFFER_SIZE - bl->wptr) * 4;
+
+      // try to read the remining bytes from the file
+      int k = read (fd, bl->wptr, l);
       if (k < 0) {
         perror ("read binlog");
         exit (2);
       }
+      // amount of read bytes must be divisible by 4, since we
+      // store 4-byte integers
       assert (!(k & 3));
       if (k < l) { 
+        // reached end of file
         end = 1;
       }
-      wptr += (k / 4);
+      // move the write pointer to the first empty byte
+      bl->wptr += (k / 4);
     }
-    if (wptr == rptr) { break; }
+    if (bl->wptr == bl->rptr) { 
+      // no further log entries, done...
+      break; 
+    }
     replay_log_event (instance);
   }
   close (fd);
 }
 
-int binlog_fd;
-void write_binlog (void) {
-  binlog_fd = open (get_binlog_file_name (), O_WRONLY);
-  if (binlog_fd < 0) {
+void write_binlog (struct binlog *bl) {
+  bl->binlog_fd = open (get_binlog_file_name (), O_WRONLY);
+  if (bl->binlog_fd < 0) {
     perror ("binlog open");
     exit (2);
   }
   
-  assert (lseek (binlog_fd, binlog_pos, SEEK_SET) == binlog_pos);
-  if (flock (binlog_fd, LOCK_EX | LOCK_NB) < 0) {
+  assert (lseek (bl->binlog_fd, bl->binlog_pos, SEEK_SET) == bl->binlog_pos);
+  if (flock (bl->binlog_fd, LOCK_EX | LOCK_NB) < 0) {
     perror ("get lock");
     exit (2);
   } 
 }
 
-void add_log_event (struct mtproto_connection *self, const int *data, int len) {
+void add_log_event (struct binlog *bl, struct mtproto_connection *self, const int *data, int len) {
   logprintf ("Add log event: magic = 0x%08x, len = %d\n", data[0], len);
   assert (!(len & 3));
-  if (in_replay_log) { return; }
-  rptr = (void *)data;
-  wptr = rptr + (len / 4);
+  if (bl->in_replay_log) { return; }
+  bl->rptr = (void *)data;
+  bl->wptr = bl->rptr + (len / 4);
   int *in = self->in_ptr;
   int *end = self->in_end;
   replay_log_event (self->connection->instance);
-  if (rptr != wptr) {
-    logprintf ("Unread %lld ints. Len = %d\n", (long long)(wptr - rptr), len);
-    assert (rptr == wptr);
+  if (bl->rptr != bl->wptr) {
+    logprintf ("Unread %lld ints. Len = %d\n", (long long)(bl->wptr - bl->rptr), len);
+    assert (bl->rptr == bl->wptr);
   }
-  if (binlog_enabled) {
-    assert (binlog_fd > 0);
-    assert (write (binlog_fd, data, len) == len);
+  if (bl->binlog_enabled) {
+    assert (bl->binlog_fd > 0);
+    assert (write (bl->binlog_fd, data, len) == len);
   }
   self->in_ptr = in;
   self->in_end = end;
@@ -1192,26 +1216,27 @@ void add_log_event (struct mtproto_connection *self, const int *data, int len) {
 
 void bl_do_set_auth_key_id (struct telegram *instance, int num, unsigned char *buf) {
   struct mtproto_connection *self = instance->connection;
+  struct binlog *bl = instance->bl;
 
   static unsigned char sha1_buffer[20];
   SHA1 (buf, 256, sha1_buffer);
   long long fingerprint = *(long long *)(sha1_buffer + 12);
-  int *ev = alloc_log_event (8 + 8 + 256);
+  int *ev = alloc_log_event (bl, 8 + 8 + 256);
   ev[0] = LOG_AUTH_KEY;
   ev[1] = num;
   *(long long *)(ev + 2) = fingerprint;
   memcpy (ev + 4, buf, 256);
-  add_log_event (self, ev, 8 + 8 + 256);
+  add_log_event (bl, self, ev, 8 + 8 + 256);
 }
 
-void bl_do_set_our_id (struct mtproto_connection *self, int id) {
-  int *ev = alloc_log_event (8);
+void bl_do_set_our_id (struct binlog *bl, struct mtproto_connection *self, int id) {
+  int *ev = alloc_log_event (bl, 8);
   ev[0] = LOG_OUR_ID;
   ev[1] = id;
-  add_log_event (self, ev, 8);
+  add_log_event (bl, self, ev, 8);
 }
 
-void bl_do_new_user (struct mtproto_connection *self, int id, const char *f, int fl, const char *l, int ll, 
+void bl_do_new_user (struct binlog *bl, struct mtproto_connection *self, int id, const char *f, int fl, const char *l, int ll, 
     long long access_token, const char *p, int pl, int contact) {
 
   clear_packet (self);
@@ -1222,29 +1247,29 @@ void bl_do_new_user (struct mtproto_connection *self, int id, const char *f, int
   out_long (self, access_token);
   out_cstring (self, p ? p : "", pl);
   out_int (self, contact);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_user_delete (struct mtproto_connection *self, struct user *U) {
+void bl_do_user_delete (struct binlog *bl, struct mtproto_connection *self, struct user *U) {
   if (U->flags & FLAG_DELETED) { return; }
-  int *ev = alloc_log_event (8);
+  int *ev = alloc_log_event (bl, 8);
   ev[0] = CODE_binlog_user_delete;
   ev[1] = get_peer_id (U->id);
-  add_log_event (self, ev, 8);
+  add_log_event (bl, self, ev, 8);
 }
 
 extern int last_date;
-void bl_do_set_user_profile_photo (struct mtproto_connection *self, struct user *U, 
+void bl_do_set_user_profile_photo (struct binlog *bl, struct mtproto_connection *self, struct user *U, 
     long long photo_id, struct file_location *big, struct file_location *small) {
   if (photo_id == U->photo_id) { return; }
   if (!photo_id) {
-    int *ev = alloc_log_event (20);
+    int *ev = alloc_log_event (bl, 20);
     ev[0] = CODE_update_user_photo;
     ev[1] = get_peer_id (U->id);
     ev[2] = last_date;
     ev[3] = CODE_user_profile_photo_empty;
     ev[4] = CODE_bool_false;
-    add_log_event (self, ev, 20);
+    add_log_event (bl, self, ev, 20);
   } else {
     clear_packet (self);
     out_int (self, CODE_update_user_photo);
@@ -1277,11 +1302,11 @@ void bl_do_set_user_profile_photo (struct mtproto_connection *self, struct user 
       out_long (self, big->secret);
     }
     out_int (self, CODE_bool_false);
-    add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+    add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
   }
 }
 
-void bl_do_set_user_name (struct mtproto_connection *self, struct user *U, const char *f, 
+void bl_do_set_user_name (struct binlog *bl, struct mtproto_connection *self, struct user *U, const char *f, 
     int fl, const char *l, int ll) {
   if ((U->first_name && (int)strlen (U->first_name) == fl && !strncmp (U->first_name, f, fl)) && 
       (U->last_name  && (int)strlen (U->last_name)  == ll && !strncmp (U->last_name,  l, ll))) {
@@ -1292,19 +1317,19 @@ void bl_do_set_user_name (struct mtproto_connection *self, struct user *U, const
   out_int (self, get_peer_id (U->id));
   out_cstring (self, f, fl);
   out_cstring (self, l, ll);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_set_user_access_token (struct mtproto_connection *self, struct user *U, long long access_token) {
+void bl_do_set_user_access_token (struct binlog *bl, struct mtproto_connection *self, struct user *U, long long access_token) {
   if (U->access_hash == access_token) { return; }
-  int *ev = alloc_log_event (16);
+  int *ev = alloc_log_event (bl, 16);
   ev[0] = CODE_binlog_set_user_access_token;
   ev[1] = get_peer_id (U->id);
   *(long long *)(ev + 2) = access_token;
-  add_log_event (self, ev, 16);
+  add_log_event (bl, self, ev, 16);
 }
 
-void bl_do_set_user_phone (struct mtproto_connection *self, struct user *U, 
+void bl_do_set_user_phone (struct binlog *bl, struct mtproto_connection *self, struct user *U, 
 const char *p, int pl) {
   if (U->phone && (int)strlen (U->phone) == pl && !strncmp (U->phone, p, pl)) {
     return;
@@ -1313,19 +1338,19 @@ const char *p, int pl) {
   out_int (self, CODE_binlog_set_user_phone);
   out_int (self, get_peer_id (U->id));
   out_cstring (self, p, pl);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_set_user_friend (struct mtproto_connection *self, struct user *U, int friend) {
+void bl_do_set_user_friend (struct binlog *bl, struct mtproto_connection *self, struct user *U, int friend) {
   if (friend == ((U->flags & FLAG_USER_CONTACT) != 0)) { return ; }
-  int *ev = alloc_log_event (12);
+  int *ev = alloc_log_event (bl, 12);
   ev[0] = CODE_binlog_set_user_friend;
   ev[1] = get_peer_id (U->id);
   ev[2] = friend;
-  add_log_event (self, ev, 12);
+  add_log_event (bl, self, ev, 12);
 }
 
-void bl_do_dc_option (struct mtproto_connection *self, int id, int l1, const char *name, 
+void bl_do_dc_option (struct binlog *bl, struct mtproto_connection *self, int id, int l1, const char *name, 
     int l2, const char *ip, int port, struct telegram *instance) {
   struct dc *DC = instance->auth.DC_list[id];
   if (DC) { return; }
@@ -1337,42 +1362,42 @@ void bl_do_dc_option (struct mtproto_connection *self, int id, int l1, const cha
   out_cstring (self, ip, l2);
   out_int (self, port);
 
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_dc_signed (struct mtproto_connection *self, int id) {
-  int *ev = alloc_log_event (8);
+void bl_do_dc_signed (struct binlog *bl, struct mtproto_connection *self, int id) {
+  int *ev = alloc_log_event (bl, 8);
   ev[0] = LOG_DC_SIGNED;
   ev[1] = id;
-  add_log_event (self, ev, 8);
+  add_log_event (bl, self, ev, 8);
 }
 
-void bl_do_set_working_dc (struct mtproto_connection *self, int num) {
-  int *ev = alloc_log_event (8);
+void bl_do_set_working_dc (struct binlog *bl, struct mtproto_connection *self, int num) {
+  int *ev = alloc_log_event (bl, 8);
   ev[0] = LOG_DEFAULT_DC;
   ev[1] = num;
-  add_log_event (self, ev, 8);
+  add_log_event (bl, self, ev, 8);
 }
 
-void bl_do_set_user_full_photo (struct mtproto_connection *self, struct user *U, const int *start, int len) {
+void bl_do_set_user_full_photo (struct binlog *bl, struct mtproto_connection *self, struct user *U, const int *start, int len) {
   if (U->photo.id == *(long long *)(start + 1)) { return; }
-  int *ev = alloc_log_event (len + 8);
+  int *ev = alloc_log_event (bl, len + 8);
   ev[0] = CODE_binlog_user_full_photo;
   ev[1] = get_peer_id (U->id);
   memcpy (ev + 2, start, len);
-  add_log_event (self, ev, len + 8);
+  add_log_event (bl, self, ev, len + 8);
 }
 
-void bl_do_set_user_blocked (struct mtproto_connection *self, struct user *U, int blocked) {
+void bl_do_set_user_blocked (struct binlog *bl, struct mtproto_connection *self, struct user *U, int blocked) {
   if (U->blocked == blocked) { return; }
-  int *ev = alloc_log_event (12);
+  int *ev = alloc_log_event (bl, 12);
   ev[0] = CODE_binlog_user_blocked;
   ev[1] = get_peer_id (U->id);
   ev[2] = blocked;
-  add_log_event (self, ev, 12);
+  add_log_event (bl, self, ev, 12);
 }
 
-void bl_do_set_user_real_name (struct mtproto_connection *self, struct user *U, const char *f, int fl, const char *l, int ll) {
+void bl_do_set_user_real_name (struct binlog *bl, struct mtproto_connection *self, struct user *U, const char *f, int fl, const char *l, int ll) {
   if ((U->real_first_name && (int)strlen (U->real_first_name) == fl && !strncmp (U->real_first_name, f, fl)) && 
       (U->real_last_name  && (int)strlen (U->real_last_name)  == ll && !strncmp (U->real_last_name,  l, ll))) {
     return;
@@ -1382,22 +1407,22 @@ void bl_do_set_user_real_name (struct mtproto_connection *self, struct user *U, 
   out_int (self, get_peer_id (U->id));
   out_cstring (self, f, fl);
   out_cstring (self, l, ll);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_encr_chat_delete (struct mtproto_connection *self, struct secret_chat *U) {
+void bl_do_encr_chat_delete (struct binlog *bl, struct mtproto_connection *self, struct secret_chat *U) {
   if (!(U->flags & FLAG_CREATED) || U->state == sc_deleted || U->state == sc_none) { return; }
-  int *ev = alloc_log_event (8);
+  int *ev = alloc_log_event (bl, 8);
   ev[0] = CODE_binlog_encr_chat_delete;
   ev[1] = get_peer_id (U->id);
-  add_log_event (self, ev, 8);
+  add_log_event (bl, self, ev, 8);
 }
 
-void bl_do_encr_chat_requested (struct mtproto_connection *self, struct secret_chat *U, 
+void bl_do_encr_chat_requested (struct binlog *bl, struct mtproto_connection *self, struct secret_chat *U, 
     long long access_hash, int date, int admin_id, int user_id, unsigned char g_key[], 
     unsigned char nonce[]) {
   if (U->state != sc_none) { return; }
-  int *ev = alloc_log_event (540);
+  int *ev = alloc_log_event (bl, 540);
   ev[0] = CODE_binlog_encr_chat_requested;
   ev[1] = get_peer_id (U->id);
   *(long long *)(ev + 2) = access_hash;
@@ -1406,105 +1431,105 @@ void bl_do_encr_chat_requested (struct mtproto_connection *self, struct secret_c
   ev[6] = user_id;
   memcpy (ev + 7, g_key, 256);
   memcpy (ev + 7 + 64, nonce, 256);
-  add_log_event (self, ev, 540);
+  add_log_event (bl, self, ev, 540);
 }
 
-void bl_do_set_encr_chat_access_hash (struct mtproto_connection *self, struct secret_chat *U, 
+void bl_do_set_encr_chat_access_hash (struct binlog *bl, struct mtproto_connection *self, struct secret_chat *U, 
     long long access_hash) {
   if (U->access_hash == access_hash) { return; }
-  int *ev = alloc_log_event (16);
+  int *ev = alloc_log_event (bl, 16);
   ev[0] = CODE_binlog_set_encr_chat_access_hash;
   ev[1] = get_peer_id (U->id);
   *(long long *)(ev + 2) = access_hash;
-  add_log_event (self, ev, 16);
+  add_log_event (bl, self, ev, 16);
 }
 
-void bl_do_set_encr_chat_date (struct mtproto_connection *self, struct secret_chat *U, int date) {
+void bl_do_set_encr_chat_date (struct binlog *bl, struct mtproto_connection *self, struct secret_chat *U, int date) {
   if (U->date == date) { return; }
-  int *ev = alloc_log_event (12);
+  int *ev = alloc_log_event (bl, 12);
   ev[0] = CODE_binlog_set_encr_chat_date;
   ev[1] = get_peer_id (U->id);
   ev[2] = date;
-  add_log_event (self, ev, 12);
+  add_log_event (bl, self, ev, 12);
 }
 
-void bl_do_set_encr_chat_state (struct mtproto_connection *self, struct secret_chat *U, enum secret_chat_state state) {
+void bl_do_set_encr_chat_state (struct binlog *bl, struct mtproto_connection *self, struct secret_chat *U, enum secret_chat_state state) {
   if (U->state == state) { return; }
-  int *ev = alloc_log_event (12);
+  int *ev = alloc_log_event (bl, 12);
   ev[0] = CODE_binlog_set_encr_chat_state;
   ev[1] = get_peer_id (U->id);
   ev[2] = state;
-  add_log_event (self, ev, 12);
+  add_log_event (bl, self, ev, 12);
 }
 
-void bl_do_encr_chat_accepted (struct mtproto_connection *self, struct secret_chat *U, const unsigned char g_key[], const unsigned char nonce[], long long key_fingerprint) {
+void bl_do_encr_chat_accepted (struct binlog *bl, struct mtproto_connection *self, struct secret_chat *U, const unsigned char g_key[], const unsigned char nonce[], long long key_fingerprint) {
   if (U->state != sc_waiting && U->state != sc_request) { return; }
-  int *ev = alloc_log_event (528);
+  int *ev = alloc_log_event (bl, 528);
   ev[0] = CODE_binlog_encr_chat_accepted;
   ev[1] = get_peer_id (U->id);
   memcpy (ev + 2, g_key, 256);
   memcpy (ev + 66, nonce, 256);
   *(long long *)(ev + 130) = key_fingerprint;
-  add_log_event (self, ev, 528);
+  add_log_event (bl, self, ev, 528);
 }
 
-void bl_do_set_encr_chat_key (struct mtproto_connection *self, struct secret_chat *E, unsigned char key[], long long key_fingerprint) {
-  int *ev = alloc_log_event (272);
+void bl_do_set_encr_chat_key (struct binlog *bl, struct mtproto_connection *self, struct secret_chat *E, unsigned char key[], long long key_fingerprint) {
+  int *ev = alloc_log_event (bl, 272);
   ev[0] = CODE_binlog_set_encr_chat_key;
   ev[1] = get_peer_id (E->id);
   memcpy (ev + 2, key, 256);
   *(long long *)(ev + 66) = key_fingerprint;
-  add_log_event (self, ev, 272);
+  add_log_event (bl, self, ev, 272);
 }
 
-void bl_do_set_dh_params (struct mtproto_connection *self, int root, unsigned char prime[], int version) {
-  int *ev = alloc_log_event (268);
+void bl_do_set_dh_params (struct binlog *bl, struct mtproto_connection *self, int root, unsigned char prime[], int version) {
+  int *ev = alloc_log_event (bl, 268);
   ev[0] = CODE_binlog_set_dh_params;
   ev[1] = root;
   memcpy (ev + 2, prime, 256);
   ev[66] = version;
-  add_log_event (self, ev, 268);
+  add_log_event (bl, self, ev, 268);
 }
 
-void bl_do_encr_chat_init (struct mtproto_connection *self, int id, int user_id, unsigned char random[], unsigned char g_a[]) {
-  int *ev = alloc_log_event (524);
+void bl_do_encr_chat_init (struct binlog *bl, struct mtproto_connection *self, int id, int user_id, unsigned char random[], unsigned char g_a[]) {
+  int *ev = alloc_log_event (bl, 524);
   ev[0] = CODE_binlog_encr_chat_init;
   ev[1] = id;
   ev[2] = user_id;
   memcpy (ev + 3, random, 256);
   memcpy (ev + 67, g_a, 256);
-  add_log_event (self, ev, 524);
+  add_log_event (bl, self, ev, 524);
 }
 
-void bl_do_set_pts (struct mtproto_connection *self, int pts) {
-  int *ev = alloc_log_event (8);
+void bl_do_set_pts (struct binlog *bl, struct mtproto_connection *self, int pts) {
+  int *ev = alloc_log_event (bl, 8);
   ev[0] = CODE_binlog_set_pts;
   ev[1] = pts;
-  add_log_event (self, ev, 8);
+  add_log_event (bl, self, ev, 8);
 }
 
-void bl_do_set_qts (struct mtproto_connection *self, int qts) {
-  int *ev = alloc_log_event (8);
+void bl_do_set_qts (struct binlog *bl, struct mtproto_connection *self, int qts) {
+  int *ev = alloc_log_event (bl, 8);
   ev[0] = CODE_binlog_set_qts;
   ev[1] = qts;
-  add_log_event (self, ev, 8);
+  add_log_event (bl, self, ev, 8);
 }
 
-void bl_do_set_date (struct mtproto_connection *self, int date) {
-  int *ev = alloc_log_event (8);
+void bl_do_set_date (struct binlog *bl, struct mtproto_connection *self, int date) {
+  int *ev = alloc_log_event (bl, 8);
   ev[0] = CODE_binlog_set_date;
   ev[1] = date;
-  add_log_event (self, ev, 8);
+  add_log_event (bl, self, ev, 8);
 }
 
-void bl_do_set_seq (struct mtproto_connection *self, int seq) {
-  int *ev = alloc_log_event (8);
+void bl_do_set_seq (struct binlog *bl, struct mtproto_connection *self, int seq) {
+  int *ev = alloc_log_event (bl, 8);
   ev[0] = CODE_binlog_set_seq;
   ev[1] = seq;
-  add_log_event (self, ev, 8);
+  add_log_event (bl, self, ev, 8);
 }
 
-void bl_do_create_chat (struct mtproto_connection *self, struct chat *C, int y, const char *s, int l, int users_num, int date, int version, struct file_location *big, struct file_location *small) {
+void bl_do_create_chat (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int y, const char *s, int l, int users_num, int date, int version, struct file_location *big, struct file_location *small) {
   clear_packet (self);
   out_int (self, CODE_binlog_chat_create);
   out_int (self, get_peer_id (C->id));
@@ -1515,39 +1540,39 @@ void bl_do_create_chat (struct mtproto_connection *self, struct chat *C, int y, 
   out_int (self, version);
   out_data (self, big, sizeof (struct file_location));
   out_data (self, small, sizeof (struct file_location));
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_chat_forbid (struct mtproto_connection *self, struct chat *C, int on) {
+void bl_do_chat_forbid (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int on) {
   if (on) {
     if (C->flags & FLAG_FORBIDDEN) { return; }
-    int *ev = alloc_log_event (16);
+    int *ev = alloc_log_event (bl, 16);
     ev[0] = CODE_binlog_chat_change_flags;
     ev[1] = get_peer_id (C->id);
     ev[2] = FLAG_FORBIDDEN;
     ev[3] = 0;
-    add_log_event (self, ev, 16);
+    add_log_event (bl, self, ev, 16);
   } else {
     if (!(C->flags & FLAG_FORBIDDEN)) { return; }
-    int *ev = alloc_log_event (16);
+    int *ev = alloc_log_event (bl, 16);
     ev[0] = CODE_binlog_chat_change_flags;
     ev[1] = get_peer_id (C->id);
     ev[2] = 0;
     ev[3] = FLAG_FORBIDDEN;
-    add_log_event (self, ev, 16);
+    add_log_event (bl, self, ev, 16);
   }
 }
 
-void bl_do_set_chat_title (struct mtproto_connection *self, struct chat *C, const char *s, int l) {
+void bl_do_set_chat_title (struct binlog *bl, struct mtproto_connection *self, struct chat *C, const char *s, int l) {
   if (C->title && (int)strlen (C->title) == l && !strncmp (C->title, s, l)) { return; }
   clear_packet (self);
   out_int (self, CODE_binlog_set_chat_title);
   out_int (self, get_peer_id (C->id));
   out_cstring (self, s, l);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_set_chat_photo (struct mtproto_connection *self, struct chat *C, struct file_location *big, struct file_location *small) {
+void bl_do_set_chat_photo (struct binlog *bl, struct mtproto_connection *self, struct chat *C, struct file_location *big, struct file_location *small) {
   if (!memcmp (&C->photo_small, small, sizeof (struct file_location)) &&
       !memcmp (&C->photo_big, big, sizeof (struct file_location))) { return; }
   clear_packet (self);
@@ -1555,100 +1580,100 @@ void bl_do_set_chat_photo (struct mtproto_connection *self, struct chat *C, stru
   out_int (self, get_peer_id (C->id));
   out_data (self, big, sizeof (struct file_location));
   out_data (self, small, sizeof (struct file_location));
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_set_chat_date (struct mtproto_connection *self, struct chat *C, int date) {
+void bl_do_set_chat_date (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int date) {
   if (C->date == date) { return; }
-  int *ev = alloc_log_event (12);
+  int *ev = alloc_log_event (bl, 12);
   ev[0] = CODE_binlog_set_chat_date;
   ev[1] = get_peer_id (C->id);
   ev[2] = date;
-  add_log_event (self, ev, 12);
+  add_log_event (bl, self, ev, 12);
 }
 
-void bl_do_set_chat_set_in_chat (struct mtproto_connection *self, struct chat *C, int on) {
+void bl_do_set_chat_set_in_chat (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int on) {
   if (on) {
     if (C->flags & FLAG_CHAT_IN_CHAT) { return; }
-    int *ev = alloc_log_event (16);
+    int *ev = alloc_log_event (bl, 16);
     ev[0] = CODE_binlog_chat_change_flags;
     ev[1] = get_peer_id (C->id);
     ev[2] = FLAG_CHAT_IN_CHAT;
     ev[3] = 0;
-    add_log_event (self, ev, 16);
+    add_log_event (bl, self, ev, 16);
   } else {
     if (!(C->flags & FLAG_CHAT_IN_CHAT)) { return; }
-    int *ev = alloc_log_event (16);
+    int *ev = alloc_log_event (bl, 16);
     ev[0] = CODE_binlog_chat_change_flags;
     ev[1] = get_peer_id (C->id);
     ev[2] = 0;
     ev[3] = FLAG_CHAT_IN_CHAT;
-    add_log_event (self, ev, 16);
+    add_log_event (bl, self, ev, 16);
   }
 }
 
-void bl_do_set_chat_version (struct mtproto_connection *self, struct chat *C, int version, int user_num) {
+void bl_do_set_chat_version (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int version, int user_num) {
   if (C->version >= version) { return; }
-  int *ev = alloc_log_event (16);
+  int *ev = alloc_log_event (bl, 16);
   ev[0] = CODE_binlog_set_chat_version;
   ev[1] = get_peer_id (C->id);
   ev[2] = version;
   ev[3] = user_num;
-  add_log_event (self, ev, 16);
+  add_log_event (bl, self, ev, 16);
 }
 
-void bl_do_set_chat_admin (struct mtproto_connection *self, struct chat *C, int admin) {
+void bl_do_set_chat_admin (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int admin) {
   if (C->admin_id == admin) { return; }
-  int *ev = alloc_log_event (12);
+  int *ev = alloc_log_event (bl, 12);
   ev[0] = CODE_binlog_set_chat_admin;
   ev[1] = get_peer_id (C->id);
   ev[2] = admin;
-  add_log_event (self, ev, 12);
+  add_log_event (bl, self, ev, 12);
 }
 
-void bl_do_set_chat_participants (struct mtproto_connection *self, struct chat *C, int version, int user_num, struct chat_user *users) {
+void bl_do_set_chat_participants (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int version, int user_num, struct chat_user *users) {
   if (C->user_list_version >= version) { return; }
-  int *ev = alloc_log_event (12 * user_num + 16);
+  int *ev = alloc_log_event (bl, 12 * user_num + 16);
   ev[0] = CODE_binlog_set_chat_participants;
   ev[1] = get_peer_id (C->id);
   ev[2] = version;
   ev[3] = user_num;
   memcpy (ev + 4, users, 12 * user_num);
-  add_log_event (self, ev, 12 * user_num + 16);
+  add_log_event (bl, self, ev, 12 * user_num + 16);
 }
 
-void bl_do_set_chat_full_photo (struct mtproto_connection *self, struct chat *U, const int *start, int len) {
+void bl_do_set_chat_full_photo (struct binlog *bl, struct mtproto_connection *self, struct chat *U, const int *start, int len) {
   if (U->photo.id == *(long long *)(start + 1)) { return; }
-  int *ev = alloc_log_event (len + 8);
+  int *ev = alloc_log_event (bl, len + 8);
   ev[0] = CODE_binlog_chat_full_photo;
   ev[1] = get_peer_id (U->id);
   memcpy (ev + 2, start, len);
-  add_log_event (self, ev, len + 8);
+  add_log_event (bl, self, ev, len + 8);
 }
 
-void bl_do_chat_add_user (struct mtproto_connection *self, struct chat *C, int version, int user, int inviter, int date) {
+void bl_do_chat_add_user (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int version, int user, int inviter, int date) {
   if (C->user_list_version >= version || !C->user_list_version) { return; }
-  int *ev = alloc_log_event (24);
+  int *ev = alloc_log_event (bl, 24);
   ev[0] = CODE_binlog_add_chat_participant;
   ev[1] = get_peer_id (C->id);
   ev[2] = version;
   ev[3] = user;
   ev[4] = inviter;
   ev[5] = date;
-  add_log_event (self, ev, 24);
+  add_log_event (bl, self, ev, 24);
 }
 
-void bl_do_chat_del_user (struct mtproto_connection *self, struct chat *C, int version, int user) {
+void bl_do_chat_del_user (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int version, int user) {
   if (C->user_list_version >= version || !C->user_list_version) { return; }
-  int *ev = alloc_log_event (16);
+  int *ev = alloc_log_event (bl, 16);
   ev[0] = CODE_binlog_add_chat_participant;
   ev[1] = get_peer_id (C->id);
   ev[2] = version;
   ev[3] = user;
-  add_log_event (self, ev, 16);
+  add_log_event (bl, self, ev, 16);
 }
 
-void bl_do_create_message_text (struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int l, const char *s) {
+void bl_do_create_message_text (struct binlog *bl, struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int l, const char *s) {
   clear_packet (self);
   out_int (self, CODE_binlog_create_message_text);
   out_int (self, msg_id);
@@ -1657,10 +1682,10 @@ void bl_do_create_message_text (struct mtproto_connection *self, int msg_id, int
   out_int (self, to_id);
   out_int (self, date);
   out_cstring (self, s, l);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_send_message_text (struct mtproto_connection *self, long long msg_id, int from_id, int to_type, int to_id, int date, int l, const char *s) {
+void bl_do_send_message_text (struct binlog *bl, struct mtproto_connection *self, long long msg_id, int from_id, int to_type, int to_id, int date, int l, const char *s) {
   clear_packet (self);
   out_int (self, CODE_binlog_send_message_text);
   out_long (self, msg_id);
@@ -1669,10 +1694,10 @@ void bl_do_send_message_text (struct mtproto_connection *self, long long msg_id,
   out_int (self, to_id);
   out_int (self, date);
   out_cstring (self, s, l);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_create_message_text_fwd (struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int fwd, int fwd_date, int l, const char *s) {
+void bl_do_create_message_text_fwd (struct binlog *bl, struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int fwd, int fwd_date, int l, const char *s) {
   clear_packet (self);
   out_int (self, CODE_binlog_create_message_text_fwd);
   out_int (self, msg_id);
@@ -1683,10 +1708,10 @@ void bl_do_create_message_text_fwd (struct mtproto_connection *self, int msg_id,
   out_int (self, fwd);
   out_int (self, fwd_date);
   out_cstring (self, s, l);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_create_message_media (struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int l, const char *s, const int *data, int len) {
+void bl_do_create_message_media (struct binlog *bl, struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int l, const char *s, const int *data, int len) {
   clear_packet (self);
   out_int (self, CODE_binlog_create_message_media);
   out_int (self, msg_id);
@@ -1696,10 +1721,10 @@ void bl_do_create_message_media (struct mtproto_connection *self, int msg_id, in
   out_int (self, date);
   out_cstring (self, s, l);
   out_ints (self, data, len);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_create_message_media_encr (struct mtproto_connection *self, long long msg_id, int from_id, int to_type, int to_id, int date, int l, const char *s, const int *data, int len, const int *data2, int len2) {
+void bl_do_create_message_media_encr (struct binlog *bl, struct mtproto_connection *self, long long msg_id, int from_id, int to_type, int to_id, int date, int l, const char *s, const int *data, int len, const int *data2, int len2) {
   clear_packet (self);
   out_int (self, CODE_binlog_create_message_media_encr);
   out_long (self, msg_id);
@@ -1710,10 +1735,10 @@ void bl_do_create_message_media_encr (struct mtproto_connection *self, long long
   out_cstring (self, s, l);
   out_ints (self, data, len);
   out_ints (self, data2, len2);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_create_message_media_fwd (struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int fwd, int fwd_date, int l, const char *s, const int *data, int len) {
+void bl_do_create_message_media_fwd (struct binlog *bl, struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int fwd, int fwd_date, int l, const char *s, const int *data, int len) {
   clear_packet (self);
   out_int (self, CODE_binlog_create_message_media_fwd);
   out_int (self, msg_id);
@@ -1725,10 +1750,10 @@ void bl_do_create_message_media_fwd (struct mtproto_connection *self, int msg_id
   out_int (self, fwd_date);
   out_cstring (self, s, l);
   out_ints (self, data, len);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_create_message_service (struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, const int *data, int len) {
+void bl_do_create_message_service (struct binlog *bl, struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, const int *data, int len) {
   clear_packet (self);
   out_int (self, CODE_binlog_create_message_service);
   out_int (self, msg_id);
@@ -1737,9 +1762,9 @@ void bl_do_create_message_service (struct mtproto_connection *self, int msg_id, 
   out_int (self, to_id);
   out_int (self, date);
   out_ints (self, data, len);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
-void bl_do_create_message_service_encr (struct mtproto_connection *self, long long msg_id, int from_id, int to_type, int to_id, int date, const int *data, int len) {
+void bl_do_create_message_service_encr (struct binlog *bl, struct mtproto_connection *self, long long msg_id, int from_id, int to_type, int to_id, int date, const int *data, int len) {
   clear_packet (self);
   out_int (self, CODE_binlog_create_message_service_encr);
   out_long (self, msg_id);
@@ -1748,10 +1773,10 @@ void bl_do_create_message_service_encr (struct mtproto_connection *self, long lo
   out_int (self, to_id);
   out_int (self, date);
   out_ints (self, data, len);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_create_message_service_fwd (struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int fwd, int fwd_date, const int *data, int len) {
+void bl_do_create_message_service_fwd (struct binlog *bl, struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int fwd, int fwd_date, const int *data, int len) {
   clear_packet (self);
   out_int (self, CODE_binlog_create_message_service_fwd);
   out_int (self, msg_id);
@@ -1762,37 +1787,37 @@ void bl_do_create_message_service_fwd (struct mtproto_connection *self, int msg_
   out_int (self, fwd);
   out_int (self, fwd_date);
   out_ints (self, data, len);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_set_unread (struct mtproto_connection *self, struct message *M, int unread) {
+void bl_do_set_unread (struct binlog *bl, struct mtproto_connection *self, struct message *M, int unread) {
   if (unread || !M->unread) { return; }
   clear_packet (self);
   out_int (self, CODE_binlog_set_unread);
   out_int (self, M->id);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_set_message_sent (struct mtproto_connection *self, struct message *M) {
+void bl_do_set_message_sent (struct binlog *bl, struct mtproto_connection *self, struct message *M) {
   if (!(M->flags & FLAG_PENDING)) { return; }
   clear_packet (self);
   out_int (self, CODE_binlog_set_message_sent);
   out_long (self, M->id);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_set_msg_id (struct mtproto_connection *self, struct message *M, int id) {
+void bl_do_set_msg_id (struct binlog *bl, struct mtproto_connection *self, struct message *M, int id) {
   if (M->id == id) { return; }
   clear_packet (self);
   out_int (self, CODE_binlog_set_msg_id);
   out_long (self, M->id);
   out_int (self, id);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_delete_msg (struct mtproto_connection *self, struct message *M) {
+void bl_do_delete_msg (struct binlog *bl, struct mtproto_connection *self, struct message *M) {
   clear_packet (self);
   out_int (self, CODE_binlog_delete_msg);
   out_long (self, M->id);
-  add_log_event (self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
+  add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }

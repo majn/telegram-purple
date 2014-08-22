@@ -189,7 +189,7 @@ long long fetch_user_photo (struct mtproto_connection *mtp, struct user *U) {
   unsigned x = fetch_int (mtp);
   code_assert (x == CODE_user_profile_photo || x == CODE_user_profile_photo_old || x == CODE_user_profile_photo_empty);
   if (x == CODE_user_profile_photo_empty) {
-    bl_do_set_user_profile_photo (mtp, U, 0, 0, 0);
+    bl_do_set_user_profile_photo (mtp->bl, mtp, U, 0, 0, 0);
     return 0;
   }
   long long photo_id = 1;
@@ -201,7 +201,7 @@ long long fetch_user_photo (struct mtproto_connection *mtp, struct user *U) {
   code_try (fetch_file_location (mtp, &small));
   code_try (fetch_file_location (mtp, &big));
 
-  bl_do_set_user_profile_photo (mtp, U, photo_id, &big, &small);
+  bl_do_set_user_profile_photo (mtp->bl, mtp, U, photo_id, &big, &small);
   return 0;
 }
 
@@ -231,7 +231,7 @@ int fetch_user (struct mtproto_connection *mtp, struct user *U) {
   if (x == CODE_user_self) {
     assert (!our_id || (our_id == get_peer_id (U->id)));
     if (!our_id) {
-      bl_do_set_our_id (mtp, get_peer_id (U->id));
+      bl_do_set_our_id (mtp->bl, mtp, get_peer_id (U->id));
       // TODO: What to do here?
       //write_auth_file ();
     }
@@ -250,8 +250,8 @@ int fetch_user (struct mtproto_connection *mtp, struct user *U) {
     char *s2 = fetch_str (mtp, l2);
     
     if (x == CODE_user_deleted && !(U->flags & FLAG_DELETED)) {
-      bl_do_new_user (mtp, get_peer_id (U->id), s1, l1, s2, l2, 0, 0, 0, 0);
-      bl_do_user_delete (mtp, U);
+      bl_do_new_user (mtp->bl, mtp, get_peer_id (U->id), s1, l1, s2, l2, 0, 0, 0, 0);
+      bl_do_user_delete (mtp->bl, mtp, U);
     }
     if (x != CODE_user_deleted) {
       long long access_token = 0;
@@ -265,7 +265,7 @@ int fetch_user (struct mtproto_connection *mtp, struct user *U) {
         code_assert (phone_len >= 0);
         phone = fetch_str (mtp, phone_len);
       }
-      bl_do_new_user (mtp, get_peer_id (U->id), s1, l1, s2, l2, access_token, phone, phone_len, x == CODE_user_contact);
+      bl_do_new_user (mtp->bl, mtp, get_peer_id (U->id), s1, l1, s2, l2, access_token, phone, phone_len, x == CODE_user_contact);
       if (fetch_user_photo (mtp, U) < 0) { return -1; }
     
       if (fetch_user_status (mtp, &U->status) < 0) { return -1; }
@@ -279,19 +279,19 @@ int fetch_user (struct mtproto_connection *mtp, struct user *U) {
     int l2 = prefetch_strlen (mtp);
     char *s2 = fetch_str (mtp, l2);
     
-    bl_do_set_user_name (mtp, U, s1, l1, s2, l2);
+    bl_do_set_user_name (mtp->bl, mtp, U, s1, l1, s2, l2);
 
     if (x == CODE_user_deleted && !(U->flags & FLAG_DELETED)) {
-      bl_do_user_delete (mtp, U);
+      bl_do_user_delete (mtp->bl, mtp, U);
     }
     if (x != CODE_user_deleted) {
       if (x != CODE_user_self) {
-        bl_do_set_user_access_token (mtp, U, fetch_long (mtp));
+        bl_do_set_user_access_token (mtp->bl, mtp, U, fetch_long (mtp));
       }
       if (x != CODE_user_foreign) {
         int l = prefetch_strlen (mtp);
         char *s = fetch_str (mtp, l);
-        bl_do_set_user_phone (mtp, U, s, l);
+        bl_do_set_user_phone (mtp->bl, mtp, U, s, l);
       }
       if (fetch_user_photo (mtp, U) < 0) { return -1; }
     
@@ -301,9 +301,9 @@ int fetch_user (struct mtproto_connection *mtp, struct user *U) {
       }
 
       if (x == CODE_user_contact) {
-        bl_do_set_user_friend (mtp, U, 1);
+        bl_do_set_user_friend (mtp->bl, mtp, U, 1);
       } else  {
-        bl_do_set_user_friend (mtp, U, 0);
+        bl_do_set_user_friend (mtp->bl, mtp, U, 0);
       }
     }
   }
@@ -324,7 +324,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
       logprintf ("Unknown chat in deleted state. May be we forgot something...\n");
       return;
     }
-    bl_do_encr_chat_delete (mtp, U);
+    bl_do_encr_chat_delete (mtp->bl, mtp, U);
 
     // TODO: properly
     write_secret_chat_file ("/home/dev-jessie/.telegram/+4915736384600/secret");
@@ -375,11 +375,11 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
       return;
     }
 
-    bl_do_encr_chat_requested (mtp, U, access_hash, date, admin_id, user_id, (void *)g_key, (void *)nonce);
+    bl_do_encr_chat_requested (mtp->bl, mtp, U, access_hash, date, admin_id, user_id, (void *)g_key, (void *)nonce);
     write_secret_chat_file ("/home/dev-jessie/.telegram/+4915736384600/secret");
   } else {
-    bl_do_set_encr_chat_access_hash (mtp, U, fetch_long (mtp));
-    bl_do_set_encr_chat_date (mtp, U, fetch_int (mtp));
+    bl_do_set_encr_chat_access_hash (mtp->bl, mtp, U, fetch_long (mtp));
+    bl_do_set_encr_chat_date (mtp->bl, mtp, U, fetch_int (mtp));
     if (fetch_int (mtp) != U->admin_id) {
       logprintf ("Changed admin in secret chat. WTF?\n");
       return;
@@ -389,7 +389,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
       return;
     }
     if (x == CODE_encrypted_chat_waiting) {
-      bl_do_set_encr_chat_state (mtp, U, sc_waiting);
+      bl_do_set_encr_chat_state (mtp->bl, mtp, U, sc_waiting);
       write_secret_chat_file ("/home/dev-jessie/.telegram/+4915736384600/secret");
       return; // We needed only access hash from here
     }
@@ -420,7 +420,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
     if (x == CODE_encrypted_chat_requested) {
       return; // Duplicate?
     }
-    bl_do_encr_chat_accepted (mtp, U, (void *)g_key, (void *)nonce, fetch_long (mtp));
+    bl_do_encr_chat_accepted (mtp->bl, mtp, U, (void *)g_key, (void *)nonce, fetch_long (mtp));
   }
   write_secret_chat_file ("/home/dev-jessie/.telegram/+4915736384600/secret");
 }
@@ -445,16 +445,16 @@ void fetch_user_full (struct mtproto_connection *mtp, struct user *U) {
 
   int *start = mtp->in_ptr;
   fetch_skip_photo (mtp);
-  bl_do_set_user_full_photo (mtp, U, start, 4 * (mtp->in_ptr - start));
+  bl_do_set_user_full_photo (mtp->bl, mtp, U, start, 4 * (mtp->in_ptr - start));
 
   fetch_notify_settings (mtp);
 
-  bl_do_set_user_blocked (mtp, U, fetch_bool (mtp));
+  bl_do_set_user_blocked (mtp->bl, mtp, U, fetch_bool (mtp));
   int l1 = prefetch_strlen (mtp);
   char *s1 = fetch_str (mtp, l1);
   int l2 = prefetch_strlen (mtp);
   char *s2 = fetch_str (mtp, l2);
-  bl_do_set_user_real_name (mtp, U, s1, l1, s2, l2);
+  bl_do_set_user_real_name (mtp->bl, mtp, U, s1, l1, s2, l2);
 }
 
 void fetch_chat (struct mtproto_connection *mtp, struct chat *C) {
@@ -505,16 +505,16 @@ void fetch_chat (struct mtproto_connection *mtp, struct chat *C) {
       version = -1;
     }
 
-    bl_do_create_chat (mtp, C, y, s, l, users_num, date, version, &big, &small);
+    bl_do_create_chat (mtp->bl, mtp, C, y, s, l, users_num, date, version, &big, &small);
   } else {
     if (x == CODE_chat_forbidden) {
-      bl_do_chat_forbid (mtp, C, 1);
+      bl_do_chat_forbid (mtp->bl, mtp, C, 1);
     } else {
-      bl_do_chat_forbid (mtp, C, 0);
+      bl_do_chat_forbid (mtp->bl, mtp, C, 0);
     }
     int l = prefetch_strlen (mtp);
     char *s = fetch_str (mtp, l);
-    bl_do_set_chat_title (mtp, C, s, l);
+    bl_do_set_chat_title (mtp->bl, mtp, C, s, l);
     
     struct file_location small;
     struct file_location big;
@@ -531,13 +531,13 @@ void fetch_chat (struct mtproto_connection *mtp, struct chat *C) {
         fetch_file_location (mtp, &small);
         fetch_file_location (mtp, &big);
       }
-      bl_do_set_chat_photo (mtp, C, &big, &small);
+      bl_do_set_chat_photo (mtp->bl, mtp, C, &big, &small);
       int users_num = fetch_int (mtp);
-      bl_do_set_chat_date (mtp, C, fetch_int (mtp));
-      bl_do_set_chat_set_in_chat (mtp, C, fetch_bool (mtp));
-      bl_do_set_chat_version (mtp, C, users_num, fetch_int (mtp));
+      bl_do_set_chat_date (mtp->bl, mtp, C, fetch_int (mtp));
+      bl_do_set_chat_set_in_chat (mtp->bl, mtp, C, fetch_bool (mtp));
+      bl_do_set_chat_version (mtp->bl, mtp, C, users_num, fetch_int (mtp));
     } else {
-      bl_do_set_chat_date (mtp, C, fetch_int (mtp));
+      bl_do_set_chat_date (mtp->bl, mtp, C, fetch_int (mtp));
     }
   }
 }
@@ -606,13 +606,13 @@ void fetch_chat_full (struct mtproto_connection *mtp, struct chat *C) {
     fetch_alloc_user (mtp);
   }
   if (admin_id) {
-    bl_do_set_chat_admin (mtp, C, admin_id);
+    bl_do_set_chat_admin (mtp->bl, mtp, C, admin_id);
   }
   if (version > 0) {
-    bl_do_set_chat_participants (mtp, C, version, users_num, users);
+    bl_do_set_chat_participants (mtp->bl, mtp, C, version, users_num, users);
     tfree (users, sizeof (struct chat_user) * users_num);
   }
-  bl_do_set_chat_full_photo (mtp, C, start, 4 * (end - start));
+  bl_do_set_chat_full_photo (mtp->bl, mtp, C, start, 4 * (end - start));
 }
 
 void fetch_photo_size (struct mtproto_connection *mtp, struct photo_size *S) {
@@ -889,7 +889,7 @@ void fetch_message_short (struct mtproto_connection *mtp, struct message *M) {
     int date = fetch_int (mtp);
     fetch_seq (mtp);
 
-    bl_do_create_message_text (mtp, id, from_id, PEER_USER, to_id, date, l, s);
+    bl_do_create_message_text (mtp->bl, mtp, id, from_id, PEER_USER, to_id, date, l, s);
   } else {
     fetch_int (mtp); // id
     fetch_int (mtp); // from_id
@@ -917,7 +917,7 @@ void fetch_message_short_chat (struct mtproto_connection *mtp, struct message *M
     int date = fetch_int (mtp);
     fetch_seq (mtp);
 
-    bl_do_create_message_text (mtp, id, from_id, PEER_CHAT, to_id, date, l, s);
+    bl_do_create_message_text (mtp->bl, mtp, id, from_id, PEER_CHAT, to_id, date, l, s);
   } else {
     fetch_int (mtp); // id
     fetch_int (mtp); // from_id
@@ -1302,10 +1302,10 @@ void fetch_message (struct mtproto_connection *mtp, struct message *M) {
     fetch_skip_message_action (mtp);
     if (new) {
       if (fwd_from_id) {
-        bl_do_create_message_service_fwd (mtp, id, from_id, get_peer_type (to_id), get_peer_id (to_id), 
+        bl_do_create_message_service_fwd (mtp->bl, mtp, id, from_id, get_peer_type (to_id), get_peer_id (to_id), 
             date, fwd_from_id, fwd_date, start, (mtp->in_ptr - start));
       } else {
-        bl_do_create_message_service (mtp, id, from_id, get_peer_type (to_id), 
+        bl_do_create_message_service (mtp->bl, mtp, id, from_id, get_peer_type (to_id), 
             get_peer_id (to_id), date, start, (mtp->in_ptr - start));
       }
     }
@@ -1316,15 +1316,15 @@ void fetch_message (struct mtproto_connection *mtp, struct message *M) {
     fetch_skip_message_media (mtp);
     if (new) {
       if (fwd_from_id) {
-        bl_do_create_message_media_fwd (mtp, id, from_id, get_peer_type (to_id), 
+        bl_do_create_message_media_fwd (mtp->bl, mtp, id, from_id, get_peer_type (to_id), 
             get_peer_id (to_id), date, fwd_from_id, fwd_date, l, s, start, mtp->in_ptr - start);
       } else {
-        bl_do_create_message_media (mtp, id, from_id, get_peer_type (to_id), 
+        bl_do_create_message_media (mtp->bl, mtp, id, from_id, get_peer_type (to_id), 
             get_peer_id (to_id), date, l, s, start, mtp->in_ptr - start);
       }
     }
   }
-  bl_do_set_unread (mtp, M, unread);
+  bl_do_set_unread (mtp->bl, mtp, M, unread);
 }
 
 void fetch_geo_message (struct mtproto_connection *mtp, struct message *M) {
@@ -1481,7 +1481,7 @@ void fetch_encrypted_message (struct mtproto_connection *mtp, struct message *M)
       int *start_file = mtp->in_ptr;
       fetch_skip_encrypted_message_file (mtp);
       if (x == CODE_decrypted_message) {
-        bl_do_create_message_media_encr (mtp, id, P->encr_chat.user_id, PEER_ENCR_CHAT, to_id, date, l, s, start, end - start, start_file, mtp->in_ptr - start_file);
+        bl_do_create_message_media_encr (mtp->bl, mtp, id, P->encr_chat.user_id, PEER_ENCR_CHAT, to_id, date, l, s, start, end - start, start_file, mtp->in_ptr - start_file);
       }
     } else {
       x = fetch_int (mtp);
@@ -1494,7 +1494,7 @@ void fetch_encrypted_message (struct mtproto_connection *mtp, struct message *M)
     }    
   } else {
     if (ok && x == CODE_decrypted_message_service) {
-      bl_do_create_message_service_encr (mtp, id, P->encr_chat.user_id, PEER_ENCR_CHAT, to_id, date, start, end - start);
+      bl_do_create_message_service_encr (mtp->bl, mtp, id, P->encr_chat.user_id, PEER_ENCR_CHAT, to_id, date, start, end - start);
     }
   }
 }

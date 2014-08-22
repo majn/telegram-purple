@@ -66,6 +66,24 @@ struct authorization_state;
 #define STATE_READY 22
 
 /**
+ * Binary log
+ */
+
+#define BINLOG_BUFFER_SIZE (1 << 20)
+struct binlog {
+  int binlog_buffer[BINLOG_BUFFER_SIZE];
+  int *rptr;
+  int *wptr;
+  int test_dc; // = 0
+  int in_replay_log;
+  int binlog_enabled; // = 0;
+  int binlog_fd;
+  long long binlog_pos;
+
+  int s[1000];
+};
+
+/**
  * A telegram session
  *
  * Contains all globals from the telegram-cli application is passed to every

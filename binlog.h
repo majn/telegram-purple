@@ -84,69 +84,68 @@
 #define CODE_binlog_create_message_service_encr 0x8b4b9395
 #define CODE_binlog_delete_msg 0xa1d6ab6d
 
-void *alloc_log_event (int l);
+void *alloc_log_event (struct binlog *bl, int l);
 void replay_log (struct telegram *instance);
-void add_log_event (struct mtproto_connection *self, const int *data, int l);
-void add_log_event_i (struct mtproto_connection *self, struct telegram *instance, const int *data, int l);
-void write_binlog (void);
+void add_log_event (struct binlog *bl, struct mtproto_connection *self, const int *data, int l);
+void write_binlog (struct binlog *bl);
 void bl_do_set_auth_key_id (struct telegram *instance, int num, unsigned char *buf);
 
-void bl_do_dc_option (struct mtproto_connection *self, int id, int l1, const char *name, int l2, const char *ip, int port, struct telegram *instance);
+void bl_do_dc_option (struct binlog *bl, struct mtproto_connection *self, int id, int l1, const char *name, int l2, const char *ip, int port, struct telegram *instance);
 
-void bl_do_set_our_id (struct mtproto_connection *self, int id);
-void bl_do_new_user (struct mtproto_connection *self, int id, const char *f, int fl, const char *l, int ll, long long access_token, const char *p, int pl, int contact);
-void bl_do_user_delete (struct mtproto_connection *self, struct user *U);
-void bl_do_set_user_profile_photo (struct mtproto_connection *self, struct user *U, long long photo_id, struct file_location *big, struct file_location *small);
-void bl_do_set_user_name (struct mtproto_connection *self, struct user *U, const char *f, int fl, const char *l, int ll);
-void bl_do_set_user_access_token (struct mtproto_connection *self, struct user *U, long long access_token);
-void bl_do_set_user_phone (struct mtproto_connection *self, struct user *U, const char *p, int pl);
-void bl_do_set_user_friend (struct mtproto_connection *self, struct user *U, int friend);
-void bl_do_set_user_full_photo (struct mtproto_connection *self, struct user *U, const int *start, int len);
-void bl_do_set_user_blocked (struct mtproto_connection *self, struct user *U, int blocked);
-void bl_do_set_user_real_name (struct mtproto_connection *self, struct user *U, const char *f, int fl, const char *l, int ll);
+void bl_do_set_our_id (struct binlog *bl, struct mtproto_connection *self, int id);
+void bl_do_new_user (struct binlog *bl, struct mtproto_connection *self, int id, const char *f, int fl, const char *l, int ll, long long access_token, const char *p, int pl, int contact);
+void bl_do_user_delete (struct binlog *bl, struct mtproto_connection *self, struct user *U);
+void bl_do_set_user_profile_photo (struct binlog *bl, struct mtproto_connection *self, struct user *U, long long photo_id, struct file_location *big, struct file_location *small);
+void bl_do_set_user_name (struct binlog *bl, struct mtproto_connection *self, struct user *U, const char *f, int fl, const char *l, int ll);
+void bl_do_set_user_access_token (struct binlog *bl, struct mtproto_connection *self, struct user *U, long long access_token);
+void bl_do_set_user_phone (struct binlog *bl, struct mtproto_connection *self, struct user *U, const char *p, int pl);
+void bl_do_set_user_friend (struct binlog *bl, struct mtproto_connection *self, struct user *U, int friend);
+void bl_do_set_user_full_photo (struct binlog *bl, struct mtproto_connection *self, struct user *U, const int *start, int len);
+void bl_do_set_user_blocked (struct binlog *bl, struct mtproto_connection *self, struct user *U, int blocked);
+void bl_do_set_user_real_name (struct binlog *bl, struct mtproto_connection *self, struct user *U, const char *f, int fl, const char *l, int ll);
 
-void bl_do_encr_chat_delete (struct mtproto_connection *self, struct secret_chat *U);
-void bl_do_encr_chat_requested (struct mtproto_connection *self, struct secret_chat *U, long long access_hash, int date, int admin_id, int user_id, unsigned char g_key[], unsigned char nonce[]);
-void bl_do_set_encr_chat_access_hash (struct mtproto_connection *self, struct secret_chat *U, long long access_hash);
-void bl_do_set_encr_chat_date (struct mtproto_connection *self, struct secret_chat *U, int date);
-void bl_do_set_encr_chat_state (struct mtproto_connection *self, struct secret_chat *U, enum secret_chat_state state);
-void bl_do_encr_chat_accepted (struct mtproto_connection *self, struct secret_chat *U, const unsigned char g_key[], const unsigned char nonce[], long long key_fingerprint);
-void bl_do_set_encr_chat_key (struct mtproto_connection *self, struct secret_chat *E, unsigned char key[], long long key_fingerprint);
-void bl_do_encr_chat_init (struct mtproto_connection *self, int id, int user_id, unsigned char random[], unsigned char g_a[]);
+void bl_do_encr_chat_delete (struct binlog *bl, struct mtproto_connection *self, struct secret_chat *U);
+void bl_do_encr_chat_requested (struct binlog *bl, struct mtproto_connection *self, struct secret_chat *U, long long access_hash, int date, int admin_id, int user_id, unsigned char g_key[], unsigned char nonce[]);
+void bl_do_set_encr_chat_access_hash (struct binlog *bl, struct mtproto_connection *self, struct secret_chat *U, long long access_hash);
+void bl_do_set_encr_chat_date (struct binlog *bl, struct mtproto_connection *self, struct secret_chat *U, int date);
+void bl_do_set_encr_chat_state (struct binlog *bl, struct mtproto_connection *self, struct secret_chat *U, enum secret_chat_state state);
+void bl_do_encr_chat_accepted (struct binlog *bl, struct mtproto_connection *self, struct secret_chat *U, const unsigned char g_key[], const unsigned char nonce[], long long key_fingerprint);
+void bl_do_set_encr_chat_key (struct binlog *bl, struct mtproto_connection *self, struct secret_chat *E, unsigned char key[], long long key_fingerprint);
+void bl_do_encr_chat_init (struct binlog *bl, struct mtproto_connection *self, int id, int user_id, unsigned char random[], unsigned char g_a[]);
 
-void bl_do_dc_signed (struct mtproto_connection *self, int id);
-void bl_do_set_working_dc (struct mtproto_connection *self, int num);
-void bl_do_set_dh_params (struct mtproto_connection *self, int root, unsigned char prime[], int version);
+void bl_do_dc_signed (struct binlog *bl, struct mtproto_connection *self, int id);
+void bl_do_set_working_dc (struct binlog *bl, struct mtproto_connection *self, int num);
+void bl_do_set_dh_params (struct binlog *bl, struct mtproto_connection *self, int root, unsigned char prime[], int version);
 
-void bl_do_set_pts (struct mtproto_connection *self, int pts);
-void bl_do_set_qts (struct mtproto_connection *self, int qts);
-void bl_do_set_seq (struct mtproto_connection *self, int seq);
-void bl_do_set_date (struct mtproto_connection *self, int date);
+void bl_do_set_pts (struct binlog *bl, struct mtproto_connection *self, int pts);
+void bl_do_set_qts (struct binlog *bl, struct mtproto_connection *self, int qts);
+void bl_do_set_seq (struct binlog *bl, struct mtproto_connection *self, int seq);
+void bl_do_set_date (struct binlog *bl, struct mtproto_connection *self, int date);
 
-void bl_do_create_chat (struct mtproto_connection *self, struct chat *C, int y, const char *s, int l, int users_num, int date, int version, struct file_location *big, struct file_location *small);
-void bl_do_chat_forbid (struct mtproto_connection *self, struct chat *C, int on);
-void bl_do_set_chat_title (struct mtproto_connection *self, struct chat *C, const char *s, int l);
-void bl_do_set_chat_photo (struct mtproto_connection *self, struct chat *C, struct file_location *big, struct file_location *small);
-void bl_do_set_chat_date (struct mtproto_connection *self, struct chat *C, int date);
-void bl_do_set_chat_set_in_chat (struct mtproto_connection *self, struct chat *C, int on);
-void bl_do_set_chat_version (struct mtproto_connection *self, struct chat *C, int version, int user_num);
-void bl_do_set_chat_admin (struct mtproto_connection *self, struct chat *C, int admin);
-void bl_do_set_chat_participants (struct mtproto_connection *self, struct chat *C, int version, int user_num, struct chat_user *users);
-void bl_do_set_chat_full_photo (struct mtproto_connection *self, struct chat *U, const int *start, int len);
-void bl_do_chat_add_user (struct mtproto_connection *self, struct chat *C, int version, int user, int inviter, int date);
-void bl_do_chat_del_user (struct mtproto_connection *self, struct chat *C, int version, int user);
+void bl_do_create_chat (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int y, const char *s, int l, int users_num, int date, int version, struct file_location *big, struct file_location *small);
+void bl_do_chat_forbid (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int on);
+void bl_do_set_chat_title (struct binlog *bl, struct mtproto_connection *self, struct chat *C, const char *s, int l);
+void bl_do_set_chat_photo (struct binlog *bl, struct mtproto_connection *self, struct chat *C, struct file_location *big, struct file_location *small);
+void bl_do_set_chat_date (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int date);
+void bl_do_set_chat_set_in_chat (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int on);
+void bl_do_set_chat_version (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int version, int user_num);
+void bl_do_set_chat_admin (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int admin);
+void bl_do_set_chat_participants (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int version, int user_num, struct chat_user *users);
+void bl_do_set_chat_full_photo (struct binlog *bl, struct mtproto_connection *self, struct chat *U, const int *start, int len);
+void bl_do_chat_add_user (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int version, int user, int inviter, int date);
+void bl_do_chat_del_user (struct binlog *bl, struct mtproto_connection *self, struct chat *C, int version, int user);
 
-void bl_do_create_message_text (struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int l, const char *s);
-void bl_do_create_message_text_fwd (struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int fwd, int fwd_date, int l, const char *s);
-void bl_do_create_message_service (struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, const int *data, int len);
-void bl_do_create_message_service_fwd (struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int fwd, int fwd_date, const int *data, int len);
-void bl_do_create_message_media (struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int l, const char *s, const int *data, int len);
-void bl_do_create_message_media_fwd (struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int fwd, int fwd_date, int l, const char *s, const int *data, int len);
-void bl_do_create_message_media_encr (struct mtproto_connection *self, long long msg_id, int from_id, int to_type, int to_id, int date, int l, const char *s, const int *data, int len, const int *data2, int len2);
-void bl_do_create_message_service_encr (struct mtproto_connection *self, long long msg_id, int from_id, int to_type, int to_id, int date, const int *data, int len);
-void bl_do_send_message_text (struct mtproto_connection *self, long long msg_id, int from_id, int to_type, int to_id, int date, int l, const char *s);
-void bl_do_set_unread (struct mtproto_connection *self, struct message *M, int unread);
-void bl_do_set_message_sent (struct mtproto_connection *self, struct message *M);
-void bl_do_set_msg_id (struct mtproto_connection *self, struct message *M, int id);
-void bl_do_delete_msg (struct mtproto_connection *self, struct message *M);
+void bl_do_create_message_text (struct binlog *bl, struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int l, const char *s);
+void bl_do_create_message_text_fwd (struct binlog *bl, struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int fwd, int fwd_date, int l, const char *s);
+void bl_do_create_message_service (struct binlog *bl, struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, const int *data, int len);
+void bl_do_create_message_service_fwd (struct binlog *bl, struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int fwd, int fwd_date, const int *data, int len);
+void bl_do_create_message_media (struct binlog *bl, struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int l, const char *s, const int *data, int len);
+void bl_do_create_message_media_fwd (struct binlog *bl, struct mtproto_connection *self, int msg_id, int from_id, int to_type, int to_id, int date, int fwd, int fwd_date, int l, const char *s, const int *data, int len);
+void bl_do_create_message_media_encr (struct binlog *bl, struct mtproto_connection *self, long long msg_id, int from_id, int to_type, int to_id, int date, int l, const char *s, const int *data, int len, const int *data2, int len2);
+void bl_do_create_message_service_encr (struct binlog *bl, struct mtproto_connection *self, long long msg_id, int from_id, int to_type, int to_id, int date, const int *data, int len);
+void bl_do_send_message_text (struct binlog *bl, struct mtproto_connection *self, long long msg_id, int from_id, int to_type, int to_id, int date, int l, const char *s);
+void bl_do_set_unread (struct binlog *bl, struct mtproto_connection *self, struct message *M, int unread);
+void bl_do_set_message_sent (struct binlog *bl, struct mtproto_connection *self, struct message *M);
+void bl_do_set_msg_id (struct binlog *bl, struct mtproto_connection *self, struct message *M, int id);
+void bl_do_delete_msg (struct binlog *bl, struct mtproto_connection *self, struct message *M);
 #endif

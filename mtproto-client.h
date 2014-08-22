@@ -238,10 +238,18 @@ struct mtproto_connection {
     // the amount of currently outgoing messages that
     // have not yet received a response
     int queries_num;
+
+    // binlog that consumes all updates and events of this connection
+    struct binlog *bl;
+
+    // marks this connection for destruction, so it
+    // will be freed once all queries received a response or timed out
+    int destroy;
 };
 
 void mtproto_connection_init (struct mtproto_connection *c);
 struct mtproto_connection *mtproto_new(struct dc *DC, int fd, struct telegram *tg);
+void mtproto_close(struct mtproto_connection *c);
 void mtproto_connect(struct mtproto_connection *c);
 
 void on_start (struct mtproto_connection *self);
