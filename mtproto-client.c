@@ -18,11 +18,7 @@
     Copyright Vitaly Valtman 2013
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#define        _FILE_OFFSET_BITS        64
+#define _FILE_OFFSET_BITS 64
 
 #include <assert.h>
 #include <string.h>
@@ -50,7 +46,6 @@
 #include "include.h"
 #include "queries.h"
 #include "loop.h"
-#include "interface.h"
 #include "structures.h"
 #include "binlog.h"
 
@@ -64,25 +59,15 @@
 
 #define sha1 SHA1
 
-#include "mtproto-common.h"
-
+#include "mtproto-client.h"
 
 #define MAX_NET_RES        (1L << 16)
-extern int log_level;
+int log_level = 2;
 
-int verbosity;
-int auth_success;
-enum dc_state c_state;
-char nonce[256];
-char new_nonce[256];
-char server_nonce[256];
-extern int binlog_enabled;
-extern int disable_auto_accept;
-extern int allow_weak_random;
 
-int total_packets_sent;
-long long total_data_sent;
-
+int verbosity = 0;
+int allow_weak_random = 0;
+int disable_auto_accept = 0;
 
 int rpc_execute (struct connection *c, int op, int len);
 int rpc_becomes_ready (struct connection *c);
@@ -151,9 +136,7 @@ static int rsa_load_public_key (const char *public_key_name) {
     return -1;
   }
 
-  if (verbosity) {
-    logprintf ( "public key '%s' loaded successfully\n", rsa_public_key_name);
-  }
+  logprintf ( "public key '%s' loaded successfully\n", rsa_public_key_name);
 
   return 0;
 }
@@ -170,42 +153,32 @@ int auth_work_start (struct connection *c);
  *
  */
 
-BIGNUM dh_prime, dh_g, g_a, dh_power, auth_key_num;
-char s_power [256];
 
-struct {
-  long long auth_key_id;
-  long long out_msg_id;
-  int msg_len;
-} unenc_msg_header;
-
-
-#define ENCRYPT_BUFFER_INTS        16384
-int encrypt_buffer[ENCRYPT_BUFFER_INTS];
-
-#define DECRYPT_BUFFER_INTS        16384
-int decrypt_buffer[ENCRYPT_BUFFER_INTS];
-
-int encrypt_packet_buffer (void) {
-  return pad_rsa_encrypt ((char *) packet_buffer, (packet_ptr - packet_buffer) * 4, (char *) encrypt_buffer, ENCRYPT_BUFFER_INTS * 4, pubKey->n, pubKey->e);
+int encrypt_packet_buffer (struct mtproto_connection *self) {
+  return pad_rsa_encrypt (self, (char *) self->packet_buffer, (self->packet_ptr - self->packet_buffer) * 4, (char *) self->encrypt_buffer, 
+    ENCRYPT_BUFFER_INTS * 4, pubKey->n, pubKey->e);
 }
 
-int encrypt_packet_buffer_aes_unauth (const char server_nonce[16], const char hidden_client_nonce[32]) {
-  init_aes_unauth (server_nonce, hidden_client_nonce, AES_ENCRYPT);
-  return pad_aes_encrypt ((char *) packet_buffer, (packet_ptr - packet_buffer) * 4, (char *) encrypt_buffer, ENCRYPT_BUFFER_INTS * 4);
+int encrypt_packet_buffer_aes_unauth (struct mtproto_connection *self, const char server_nonce[16], const char hidden_client_nonce[32]) {
+  init_aes_unauth (self, server_nonce, hidden_client_nonce, AES_ENCRYPT);
+  return pad_aes_encrypt (self, (char *) self->packet_buffer, (self->packet_ptr - self->packet_buffer) * 4, 
+    (char *) self->encrypt_buffer, ENCRYPT_BUFFER_INTS * 4);
 }
 
 
 int rpc_send_packet (struct connection *c) {
-  int len = (packet_ptr - packet_buffer) * 4;
+  logprintf("rpc_send_packet()\n");
+  struct mtproto_connection *self = c->mtconnection;
+
+  int len = (self->packet_ptr - self->packet_buffer) * 4;
   c->out_packet_num ++;
   long long next_msg_id = (long long) ((1LL << 32) * get_utime (CLOCK_REALTIME)) & -4;
-  if (next_msg_id <= unenc_msg_header.out_msg_id) {
-    unenc_msg_header.out_msg_id += 4;
+  if (next_msg_id <= self->unenc_msg_header.out_msg_id) {
+    self->unenc_msg_header.out_msg_id += 4;
   } else {
-    unenc_msg_header.out_msg_id = next_msg_id;
+    self->unenc_msg_header.out_msg_id = next_msg_id;
   }
-  unenc_msg_header.msg_len = len;
+  self->unenc_msg_header.msg_len = len;
 
   int total_len = len + 20;
   assert (total_len > 0 && !(total_len & 0xfc000003));
@@ -216,16 +189,18 @@ int rpc_send_packet (struct connection *c) {
     total_len = (total_len << 8) | 0x7f;
     assert (write_out (c, &total_len, 4) == 4);
   }
-  write_out (c, &unenc_msg_header, 20);
-  write_out (c, packet_buffer, len);
+  write_out (c, &self->unenc_msg_header, 20);
+  write_out (c, self->packet_buffer, len);
   flush_out (c);
 
-  total_packets_sent ++;
-  total_data_sent += total_len;
+  self->total_packets_sent ++;
+  self->total_data_sent += total_len;
   return 1;
 }
 
 int rpc_send_message (struct connection *c, void *data, int len) {
+  struct mtproto_connection *self = c->mtconnection;
+
   logprintf("rpc_send_message(...)\n");
   assert (len > 0 && !(len & 0xfc000003));
   int total_len = len >> 2;
@@ -239,20 +214,22 @@ int rpc_send_message (struct connection *c, void *data, int len) {
   assert (write_out (c, data, len) == len);
   flush_out (c);
 
-  total_packets_sent ++;
-  total_data_sent += total_len;
+  self->total_packets_sent ++;
+  self->total_data_sent += total_len;
   return 1;
 }
 
 int send_req_pq_packet (struct connection *c) {
-  assert (c_state == st_init);
-  secure_random (nonce, 16);
-  unenc_msg_header.out_msg_id = 0;
-  clear_packet ();
-  out_int (CODE_req_pq);
-  out_ints ((int *)nonce, 4);
+  struct mtproto_connection *self = c->mtconnection;
+
+  assert (self->c_state == st_init);
+  secure_random (self->nonce, 16);
+  self->unenc_msg_header.out_msg_id = 0;
+  clear_packet (self);
+  out_int (self, CODE_req_pq);
+  out_ints (self, (int *)self->nonce, 4);
   rpc_send_packet (c);
-  c_state = st_reqpq_sent;
+  self->c_state = st_reqpq_sent;
   return 1;
 }
 
@@ -262,42 +239,38 @@ unsigned long long gcd (unsigned long long a, unsigned long long b) {
 }
 
 //typedef unsigned int uint128_t __attribute__ ((mode(TI)));
-unsigned long long what;
-unsigned p1, p2;
 
 int process_respq_answer (struct connection *c, char *packet, int len) {
+  logprintf ( "process_respq_answer(), len=%d\n", len);
+
+  struct mtproto_connection *self = c->mtconnection;
   int i;
-  if (verbosity) {
-    logprintf ( "process_respq_answer(), len=%d\n", len);
-  }
   assert (len >= 76);
   assert (!*(long long *) packet);
   assert (*(int *) (packet + 16) == len - 20);
   assert (!(len & 3));
   assert (*(int *) (packet + 20) == CODE_resPQ);
-  assert (!memcmp (packet + 24, nonce, 16));
-  memcpy (server_nonce, packet + 40, 16);
+  assert (!memcmp (packet + 24, self->nonce, 16));
+  memcpy (self->server_nonce, packet + 40, 16);
   char *from = packet + 56;
   int clen = *from++;
   assert (clen <= 8);
-  what = 0;
+  self->what = 0;
   for (i = 0; i < clen; i++) {
-    what = (what << 8) + (unsigned char)*from++;
+    self->what = (self->what << 8) + (unsigned char)*from++;
   }
 
   while (((unsigned long)from) & 3) ++from;
 
-  p1 = 0, p2 = 0;
+  self->p1 = 0, self->p2 = 0;
 
-  if (verbosity >= 2) {
-    logprintf ( "%lld received\n", what);
-  }
+  logprintf ( "%lld received\n", self->what);
 
   int it = 0;
   unsigned long long g = 0;
   for (i = 0; i < 3 || it < 1000; i++) {
-    int q = ((lrand48() & 15) + 17) % what;
-    unsigned long long x = (long long)lrand48 () % (what - 1) + 1, y = x;
+    int q = ((lrand48() & 15) + 17) % self->what;
+    unsigned long long x = (long long)lrand48 () % (self->what - 1) + 1, y = x;
     int lim = 1 << (i + 18);
     int j;
     for (j = 1; j < lim; j++) {
@@ -306,19 +279,19 @@ int process_respq_answer (struct connection *c, char *packet, int len) {
       while (b) {
         if (b & 1) {
           c += a;
-          if (c >= what) {
-            c -= what;
+          if (c >= self->what) {
+            c -= self->what;
           }
         }
         a += a;
-        if (a >= what) {
-          a -= what;
+        if (a >= self->what) {
+          a -= self->what;
         }
         b >>= 1;
       }
       x = c;
-      unsigned long long z = x < y ? what + x - y : x - y;
-      g = gcd (z, what);
+      unsigned long long z = x < y ? self->what + x - y : x - y;
+      g = gcd (z, self->what);
       if (g != 1) {
         break;
       }
@@ -326,20 +299,17 @@ int process_respq_answer (struct connection *c, char *packet, int len) {
         y = x;
       }
     }
-    if (g > 1 && g < what) break;
+    if (g > 1 && g < self->what) break;
   }
 
-  assert (g > 1 && g < what);
-  p1 = g;
-  p2 = what / g;
-  if (p1 > p2) {
-    unsigned t = p1; p1 = p2; p2 = t;
+  assert (g > 1 && g < self->what);
+  self->p1 = g;
+  self->p2 = self->what / g;
+  if (self->p1 > self->p2) {
+    unsigned t = self->p1; self->p1 = self->p2; self->p2 = t;
   }
 
-
-  if (verbosity) {
-    logprintf ( "p1 = %d, p2 = %d, %d iterations\n", p1, p2, it);
-  }
+  logprintf ( "Calculated primes: self->p1 = %d, self->p2 = %d, %d iterations\n", self->p1, self->p2, it);
 
   /// ++p1; ///
 
@@ -347,9 +317,10 @@ int process_respq_answer (struct connection *c, char *packet, int len) {
   int fingerprints_num = *(int *)(from + 4);
   assert (fingerprints_num >= 1 && fingerprints_num <= 64 && len == fingerprints_num * 8 + 8 + (from - packet));
   long long *fingerprints = (long long *) (from + 8);
+  logprintf("Got %d fingerprints\n", fingerprints_num);
   for (i = 0; i < fingerprints_num; i++) {
     if (fingerprints[i] == pk_fingerprint) {
-      //logprintf ( "found our public key at position %d\n", i);
+      logprintf ( "found our public key at position %d\n", i);
       break;
     }
   }
@@ -358,106 +329,106 @@ int process_respq_answer (struct connection *c, char *packet, int len) {
     exit (2);
   }
   // create inner part (P_Q_inner_data)
-  clear_packet ();
-  packet_ptr += 5;
-  out_int (CODE_p_q_inner_data);
-  out_cstring (packet + 57, clen);
+  clear_packet (self);
+  self->packet_ptr += 5;
+  out_int (self, CODE_p_q_inner_data);
+  out_cstring (self, packet + 57, clen);
   //out_int (0x0f01);  // pq=15
 
-  if (p1 < 256) {
+  if (self->p1 < 256) {
     clen = 1;
-  } else if (p1 < 65536) {
+  } else if (self->p1 < 65536) {
     clen = 2;
-  } else if (p1 < 16777216) {
+  } else if (self->p1 < 16777216) {
     clen = 3;
   } else {
     clen = 4;
   }
-  p1 = __builtin_bswap32 (p1);
-  out_cstring ((char *)&p1 + 4 - clen, clen);
-  p1 = __builtin_bswap32 (p1);
+  self->p1 = __builtin_bswap32 (self->p1);
+  out_cstring (self, (char *)&self->p1 + 4 - clen, clen);
+  self->p1 = __builtin_bswap32 (self->p1);
 
-  if (p2 < 256) {
+  if (self->p2 < 256) {
     clen = 1;
-  } else if (p2 < 65536) {
+  } else if (self->p2 < 65536) {
     clen = 2;
-  } else if (p2 < 16777216) {
+  } else if (self->p2 < 16777216) {
     clen = 3;
   } else {
     clen = 4;
   }
-  p2 = __builtin_bswap32 (p2);
-  out_cstring ((char *)&p2 + 4 - clen, clen);
-  p2 = __builtin_bswap32 (p2);
+  self->p2 = __builtin_bswap32 (self->p2);
+  out_cstring (self, (char *)&self->p2 + 4 - clen, clen);
+  self->p2 = __builtin_bswap32 (self->p2);
 
   //out_int (0x0301);  // p=3
   //out_int (0x0501);  // q=5
-  out_ints ((int *) nonce, 4);
-  out_ints ((int *) server_nonce, 4);
-  secure_random (new_nonce, 32);
-  out_ints ((int *) new_nonce, 8);
-  sha1 ((unsigned char *) (packet_buffer + 5), (packet_ptr - packet_buffer - 5) * 4, (unsigned char *) packet_buffer);
+  out_ints (self, (int *) self->nonce, 4);
+  out_ints (self, (int *) self->server_nonce, 4);
+  secure_random (self->new_nonce, 32);
+  out_ints (self, (int *) self->new_nonce, 8);
+  sha1 ((unsigned char *) (self->packet_buffer + 5), (self->packet_ptr - self->packet_buffer - 5) * 4, (unsigned char *) self->packet_buffer);
 
-  int l = encrypt_packet_buffer ();
+  int l = encrypt_packet_buffer (self);
 
-  clear_packet ();
-  out_int (CODE_req_DH_params);
-  out_ints ((int *) nonce, 4);
-  out_ints ((int *) server_nonce, 4);
+  clear_packet (self);
+  out_int (self, CODE_req_DH_params);
+  out_ints (self, (int *) self->nonce, 4);
+  out_ints (self, (int *) self->server_nonce, 4);
   //out_int (0x0301);  // p=3
   //out_int (0x0501);  // q=5
-  if (p1 < 256) {
+  if (self->p1 < 256) {
     clen = 1;
-  } else if (p1 < 65536) {
+  } else if (self->p1 < 65536) {
     clen = 2;
-  } else if (p1 < 16777216) {
+  } else if (self->p1 < 16777216) {
     clen = 3;
   } else {
     clen = 4;
   }
-  p1 = __builtin_bswap32 (p1);
-  out_cstring ((char *)&p1 + 4 - clen, clen);
-  p1 = __builtin_bswap32 (p1);
-  if (p2 < 256) {
+  self->p1 = __builtin_bswap32 (self->p1);
+  out_cstring (self, (char *)&self->p1 + 4 - clen, clen);
+  self->p1 = __builtin_bswap32 (self->p1);
+  if (self->p2 < 256) {
     clen = 1;
-  } else if (p2 < 65536) {
+  } else if (self->p2 < 65536) {
     clen = 2;
-  } else if (p2 < 16777216) {
+  } else if (self->p2 < 16777216) {
     clen = 3;
   } else {
     clen = 4;
   }
-  p2 = __builtin_bswap32 (p2);
-  out_cstring ((char *)&p2 + 4 - clen, clen);
-  p2 = __builtin_bswap32 (p2);
+  self->p2 = __builtin_bswap32 (self->p2);
+  out_cstring (self, (char *)&self->p2 + 4 - clen, clen);
+  self->p2 = __builtin_bswap32 (self->p2);
 
-  out_long (pk_fingerprint);
-  out_cstring ((char *) encrypt_buffer, l);
+  out_long (self, pk_fingerprint);
+  out_cstring (self, (char *) self->encrypt_buffer, l);
 
-  c_state = st_reqdh_sent;
+  self->c_state = st_reqdh_sent;
 
   return rpc_send_packet (c);
 }
 
-int check_prime (BIGNUM *p) {
-  int r = BN_is_prime (p, BN_prime_checks, 0, BN_ctx, 0);
+int check_prime (struct mtproto_connection *self, BIGNUM *p) {
+  int r = BN_is_prime (p, BN_prime_checks, 0, self->BN_ctx, 0);
   ensure (r >= 0);
   return r;
 }
 
-int check_DH_params (BIGNUM *p, int g) {
+int check_DH_params (struct mtproto_connection *self, BIGNUM *p, int g) {
   if (g < 2 || g > 7) { return -1; }
   BIGNUM t;
   BN_init (&t);
 
-  BN_init (&dh_g);
-  ensure (BN_set_word (&dh_g, 4 * g));
+  BN_init (&self->dh_g);
+  ensure (BN_set_word (&self->dh_g, 4 * g));
 
-  ensure (BN_mod (&t, p, &dh_g, BN_ctx));
+  ensure (BN_mod (&t, p, &self->dh_g, self->BN_ctx));
   int x = BN_get_word (&t);
   assert (x >= 0 && x < 4 * g);
 
-  BN_free (&dh_g);
+  BN_free (&self->dh_g);
 
   switch (g) {
   case 2:
@@ -479,13 +450,13 @@ int check_DH_params (BIGNUM *p, int g) {
     break;
   }
 
-  if (!check_prime (p)) { return -1; }
+  if (!check_prime (self, p)) { return -1; }
 
   BIGNUM b;
   BN_init (&b);
   ensure (BN_set_word (&b, 2));
-  ensure (BN_div (&t, 0, p, &b, BN_ctx));
-  if (!check_prime (&t)) { return -1; }
+  ensure (BN_div (&t, 0, p, &b, self->BN_ctx));
+  if (!check_prime (self, &t)) { return -1; }
   BN_free (&b);
   BN_free (&t);
   return 0;
@@ -536,145 +507,138 @@ int check_g_bn (BIGNUM *p, BIGNUM *g) {
 }
 
 int process_dh_answer (struct connection *c, char *packet, int len) {
-  if (verbosity) {
-    logprintf ( "process_dh_answer(), len=%d\n", len);
-  }
+  logprintf ( "process_dh_answer(), len=%d\n", len);
+  struct mtproto_connection *self = c->mtconnection;
   if (len < 116) {
-    logprintf ( "%u * %u = %llu", p1, p2, what);
+    logprintf ( "%u * %u = %llu", self->p1, self->p2, self->what);
   }
   assert (len >= 116);
   assert (!*(long long *) packet);
   assert (*(int *) (packet + 16) == len - 20);
   assert (!(len & 3));
   assert (*(int *) (packet + 20) == (int)CODE_server_DH_params_ok);
-  assert (!memcmp (packet + 24, nonce, 16));
-  assert (!memcmp (packet + 40, server_nonce, 16));
-  init_aes_unauth (server_nonce, new_nonce, AES_DECRYPT);
-  in_ptr = (int *)(packet + 56);
-  in_end = (int *)(packet + len);
-  int l = prefetch_strlen ();
+  assert (!memcmp (packet + 24, self->nonce, 16));
+  assert (!memcmp (packet + 40, self->server_nonce, 16));
+  init_aes_unauth (self, self->server_nonce, self->new_nonce, AES_DECRYPT);
+  self->in_ptr = (int *)(packet + 56);
+  self->in_end = (int *)(packet + len);
+  int l = prefetch_strlen (self);
   assert (l > 0);
-  l = pad_aes_decrypt (fetch_str (l), l, (char *) decrypt_buffer, DECRYPT_BUFFER_INTS * 4 - 16);
-  assert (in_ptr == in_end);
+  l = pad_aes_decrypt (self, fetch_str (self, l), l, (char *) self->decrypt_buffer, DECRYPT_BUFFER_INTS * 4 - 16);
+  assert (self->in_ptr == self->in_end);
   assert (l >= 60);
-  assert (decrypt_buffer[5] == (int)CODE_server_DH_inner_data);
-  assert (!memcmp (decrypt_buffer + 6, nonce, 16));
-  assert (!memcmp (decrypt_buffer + 10, server_nonce, 16));
-  int g = decrypt_buffer[14];
-  in_ptr = decrypt_buffer + 15;
-  in_end = decrypt_buffer + (l >> 2);
-  BN_init (&dh_prime);
-  BN_init (&g_a);
-  assert (fetch_bignum (&dh_prime) > 0);
-  assert (fetch_bignum (&g_a) > 0);
-  assert (check_g_bn (&dh_prime, &g_a) >= 0);
-  int server_time = *in_ptr++;
-  assert (in_ptr <= in_end);
+  assert (self->decrypt_buffer[5] == (int)CODE_server_DH_inner_data);
+  assert (!memcmp (self->decrypt_buffer + 6, self->nonce, 16));
+  assert (!memcmp (self->decrypt_buffer + 10, self->server_nonce, 16));
+  int g = self->decrypt_buffer[14];
+  self->in_ptr = self->decrypt_buffer + 15;
+  self->in_end = self->decrypt_buffer + (l >> 2);
+  BN_init (&self->dh_prime);
+  BN_init (&self->g_a);
+  assert (fetch_bignum (self, &self->dh_prime) > 0);
+  assert (fetch_bignum (self, &self->g_a) > 0);
+  assert (check_g_bn (&self->dh_prime, &self->g_a) >= 0);
+  int server_time = *self->in_ptr++;
+  assert (self->in_ptr <= self->in_end);
 
-  assert (check_DH_params (&dh_prime, g) >= 0);
+  assert (check_DH_params (self, &self->dh_prime, g) >= 0);
 
   static char sha1_buffer[20];
-  sha1 ((unsigned char *) decrypt_buffer + 20, (in_ptr - decrypt_buffer - 5) * 4, (unsigned char *) sha1_buffer);
-  assert (!memcmp (decrypt_buffer, sha1_buffer, 20));
-  assert ((char *) in_end - (char *) in_ptr < 16);
+  sha1 ((unsigned char *) self->decrypt_buffer + 20, (self->in_ptr - self->decrypt_buffer - 5) * 4, (unsigned char *) sha1_buffer);
+  assert (!memcmp (self->decrypt_buffer, sha1_buffer, 20));
+  assert ((char *) self->in_end - (char *) self->in_ptr < 16);
 
   GET_DC(c)->server_time_delta = server_time - time (0);
   GET_DC(c)->server_time_udelta = server_time - get_utime (CLOCK_MONOTONIC);
   //logprintf ( "server time is %d, delta = %d\n", server_time, server_time_delta);
 
   // Build set_client_DH_params answer
-  clear_packet ();
-  packet_ptr += 5;
-  out_int (CODE_client_DH_inner_data);
-  out_ints ((int *) nonce, 4);
-  out_ints ((int *) server_nonce, 4);
-  out_long (0LL);
+  clear_packet (self);
+  self->packet_ptr += 5;
+  out_int (self, CODE_client_DH_inner_data);
+  out_ints (self, (int *) self->nonce, 4);
+  out_ints (self, (int *) self->server_nonce, 4);
+  out_long (self, 0LL);
 
-  BN_init (&dh_g);
-  ensure (BN_set_word (&dh_g, g));
+  BN_init (&self->dh_g);
+  ensure (BN_set_word (&self->dh_g, g));
 
-  secure_random (s_power, 256);
-  BIGNUM *dh_power = BN_bin2bn ((unsigned char *)s_power, 256, 0);
+  secure_random (self->s_power, 256);
+  BIGNUM *dh_power = BN_bin2bn ((unsigned char *)self->s_power, 256, 0);
   ensure_ptr (dh_power);
 
   BIGNUM *y = BN_new ();
   ensure_ptr (y);
-  ensure (BN_mod_exp (y, &dh_g, dh_power, &dh_prime, BN_ctx));
-  out_bignum (y);
+  ensure (BN_mod_exp (y, &self->dh_g, dh_power, &self->dh_prime, self->BN_ctx));
+  out_bignum (self, y);
   BN_free (y);
 
-  BN_init (&auth_key_num);
-  ensure (BN_mod_exp (&auth_key_num, &g_a, dh_power, &dh_prime, BN_ctx));
-  l = BN_num_bytes (&auth_key_num);
+  BN_init (&self->auth_key_num);
+  ensure (BN_mod_exp (&self->auth_key_num, &self->g_a, dh_power, &self->dh_prime, self->BN_ctx));
+  l = BN_num_bytes (&self->auth_key_num);
   assert (l >= 250 && l <= 256);
-  assert (BN_bn2bin (&auth_key_num, (unsigned char *)GET_DC(c)->auth_key));
+  assert (BN_bn2bin (&self->auth_key_num, (unsigned char *)GET_DC(c)->auth_key));
   memset (GET_DC(c)->auth_key + l, 0, 256 - l);
   BN_free (dh_power);
-  BN_free (&auth_key_num);
-  BN_free (&dh_g);
-  BN_free (&g_a);
-  BN_free (&dh_prime);
+  BN_free (&self->auth_key_num);
+  BN_free (&self->dh_g);
+  BN_free (&self->g_a);
+  BN_free (&self->dh_prime);
 
   //hexdump (auth_key, auth_key + 256);
 
-  sha1 ((unsigned char *) (packet_buffer + 5), (packet_ptr - packet_buffer - 5) * 4, (unsigned char *) packet_buffer);
+  sha1 ((unsigned char *) (self->packet_buffer + 5), (self->packet_ptr - self->packet_buffer - 5) * 4, (unsigned char *) self->packet_buffer);
 
   //hexdump ((char *)packet_buffer, (char *)packet_ptr);
 
-  l = encrypt_packet_buffer_aes_unauth (server_nonce, new_nonce);
+  l = encrypt_packet_buffer_aes_unauth (self, self->server_nonce, self->new_nonce);
 
-  clear_packet ();
-  out_int (CODE_set_client_DH_params);
-  out_ints ((int *) nonce, 4);
-  out_ints ((int *) server_nonce, 4);
-  out_cstring ((char *) encrypt_buffer, l);
+  clear_packet (self);
+  out_int (self, CODE_set_client_DH_params);
+  out_ints (self, (int *) self->nonce, 4);
+  out_ints (self, (int *) self->server_nonce, 4);
+  out_cstring (self, (char *) self->encrypt_buffer, l);
 
-  c_state = st_client_dh_sent;
+  self->c_state = st_client_dh_sent;
 
   return rpc_send_packet (c);
 }
 
 
-int process_auth_complete (struct connection *c UU, char *packet, int len) {
-  if (verbosity) {
-    logprintf ( "process_dh_answer(), len=%d\n", len);
-  }
+int process_auth_complete (struct connection *c, char *packet, int len) {
+  logprintf ( "process_auth_complete(), len=%d\n", len);
+  struct mtproto_connection *self = c->mtconnection;
   assert (len == 72);
   assert (!*(long long *) packet);
   assert (*(int *) (packet + 16) == len - 20);
   assert (!(len & 3));
   assert (*(int *) (packet + 20) == CODE_dh_gen_ok);
-  assert (!memcmp (packet + 24, nonce, 16));
-  assert (!memcmp (packet + 40, server_nonce, 16));
+  assert (!memcmp (packet + 24, self->nonce, 16));
+  assert (!memcmp (packet + 40, self->server_nonce, 16));
   static unsigned char tmp[44], sha1_buffer[20];
-  memcpy (tmp, new_nonce, 32);
+  memcpy (tmp, self->new_nonce, 32);
   tmp[32] = 1;
   //GET_DC(c)->auth_key_id = *(long long *)(sha1_buffer + 12);
 
-  bl_do_set_auth_key_id (GET_DC(c)->id, (unsigned char *)GET_DC(c)->auth_key);
+  bl_do_set_auth_key_id (c->instance, GET_DC(c)->id, (unsigned char *)GET_DC(c)->auth_key);
   sha1 ((unsigned char *)GET_DC(c)->auth_key, 256, sha1_buffer);
 
   memcpy (tmp + 33, sha1_buffer, 8);
   sha1 (tmp, 41, sha1_buffer);
   assert (!memcmp (packet + 56, sha1_buffer + 4, 16));
-  GET_DC(c)->server_salt = *(long long *)server_nonce ^ *(long long *)new_nonce;
+  GET_DC(c)->server_salt = *(long long *)self->server_nonce ^ *(long long *)self->new_nonce;
 
-  if (verbosity >= 3) {
-    logprintf ( "auth_key_id=%016llx\n", GET_DC(c)->auth_key_id);
-  }
+  logprintf ( "auth_key_id=%016llx\n", GET_DC(c)->auth_key_id);
   //kprintf ("OK\n");
 
   //c->status = conn_error;
   //sleep (1);
 
-  c_state = st_authorized;
+  self->c_state = st_authorized;
   //return 1;
-  if (verbosity) {
-    logprintf ( "Auth success\n");
-  }
-  auth_success ++;
+  logprintf ( "Auth success\n");
+  self->auth_success ++;
   GET_DC(c)->flags |= 1;
-  write_auth_file ();
 
   return 1;
 }
@@ -685,10 +649,6 @@ int process_auth_complete (struct connection *c UU, char *packet, int len) {
  *
  */
 
-struct encrypted_message enc_msg;
-
-long long client_last_msg_id, server_last_msg_id;
-
 double get_server_time (struct dc *DC) {
   if (!DC->server_time_udelta) {
     DC->server_time_udelta = get_utime (CLOCK_REALTIME) - get_utime (CLOCK_MONOTONIC);
@@ -696,38 +656,38 @@ double get_server_time (struct dc *DC) {
   return get_utime (CLOCK_MONOTONIC) + DC->server_time_udelta;
 }
 
-long long generate_next_msg_id (struct dc *DC) {
+long long generate_next_msg_id (struct mtproto_connection *self, struct dc *DC) {
   long long next_id = (long long) (get_server_time (DC) * (1LL << 32)) & -4;
-  if (next_id <= client_last_msg_id) {
-    next_id = client_last_msg_id += 4;
+  if (next_id <= self->client_last_msg_id) {
+    next_id = self->client_last_msg_id += 4;
   } else {
-    client_last_msg_id = next_id;
+    self->client_last_msg_id = next_id;
   }
   return next_id;
 }
 
-void init_enc_msg (struct session *S, int useful) {
+void init_enc_msg (struct mtproto_connection *self, struct session *S, int useful) {
   struct dc *DC = S->dc;
   assert (DC->auth_key_id);
-  enc_msg.auth_key_id = DC->auth_key_id;
+  self->enc_msg.auth_key_id = DC->auth_key_id;
 //  assert (DC->server_salt);
-  enc_msg.server_salt = DC->server_salt;
+  self->enc_msg.server_salt = DC->server_salt;
   if (!S->session_id) {
     secure_random (&S->session_id, 8);
   }
-  enc_msg.session_id = S->session_id;
+  self->enc_msg.session_id = S->session_id;
   //enc_msg.auth_key_id2 = auth_key_id;
-  enc_msg.msg_id = generate_next_msg_id (DC);
+  self->enc_msg.msg_id = generate_next_msg_id (self, DC);
   //enc_msg.msg_id -= 0x10000000LL * (lrand48 () & 15);
   //kprintf ("message id %016llx\n", enc_msg.msg_id);
-  enc_msg.seq_no = S->seq_no;
+  self->enc_msg.seq_no = S->seq_no;
   if (useful) {
-    enc_msg.seq_no |= 1;
+    self->enc_msg.seq_no |= 1;
   }
   S->seq_no += 2;
 };
 
-int aes_encrypt_message (struct dc *DC, struct encrypted_message *enc) {
+int aes_encrypt_message (struct mtproto_connection *self, struct dc *DC, struct encrypted_message *enc) {
   unsigned char sha1_buffer[20];
   const int MINSZ = offsetof (struct encrypted_message, message);
   const int UNENCSZ = offsetof (struct encrypted_message, server_salt);
@@ -739,12 +699,14 @@ int aes_encrypt_message (struct dc *DC, struct encrypted_message *enc) {
     logprintf ( "sending message with sha1 %08x\n", *(int *)sha1_buffer);
   }
   memcpy (enc->msg_key, sha1_buffer + 4, 16);
-  init_aes_auth (DC->auth_key, enc->msg_key, AES_ENCRYPT);
+  init_aes_auth (self, DC->auth_key, enc->msg_key, AES_ENCRYPT);
   //hexdump ((char *)enc, (char *)enc + enc_len + 24);
-  return pad_aes_encrypt ((char *) &enc->server_salt, enc_len, (char *) &enc->server_salt, MAX_MESSAGE_INTS * 4 + (MINSZ - UNENCSZ));
+  return pad_aes_encrypt (self, (char *) &enc->server_salt, enc_len, (char *) &enc->server_salt, MAX_MESSAGE_INTS * 4 + (MINSZ - UNENCSZ));
 }
 
-long long encrypt_send_message (struct connection *c, int *msg, int msg_ints, int useful) {
+long long encrypt_send_message (struct mtproto_connection *self, int *msg, int msg_ints, int useful) {
+  struct connection *c = self->connection;
+
   logprintf("encrypt_send_message(...)\n");
   struct dc *DC = GET_DC(c);
   struct session *S = c->session;
@@ -754,25 +716,24 @@ long long encrypt_send_message (struct connection *c, int *msg, int msg_ints, in
     return -1;
   }
   if (msg) {
-    memcpy (enc_msg.message, msg, msg_ints * 4);
-    enc_msg.msg_len = msg_ints * 4;
+    memcpy (self->enc_msg.message, msg, msg_ints * 4);
+    self->enc_msg.msg_len = msg_ints * 4;
   } else {
-    if ((enc_msg.msg_len & 0x80000003) || enc_msg.msg_len > MAX_MESSAGE_INTS * 4 - 16) {
+    if ((self->enc_msg.msg_len & 0x80000003) || self->enc_msg.msg_len > MAX_MESSAGE_INTS * 4 - 16) {
       return -1;
     }
   }
-  init_enc_msg (S, useful);
+  init_enc_msg (self, S, useful);
 
   //hexdump ((char *)msg, (char *)msg + (msg_ints * 4));
-  int l = aes_encrypt_message (DC, &enc_msg);
+  int l = aes_encrypt_message (self, DC, &self->enc_msg);
   //hexdump ((char *)&enc_msg, (char *)&enc_msg + l  + 24);
   assert (l > 0);
-  rpc_send_message (c, &enc_msg, l + UNENCSZ);
-
-  return client_last_msg_id;
+  rpc_send_message (c, &self->enc_msg, l + UNENCSZ);
+  
+  return self->client_last_msg_id;
 }
 
-int longpoll_count, good_messages;
 
 int auth_work_start (struct connection *c UU) {
   return 1;
@@ -780,74 +741,67 @@ int auth_work_start (struct connection *c UU) {
 
 void rpc_execute_answer (struct connection *c, long long msg_id UU);
 
-int unread_messages;
-int our_id;
-int pts;
-int qts;
-int last_date;
-int seq;
-
-void fetch_pts (void) {
-  int p = fetch_int ();
-  if (p <= pts) { return; }
-  if (p != pts + 1) {
-    if (pts) {
+void fetch_pts (struct mtproto_connection *self) {
+  int p = fetch_int (self);
+  if (p <= self->pts) { return; }
+  if (p != self->pts + 1) {
+    if (self->pts) {
       //logprintf ("Hole in pts p = %d, pts = %d\n", p, pts);
 
       // get difference should be here
-      pts = p;
+      self->pts = p;
     } else {
-      pts = p;
+      self->pts = p;
     }
   } else {
-    pts ++;
+    self->pts ++;
   }
-  bl_do_set_pts (pts);
+  bl_do_set_pts (self->bl, self, self->pts);
 }
 
-void fetch_qts (void) {
-  int p = fetch_int ();
-  if (p <= qts) { return; }
-  if (p != qts + 1) {
-    if (qts) {
+void fetch_qts (struct mtproto_connection *self) {
+  int p = fetch_int (self);
+  if (p <= self->qts) { return; }
+  if (p != self->qts + 1) {
+    if (self->qts) {
       //logprintf ("Hole in qts\n");
       // get difference should be here
-      qts = p;
+      self->qts = p;
     } else {
-      qts = p;
+      self->qts = p;
     }
   } else {
-    qts ++;
+    self->qts ++;
   }
-  bl_do_set_qts (qts);
+  bl_do_set_qts (self->bl, self, self->qts);
 }
 
-void fetch_date (void) {
-  int p = fetch_int ();
-  if (p > last_date) {
-    last_date = p;
-    bl_do_set_date (last_date);
+void fetch_date (struct mtproto_connection *self) {
+  int p = fetch_int (self);
+  if (p > self->last_date) {
+    self->last_date = p;
+    bl_do_set_date (self->bl, self, self->last_date);
   }
 }
 
-void fetch_seq (void) {
-  int x = fetch_int ();
-  if (x > seq + 1) {
-    logprintf ("Hole in seq: seq = %d, x = %d\n", seq, x);
+void fetch_seq (struct mtproto_connection *self) {
+  int x = fetch_int (self);
+  if (x > self->seq + 1) {
+    logprintf ("Hole in seq: seq = %d, x = %d\n", self->seq, x);
     //do_get_difference ();
     //seq = x;
-  } else if (x == seq + 1) {
-    seq = x;
-    bl_do_set_seq (seq);
+  } else if (x == self->seq + 1) {
+    self->seq = x;
+    bl_do_set_seq (self->bl, self, self->seq);
   }
 }
 
-void work_update_binlog (void) {
-  unsigned op = fetch_int ();
+void work_update_binlog (struct mtproto_connection *self) {
+  unsigned op = fetch_int (self);
   switch (op) {
   case CODE_update_user_name:
     {
-      peer_id_t user_id = MK_USER (fetch_int ());
+      peer_id_t user_id = MK_USER (fetch_int (self));
       peer_t *UC = user_chat_get (user_id);
       if (UC) {
         struct user *U = &UC->user;
@@ -857,47 +811,47 @@ void work_update_binlog (void) {
           peer_delete_name (UC);
           tfree_str (U->print_name);
         }
-        U->first_name = fetch_str_dup ();
-        U->last_name = fetch_str_dup ();
+        U->first_name = fetch_str_dup (self);
+        U->last_name = fetch_str_dup (self);
         U->print_name = create_print_name (U->id, U->first_name, U->last_name, 0, 0);
         peer_insert_name ((void *)U);
       } else {
-        fetch_skip_str ();
-        fetch_skip_str ();
+        fetch_skip_str (self);
+        fetch_skip_str (self);
       }
     }
     break;
   case CODE_update_user_photo:
     {
-      peer_id_t user_id = MK_USER (fetch_int ());
+      peer_id_t user_id = MK_USER (fetch_int (self));
       peer_t *UC = user_chat_get (user_id);
-      fetch_date ();
+      fetch_date (self);
       if (UC) {
         struct user *U = &UC->user;
 
-        unsigned y = fetch_int ();
+        unsigned y = fetch_int (self);
         if (y == CODE_user_profile_photo_empty) {
           U->photo_id = 0;
           U->photo_big.dc = -2;
           U->photo_small.dc = -2;
         } else {
           assert (y == CODE_user_profile_photo);
-          U->photo_id = fetch_long ();
-          fetch_file_location (&U->photo_small);
-          fetch_file_location (&U->photo_big);
+          U->photo_id = fetch_long (self);
+          fetch_file_location (self, &U->photo_small);
+          fetch_file_location (self, &U->photo_big);
         }
       } else {
         struct file_location t;
-        unsigned y = fetch_int ();
+        unsigned y = fetch_int (self);
         if (y == CODE_user_profile_photo_empty) {
         } else {
           assert (y == CODE_user_profile_photo);
-          fetch_long (); // photo_id
-          fetch_file_location (&t);
-          fetch_file_location (&t);
+          fetch_long (self); // photo_id
+          fetch_file_location (self, &t);
+          fetch_file_location (self, &t);
         }
       }
-      fetch_bool ();
+      fetch_bool (self);
     }
     break;
   default:
@@ -905,148 +859,151 @@ void work_update_binlog (void) {
   }
 }
 
-void work_update (struct connection *c UU, long long msg_id UU) {
-  unsigned op = fetch_int ();
+void work_update (struct mtproto_connection *self, long long msg_id UU) {
+  struct connection *c UU = self->connection;
+  struct telegram *tg = c->instance;
+
+  unsigned op = fetch_int (self);
   logprintf("work_update(): OP:%d\n", op);
   switch (op) {
   case CODE_update_new_message:
     {
-      struct message *M = fetch_alloc_message ();
+      struct message *M = fetch_alloc_message (self, tg);
       assert (M);
-      fetch_pts ();
-      unread_messages ++;
-	  event_update_new_message(M);
+      fetch_pts (self);
+      self->unread_messages ++;
+	  event_update_new_message (tg, M);
       //print_message (M);
-      update_prompt ();
+      //update_prompt ();
       break;
     };
   case CODE_update_message_i_d:
     {
-      int id = fetch_int (); // id
-      int new = fetch_long (); // random_id
+      int id = fetch_int (self); // id
+      int new = fetch_long (self); // random_id
       struct message *M = message_get (new);
       if (M) {
-        bl_do_set_msg_id (M, id);
+        bl_do_set_msg_id (self->bl, self, M, id);
       }
     }
     break;
   case CODE_update_read_messages:
     {
-      assert (fetch_int () == (int)CODE_vector);
-      int n = fetch_int ();
+      assert (fetch_int (self) == (int)CODE_vector);
+      int n = fetch_int (self);
       int i;
       for (i = 0; i < n; i++) {
-        int id = fetch_int ();
+        int id = fetch_int (self);
         struct message *M = message_get (id);
         if (M) {
-          bl_do_set_unread (M, 0);
+          bl_do_set_unread (self->bl, self, M, 0);
         }
       }
-      fetch_pts ();
+      fetch_pts (self);
       if (log_level >= 1) {
-        print_start ();
-        push_color (COLOR_YELLOW);
-        print_date (time (0));
+        //print_start ();
+        //push_color (COLOR_YELLOW);
+        //print_date (time (0));
         printf (" %d messages marked as read\n", n);
-        pop_color ();
-        print_end ();
+        //pop_color ();
+        //print_end ();
       }
     }
     break;
   case CODE_update_user_typing:
     {
-      peer_id_t id = MK_USER (fetch_int ());
-      peer_t *U = user_chat_get (id);
+      peer_id_t id = MK_USER (fetch_int (self));
+      peer_t *U UU = user_chat_get (id);
       if (log_level >= 2) {
-        print_start ();
-        push_color (COLOR_YELLOW);
-        print_date (time (0));
+        //print_start ();
+        //push_color (COLOR_YELLOW);
+        //print_date (time (0));
         printf (" User ");
-        print_user_name (id, U);
+        //print_user_name (id, U);
         printf (" is typing....\n");
-        pop_color ();
-        print_end ();
+        //pop_color ();
+        //print_end ();
       }
     }
     break;
   case CODE_update_chat_user_typing:
     {
-      peer_id_t chat_id = MK_CHAT (fetch_int ());
-      peer_id_t id = MK_USER (fetch_int ());
-      peer_t *C = user_chat_get (chat_id);
-      peer_t *U = user_chat_get (id);
+      peer_id_t chat_id = MK_CHAT (fetch_int (self));
+      peer_id_t id = MK_USER (fetch_int (self));
+      peer_t *C UU = user_chat_get (chat_id);
+      peer_t *U UU = user_chat_get (id);
       if (log_level >= 2) {
-        print_start ();
-        push_color (COLOR_YELLOW);
-        print_date (time (0));
+        //print_start ();
+        //push_color (COLOR_YELLOW);
+        //print_date (time (0));
         printf (" User ");
-        print_user_name (id, U);
+        //print_user_name (id, U);
         printf (" is typing in chat ");
-        print_chat_name (chat_id, C);
+        //print_chat_name (chat_id, C);
         printf ("....\n");
-        pop_color ();
-        print_end ();
+        //pop_color ();
+        //print_end ();
       }
     }
     break;
   case CODE_update_user_status:
     {
-      peer_id_t user_id = MK_USER (fetch_int ());
+      peer_id_t user_id = MK_USER (fetch_int (self));
       peer_t *U = user_chat_get (user_id);
       if (U) {
-        fetch_user_status (&U->user.status);
+        fetch_user_status (self, &U->user.status);
         if (log_level >= 3) {
-          print_start ();
-          push_color (COLOR_YELLOW);
-          print_date (time (0));
+          //print_start ();
+          //push_color (COLOR_YELLOW);
+          //print_date (time (0));
           printf (" User ");
-          print_user_name (user_id, U);
+          //print_user_name (user_id, U);
           printf (" is now ");
           printf ("%s\n", (U->user.status.online > 0) ? "online" : "offline");
-          pop_color ();
-          print_end ();
+          //pop_color ();
+          //print_end ();
         }
       } else {
         struct user_status t;
-        fetch_user_status (&t);
+        fetch_user_status (self, &t);
       }
     }
     break;
   case CODE_update_user_name:
     {
-      peer_id_t user_id = MK_USER (fetch_int ());
+      peer_id_t user_id = MK_USER (fetch_int (self));
       peer_t *UC = user_chat_get (user_id);
       if (UC && (UC->flags & FLAG_CREATED)) {
-        int l1 = prefetch_strlen ();
-        char *f = fetch_str (l1);
-        int l2 = prefetch_strlen ();
-        char *l = fetch_str (l2);
+        int l1 = prefetch_strlen (self);
+        char *f = fetch_str (self, l1);
+        int l2 = prefetch_strlen (self);
+        char *l = fetch_str (self, l2);
         struct user *U = &UC->user;
-        bl_do_set_user_real_name (U, f, l1, l, l2);
-        print_start ();
-        push_color (COLOR_YELLOW);
-        print_date (time (0));
+        bl_do_set_user_real_name (self->bl, self, U, f, l1, l, l2);
+        //print_start ();
+        //push_color (COLOR_YELLOW);
+        //print_date (time (0));
         printf (" User ");
-        print_user_name (user_id, UC);
+        //print_user_name (user_id, UC);
         printf (" changed name to ");
-        print_user_name (user_id, UC);
+        //print_user_name (user_id, UC);
         printf ("\n");
-        pop_color ();
-        print_end ();
+        //pop_color ();
+        //print_end ();
       } else {
-        fetch_skip_str ();
-        fetch_skip_str ();
+        fetch_skip_str (self);
+        fetch_skip_str (self);
       }
     }
     break;
   case CODE_update_user_photo:
     {
-      peer_id_t user_id = MK_USER (fetch_int ());
+      peer_id_t user_id = MK_USER (fetch_int (self));
       peer_t *UC = user_chat_get (user_id);
-      fetch_date ();
+      fetch_date (self);
       if (UC && (UC->flags & FLAG_CREATED)) {
         struct user *U = &UC->user;
-        unsigned y = fetch_int ();
+        unsigned y = fetch_int (self);
         long long photo_id;
         struct file_location big;
         struct file_location small;
@@ -1058,262 +1015,262 @@ void work_update (struct connection *c UU, long long msg_id UU) {
           small.dc = -2;
         } else {
           assert (y == CODE_user_profile_photo);
-          photo_id = fetch_long ();
-          fetch_file_location (&small);
-          fetch_file_location (&big);
+          photo_id = fetch_long (self);
+          fetch_file_location (self, &small);
+          fetch_file_location (self, &big);
         }
-        bl_do_set_user_profile_photo (U, photo_id, &big, &small);
+        bl_do_set_user_profile_photo (self->bl, self, U, photo_id, &big, &small);
 
-        print_start ();
-        push_color (COLOR_YELLOW);
-        print_date (time (0));
+        //print_start ();
+        //push_color (COLOR_YELLOW);
+        //print_date (time (0));
         printf (" User ");
-        print_user_name (user_id, UC);
+        //print_user_name (user_id, UC);
         printf (" updated profile photo\n");
-        pop_color ();
-        print_end ();
+        //pop_color ();
+        //print_end ();
       } else {
         struct file_location t;
-        unsigned y = fetch_int ();
+        unsigned y = fetch_int (self);
         if (y == CODE_user_profile_photo_empty) {
         } else {
           assert (y == CODE_user_profile_photo);
-          fetch_long (); // photo_id
-          fetch_file_location (&t);
-          fetch_file_location (&t);
+          fetch_long (self); // photo_id
+          fetch_file_location (self, &t);
+          fetch_file_location (self, &t);
         }
       }
-      fetch_bool ();
+      fetch_bool (self);
     }
     break;
   case CODE_update_restore_messages:
     {
-      assert (fetch_int () == CODE_vector);
-      int n = fetch_int ();
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      assert (fetch_int (self) == CODE_vector);
+      int n = fetch_int (self);
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" Restored %d messages\n", n);
-      pop_color ();
-      print_end ();
-      fetch_skip (n);
-      fetch_pts ();
+      //pop_color ();
+      //print_end ();
+      fetch_skip (self, n);
+      fetch_pts (self);
     }
     break;
   case CODE_update_delete_messages:
     {
-      assert (fetch_int () == CODE_vector);
-      int n = fetch_int ();
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      assert (fetch_int (self) == CODE_vector);
+      int n = fetch_int (self);
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" Deleted %d messages\n", n);
-      pop_color ();
-      print_end ();
-      fetch_skip (n);
-      fetch_pts ();
+      //pop_color ();
+      //print_end ();
+      fetch_skip (self, n);
+      fetch_pts (self);
     }
     break;
   case CODE_update_chat_participants:
     {
-      unsigned x = fetch_int ();
+      unsigned x = fetch_int (self);
       assert (x == CODE_chat_participants || x == CODE_chat_participants_forbidden);
-      peer_id_t chat_id = MK_CHAT (fetch_int ());
+      peer_id_t chat_id = MK_CHAT (fetch_int (self));
       int n = 0;
       peer_t *C = user_chat_get (chat_id);
       if (C && (C->flags & FLAG_CREATED)) {
         if (x == CODE_chat_participants) {
-          bl_do_set_chat_admin (&C->chat, fetch_int ());
-          assert (fetch_int () == CODE_vector);
-          n = fetch_int ();
+          bl_do_set_chat_admin (self->bl, self, &C->chat, fetch_int (self));
+          assert (fetch_int (self) == CODE_vector);
+          n = fetch_int (self);
           struct chat_user *users = talloc (12 * n);
           int i;
           for (i = 0; i < n; i++) {
-            assert (fetch_int () == (int)CODE_chat_participant);
-            users[i].user_id = fetch_int ();
-            users[i].inviter_id = fetch_int ();
-            users[i].date = fetch_int ();
+            assert (fetch_int (self) == (int)CODE_chat_participant);
+            users[i].user_id = fetch_int (self);
+            users[i].inviter_id = fetch_int (self);
+            users[i].date = fetch_int (self);
           }
-          int version = fetch_int ();
-          bl_do_set_chat_participants (&C->chat, version, n, users);
+          int version = fetch_int (self);
+          bl_do_set_chat_participants (self->bl, self, &C->chat, version, n, users);
         }
       } else {
         if (x == CODE_chat_participants) {
-          fetch_int (); // admin_id
-          assert (fetch_int () == CODE_vector);
-          n = fetch_int ();
-          fetch_skip (n * 4);
-          fetch_int (); // version
+          fetch_int (self); // admin_id
+          assert (fetch_int (self) == CODE_vector);
+          n = fetch_int (self);
+          fetch_skip (self, n * 4);
+          fetch_int (self); // version
         }
       }
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" Chat ");
-      print_chat_name (chat_id, C);
+      //print_chat_name (chat_id, C);
       if (x == CODE_chat_participants) {
         printf (" changed list: now %d members\n", n);
       } else {
         printf (" changed list, but we are forbidden to know about it (Why this update even was sent to us?\n");
       }
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
     }
     break;
   case CODE_update_contact_registered:
     {
-      peer_id_t user_id = MK_USER (fetch_int ());
-      peer_t *U = user_chat_get (user_id);
-      fetch_int (); // date
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      peer_id_t user_id = MK_USER (fetch_int (self));
+      peer_t *U UU = user_chat_get (user_id);
+      fetch_int (self); // date
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" User ");
-      print_user_name (user_id, U);
+      //print_user_name (user_id, U);
       printf (" registered\n");
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
     }
     break;
   case CODE_update_contact_link:
     {
-      peer_id_t user_id = MK_USER (fetch_int ());
-      peer_t *U = user_chat_get (user_id);
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      peer_id_t user_id = MK_USER (fetch_int (self));
+      peer_t *U UU = user_chat_get (user_id);
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" Updated link with user ");
-      print_user_name (user_id, U);
+      //print_user_name (user_id, U);
       printf ("\n");
-      pop_color ();
-      print_end ();
-      unsigned t = fetch_int ();
+      //pop_color ();
+      //print_end ();
+      unsigned t = fetch_int (self);
       assert (t == CODE_contacts_my_link_empty || t == CODE_contacts_my_link_requested || t == CODE_contacts_my_link_contact);
       if (t == CODE_contacts_my_link_requested) {
-        fetch_bool (); // has_phone
+        fetch_bool (self); // has_phone
       }
-      t = fetch_int ();
+      t = fetch_int (self);
       assert (t == CODE_contacts_foreign_link_unknown || t == CODE_contacts_foreign_link_requested || t == CODE_contacts_foreign_link_mutual);
       if (t == CODE_contacts_foreign_link_requested) {
-        fetch_bool (); // has_phone
+        fetch_bool (self); // has_phone
       }
     }
     break;
   case CODE_update_activation:
     {
-      peer_id_t user_id = MK_USER (fetch_int ());
-      peer_t *U = user_chat_get (user_id);
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      peer_id_t user_id = MK_USER (fetch_int (self));
+      peer_t *U UU = user_chat_get (user_id);
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" User ");
-      print_user_name (user_id, U);
+      //print_user_name (user_id, U);
       printf (" activated\n");
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
     }
     break;
   case CODE_update_new_authorization:
     {
-      fetch_long (); // auth_key_id
-      fetch_int (); // date
-      char *s = fetch_str_dup ();
-      char *location = fetch_str_dup ();
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      fetch_long (self); // auth_key_id
+      fetch_int (self); // date
+      char *s = fetch_str_dup (self);
+      char *location = fetch_str_dup (self);
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" New autorization: device='%s' location='%s'\n",
         s, location);
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
       tfree_str (s);
       tfree_str (location);
     }
     break;
   case CODE_update_new_geo_chat_message:
     {
-      struct message *M = fetch_alloc_geo_message ();
-      unread_messages ++;
-      print_message (M);
-      update_prompt ();
+      struct message *M UU = fetch_alloc_geo_message (self, tg);
+      self->unread_messages ++;
+      //print_message (M);
+      //update_prompt ();
     }
     break;
   case CODE_update_new_encrypted_message:
     {
-      struct message *M = fetch_alloc_encrypted_message ();
-      unread_messages ++;
-      print_message (M);
-      update_prompt ();
-      fetch_qts ();
+      struct message *M UU = fetch_alloc_encrypted_message (self, tg);
+      self->unread_messages ++;
+      //print_message (M);
+      //update_prompt ();
+      fetch_qts (self);
     }
     break;
   case CODE_update_encryption:
     {
-      struct secret_chat *E = fetch_alloc_encrypted_chat ();
+      struct secret_chat *E = fetch_alloc_encrypted_chat (self);
       if (verbosity >= 2) {
         logprintf ("Secret chat state = %d\n", E->state);
       }
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       switch (E->state) {
       case sc_none:
         break;
       case sc_waiting:
         printf (" Encrypted chat ");
-        print_encr_chat_name (E->id, (void *)E);
+        //print_encr_chat_name (E->id, (void *)E);
         printf (" is now in wait state\n");
         break;
       case sc_request:
         printf (" Encrypted chat ");
-        print_encr_chat_name (E->id, (void *)E);
+        //print_encr_chat_name (E->id, (void *)E);
         printf (" is now in request state. Sending request ok\n");
         break;
       case sc_ok:
         printf (" Encrypted chat ");
-        print_encr_chat_name (E->id, (void *)E);
+        //print_encr_chat_name (E->id, (void *)E);
         printf (" is now in ok state\n");
         break;
       case sc_deleted:
         printf (" Encrypted chat ");
-        print_encr_chat_name (E->id, (void *)E);
+        //print_encr_chat_name (E->id, (void *)E);
         printf (" is now in deleted state\n");
         break;
       }
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
       if (E->state == sc_request && !disable_auto_accept) {
-        do_accept_encr_chat_request (E);
+        do_accept_encr_chat_request (tg, E);
       }
-      fetch_int (); // date
+      fetch_int (self); // date
     }
     break;
   case CODE_update_encrypted_chat_typing:
     {
-      peer_id_t id = MK_ENCR_CHAT (fetch_int ());
+      peer_id_t id = MK_ENCR_CHAT (fetch_int (self));
       peer_t *P = user_chat_get (id);
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       if (P) {
         printf (" User ");
-        peer_id_t user_id = MK_USER (P->encr_chat.user_id);
-        print_user_name (user_id, user_chat_get (user_id));
+        peer_id_t user_id UU = MK_USER (P->encr_chat.user_id);
+        //print_user_name (user_id, user_chat_get (user_id));
         printf (" typing in secret chat ");
-        print_encr_chat_name (id, P);
+        //print_encr_chat_name (id, P);
         printf ("\n");
       } else {
         printf (" Some user is typing in unknown secret chat\n");
       }
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
     }
     break;
   case CODE_update_encrypted_messages_read:
     {
-      peer_id_t id = MK_ENCR_CHAT (fetch_int ()); // chat_id
-      fetch_int (); // max_date
-      fetch_int (); // date
+      peer_id_t id = MK_ENCR_CHAT (fetch_int (self)); // chat_id
+      fetch_int (self); // max_date
+      fetch_int (self); // date
       peer_t *P = user_chat_get (id);
       int x = -1;
       if (P && P->last) {
@@ -1328,74 +1285,74 @@ void work_update (struct connection *c UU, long long msg_id UU) {
         }
       }
       if (log_level >= 1) {
-        print_start ();
-        push_color (COLOR_YELLOW);
-        print_date (time (0));
+        //print_start ();
+        //push_color (COLOR_YELLOW);
+        //print_date (time (0));
         printf (" Encrypted chat ");
-        print_encr_chat_name_full (id, user_chat_get (id));
+        //print_encr_chat_name_full (id, user_chat_get (id));
         printf (": %d messages marked read \n", x);
-        pop_color ();
-        print_end ();
+        //pop_color ();
+        //print_end ();
       }
     }
     break;
   case CODE_update_chat_participant_add:
     {
-      peer_id_t chat_id = MK_CHAT (fetch_int ());
-      peer_id_t user_id = MK_USER (fetch_int ());
-      peer_id_t inviter_id = MK_USER (fetch_int ());
-      int  version = fetch_int ();
+      peer_id_t chat_id = MK_CHAT (fetch_int (self));
+      peer_id_t user_id = MK_USER (fetch_int (self));
+      peer_id_t inviter_id = MK_USER (fetch_int (self));
+      int  version = fetch_int (self);
 
       peer_t *C = user_chat_get (chat_id);
       if (C && (C->flags & FLAG_CREATED)) {
-        bl_do_chat_add_user (&C->chat, version, get_peer_id (user_id), get_peer_id (inviter_id), time (0));
+        bl_do_chat_add_user (self->bl, self, &C->chat, version, get_peer_id (user_id), get_peer_id (inviter_id), time (0));
       }
 
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" Chat ");
-      print_chat_name (chat_id, user_chat_get (chat_id));
+      //print_chat_name (chat_id, user_chat_get (chat_id));
       printf (": user ");
-      print_user_name (user_id, user_chat_get (user_id));
+      //print_user_name (user_id, user_chat_get (user_id));
       printf (" added by user ");
-      print_user_name (inviter_id, user_chat_get (inviter_id));
+      //print_user_name (inviter_id, user_chat_get (inviter_id));
       printf ("\n");
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
     }
     break;
   case CODE_update_chat_participant_delete:
     {
-      peer_id_t chat_id = MK_CHAT (fetch_int ());
-      peer_id_t user_id = MK_USER (fetch_int ());
-      int version = fetch_int ();
+      peer_id_t chat_id = MK_CHAT (fetch_int (self));
+      peer_id_t user_id = MK_USER (fetch_int (self));
+      int version = fetch_int (self);
 
       peer_t *C = user_chat_get (chat_id);
       if (C && (C->flags & FLAG_CREATED)) {
-        bl_do_chat_del_user (&C->chat, version, get_peer_id (user_id));
+        bl_do_chat_del_user (self->bl, self, &C->chat, version, get_peer_id (user_id));
       }
 
-      print_start ();
-      push_color (COLOR_YELLOW);
-      print_date (time (0));
+      //print_start ();
+      //push_color (COLOR_YELLOW);
+      //print_date (time (0));
       printf (" Chat ");
-      print_chat_name (chat_id, user_chat_get (chat_id));
+      //print_chat_name (chat_id, user_chat_get (chat_id));
       printf (": user ");
-      print_user_name (user_id, user_chat_get (user_id));
+      //print_user_name (user_id, user_chat_get (user_id));
       printf (" deleted\n");
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
     }
     break;
   case CODE_update_dc_options:
     {
-      assert (fetch_int () == CODE_vector);
-      int n = fetch_int ();
+      assert (fetch_int (self) == CODE_vector);
+      int n = fetch_int (self);
       assert (n >= 0);
       int i;
       for (i = 0; i < n; i++) {
-        fetch_dc_option ();
+        fetch_dc_option (tg);
       }
     }
     break;
@@ -1406,114 +1363,112 @@ void work_update (struct connection *c UU, long long msg_id UU) {
 }
 
 void work_update_short (struct connection *c, long long msg_id) {
-  assert (fetch_int () == CODE_update_short);
-  work_update (c, msg_id);
-  fetch_date ();
+  struct mtproto_connection *self = c->mtconnection;
+
+  assert (fetch_int (self) == CODE_update_short);
+  work_update (self, msg_id);
+  fetch_date (self);
 }
 
 void work_updates (struct connection *c, long long msg_id) {
-  assert (fetch_int () == CODE_updates);
-  assert (fetch_int () == CODE_vector);
-  int n = fetch_int ();
+  struct mtproto_connection *self = c->mtconnection;
+
+  assert (fetch_int (c->mtconnection) == CODE_updates);
+  assert (fetch_int (c->mtconnection) == CODE_vector);
+  int n = fetch_int (c->mtconnection);
   int i;
   for (i = 0; i < n; i++) {
-    work_update (c, msg_id);
+    work_update (c->mtconnection, msg_id);
   }
-  assert (fetch_int () == CODE_vector);
-  n = fetch_int ();
+  assert (fetch_int (c->mtconnection) == CODE_vector);
+  n = fetch_int (c->mtconnection);
   for (i = 0; i < n; i++) {
-    fetch_alloc_user ();
+    fetch_alloc_user (self);
   }
-  assert (fetch_int () == CODE_vector);
-  n = fetch_int ();
+  assert (fetch_int (c->mtconnection) == CODE_vector);
+  n = fetch_int (c->mtconnection);
   for (i = 0; i < n; i++) {
-    fetch_alloc_chat ();
+    fetch_alloc_chat (self);
   }
-  bl_do_set_date (fetch_int ());
-  bl_do_set_seq (fetch_int ());
+  bl_do_set_date (self->bl, self, fetch_int (c->mtconnection));
+  bl_do_set_seq (self->bl, self, fetch_int (c->mtconnection));
 }
 
 void work_update_short_message (struct connection *c UU, long long msg_id UU) {
-  assert (fetch_int () == (int)CODE_update_short_message);
-  struct message *M = fetch_alloc_message_short ();
-  unread_messages ++;
-  print_message (M);
-  update_prompt ();
-  if (M->date > last_date) {
-    last_date = M->date;
+  struct mtproto_connection *self = c->mtconnection;
+
+  assert (fetch_int (c->mtconnection) == (int)CODE_update_short_message);
+  struct message *M = fetch_alloc_message_short (self, c->instance);
+  c->mtconnection->unread_messages ++;
+  //print_message (M);
+  //update_prompt ();
+  if (M->date > c->mtconnection->last_date) {
+    c->mtconnection->last_date = M->date;
   }
 }
 
-void work_update_short_chat_message (struct connection *c UU, long long msg_id UU) {
-  assert (fetch_int () == CODE_update_short_chat_message);
-  struct message *M = fetch_alloc_message_short_chat ();
-  unread_messages ++;
-  print_message (M);
-  update_prompt ();
-  if (M->date > last_date) {
-    last_date = M->date;
+void work_update_short_chat_message (struct connection *c, long long msg_id UU) {
+  struct mtproto_connection *self = c->mtconnection;
+
+  assert (fetch_int (self) == CODE_update_short_chat_message);
+  struct message *M = fetch_alloc_message_short_chat (self, c->instance);
+  c->mtconnection->unread_messages ++;
+  //print_message (M);
+  ////update_prompt ();
+  if (M->date > c->mtconnection->last_date) {
+    c->mtconnection->last_date = M->date;
   }
 }
 
 void work_container (struct connection *c, long long msg_id UU) {
-  if (verbosity) {
-    logprintf ( "work_container: msg_id = %lld\n", msg_id);
-  }
-  assert (fetch_int () == CODE_msg_container);
-  int n = fetch_int ();
+  logprintf ( "work_container: msg_id = %lld\n", msg_id);
+  assert (fetch_int (c->mtconnection) == CODE_msg_container);
+  int n = fetch_int (c->mtconnection);
   int i;
   for (i = 0; i < n; i++) {
-    long long id = fetch_long ();
+    long long id = fetch_long (c->mtconnection);
     //int seqno = fetch_int ();
-    fetch_int (); // seq_no
+    fetch_int (c->mtconnection); // seq_no
     if (id & 1) {
       insert_msg_id (c->session, id);
     }
-    int bytes = fetch_int ();
-    int *t = in_end;
-    in_end = in_ptr + (bytes / 4);
+    int bytes = fetch_int (c->mtconnection);
+    int *t = c->mtconnection->in_end;
+    c->mtconnection->in_end = c->mtconnection->in_ptr + (bytes / 4);
     rpc_execute_answer (c, id);
-    assert (in_ptr == in_end);
-    in_end = t;
+    assert (c->mtconnection->in_ptr == c->mtconnection->in_end);
+    c->mtconnection->in_end = t;
   }
 }
 
 void work_new_session_created (struct connection *c, long long msg_id UU) {
-  if (verbosity) {
-    logprintf ( "work_new_session_created: msg_id = %lld\n", msg_id);
-  }
-  assert (fetch_int () == (int)CODE_new_session_created);
-  fetch_long (); // first message id
+  logprintf ( "work_new_session_created: msg_id = %lld\n", msg_id);
+  assert (fetch_int (c->mtconnection) == (int)CODE_new_session_created);
+  fetch_long (c->mtconnection); // first message id
   //DC->session_id = fetch_long ();
-  fetch_long (); // unique_id
-  GET_DC(c)->server_salt = fetch_long ();
-
+  fetch_long (c->mtconnection); // unique_id
+  GET_DC(c)->server_salt = fetch_long (c->mtconnection);
+  logprintf ("new server_salt = %lld\n", GET_DC(c)->server_salt);
 }
 
 void work_msgs_ack (struct connection *c UU, long long msg_id UU) {
-  if (verbosity) {
-    logprintf ( "work_msgs_ack: msg_id = %lld\n", msg_id);
-  }
-  assert (fetch_int () == CODE_msgs_ack);
-  assert (fetch_int () == CODE_vector);
-  int n = fetch_int ();
+  logprintf ( "work_msgs_ack: msg_id = %lld\n", msg_id);
+  assert (fetch_int (c->mtconnection) == CODE_msgs_ack);
+  assert (fetch_int (c->mtconnection) == CODE_vector);
+  int n = fetch_int (c->mtconnection);
   int i;
   for (i = 0; i < n; i++) {
-    long long id = fetch_long ();
-    if (verbosity) {
-      logprintf ("ack for %lld\n", id);
-    }
+    long long id = fetch_long (c->mtconnection);
+    logprintf ("ack for %lld\n", id);
     query_ack (id);
   }
 }
 
 void work_rpc_result (struct connection *c UU, long long msg_id UU) {
-  if (verbosity) {
-    logprintf ( "work_rpc_result: msg_id = %lld\n", msg_id);
-  }
-  assert (fetch_int () == (int)CODE_rpc_result);
-  long long id = fetch_long ();
-  int op = prefetch_int ();
+  logprintf ( "work_rpc_result: msg_id = %lld\n", msg_id);
+  assert (fetch_int (c->mtconnection) == (int)CODE_rpc_result);
+  long long id = fetch_long (c->mtconnection);
+  int op = prefetch_int (c->mtconnection);
   if (op == CODE_rpc_error) {
     query_error (id);
   } else {
@@ -1523,82 +1478,82 @@ void work_rpc_result (struct connection *c UU, long long msg_id UU) {
 
 #define MAX_PACKED_SIZE (1 << 24)
 void work_packed (struct connection *c, long long msg_id) {
-  assert (fetch_int () == CODE_gzip_packed);
+  assert (fetch_int (c->mtconnection) == CODE_gzip_packed);
   static int in_gzip;
   static int buf[MAX_PACKED_SIZE >> 2];
   assert (!in_gzip);
   in_gzip = 1;
 
-  int l = prefetch_strlen ();
-  char *s = fetch_str (l);
+  int l = prefetch_strlen (c->mtconnection);
+  char *s = fetch_str (c->mtconnection, l);
 
   int total_out = tinflate (s, l, buf, MAX_PACKED_SIZE);
-  int *end = in_ptr;
-  int *eend = in_end;
+  int *end = c->mtconnection->in_ptr;
+  int *eend = c->mtconnection->in_end;
   //assert (total_out % 4 == 0);
-  in_ptr = buf;
-  in_end = in_ptr + total_out / 4;
+  c->mtconnection->in_ptr = buf;
+  c->mtconnection->in_end = c->mtconnection->in_ptr + total_out / 4;
   if (verbosity >= 4) {
     logprintf ( "Unzipped data: ");
-    hexdump_in ();
+    hexdump_in (c->mtconnection);
   }
   rpc_execute_answer (c, msg_id);
-  in_ptr = end;
-  in_end = eend;
+  c->mtconnection->in_ptr = end;
+  c->mtconnection->in_end = eend;
   in_gzip = 0;
 }
 
 void work_bad_server_salt (struct connection *c UU, long long msg_id UU) {
-  assert (fetch_int () == (int)CODE_bad_server_salt);
-  long long id = fetch_long ();
+  assert (fetch_int (c->mtconnection) == (int)CODE_bad_server_salt);
+  long long id = fetch_long (c->mtconnection);
   query_restart (id);
-  fetch_int (); // seq_no
-  fetch_int (); // error_code
-  long long new_server_salt = fetch_long ();
+  fetch_int (c->mtconnection); // seq_no
+  fetch_int (c->mtconnection); // error_code
+  long long new_server_salt = fetch_long (c->mtconnection);
   GET_DC(c)->server_salt = new_server_salt;
 }
 
 void work_pong (struct connection *c UU, long long msg_id UU) {
-  assert (fetch_int () == CODE_pong);
-  fetch_long (); // msg_id
-  fetch_long (); // ping_id
+  assert (fetch_int (c->mtconnection) == CODE_pong);
+  fetch_long (c->mtconnection); // msg_id
+  fetch_long (c->mtconnection); // ping_id
 }
 
 void work_detailed_info (struct connection *c UU, long long msg_id UU) {
-  assert (fetch_int () == CODE_msg_detailed_info);
-  fetch_long (); // msg_id
-  fetch_long (); // answer_msg_id
-  fetch_int (); // bytes
-  fetch_int (); // status
+  assert (fetch_int (c->mtconnection) == CODE_msg_detailed_info);
+  fetch_long (c->mtconnection); // msg_id
+  fetch_long (c->mtconnection); // answer_msg_id
+  fetch_int (c->mtconnection); // bytes
+  fetch_int (c->mtconnection); // status
 }
 
 void work_new_detailed_info (struct connection *c UU, long long msg_id UU) {
-  assert (fetch_int () == (int)CODE_msg_new_detailed_info);
-  fetch_long (); // answer_msg_id
-  fetch_int (); // bytes
-  fetch_int (); // status
+  assert (fetch_int (c->mtconnection) == (int)CODE_msg_new_detailed_info);
+  fetch_long (c->mtconnection); // answer_msg_id
+  fetch_int (c->mtconnection); // bytes
+  fetch_int (c->mtconnection); // status
 }
 
 void work_updates_to_long (struct connection *c UU, long long msg_id UU) {
-  assert (fetch_int () == (int)CODE_updates_too_long);
+  assert (fetch_int (c->mtconnection) == (int)CODE_updates_too_long);
   logprintf ("updates to long... Getting difference\n");
-  do_get_difference ();
+  do_get_difference (c->instance);
 }
 
 void work_bad_msg_notification (struct connection *c UU, long long msg_id UU) {
-  assert (fetch_int () == (int)CODE_bad_msg_notification);
-  long long m1 = fetch_long ();
-  int s = fetch_int ();
-  int e = fetch_int ();
+  assert (fetch_int (c->mtconnection) == (int)CODE_bad_msg_notification);
+  long long m1 = fetch_long (c->mtconnection);
+  int s = fetch_int (c->mtconnection);
+  int e = fetch_int (c->mtconnection);
   logprintf ("bad_msg_notification: msg_id = %lld, seq = %d, error = %d\n", m1, s, e);
 }
 
 void rpc_execute_answer (struct connection *c, long long msg_id UU) {
   if (verbosity >= 5) {
     logprintf ("rpc_execute_answer: fd=%d\n", c->fd);
-    hexdump_in ();
+    hexdump_in (c->mtconnection);
   }
-  int op = prefetch_int ();
+  int op = prefetch_int (c->mtconnection);
   switch (op) {
   case CODE_msg_container:
     work_container (c, msg_id);
@@ -1647,22 +1602,20 @@ void rpc_execute_answer (struct connection *c, long long msg_id UU) {
     return;
   }
   logprintf ( "Unknown message: \n");
-  hexdump_in ();
-  in_ptr = in_end; // Will not fail due to assertion in_ptr == in_end
+  hexdump_in (c->mtconnection);
+  c->mtconnection->in_ptr = c->mtconnection->in_end; // Will not fail due to assertion in_ptr == in_end
 }
 
 int process_rpc_message (struct connection *c UU, struct encrypted_message *enc, int len) {
   const int MINSZ = offsetof (struct encrypted_message, message);
   const int UNENCSZ = offsetof (struct encrypted_message, server_salt);
-  if (verbosity) {
-    logprintf ( "process_rpc_message(), len=%d\n", len);
-  }
+  logprintf ( "process_rpc_message(), len=%d\n", len);
   assert (len >= MINSZ && (len & 15) == (UNENCSZ & 15));
   struct dc *DC = GET_DC(c);
   assert (enc->auth_key_id == DC->auth_key_id);
   assert (DC->auth_key_id);
-  init_aes_auth (DC->auth_key + 8, enc->msg_key, AES_DECRYPT);
-  int l = pad_aes_decrypt ((char *)&enc->server_salt, len - UNENCSZ, (char *)&enc->server_salt, len - UNENCSZ);
+  init_aes_auth (c->mtconnection, DC->auth_key + 8, enc->msg_key, AES_DECRYPT);
+  int l = pad_aes_decrypt (c->mtconnection, (char *)&enc->server_salt, len - UNENCSZ, (char *)&enc->server_salt, len - UNENCSZ);
   assert (l == len - UNENCSZ);
   //assert (enc->auth_key_id2 == enc->auth_key_id);
   assert (!(enc->msg_len & 3) && enc->msg_len > 0 && enc->msg_len <= len - MINSZ && len - MINSZ - enc->msg_len <= 12);
@@ -1672,7 +1625,7 @@ int process_rpc_message (struct connection *c UU, struct encrypted_message *enc,
   //assert (enc->server_salt == server_salt); //in fact server salt can change
   if (DC->server_salt != enc->server_salt) {
     DC->server_salt = enc->server_salt;
-    write_auth_file ();
+    //write_auth_file ();
   }
 
   int this_server_time = enc->msg_id >> 32LL;
@@ -1682,44 +1635,44 @@ int process_rpc_message (struct connection *c UU, struct encrypted_message *enc,
   }
   double st = get_server_time (DC);
   if (this_server_time < st - 300 || this_server_time > st + 30) {
-    logprintf ("salt = %lld, session_id = %lld, msg_id = %lld, seq_no = %d, st = %lf, now = %lf\n", enc->server_salt, enc->session_id, enc->msg_id, enc->seq_no, st, get_utime (CLOCK_REALTIME));
-    in_ptr = enc->message;
-    in_end = in_ptr + (enc->msg_len / 4);
-    hexdump_in ();
+    logprintf ("salt = %lld, session_id = %lld, msg_id = %lld, seq_no = %d, st = %lf, now = %lf\n", 
+        enc->server_salt, enc->session_id, enc->msg_id, enc->seq_no, st, get_utime (CLOCK_REALTIME));
+    c->mtconnection->in_ptr = enc->message;
+    c->mtconnection->in_end = c->mtconnection->in_ptr + (enc->msg_len / 4);
+    hexdump_in (c->mtconnection);
   }
 
   assert (this_server_time >= st - 300 && this_server_time <= st + 30);
   //assert (enc->msg_id > server_last_msg_id && (enc->msg_id & 3) == 1);
-  if (verbosity >= 1) {
-    logprintf ( "received mesage id %016llx\n", enc->msg_id);
-    hexdump_in ();
-  }
-  server_last_msg_id = enc->msg_id;
+  logprintf ( "received mesage id %016llx\n", enc->msg_id);
+  hexdump_in (c->mtconnection);
+  c->mtconnection->server_last_msg_id = enc->msg_id;
 
   //*(long long *)(longpoll_query + 3) = *(long long *)((char *)(&enc->msg_id) + 0x3c);
   //*(long long *)(longpoll_query + 5) = *(long long *)((char *)(&enc->msg_id) + 0x3c);
 
   assert (l >= (MINSZ - UNENCSZ) + 8);
   //assert (enc->message[0] == CODE_rpc_result && *(long long *)(enc->message + 1) == client_last_msg_id);
-  ++good_messages;
+  ++c->mtconnection->good_messages;
 
-  in_ptr = enc->message;
-  in_end = in_ptr + (enc->msg_len / 4);
+  c->mtconnection->in_ptr = enc->message;
+  c->mtconnection->in_end = c->mtconnection->in_ptr + (enc->msg_len / 4);
 
   if (enc->msg_id & 1) {
     insert_msg_id (c->session, enc->msg_id);
   }
   assert (c->session->session_id == enc->session_id);
   rpc_execute_answer (c, enc->msg_id);
-  assert (in_ptr == in_end);
+  assert (c->mtconnection->in_ptr == c->mtconnection->in_end);
   return 0;
 }
 
 
 int rpc_execute (struct connection *c, int op, int len) {
-  if (verbosity) {
-    logprintf ( "outbound rpc connection #%d : received rpc answer %d with %d content bytes\n", c->fd, op, len);
-  }
+  logprintf ("outbound rpc connection #%d : received rpc answer %d with %d content bytes\n", c->fd, op, len);
+  struct mtproto_connection *self = c->mtconnection;
+  struct telegram *instance = c->instance;
+  
   /*  
   if (op < 0) {
     assert (read_in (c, Response, Response_len) == Response_len);
@@ -1743,42 +1696,36 @@ int rpc_execute (struct connection *c, int op, int len) {
     logprintf ( "have %d Response bytes\n", Response_len);
   }
 
-#if !defined(__MACH__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined (__CYGWIN__)
-  setsockopt (c->fd, IPPROTO_TCP, TCP_QUICKACK, (int[]){0}, 4);
-#endif
-  int o = c_state;
+  int o = c->mtconnection->c_state;
   if (GET_DC(c)->flags & 1) { o = st_authorized;}
   switch (o) {
   case st_reqpq_sent:
     process_respq_answer (c, Response/* + 8*/, Response_len/* - 12*/);
-#if !defined(__MACH__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined (__CYGWIN__)
-    setsockopt (c->fd, IPPROTO_TCP, TCP_QUICKACK, (int[]){0}, 4);
-#endif
     return 0;
   case st_reqdh_sent:
     process_dh_answer (c, Response/* + 8*/, Response_len/* - 12*/);
-#if !defined(__MACH__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined (__CYGWIN__)
-    setsockopt (c->fd, IPPROTO_TCP, TCP_QUICKACK, (int[]){0}, 4);
-#endif
     return 0;
   case st_client_dh_sent:
     process_auth_complete (c, Response/* + 8*/, Response_len/* - 12*/);
-#if !defined(__MACH__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined (__CYGWIN__)
-    setsockopt (c->fd, IPPROTO_TCP, TCP_QUICKACK, (int[]){0}, 4);
-#endif
+    self->queries_num --;
+    logprintf ("queries_num=%d\n", c->mtconnection->queries_num);
+    if (self->on_ready) {
+      self->on_ready(self, self->on_ready_data);
+    }
     return 0;
   case st_authorized:
     if (op < 0 && op >= -999) {
       logprintf ("Server error %d\n", op);
+      char code[12] = {0};
+      snprintf (code, 12, "%d", op);
+      c->mtconnection->c_state = st_error;
+      telegram_change_state (instance, STATE_ERROR, code);
     } else {
       process_rpc_message (c, (void *)(Response/* + 8*/), Response_len/* - 12*/);
     }
-#if !defined(__MACH__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined (__CYGWIN__)
-    setsockopt (c->fd, IPPROTO_TCP, TCP_QUICKACK, (int[]){0}, 4);
-#endif
     return 0;
   default:
-    logprintf ( "fatal: cannot receive answer in state %d\n", c_state);
+    logprintf ( "fatal: cannot receive answer in state %d\n", c->mtconnection->c_state);
     exit (2);
   }
 
@@ -1787,34 +1734,32 @@ int rpc_execute (struct connection *c, int op, int len) {
 
 
 int tc_close (struct connection *c, int who) {
-  if (verbosity) {
-    logprintf ( "outbound http connection #%d : closing by %d\n", c->fd, who);
-  }
+  logprintf ( "outbound http connection #%d : closing by %d\n", c->fd, who);
   return 0;
 }
 
 int tc_becomes_ready (struct connection *c) {
-  if (verbosity) {
-    logprintf ( "outbound connection #%d becomes ready\n", c->fd);
-  }
+  logprintf ( "outbound connection #%d becomes ready\n", c->fd);
   char byte = 0xef;
   assert (write_out (c, &byte, 1) == 1);
   flush_out (c);
 
-#if !defined(__MACH__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined (__CYGWIN__)
-  setsockopt (c->fd, IPPROTO_TCP, TCP_QUICKACK, (int[]){0}, 4);
-#endif
-  int o = c_state;
-  if (GET_DC(c)->flags & 1) { o = st_authorized; }
+  int o = c->mtconnection->c_state;
+  if (GET_DC(c)->flags & 1) { 
+    o = st_authorized; 
+  }
   switch (o) {
   case st_init:
+    c->mtconnection->queries_num ++;
+    logprintf ("queries_num=%d\n", c->mtconnection->queries_num);
     send_req_pq_packet (c);
     break;
   case st_authorized:
     auth_work_start (c);
+    telegram_change_state (c->instance, STATE_AUTHORIZED, NULL);
     break;
   default:
-    logprintf ( "c_state = %d\n", c_state);
+    logprintf ( "c_state = %d\n", c->mtconnection->c_state);
     assert (0);
   }
   return 0;
@@ -1828,15 +1773,15 @@ int rpc_close (struct connection *c) {
   return tc_close (c, 0);
 }
 
-int auth_is_success (void) {
-  return auth_success;
+int auth_is_success (struct mtproto_connection *m) {
+  return m->auth_success;
 }
 
 
 #define RANDSEED_PASSWORD_FILENAME     NULL
 #define RANDSEED_PASSWORD_LENGTH       0
-void on_start (void) {
-  prng_seed (RANDSEED_PASSWORD_FILENAME, RANDSEED_PASSWORD_LENGTH);
+void on_start (struct mtproto_connection *self) {
+  prng_seed (self, RANDSEED_PASSWORD_FILENAME, RANDSEED_PASSWORD_LENGTH);
 
   if (rsa_public_key_name) {
     if (rsa_load_public_key (rsa_public_key_name) < 0) {
@@ -1853,18 +1798,87 @@ void on_start (void) {
   pk_fingerprint = compute_rsa_key_fingerprint (pubKey);
 }
 
-int auth_ok (void) {
-  return auth_success;
+
+struct connection_methods mtproto_methods = {
+  .execute = rpc_execute,
+  .ready = rpc_becomes_ready,
+  .close = rpc_close
+};
+
+// TODO: use a list or tree instead
+struct mtproto_connection *Cs[100]; 
+
+/**
+ * Create a new struct mtproto_connection connection using the giving datacenter for authorization and 
+ *  session handling
+ */
+struct mtproto_connection *mtproto_new(struct dc *DC, int fd, struct telegram *tg)
+{
+    static int cs = 0;
+    struct mtproto_connection *mtp = talloc(sizeof(struct mtproto_connection));
+    Cs[cs++] = mtp;
+    memset(mtp, 0, sizeof(struct mtproto_connection));
+    mtp->packet_buffer = mtp->__packet_buffer + 16;
+    mtp->connection = fd_create_connection(DC, fd, tg, &mtproto_methods, mtp);
+
+    // binlog must exist
+    assert (tg->bl);
+    mtp->bl = tg->bl;
+    return mtp;
 }
 
-void dc_authorize (struct dc *DC) {
-  c_state = 0;
-  auth_success = 0;
-  if (!DC->sessions[0]) {
-    dc_create_session (DC);
-  }
-  if (verbosity) {
-    logprintf ( "Starting authorization for DC #%d: %s:%d\n", DC->id, DC->ip, DC->port);
-  }
-  net_loop (0, auth_ok);
+/**
+ * Connect to the network
+ */
+void mtproto_connect(struct mtproto_connection *c)
+{
+    on_start(c);
+    c->connection->methods->ready(c->connection);
+
+    // Don't ping TODO: Really? Timeout callback functions of libpurple
+    //start_ping_timer (c->connection);
 }
+
+/**
+ * Free all used resources and close the connection
+ */
+void mtproto_close(struct mtproto_connection *mtp) {
+    logprintf ("closing mtproto_connection...\n");
+    mtp->destroy = 1;
+
+    // TODO: Use Pings?
+    // stop_ping_timer (c->connection);
+
+    // TODO: Set destruction timeout?
+    // add_destruction_timer (c, 5000)
+    /* 
+        Timout:
+        - alle queries und acks löschen?
+        - was passiert wenn eine antwort auf eine query 
+            in einer neuen instanz ankommt?
+    */
+}
+
+void mtproto_destroy (struct mtproto_connection *self) {
+    logprintf("destroying mtproto_connection: %p\n", self);
+
+    // TODO: Remove all pending timers, queries, acks
+    // TODO: Call destruction callback
+    fd_close_connection(self->connection);
+    tfree(self->connection, sizeof(struct connection));
+}
+
+void mtproto_free_closed () {
+    int i;
+    for (i = 0; i < 100; i++) {
+        if (Cs[i] == NULL) continue; 
+        struct mtproto_connection *c = Cs[i];
+        logprintf ("checking mtproto_connection %d: c_state:%d destroy:%d, quries_num:%d\n", 
+            i, c->c_state, c->destroy, c->queries_num);
+        if (c->destroy == 0) continue;
+        if (c->queries_num > 0) continue;
+        mtproto_destroy (c);
+        Cs[i] = NULL;
+    }
+}
+

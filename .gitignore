@@ -13,3 +13,5 @@ tags
 .DS_Store
 .ycm_extra_conf.py
 *.pyc
+app-hash.png
+.gdbinit

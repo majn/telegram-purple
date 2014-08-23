@@ -17,10 +17,6 @@
     Copyright Vitaly Valtman 2013
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #define _GNU_SOURCE
 #include <string.h>
 #include <stdlib.h>
@@ -41,9 +37,7 @@
 #include "net.h"
 #include "include.h"
 #include "mtproto-client.h"
-#include "mtproto-common.h"
 #include "tree.h"
-#include "interface.h"
 
 #ifndef POLLRDHUP
 #define POLLRDHUP 0
@@ -55,7 +49,8 @@ double get_utime (int clock_id);
 
 int verbosity;
 extern struct connection_methods auth_methods;
-extern FILE *log_net_f;
+//extern FILE *log_net_f;
+FILE *log_net_f = 0;
 
 void fail_connection (struct connection *c);
 
@@ -105,16 +100,14 @@ int ping_alarm (struct connection *c) {
   }
   assert (c->state == conn_ready || c->state == conn_connecting);
   if (get_double_time () - c->last_receive_time > 20 * PING_TIMEOUT) {
-    if (verbosity) {
-      logprintf ( "fail connection: reason: ping timeout\n");
-    }
+    logprintf ( "fail connection: reason: ping timeout\n");
     c->state = conn_failed;
     fail_connection (c);
   } else if (get_double_time () - c->last_receive_time > 5 * PING_TIMEOUT && c->state == conn_ready) {
     int x[3];
     x[0] = CODE_ping;
     *(long long *)(x + 1) = lrand48 () * (1ll << 32) + lrand48 ();
-    encrypt_send_message (c, x, 3, 0);
+    encrypt_send_message (c->mtconnection, x, 3, 0);
     start_ping_timer (c);
   } else {
     start_ping_timer (c);
@@ -330,9 +323,7 @@ struct connection *create_connection (const char *host, int port, struct session
   c->port = port;
   assert (!Connections[fd]);
   Connections[fd] = c;
-  if (verbosity) {
-    logprintf ( "connect to %s:%d successful\n", host, port);
-  }
+  logprintf ( "connect to %s:%d successful\n", host, port);
   if (c->methods->ready) {
     c->methods->ready (c);
   }
@@ -417,10 +408,8 @@ void fail_connection (struct connection *c) {
 }
 
 extern FILE *log_net_f;
-void try_write (struct connection *c) {
-  if (verbosity) {
-    logprintf ( "try write: fd = %d\n", c->fd);
-  }
+int try_write (struct connection *c) {
+  logprintf ( "try write: fd = %d\n", c->fd);
   int x = 0;
   while (c->out_head) {
     int r = netwrite (c->fd, c->out_head->rptr, c->out_head->wptr - c->out_head->rptr);
@@ -454,20 +443,17 @@ void try_write (struct connection *c) {
       delete_connection_buffer (b);
     } else {
       if (errno != EAGAIN && errno != EWOULDBLOCK) {
-        if (verbosity) {
-          logprintf ("fail_connection: write_error %m\n");
-        }
+        logprintf ("fail_connection: write_error %m\n");
         fail_connection (c);
-        return;
+        return 0;
       } else {
         break;
       }
     }
   }
-  if (verbosity) {
-    logprintf ( "Sent %d bytes to %d\n", x, c->fd);
-  }
+  logprintf ( "Sent %d bytes to %d\n", x, c->fd);
   c->out_bytes -= x;
+  return x;
 }
 
 void hexdump_buf (struct connection_buffer *b) {
@@ -533,9 +519,7 @@ void try_rpc_read (struct connection *c) {
 }
 
 void try_read (struct connection *c) {
-  if (verbosity) {
-    logprintf ( "try read: fd = %d\n", c->fd);
-  }
+  logprintf ( "try read: fd = %d\n", c->fd);
   if (!c->in_tail) {
     c->in_head = c->in_tail = new_connection_buffer (1 << 20);
   }
@@ -546,7 +530,6 @@ void try_read (struct connection *c) {
       fprintf (log_net_f, "%.02lf %d IN %s:%d", get_utime (CLOCK_REALTIME), r, c->ip, c->port);
       int i;
       for (i = 0; i < r; i++) {
-	    // print all writte bits
         fprintf (log_net_f, " %02x", *(unsigned char *)(c->in_tail->wptr + i));
       }
       fprintf (log_net_f, "\n");
@@ -554,17 +537,14 @@ void try_read (struct connection *c) {
     }
     if (r > 0) {
       c->last_receive_time = get_double_time ();
-	  // reset ping timer
-      stop_ping_timer (c);
-      start_ping_timer (c);
+      // TODO implement ping?
+      //stop_ping_timer (c);
+      //start_ping_timer (c);
     }
     if (r >= 0) {
-	  // write pointer nach vorne setzen
       c->in_tail->wptr += r;
       x += r;
-
       if (c->in_tail->wptr != c->in_tail->end) {
-	    // Paket nicht komplett beschrieben, keine neuen Daten liegen an.
         break;
       }
       struct connection_buffer *b = new_connection_buffer (1 << 20);
@@ -572,9 +552,7 @@ void try_read (struct connection *c) {
       c->in_tail = b;
     } else {
       if (errno != EAGAIN && errno != EWOULDBLOCK) {
-        if (verbosity) {
-          logprintf ("fail_connection: read_error %m\n");
-        }
+        logprintf ("fail_connection: read_error %m\n");
         fail_connection (c);
         return;
       } else {
@@ -582,9 +560,7 @@ void try_read (struct connection *c) {
       }
     }
   }
-  if (verbosity) {
-    logprintf ( "Received %d bytes from %d\n", x, c->fd);
-  }
+  logprintf ( "Received %d bytes from %d\n", x, c->fd);
   c->in_bytes += x;
   if (x) {
     try_rpc_read (c);
@@ -627,9 +603,7 @@ void connections_poll_result (struct pollfd *fds, int max) {
       try_read (c);
     }
     if (fds[i].revents & (POLLHUP | POLLERR | POLLRDHUP)) {
-      if (verbosity) {
-        logprintf ("fail_connection: events_mask=0x%08x\n", fds[i].revents);
-      }
+      logprintf ("fail_connection: events_mask=0x%08x\n", fds[i].revents);
       fail_connection (c);
     } else if (fds[i].revents & POLLOUT) {
       if (c->state == conn_connecting) {
@@ -645,16 +619,18 @@ void connections_poll_result (struct pollfd *fds, int max) {
 }
 
 int send_all_acks (struct session *S) {
-  clear_packet ();
-  out_int (CODE_msgs_ack);
-  out_int (CODE_vector);
-  out_int (tree_count_long (S->ack_tree));
+  struct mtproto_connection *mt = S->c->mtconnection;
+  
+  clear_packet (mt);
+  out_int (mt, CODE_msgs_ack);
+  out_int (mt, CODE_vector);
+  out_int (mt, tree_count_long (S->ack_tree));
   while (S->ack_tree) {
     long long x = tree_get_min_long (S->ack_tree); 
-    out_long (x);
+    out_long (mt, x);
     S->ack_tree = tree_delete_long (S->ack_tree, x);
   }
-  encrypt_send_message (S->c, packet_buffer, packet_ptr - packet_buffer, 0);
+  encrypt_send_message (mt, mt->packet_buffer, mt->packet_ptr - mt->packet_buffer, 0);
   return 0;
 }
 
@@ -672,7 +648,7 @@ void insert_msg_id (struct session *S, long long id) {
 
 extern struct dc *DC_list[];
 
-struct dc *alloc_dc (int id, char *ip, int port UU) {
+struct dc *alloc_dc (struct dc* DC_list[], int id, char *ip, int port UU) {
   assert (!DC_list[id]);
   struct dc *DC = talloc0 (sizeof (*DC));
   DC->id = id;
@@ -694,5 +670,61 @@ void dc_create_session (struct dc *DC) {
   }
   assert (!DC->sessions[0]);
   DC->sessions[0] = S;
+}
+
+/** 
+ * Wrap an existing socket file descriptor and make it usable as a connection,
+ */
+struct connection *fd_create_connection (struct dc *DC, int fd, 
+     struct telegram *instance, struct connection_methods *methods, struct mtproto_connection *mtp) {
+  
+  // create a connection
+  struct connection *c = talloc0 (sizeof (*c));
+  c->fd = fd; 
+  c->ip = tstrdup (DC->ip);
+  c->flags = 0;
+  c->state = conn_ready;
+  c->port = DC->port;
+  c->methods = methods;
+  c->instance = instance;
+  c->last_receive_time = get_double_time ();
+  logprintf ( "connect to %s:%d successful\n", DC->ip, DC->port);
+
+  // TODO: Load existing session from state file
+  // create an empty session and attach it to the dc and the connection
+  if (!DC->sessions[0]) {
+    struct session *S = talloc0 (sizeof (*S));
+    assert (RAND_pseudo_bytes ((unsigned char *) &S->session_id, 8) >= 0);
+    S->dc = DC;
+    S->c = c;
+    DC->sessions[0] = S;
+  }
+  // add backreference to session
+  c->session = DC->sessions[0];
+
+  // add backreference to used mtproto-connection
+  c->mtconnection = mtp;
+  return c;
+}
+
+/** 
+ * Close the connection by freeing all attached buffers and setting
+ * the state to conn_stopped, but does NOT close the attached file descriptor
+ */
+void fd_close_connection(struct connection *c) {
+  struct connection_buffer *b = c->out_head;
+  while (b) {
+    struct connection_buffer *d = b;
+    b = b->next;
+    delete_connection_buffer (d);
+  }
+  while (b) {
+    struct connection_buffer *d = b;
+    b = b->next;
+    delete_connection_buffer (d);
+  }
+  c->out_head = c->out_tail = c->in_head = c->in_tail = 0;
+  c->state = conn_stopped;
+  c->out_bytes = c->in_bytes = 0;
 }
 

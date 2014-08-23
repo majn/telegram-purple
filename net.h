@@ -1,12 +1,12 @@
 /*
     This file is part of telegram-client.
 
-    Telegram-client is free software: you can redistribute it and/or modify
+    struct telegram-client is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 2 of the License, or
     (at your option) any later version.
 
-    Telegram-client is distributed in the hope that it will be useful,
+    struct telegram-client is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
@@ -19,9 +19,14 @@
 #ifndef __NET_H__
 #define __NET_H__
 
+#pragma once
+
 #include <poll.h>
 struct dc;
+#include "mtproto-client.h"
+#include "telegram.h"
 #include "queries.h"
+
 #define TG_SERVER "173.240.5.1"
 #define TG_SERVER_TEST "173.240.5.253"
 #define TG_APP_HASH "36722c72256a24c1225de00eb6a1ca74"
@@ -33,14 +38,8 @@ struct dc;
 #define ACK_TIMEOUT 1
 #define MAX_DC_ID 10
 
-enum dc_state {
-  st_init,
-  st_reqpq_sent,
-  st_reqdh_sent,
-  st_client_dh_sent,
-  st_authorized,
-  st_error
-} ;
+// typedef struct mtproto_connection not available right now
+struct mtproto_connection;
 
 struct connection;
 struct connection_methods {
@@ -130,6 +129,8 @@ struct connection {
   void *extra;
   struct event_timer ev;
   double last_receive_time;
+  struct telegram *instance;
+  struct mtproto_connection *mtconnection;
 };
 
 extern struct connection *Connections[];
@@ -145,7 +146,17 @@ int connections_make_poll_array (struct pollfd *fds, int max);
 void connections_poll_result (struct pollfd *fds, int max);
 void dc_create_session (struct dc *DC);
 void insert_msg_id (struct session *S, long long id);
-struct dc *alloc_dc (int id, char *ip, int port);
+struct dc *alloc_dc (struct dc* DC_list[], int id, char *ip, int port);
 
-#define GET_DC(c) (c->session->dc)
+#define GET_DC(c) (telegram_get_working_dc(c->instance))
+
+// export read and write methods to redirect network control
+void try_read (struct connection *c);
+void try_rpc_read (struct connection *c);
+int try_write (struct connection *c);
+
+struct connection *fd_create_connection (struct dc *DC, int fd, struct telegram *instance, 
+    struct connection_methods *methods, struct mtproto_connection *mtp);
+void fd_close_connection(struct connection *c);
+
 #endif

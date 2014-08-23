@@ -14,14 +14,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  */
 
-#include <glib.h>
-
-#include "notify.h"
-#include "plugin.h"
-#include "version.h"
-#include "account.h"
-#include "connection.h"
-
+#ifndef __TG_PURPLE_H__
+#define __TG_PURPLE_H__
 #define PLUGIN_ID "prpl-telegram"
 
 #define TELEGRAM_APP_API_ID 16944
@@ -34,8 +28,27 @@
 #define TELEGRAM_AUTH_MODE_PHONE "phone"
 #define TELEGRAM_AUTH_MODE_SMS "sms"
 
+#include <glib.h>
+#include "notify.h"
+#include "plugin.h"
+#include "version.h"
+#include "account.h"
+#include "connection.h"
+
 typedef struct {
-	PurpleAccount *account;
+    struct telegram *tg;
+	PurpleAccount *pa;
 	PurpleConnection *gc;
-	PurpleSslConnection *gsc;
+
+    /**
+     * Write handler returned by purple_input_add
+     */
+    guint wh;
+
+    /**
+     * Read handler returned by purple_input_add
+     */
+    guint rh;
 } telegram_conn;
+
+#endif

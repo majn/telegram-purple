@@ -8,16 +8,17 @@ CFLAGS=@CFLAGS@
 LDFLAGS=@LDFLAGS@
 CPPFLAGS=@CPPFLAGS@
 DEFS=@DEFS@
-COMPILE_FLAGS=${CFLAGS} ${CPPFLAGS} ${DEFS} -Wall -Wextra -Werror -Wno-deprecated-declarations -fno-strict-aliasing -fno-omit-frame-pointer -ggdb
+COMPILE_FLAGS=${CFLAGS} ${CPPFLAGS} ${DEFS} -Wall -Wextra -Wno-deprecated-declarations -fno-strict-aliasing -fno-omit-frame-pointer -ggdb
 
 EXTRA_LIBS=@LIBS@ @EXTRA_LIBS@
 LOCAL_LDFLAGS=-rdynamic -ggdb ${EXTRA_LIBS}
 LINK_FLAGS=${LDFLAGS} ${LOCAL_LDFLAGS}
 
-HEADERS= ${srcdir}/constants.h  ${srcdir}/include.h  ${srcdir}/interface.h  ${srcdir}/LICENSE.h  ${srcdir}/loop.h  ${srcdir}/mtproto-client.h  ${srcdir}/mtproto-common.h  ${srcdir}/net.h  ${srcdir}/no-preview.h  ${srcdir}/queries.h  ${srcdir}/structures.h  ${srcdir}/telegram.h  ${srcdir}/tree.h ${srcdir}/config.h ${srcdir}/binlog.h ${srcdir}/tools.h ${srcdir}/lua-tg.h  ${srcdir}/msglog.h
+HEADERS= ${srcdir}/constants.h  ${srcdir}/include.h ${srcdir}/LICENSE.h  ${srcdir}/loop.h  ${srcdir}/mtproto-client.h ${srcdir}/net.h ${srcdir}/queries.h  ${srcdir}/structures.h ${srcdir}/no-preview.h ${srcdir}/telegram.h  ${srcdir}/tree.h ${srcdir}/binlog.h ${srcdir}/tools.h ${srcdir}/msglog.h 
+
 INCLUDE=-I. -I${srcdir}
 CC=@CC@
-OBJECTS=main.o loop.o interface.o net.o mtproto-common.o mtproto-client.o queries.o structures.o binlog.o tools.o lua-tg.o msglog.o telegram.o
+OBJECTS=loop.o net.o mtproto-common.o mtproto-client.o queries.o structures.o binlog.o tools.o msglog.o telegram.o
 .SUFFIXES:
 
 .SUFFIXES: .c .h .o
@@ -53,6 +54,7 @@ PRPL_CFLAGS = \
 	-fPIC \
 	-DPURPLE_PLUGINS \
 	-DPIC \
+    -DDEBUG \
 	-g \
 	$(CFLAGS_PURPLE)
 
@@ -84,10 +86,6 @@ plugin: $(PRPL_LIBNAME)
 strip: $(PRPL_LIBNAME)
 	$(STRIP) --strip-unneeded $(PRPL_LIBNAME)
 
-debug: PRPL_CFLAGS += -g -DDEBUG
-debug: $(PRPL_LIBNAME)
-	gdb -tui -ex 'break telegram-purple.c:tgprpl_login' pidgin
-
 # TODO: Find a better place for server.pub
 install: $(PRPL_LIBNAME)
 	install -D $(PRPL_LIBNAME) $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_LIBNAME)
@@ -107,6 +105,10 @@ uninstall: $(PRPL_LIBNAME)
 .PHONY: run
 run: install
 	pidgin -d | grep 'telegram\|plugin\|proxy'
+
+.PHONY: debug
+debug: install
+	gdb -tui -ex "$(shell echo $$GDB_BPOINTS )" pidgin
 
 clean:
 	rm -rf *.so *.a *.o telegram config.log config.status $(PRPL_C_OBJS) $(PRPL_LIBNAME) > /dev/null || echo "all clean"

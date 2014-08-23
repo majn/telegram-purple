@@ -1,12 +1,12 @@
 /*
     This file is part of telegram-client.
 
-    Telegram-client is free software: you can redistribute it and/or modify
+    struct telegram-client is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 2 of the License, or
     (at your option) any later version.
 
-    Telegram-client is distributed in the hope that it will be useful,
+    struct telegram-client is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
@@ -16,10 +16,6 @@
 
     Copyright Vitaly Valtman 2013
 */
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 
 #define _FILE_OFFSET_BITS 64
 #include <string.h>
@@ -39,11 +35,8 @@
 #include "mtproto-client.h"
 #include "queries.h"
 #include "tree.h"
-#include "mtproto-common.h"
-#include "telegram.h"
 #include "loop.h"
 #include "structures.h"
-#include "interface.h"
 #include "net.h"
 #include <openssl/bn.h>
 #include <openssl/rand.h>
@@ -53,6 +46,8 @@
 
 #include "no-preview.h"
 #include "binlog.h"
+#include "telegram.h"
+#include "msglog.h"
 
 #define sha1 SHA1
 
@@ -65,38 +60,33 @@
 char *get_downloads_directory (void);
 int verbosity;
 extern int offline_mode;
+int offline_mode = 0;
 
 long long cur_uploading_bytes;
 long long cur_uploaded_bytes;
 long long cur_downloading_bytes;
 long long cur_downloaded_bytes;
 
-extern int binlog_enabled;
 extern int sync_from_start;
+int sync_from_start = 0;
 
-int queries_num = 0;
-
-int all_queries_done() 
-{
-   if (queries_num > 0) {
-     logprintf("all_queries_done() == false\n");
-     return 0;
-   } else {
-     logprintf("all_queries_done() == true\n");
-     return 1;
-   }
+void telegram_flush_queries (struct telegram *instance) {
+   instance->config->on_output(instance);
 }
 
-void flush_queries () {
-  net_loop(0, all_queries_done);
-}
-
-void out_peer_id (peer_id_t id);
+void out_peer_id (struct mtproto_connection *self, peer_id_t id);
 #define QUERY_TIMEOUT 6.0
 
 #define memcmp8(a,b) memcmp ((a), (b), 8)
 DEFINE_TREE (query, struct query *, memcmp8, 0) ;
 struct tree_query *queries_tree;
+
+/**
+ * Get the struct mtproto_connection connection this connection was attached to
+ */
+struct mtproto_connection *query_get_mtproto(struct query *q) { 
+  return q->DC->sessions[0]->c->mtconnection; 
+}
 
 double get_double_time (void) {
   struct timespec tv;
@@ -119,16 +109,17 @@ int alarm_query (struct query *q) {
   if (q->session->c->out_bytes >= 100000) {
     return 0;
   }
-
-  clear_packet ();
-  out_int (CODE_msg_container);
-  out_int (1);
-  out_long (q->msg_id);
-  out_int (q->seq_no);
-  out_int (4 * q->data_len);
-  out_ints (q->data, q->data_len);
   
-  encrypt_send_message (q->session->c, packet_buffer, packet_ptr - packet_buffer, 0);
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+  clear_packet (mtp);
+  out_int (mtp, CODE_msg_container);
+  out_int (mtp, 1);
+  out_long (mtp, q->msg_id);
+  out_int (mtp, q->seq_no);
+  out_int (mtp, 4 * q->data_len);
+  out_ints (mtp, q->data, q->data_len);
+  
+  encrypt_send_message (mtp, mtp->packet_buffer, mtp->packet_ptr - mtp->packet_buffer, 0);
   return 0;
 }
 
@@ -142,24 +133,15 @@ void query_restart (long long id) {
 
 struct query *send_query (struct dc *DC, int ints, void *data, struct query_methods *methods, void *extra) {
   logprintf("send_query(...)\n");
-  assert (DC);
-  assert (DC->auth_key_id);
-  if (!DC->sessions[0]) {
-    dc_create_session (DC);
-  }
-  if (verbosity) {
-    logprintf ( "Sending query of size %d to DC (%s:%d)\n", 4 * ints, DC->ip, DC->port);
-  }
+  logprintf ( "Sending query of size %d to DC (%s:%d)\n", 4 * ints, DC->ip, DC->port);
   struct query *q = talloc0 (sizeof (*q));
   q->data_len = ints;
   q->data = talloc (4 * ints);
   memcpy (q->data, data, 4 * ints);
-  q->msg_id = encrypt_send_message (DC->sessions[0]->c, data, ints, 1);
+  q->msg_id = encrypt_send_message (DC->sessions[0]->c->mtconnection, data, ints, 1);
   q->session = DC->sessions[0];
   q->seq_no = DC->sessions[0]->seq_no - 1; 
-  if (verbosity) {
-    logprintf ( "Msg_id is %lld %p\n", q->msg_id, q);
-  }
+  logprintf ( "Msg_id is %lld %p\n", q->msg_id, q);
   q->methods = methods;
   q->DC = DC;
   if (queries_tree) {
@@ -167,7 +149,10 @@ struct query *send_query (struct dc *DC, int ints, void *data, struct query_meth
       logprintf ( "%lld %lld\n", q->msg_id, queries_tree->x->msg_id);
     }
   }
+
   queries_tree = tree_insert_query (queries_tree, q, lrand48 ());
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+  logprintf("queries_num: %d\n", ++ mtp->queries_num);
 
   q->ev.alarm = (void *)alarm_query;
   q->ev.timeout = get_double_time () + QUERY_TIMEOUT;
@@ -175,8 +160,6 @@ struct query *send_query (struct dc *DC, int ints, void *data, struct query_meth
   insert_event_timer (&q->ev);
 
   q->extra = extra;
-  queries_num ++;
-  logprintf("queries_num: %d\n", queries_num);
   return q;
 }
 
@@ -190,23 +173,23 @@ void query_ack (long long id) {
 }
 
 void query_error (long long id) {
-  assert (fetch_int () == CODE_rpc_error);
-  int error_code = fetch_int ();
-  int error_len = prefetch_strlen ();
-  char *error = fetch_str (error_len);
-  if (verbosity) {
-    logprintf ( "error for query #%lld: #%d :%.*s\n", id, error_code, error_len, error);
-  }
   struct query *q = query_get (id);
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  assert (fetch_int (mtp) == CODE_rpc_error);
+  int error_code = fetch_int (mtp);
+  int error_len = prefetch_strlen (mtp);
+  char *error = fetch_str (mtp, error_len);
+  logprintf ( "error for query #%lld: #%d :%.*s\n", id, error_code, error_len, error);
   if (!q) {
-    if (verbosity) {
-      logprintf ( "No such query\n");
-    }
+    logprintf ( "No such query\n");
   } else {
     if (!(q->flags & QUERY_ACK_RECEIVED)) {
       remove_event_timer (&q->ev);
     }
     queries_tree = tree_delete_query (queries_tree, q);
+    logprintf("queries_num: %d\n", -- mtp->queries_num);
+
     if (q->methods && q->methods->on_error) {
       q->methods->on_error (q, error_code, error_len, error);
     } else {
@@ -214,64 +197,63 @@ void query_error (long long id) {
     }
     tfree (q->data, q->data_len * 4);
     tfree (q, sizeof (*q));
+    return;
   }
-  queries_num --;
-  logprintf("queries_num: %d\n", queries_num);
+
 }
 
 #define MAX_PACKED_SIZE (1 << 24)
 static int packed_buffer[MAX_PACKED_SIZE / 4];
 
 void query_result (long long id UU) {
-  if (verbosity) {
-    logprintf ( "result for query #%lld\n", id);
-  }
+  struct query *q = query_get (id);
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  logprintf ( "result for query #%lld\n", id);
   if (verbosity  >= 4) {
     logprintf ( "result: ");
-    hexdump_in ();
+    hexdump_in (mtp);
   }
-  int op = prefetch_int ();
+
+  int op = prefetch_int (mtp);
   int *end = 0;
   int *eend = 0;
   if (op == CODE_gzip_packed) {
-    fetch_int ();
-    int l = prefetch_strlen ();
-    char *s = fetch_str (l);
+    fetch_int (mtp);
+    int l = prefetch_strlen (mtp);
+    char *s = fetch_str (mtp, l);
     int total_out = tinflate (s, l, packed_buffer, MAX_PACKED_SIZE);
-    end = in_ptr;
-    eend = in_end;
+    end = mtp->in_ptr;
+    eend = mtp->in_end;
     //assert (total_out % 4 == 0);
-    in_ptr = packed_buffer;
-    in_end = in_ptr + total_out / 4;
+    mtp->in_ptr = packed_buffer;
+    mtp->in_end = mtp->in_ptr + total_out / 4;
     if (verbosity >= 4) {
       logprintf ( "Unzipped data: ");
-      hexdump_in ();
+      hexdump_in (mtp);
     }
   }
-  struct query *q = query_get (id);
   if (!q) {
-    if (verbosity) {
-      logprintf ( "No such query\n");
-    }
-    in_ptr = in_end;
+    logprintf ( "No such query\n");
+    mtp->in_ptr = mtp->in_end;
   } else {
     if (!(q->flags & QUERY_ACK_RECEIVED)) {
       remove_event_timer (&q->ev);
     }
     queries_tree = tree_delete_query (queries_tree, q);
+    logprintf("queries_num: %d\n", -- mtp->queries_num);
+
     if (q->methods && q->methods->on_answer) {
       q->methods->on_answer (q);
-      assert (in_ptr == in_end);
+      assert (mtp->in_ptr == mtp->in_end);
     }
     tfree (q->data, 4 * q->data_len);
     tfree (q, sizeof (*q));
   }
   if (end) {
-    in_ptr = end;
-    in_end = eend;
+    mtp->in_ptr = end;
+    mtp->in_end = eend;
   }
-  queries_num --;
-  logprintf("queries_num: %d\n", queries_num);
 } 
 
 #define event_timer_cmp(a,b) ((a)->timeout > (b)->timeout ? 1 : ((a)->timeout < (b)->timeout ? -1 : (memcmp (a, b, sizeof (struct event_timer)))))
@@ -279,16 +261,12 @@ DEFINE_TREE (timer, struct event_timer *, event_timer_cmp, 0)
 struct tree_timer *timer_tree;
 
 void insert_event_timer (struct event_timer *ev) {
-  if (verbosity > 2) {
-    logprintf ( "INSERT: %lf %p %p\n", ev->timeout, ev->self, ev->alarm);
-  }
+  logprintf ( "INSERT: %lf %p %p\n", ev->timeout, ev->self, ev->alarm);
   timer_tree = tree_insert_timer (timer_tree, ev, lrand48 ());
 }
 
 void remove_event_timer (struct event_timer *ev) {
-  if (verbosity > 2) {
-    logprintf ( "REMOVE: %lf %p %p\n", ev->timeout, ev->self, ev->alarm);
-  }
+  logprintf ( "REMOVE: %lf %p %p\n", ev->timeout, ev->self, ev->alarm);
   timer_tree = tree_delete_timer (timer_tree, ev);
 }
 
@@ -305,9 +283,7 @@ void work_timers (void) {
     if (ev->timeout > t) { break; }
     remove_event_timer (ev);
     assert (ev->alarm);
-    if (verbosity) {
-      logprintf ("Alarm\n");
-    }
+    logprintf ("Alarm\n");
     ev->alarm (ev->self);
   }
 }
@@ -316,81 +292,82 @@ int max_chat_size;
 int max_bcast_size;
 int want_dc_num;
 int new_dc_num;
-extern struct dc *DC_list[];
-extern struct dc *DC_working;
+//extern struct dc *DC_list[];
+//extern struct dc *DC_working;
 
-void out_random (int n) {
+void out_random (struct mtproto_connection *mtp, int n) {
   assert (n <= 32);
   static char buf[32];
   secure_random (buf, n);
-  out_cstring (buf, n);
+  out_cstring (mtp, buf, n);
 }
 
 int allow_send_linux_version;
-void do_insert_header (void) {
-  out_int (CODE_invoke_with_layer12);  
-  out_int (CODE_init_connection);
-  out_int (TG_APP_ID);
+void do_insert_header (struct mtproto_connection *mtp) {
+  out_int (mtp, CODE_invoke_with_layer12);  
+  out_int (mtp, CODE_init_connection);
+  out_int (mtp, TG_APP_ID);
   if (allow_send_linux_version) {
     struct utsname st;
     uname (&st);
-    out_string (st.machine);
+    out_string (mtp, st.machine);
     static char buf[4096];
     tsnprintf (buf, sizeof (buf), "%.999s %.999s %.999s\n", st.sysname, st.release, st.version);
-    out_string (buf);
-    out_string (TG_VERSION " (build " TG_BUILD ")");
-    out_string ("En");
+    out_string (mtp, buf);
+    out_string (mtp, TG_VERSION " (build " TG_BUILD ")");
+    out_string (mtp, "En");
   } else { 
-    out_string ("x86");
-    out_string ("Linux");
-    out_string (TG_VERSION);
-    out_string ("en");
+    out_string (mtp, "x86");
+    out_string (mtp, "Linux");
+    out_string (mtp, TG_VERSION);
+    out_string (mtp, "en");
   }
 }
 
 /* {{{ Get config */
 
-void fetch_dc_option (void) {
-  assert (fetch_int () == CODE_dc_option);
-  int id = fetch_int ();
-  int l1 = prefetch_strlen ();
-  char *name = fetch_str (l1);
-  int l2 = prefetch_strlen ();
-  char *ip = fetch_str (l2);
-  int port = fetch_int ();
-  if (verbosity) {
-    logprintf ( "id = %d, name = %.*s ip = %.*s port = %d\n", id, l1, name, l2, ip, port);
-  }
+void fetch_dc_option (struct telegram *instance) {
+  struct mtproto_connection *mtp = instance->connection;
+  
+  assert (fetch_int (mtp) == CODE_dc_option);
+  int id = fetch_int (mtp);
+  int l1 = prefetch_strlen (mtp);
+  char *name = fetch_str (mtp, l1);
+  int l2 = prefetch_strlen (mtp);
+  char *ip = fetch_str (mtp, l2);
+  int port = fetch_int (mtp);
+  logprintf ( "id = %d, name = %.*s ip = %.*s port = %d\n", id, l1, name, l2, ip, port);
 
-  bl_do_dc_option (id, l1, name, l2, ip, port);
+  bl_do_dc_option (mtp->bl, mtp, id, l1, name, l2, ip, port, instance);
 }
 
 int help_get_config_on_answer (struct query *q UU) {
-  unsigned op = fetch_int ();
-  assert (op == CODE_config || op == CODE_config_old);
-  fetch_int ();
+  struct telegram *instance = q->extra;
+  struct mtproto_connection *mtp = query_get_mtproto(q);
 
-  unsigned test_mode = fetch_int ();
+  unsigned op = fetch_int (mtp);
+  assert (op == CODE_config || op == CODE_config_old);
+  fetch_int (mtp);
+
+  unsigned test_mode = fetch_int (mtp);
   assert (test_mode == CODE_bool_true || test_mode == CODE_bool_false);
   assert (test_mode == CODE_bool_false || test_mode == CODE_bool_true);
-  int this_dc = fetch_int ();
-  if (verbosity) {
-    logprintf ( "this_dc = %d\n", this_dc);
-  }
-  assert (fetch_int () == CODE_vector);
-  int n = fetch_int ();
+  int this_dc = fetch_int (mtp);
+  logprintf ( "this_dc = %d\n", this_dc);
+  assert (fetch_int (mtp) == CODE_vector);
+  int n = fetch_int (mtp);
   assert (n <= 10);
   int i;
   for (i = 0; i < n; i++) {
-    fetch_dc_option ();
+    fetch_dc_option (instance);
   }
-  max_chat_size = fetch_int ();
+  max_chat_size = fetch_int (mtp);
   if (op == CODE_config) {
-    max_bcast_size = fetch_int ();
+    max_bcast_size = fetch_int (mtp);
   }
-  if (verbosity >= 2) {
-    logprintf ( "chat_size = %d\n", max_chat_size);
-  }
+  logprintf ( "max_chat_size = %d\n", max_chat_size);
+
+  telegram_change_state(instance, STATE_CONFIG_RECEIVED, NULL);
   return 0;
 }
 
@@ -398,40 +375,56 @@ struct query_methods help_get_config_methods  = {
   .on_answer = help_get_config_on_answer
 };
 
-void do_help_get_config (void) {
-  clear_packet ();  
-  out_int (CODE_help_get_config);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &help_get_config_methods, 0);
+void do_help_get_config (struct telegram *instance) {
+  struct mtproto_connection *mtp = instance->connection;
+
+  logprintf ("mtp: %p:%p\n", mtp->packet_ptr, mtp->packet_buffer);
+  clear_packet (mtp);  
+  out_int (mtp, CODE_help_get_config);
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, 
+    mtp->packet_buffer, &help_get_config_methods, instance);
 }
 /* }}} */
 
 /* {{{ Send code */
-char *phone_code_hash;
 int send_code_on_answer (struct query *q UU) {
-  assert (fetch_int () == (int)CODE_auth_sent_code);
-  fetch_bool ();
-  int l = prefetch_strlen ();
-  char *s = fetch_str (l);
-  if (phone_code_hash) {
-    tfree_str (phone_code_hash);
-  }
-  phone_code_hash = tstrndup (s, l);
+  struct telegram *instance = q->extra;
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  assert (fetch_int (mtp) == (int)CODE_auth_sent_code);
+  fetch_bool (mtp);
+  int l = prefetch_strlen (mtp);
+  char *phone_code_hash = tstrndup (fetch_str (mtp, l), l);
+  instance->phone_code_hash = phone_code_hash;
   logprintf("telegram: phone_code_hash: %s\n", phone_code_hash);
-  fetch_int (); 
-  fetch_bool ();
+  fetch_int (mtp); 
+  fetch_bool (mtp);
   want_dc_num = -1;
+  if (instance->session_state == STATE_PHONE_CODE_REQUESTED) {
+    telegram_change_state(instance, STATE_PHONE_CODE_NOT_ENTERED, NULL); 
+  } else if (instance->session_state == STATE_CLIENT_CODE_REQUESTED) {
+    telegram_change_state(instance, STATE_CLIENT_CODE_NOT_ENTERED, NULL); 
+  } else {
+    logprintf("send_code_on_answer(): Invalid State %d ", instance->session_state);
+    telegram_change_state(instance, STATE_ERROR, NULL);
+  }
   return 0;
 }
 
 int send_code_on_error (struct query *q UU, int error_code, int l, char *error) {
+  struct telegram *tg = q->extra;
+
   int s = strlen ("PHONE_MIGRATE_");
   int s2 = strlen ("NETWORK_MIGRATE_");
   if (l >= s && !memcmp (error, "PHONE_MIGRATE_", s)) {
-    int i = error[s] - '0';
-    want_dc_num = i;
+    int want_dc_num = error[s] - '0';
+    tg->auth.dc_working_num = want_dc_num;
+    telegram_change_state(tg, STATE_ERROR, error);
   } else if (l >= s2 && !memcmp (error, "NETWORK_MIGRATE_", s2)) {
-    int i = error[s2] - '0';
-    want_dc_num = i;
+    int want_dc_num = error[s2] - '0';
+    tg->auth.dc_working_num = want_dc_num;
+    telegram_change_state(tg, STATE_ERROR, error);
   } else {
     logprintf ( "error_code = %d, error = %.*s\n", error_code, l, error);
     assert (0);
@@ -448,59 +441,40 @@ int code_is_sent (void) {
   return want_dc_num;
 }
 
-int config_got (void) {
-  return DC_list[want_dc_num] != 0;
-}
-
 char *suser;
-extern int dc_working_num;
-char* do_send_code (const char *user) {
+void do_send_code (struct telegram *instance, const char *user) {
+  struct mtproto_connection *mtp = instance->connection;
+
   logprintf ("sending code\n");
   suser = tstrdup (user);
   want_dc_num = 0;
-  clear_packet ();
-  do_insert_header ();
-  out_int (CODE_auth_send_code);
-  out_string (user);
-  out_int (0);
-  out_int (TG_APP_ID);
-  out_string (TG_APP_HASH);
-  out_string ("en");
+  clear_packet (mtp);
+  do_insert_header (mtp);
+  out_int (mtp, CODE_auth_send_code);
+  out_string (mtp, user);
+  out_int (mtp, 0);
+  out_int (mtp, TG_APP_ID);
+  out_string (mtp, TG_APP_HASH);
+  out_string (mtp, "en");
 
-  logprintf ("send_code: dc_num = %d\n", dc_working_num);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_code_methods, 0);
-  net_loop (0, code_is_sent);
-  if (want_dc_num == -1) { return phone_code_hash; }
-
-  DC_working = DC_list[want_dc_num];
-  if (!DC_working->sessions[0]) {
-    dc_create_session (DC_working);
+  logprintf ("send_code: dc_num = %d\n", instance->auth.dc_working_num);
+  send_query (telegram_get_working_dc(instance), mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &send_code_methods, instance);
+  if (instance->session_state == STATE_PHONE_NOT_REGISTERED) {
+    telegram_change_state(instance, STATE_PHONE_CODE_REQUESTED, NULL);
+  } else if (instance->session_state == STATE_CLIENT_NOT_REGISTERED) {
+    telegram_change_state(instance, STATE_CLIENT_CODE_REQUESTED, NULL);
+  } else {
+    logprintf("do_send_code() Invalid State %d, erroring\n", instance->session_state);
+    telegram_change_state(instance, STATE_ERROR, NULL);
   }
-  dc_working_num = want_dc_num;
-
-  bl_do_set_working_dc (dc_working_num);
-
-  logprintf ("send_code: dc_num = %d\n", dc_working_num);
-  want_dc_num = 0;
-  clear_packet ();
-  do_insert_header ();
-  out_int (CODE_auth_send_code);
-  out_string (user);
-  out_int (0);
-  out_int (TG_APP_ID);
-  out_string (TG_APP_HASH);
-  out_string ("en");
-
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_code_methods, 0);
-  net_loop (0, code_is_sent);
-  assert (want_dc_num == -1);
-
-  return phone_code_hash;
+  // TODO: Phone Code Hash
 }
 
 
 int phone_call_on_answer (struct query *q UU) {
-  fetch_bool ();
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  fetch_bool (mtp);
   return 0;
 }
 
@@ -515,18 +489,20 @@ struct query_methods phone_call_methods  = {
   .on_error = phone_call_on_error
 };
 
-void do_phone_call (const char *user) {
+void do_phone_call (struct telegram *instance, const char *user) {
+  struct mtproto_connection *mtp = instance->connection;
+ 
   logprintf ("calling user\n");
   suser = tstrdup (user);
   want_dc_num = 0;
-  clear_packet ();
-  do_insert_header ();
-  out_int (CODE_auth_send_call);
-  out_string (user);
-  out_string (phone_code_hash);
+  clear_packet (mtp);
+  do_insert_header (mtp);
+  out_int (mtp, CODE_auth_send_call);
+  out_string (mtp, user);
+  out_string (mtp, instance->phone_code_hash);
 
-  logprintf ("do_phone_call: dc_num = %d\n", dc_working_num);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &phone_call_methods, 0);
+  logprintf ("do_phone_call: dc_num = %d\n", instance->auth.dc_working_num);
+  send_query (telegram_get_working_dc(instance), mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &phone_call_methods, 0);
 }
 /* }}} */
 
@@ -537,40 +513,44 @@ int cr_f (void) {
 }
 
 int check_phone_on_answer (struct query *q UU) {
-  assert (fetch_int () == (int)CODE_auth_checked_phone);
-  check_phone_result = fetch_bool ();
-  fetch_bool ();
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  assert (fetch_int (mtp) == (int)CODE_auth_checked_phone);
+  check_phone_result = fetch_bool (mtp);
+  fetch_bool (mtp);
+
+  assert (mtp->connection->instance->session_state == STATE_CONFIG_RECEIVED);
+  logprintf ("check_phone_result=%d\n", check_phone_result);
+  telegram_change_state (mtp->connection->instance, 
+     check_phone_result ? STATE_CLIENT_NOT_REGISTERED : STATE_PHONE_NOT_REGISTERED, NULL);
   return 0;
 }
 
 int check_phone_on_error (struct query *q UU, int error_code, int l, char *error) {
   int s = strlen ("PHONE_MIGRATE_");
   int s2 = strlen ("NETWORK_MIGRATE_");
+  struct telegram* instance = q->extra;
+
   if (l >= s && !memcmp (error, "PHONE_MIGRATE_", s)) {
+    // update used data centre
     int i = error[s] - '0';
-    assert (DC_list[i]);
+    instance->auth.dc_working_num = i;
 
-    dc_working_num = i;
-    DC_working = DC_list[i];
-    write_auth_file ();
-
-    bl_do_set_working_dc (i);
-
-    check_phone_result = 1;
+    //bl_do_set_working_dc (i);
+    //check_phone_result = 1;
   } else if (l >= s2 && !memcmp (error, "NETWORK_MIGRATE_", s2)) {
+    // update used data centre
     int i = error[s2] - '0';
-    assert (DC_list[i]);
-    dc_working_num = i;
+    instance->auth.dc_working_num = i;
+    //bl_do_set_working_dc (i);
 
-    bl_do_set_working_dc (i);
-
-    DC_working = DC_list[i];
-    write_auth_file ();
-    check_phone_result = 1;
+    //check_phone_result = 1;
   } else {
     logprintf ( "error_code = %d, error = %.*s\n", error_code, l, error);
-    assert (0);
+    telegram_change_state(instance, STATE_ERROR, error);
   }
+  telegram_change_state(instance,
+    STATE_DISCONNECTED_SWITCH_DC, &instance->auth.dc_working_num);
   return 0;
 }
 
@@ -579,18 +559,17 @@ struct query_methods check_phone_methods = {
   .on_error = check_phone_on_error
 };
 
-int do_auth_check_phone (const char *user) {
+void do_auth_check_phone (struct telegram *instance, const char *user) {
+  struct mtproto_connection *mtp = instance->connection;
+
   suser = tstrdup (user);
-  clear_packet ();
-  out_int (CODE_auth_check_phone);
-  out_string (user);
+  clear_packet (mtp);
+  out_int (mtp, CODE_auth_check_phone);
+  out_string (mtp, user);
   check_phone_result = -1;
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &check_phone_methods, 0);
-  net_loop (0, cr_f);
-  check_phone_result = -1;
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &check_phone_methods, 0);
-  net_loop (0, cr_f);
-  return check_phone_result;
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, 
+    &check_phone_methods, instance);
 }
 /* }}} */
 
@@ -601,13 +580,13 @@ int nr_f (void) {
 }
 
 int nearest_dc_on_answer (struct query *q UU) {
-  assert (fetch_int () == (int)CODE_nearest_dc);
-  char *country = fetch_str_dup ();
-  if (verbosity > 0) {
-    logprintf ("Server thinks that you are in %s\n", country);
-  }
-  fetch_int (); // this_dc
-  nearest_dc_num = fetch_int ();
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  assert (fetch_int (mtp) == (int)CODE_nearest_dc);
+  char *country = fetch_str_dup (mtp);
+  logprintf ("Server thinks that you are in %s\n", country);
+  fetch_int (mtp); // this_dc
+  nearest_dc_num = fetch_int (mtp);
   assert (nearest_dc_num >= 0);
   return 0;
 }
@@ -623,57 +602,48 @@ struct query_methods nearest_dc_methods = {
   .on_error = fail_on_error
 };
 
-int do_get_nearest_dc (void) {
-  clear_packet ();
-  out_int (CODE_help_get_nearest_dc);
+void do_get_nearest_dc (struct telegram *instance) {
+  struct mtproto_connection *mtp = instance->connection;
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  clear_packet (mtp);
+  out_int (mtp, CODE_help_get_nearest_dc);
   nearest_dc_num = -1;
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &nearest_dc_methods, 0);
-  net_loop (0, nr_f);
-  return nearest_dc_num;
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &nearest_dc_methods, 0);
+  //net_loop (0, nr_f);
+  //return nearest_dc_num;
 }
 /* }}} */
 
 /* {{{ Sign in / Sign up */
-int sign_in_ok;
 int our_id;
-int sign_in_is_ok (void) {
-  return sign_in_ok;
-}
 
 struct user User;
 
-int sign_in_on_answer (struct query *q UU) {
-  assert (fetch_int () == (int)CODE_auth_authorization);
-  int expires = fetch_int ();
-  fetch_user (&User);
+int sign_in_on_answer (struct query *q) {
+  logprintf ("sign_in_on_answer()\n");
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+  struct dc *DC_working = telegram_get_working_dc(mtp->connection->instance);
+  assert (fetch_int (mtp) == (int)CODE_auth_authorization);
+  int expires = fetch_int (mtp);
+  fetch_user (mtp, &User);
   if (!our_id) {
     our_id = get_peer_id (User.id);
-    bl_do_set_our_id (our_id);
+    bl_do_set_our_id (mtp->bl, mtp, our_id);
   }
-  sign_in_ok = 1;
-  if (verbosity) {
-    logprintf ( "telegram: authorized successfully: name = '%s %s', phone = '%s', expires = %d\n", User.first_name, User.last_name, User.phone, (int)(expires - get_double_time ()));
-  }
+  logprintf ( "telegram: authorized successfully: name = '%s %s', phone = '%s', expires = %d\n", 
+    User.first_name, User.last_name, User.phone, (int)(expires - get_double_time ()));
   DC_working->has_auth = 1;
 
-  bl_do_dc_signed (DC_working->id);
-
+  bl_do_dc_signed (mtp->bl, mtp, DC_working->id);
+  telegram_change_state (mtp->connection->instance, STATE_READY, NULL);
   return 0;
 }
 
-char lasterror[75];
-const char *get_last_err()
-{
-   return lasterror;
-}
-
 int sign_in_on_error (struct query *q UU, int error_code, int l, char *error) {
+  logprintf ("sign_in_on_error()\n");
+  struct mtproto_connection *mtp = query_get_mtproto(q);
   logprintf ( "error_code = %d, error = %.*s\n", error_code, l, error);
-  if (sizeof(lasterror) >= strlen(error)) {
-    int dest = memcmp(lasterror, error, strlen(error));
-	logprintf("memcpy-state: %d", dest);
-  }
-  sign_in_ok = -1;
+  telegram_change_state (mtp->connection->instance, STATE_CLIENT_CODE_NOT_ENTERED, NULL);
   return 0;
 }
 
@@ -682,30 +652,33 @@ struct query_methods sign_in_methods  = {
   .on_error = sign_in_on_error
 };
 
-int do_send_code_result (const char *code, const char *sms_hash) {
-  clear_packet ();
-  out_int (CODE_auth_sign_in);
-  out_string (suser);
-  out_string(sms_hash);
-  out_string (code);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &sign_in_methods, 0);
-  sign_in_ok = 0;
-  net_loop (0, sign_in_is_ok);
-  return sign_in_ok;
+void do_send_code_result (struct telegram *instance, const char *code) {
+  logprintf ("do_send_code_result()\n");
+  struct mtproto_connection *mtp = instance->connection;
+  assert (instance->session_state == STATE_CLIENT_CODE_NOT_ENTERED);
+ 
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  clear_packet (mtp);
+  out_int (mtp, CODE_auth_sign_in);
+  out_string (mtp, suser);
+  out_string(mtp, instance->phone_code_hash);
+  out_string (mtp, code);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, 
+    &sign_in_methods, NULL);
 }
 
-int do_send_code_result_auth (const char *code, const char *sms_hash, const char *first_name, const char *last_name) {
-  clear_packet ();
-  out_int (CODE_auth_sign_up);
-  out_string (suser);
-  out_string (sms_hash);
-  out_string (code);
-  out_string (first_name);
-  out_string (last_name);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &sign_in_methods, 0);
-  sign_in_ok = 0;
-  net_loop (0, sign_in_is_ok);
-  return sign_in_ok;
+void do_send_code_result_auth (struct telegram *instance, const char *code, const char *first_name, const char *last_name) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+
+  clear_packet (mtp);
+  out_int (mtp, CODE_auth_sign_up);
+  out_string (mtp ,suser);
+  out_string (mtp, instance->phone_code_hash);
+  out_string (mtp, code);
+  out_string (mtp, first_name);
+  out_string (mtp, last_name);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &sign_in_methods, instance);
 }
 /* }}} */
 
@@ -714,47 +687,20 @@ extern char *user_list[];
 
 int contacts_got = 0;
 int get_contacts_on_answer (struct query *q UU) {
+  struct mtproto_connection *mtp = query_get_mtproto(q);
   int i;
-  assert (fetch_int () == (int)CODE_contacts_contacts);
-  assert (fetch_int () == CODE_vector);
-  int n = fetch_int ();
+  assert (fetch_int (mtp) == (int)CODE_contacts_contacts);
+  assert (fetch_int (mtp) == CODE_vector);
+  int n = fetch_int (mtp);
   for (i = 0; i < n; i++) {
-    assert (fetch_int () == (int)CODE_contact);
-    fetch_int (); // id
-    fetch_int (); // mutual
+    assert (fetch_int (mtp) == (int)CODE_contact);
+    fetch_int (mtp); // id
+    fetch_int (mtp); // mutual
   }
-  assert (fetch_int () == CODE_vector);
-  n = fetch_int ();
+  assert (fetch_int (mtp) == CODE_vector);
+  n = fetch_int (mtp);
   for (i = 0; i < n; i++) {
-    fetch_alloc_user ();
-	/*
-    print_start ();
-    push_color (COLOR_YELLOW);
-    logprintf ("User #%d: ", get_peer_id (U->id));
-    print_user_name (U->id, (peer_t *)U);
-    push_color (COLOR_GREEN);
-    logprintf (" (");
-    logprintf ("%s", U->print_name);
-    if (U->phone) {
-      logprintf (" ");
-      logprintf ("%s", U->phone);
-    }
-    logprintf (") ");
-    pop_color ();
-    if (U->status.online > 0) {
-      logprintf ("online\n");
-    } else {
-      if (U->status.online < 0) {
-        logprintf ("offline. Was online ");
-        print_date_full (U->status.when);
-      } else {
-        logprintf ("offline permanent");
-      }
-      logprintf ("\n");
-    }
-    pop_color ();
-    print_end ();
-	*/
+    fetch_alloc_user (mtp);
   }
   contacts_got = 1;
   return 0;
@@ -765,31 +711,31 @@ struct query_methods get_contacts_methods = {
 };
 
 
-void do_update_contact_list (void) {
+void do_update_contact_list (struct telegram *instance) {
+  struct mtproto_connection *mtp = instance->connection;
+  struct dc *DC_working = telegram_get_working_dc(instance);
+
   contacts_got = 0;
-  clear_packet ();
-  out_int (CODE_contacts_get_contacts);
-  out_string ("");
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_contacts_methods, 0);
+  clear_packet (mtp);
+  out_int (mtp, CODE_contacts_get_contacts);
+  out_string (mtp, "");
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &get_contacts_methods, 0);
 }
 
 
 /* }}} */
 
 /* {{{ Encrypt decrypted */
-int *encr_extra;
-int *encr_ptr;
-int *encr_end;
 
-char *encrypt_decrypted_message (struct secret_chat *E) {
+char *encrypt_decrypted_message (struct mtproto_connection *mtp, struct secret_chat *E) {
   static int msg_key[4];
   static unsigned char sha1a_buffer[20];
   static unsigned char sha1b_buffer[20];
   static unsigned char sha1c_buffer[20];
   static unsigned char sha1d_buffer[20];
-  int x = *(encr_ptr);  
+  int x = *(mtp->encr_ptr);  
   assert (x >= 0 && !(x & 3));
-  sha1 ((void *)encr_ptr, 4 + x, sha1a_buffer);
+  sha1 ((void *)mtp->encr_ptr, 4 + x, sha1a_buffer);
   memcpy (msg_key, sha1a_buffer + 4, 16);
  
   static unsigned char buf[64];
@@ -823,78 +769,81 @@ char *encrypt_decrypted_message (struct secret_chat *E) {
 
   AES_KEY aes_key;
   AES_set_encrypt_key (key, 256, &aes_key);
-  AES_ige_encrypt ((void *)encr_ptr, (void *)encr_ptr, 4 * (encr_end - encr_ptr), &aes_key, iv, 1);
+  AES_ige_encrypt ((void *)mtp->encr_ptr, (void *)mtp->encr_ptr, 4 * (mtp->encr_end - mtp->encr_ptr), &aes_key, iv, 1);
   memset (&aes_key, 0, sizeof (aes_key));
 
   return (void *)msg_key;
 }
 
-void encr_start (void) {
-  encr_extra = packet_ptr;
-  packet_ptr += 1; // str len
-  packet_ptr += 2; // fingerprint
-  packet_ptr += 4; // msg_key
-  packet_ptr += 1; // len
+void encr_start (struct mtproto_connection *mtp) {
+  mtp->encr_extra = mtp->packet_ptr;
+  mtp->packet_ptr += 1; // str len
+  mtp->packet_ptr += 2; // fingerprint
+  mtp->packet_ptr += 4; // msg_key
+  mtp->packet_ptr += 1; // len
 }
 
 
-void encr_finish (struct secret_chat *E) {
-  int l = packet_ptr - (encr_extra +  8);
-  while (((packet_ptr - encr_extra) - 3) & 3) {  
+void encr_finish (struct mtproto_connection *mtp, struct secret_chat *E) {
+  int l = mtp->packet_ptr - (mtp->encr_extra +  8);
+  while (((mtp->packet_ptr - mtp->encr_extra) - 3) & 3) {  
     int t;
     secure_random (&t, 4);
-    out_int (t);
+    out_int (mtp, t);
   }
 
-  *encr_extra = ((packet_ptr - encr_extra) - 1) * 4 * 256 + 0xfe;
-  encr_extra ++;
-  *(long long *)encr_extra = E->key_fingerprint;
-  encr_extra += 2;
-  encr_extra[4] = l * 4;
-  encr_ptr = encr_extra + 4;
-  encr_end = packet_ptr;
-  memcpy (encr_extra, encrypt_decrypted_message (E), 16);
+  *mtp->encr_extra = ((mtp->packet_ptr - mtp->encr_extra) - 1) * 4 * 256 + 0xfe;
+  mtp->encr_extra ++;
+  *(long long *)mtp->encr_extra = E->key_fingerprint;
+  mtp->encr_extra += 2;
+  mtp->encr_extra[4] = l * 4;
+  mtp->encr_ptr = mtp->encr_extra + 4;
+  mtp->encr_end = mtp->packet_ptr;
+  memcpy (mtp->encr_extra, encrypt_decrypted_message (mtp, E), 16);
 }
 /* }}} */
 
 /* {{{ Seng msg (plain text) */
 int msg_send_encr_on_answer (struct query *q UU) {
-  assert (fetch_int () == CODE_messages_sent_encrypted_message);
-  rprintf ("Sent\n");
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+  assert (fetch_int (mtp) == CODE_messages_sent_encrypted_message);
+  logprintf ("Sent\n");
   struct message *M = q->extra;
-  //M->date = fetch_int ();
-  fetch_int ();
-  bl_do_set_message_sent (M);
+  //M->date = fetch_int (mtp);
+  fetch_int (mtp);
+  bl_do_set_message_sent (mtp->bl, mtp, M);
   return 0;
 }
 
 int msg_send_on_answer (struct query *q UU) {
-  unsigned x = fetch_int ();
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+ 
+  unsigned x = fetch_int (mtp);
   assert (x == CODE_messages_sent_message || x == CODE_messages_sent_message_link);
-  int id = fetch_int (); // id
+  int id = fetch_int (mtp); // id
   struct message *M = q->extra;
-  bl_do_set_msg_id (M, id);
-  fetch_date ();
-  fetch_pts ();
-  fetch_seq ();
+  bl_do_set_msg_id (mtp->bl, mtp, M, id);
+  fetch_date (mtp);
+  fetch_pts (mtp);
+  fetch_seq (mtp);
   if (x == CODE_messages_sent_message_link) {
-    assert (fetch_int () == CODE_vector);
-    int n = fetch_int ();
+    assert (fetch_int (mtp) == CODE_vector);
+    int n = fetch_int (mtp);
     int i;
     unsigned a, b;
     for (i = 0; i < n; i++) {
-      assert (fetch_int () == (int)CODE_contacts_link);
-      a = fetch_int ();
+      assert (fetch_int (mtp) == (int)CODE_contacts_link);
+      a = fetch_int (mtp);
       assert (a == CODE_contacts_my_link_empty || a == CODE_contacts_my_link_requested || a == CODE_contacts_my_link_contact);
       if (a == CODE_contacts_my_link_requested) {
-        fetch_bool ();
+        fetch_bool (mtp);
       }
-      b = fetch_int ();
+      b = fetch_int (mtp);
       assert (b == CODE_contacts_foreign_link_unknown || b == CODE_contacts_foreign_link_requested || b == CODE_contacts_foreign_link_mutual);
       if (b == CODE_contacts_foreign_link_requested) {
-        fetch_bool ();
+        fetch_bool (mtp);
       }
-      struct user *U = fetch_alloc_user ();
+      struct user *U = fetch_alloc_user (mtp);
   
       U->flags &= ~(FLAG_USER_IN_CONTACT | FLAG_USER_OUT_CONTACT);
       if (a == CODE_contacts_my_link_contact) {
@@ -907,24 +856,26 @@ int msg_send_on_answer (struct query *q UU) {
       if (b == CODE_contacts_foreign_link_requested) {
         U->flags |= FLAG_USER_OUT_CONTACT;
       }
-      print_start ();
-      push_color (COLOR_YELLOW);
+      //print_start ();
+      //push_color (COLOR_YELLOW);
       logprintf ("Link with user ");
-      print_user_name (U->id, (void *)U);
+      //print_user_name (U->id, (void *)U);
       logprintf (" changed\n");
-      pop_color ();
-      print_end ();
+      //pop_color ();
+      //print_end ();
     }
   }
-  rprintf ("Sent: id = %d\n", id);
-  bl_do_set_message_sent (M);
+  logprintf ("Sent: id = %d\n", id);
+  bl_do_set_message_sent (mtp->bl, mtp, M);
   return 0;
 }
 
 int msg_send_on_error (struct query *q, int error_code, int error_len, char *error) {
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
   logprintf ( "error for query #%lld: #%d :%.*s\n", q->msg_id, error_code, error_len, error);
   struct message *M = q->extra;
-  bl_do_delete_msg (M);
+  bl_do_delete_msg (mtp->bl, mtp, M);
   return 0;
 }
 
@@ -940,43 +891,51 @@ struct query_methods msg_send_encr_methods = {
 int out_message_num;
 int our_id;
 
-void do_send_encr_msg (struct message *M) {
+void do_send_encr_msg (struct telegram *instance, struct message *M) {
+  struct mtproto_connection *mtp = instance->connection;
+  struct dc *DC_working = telegram_get_working_dc(instance);
+
   peer_t *P = user_chat_get (M->to_id);
   if (!P || P->encr_chat.state != sc_ok) { return; }
   
-  clear_packet ();
-  out_int (CODE_messages_send_encrypted);
-  out_int (CODE_input_encrypted_chat);
-  out_int (get_peer_id (M->to_id));
-  out_long (P->encr_chat.access_hash);
-  out_long (M->id);
-  encr_start ();
-  out_int (CODE_decrypted_message);
-  out_long (M->id);
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_send_encrypted);
+  out_int (mtp, CODE_input_encrypted_chat);
+  out_int (mtp, get_peer_id (M->to_id));
+  out_long (mtp, P->encr_chat.access_hash);
+  out_long (mtp, M->id);
+  encr_start (mtp);
+  out_int (mtp, CODE_decrypted_message);
+  out_long (mtp, M->id);
   static int buf[4];
   secure_random (buf, 16);
-  out_cstring ((void *)buf, 16);
-  out_cstring ((void *)M->message, M->message_len);
-  out_int (CODE_decrypted_message_media_empty);
-  encr_finish (&P->encr_chat);
+  out_cstring (mtp, (void *)buf, 16);
+  out_cstring (mtp, (void *)M->message, M->message_len);
+  out_int (mtp, CODE_decrypted_message_media_empty);
+  encr_finish (mtp, &P->encr_chat);
   
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &msg_send_encr_methods, M);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, 
+    &msg_send_encr_methods, M);
 }
 
-void do_send_msg (struct message *M) {
+void do_send_msg (struct telegram *instance, struct message *M) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+
   if (get_peer_type (M->to_id) == PEER_ENCR_CHAT) {
-    do_send_encr_msg (M);
+    do_send_encr_msg (instance ,M);
     return;
   }
-  clear_packet ();
-  out_int (CODE_messages_send_message);
-  out_peer_id (M->to_id);
-  out_cstring (M->message, M->message_len);
-  out_long (M->id);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &msg_send_methods, M);
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_send_message);
+  out_peer_id (mtp, M->to_id);
+  out_cstring (mtp, M->message, M->message_len);
+  out_long (mtp, M->id);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &msg_send_methods, M);
 }
 
-void do_send_message (peer_id_t id, const char *msg, int len) {
+void do_send_message (struct telegram *instance, peer_id_t id, const char *msg, int len) {
+  struct mtproto_connection *mtp = instance->connection;
   if (get_peer_type (id) == PEER_ENCR_CHAT) {
     peer_t *P = user_chat_get (id);
     if (!P) {
@@ -991,19 +950,19 @@ void do_send_message (peer_id_t id, const char *msg, int len) {
   long long t;
   secure_random (&t, 8);
   logprintf ("t = %lld, len = %d\n", t, len);
-  bl_do_send_message_text (t, our_id, get_peer_type (id), get_peer_id (id), time (0), len, msg);
+  bl_do_send_message_text (mtp->bl, mtp, t, our_id, get_peer_type (id), get_peer_id (id), time (0), len, msg);
   struct message *M = message_get (t);
   assert (M);
-  do_send_msg (M);
-  print_message (M);
+  do_send_msg (instance, M);
+  //print_message (M);
 }
 /* }}} */
 
 /* {{{ Send text file */
-void do_send_text (peer_id_t id, char *file_name) {
+void do_send_text (struct telegram *instance, peer_id_t id, char *file_name) {
   int fd = open (file_name, O_RDONLY);
   if (fd < 0) {
-    rprintf ("No such file '%s'\n", file_name);
+    logprintf ("No such file '%s'\n", file_name);
     tfree_str (file_name);
     return;
   }
@@ -1011,12 +970,12 @@ void do_send_text (peer_id_t id, char *file_name) {
   int x = read (fd, buf, (1 << 20) + 1);
   assert (x >= 0);
   if (x == (1 << 20) + 1) {
-    rprintf ("Too big file '%s'\n", file_name);
+    logprintf ("Too big file '%s'\n", file_name);
     tfree_str (file_name);
     close (fd);
   } else {
     buf[x] = 0;
-    do_send_message (id, buf, x);
+    do_send_message (instance, id, buf, x);
     tfree_str (file_name);
     close (fd);
   }
@@ -1025,15 +984,18 @@ void do_send_text (peer_id_t id, char *file_name) {
 
 /* {{{ Mark read */
 int mark_read_on_receive (struct query *q UU) {
-  assert (fetch_int () == (int)CODE_messages_affected_history);
-  fetch_pts ();
-  fetch_seq ();
-  fetch_int (); // offset
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  assert (fetch_int (mtp) == (int)CODE_messages_affected_history);
+  fetch_pts (mtp);
+  fetch_seq (mtp);
+  fetch_int (mtp); // offset
   return 0;
 }
 
 int mark_read_encr_on_receive (struct query *q UU) {
-  fetch_bool ();
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+  fetch_bool (mtp);
   return 0;
 }
 
@@ -1045,64 +1007,80 @@ struct query_methods mark_read_encr_methods = {
   .on_answer = mark_read_encr_on_receive
 };
 
-void do_messages_mark_read (peer_id_t id, int max_id) {
-  clear_packet ();
-  out_int (CODE_messages_read_history);
-  out_peer_id (id);
-  out_int (max_id);
-  out_int (0);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &mark_read_methods, 0);
+void do_messages_mark_read (struct telegram *instance, peer_id_t id, int max_id) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_read_history);
+  out_peer_id (mtp, id);
+  out_int (mtp, max_id);
+  out_int (mtp, 0);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &mark_read_methods, 0);
 }
 
-void do_messages_mark_read_encr (peer_id_t id, long long access_hash, int last_time) {
-  clear_packet ();
-  out_int (CODE_messages_read_encrypted_history);
-  out_int (CODE_input_encrypted_chat);
-  out_int (get_peer_id (id));
-  out_long (access_hash);
-  out_int (last_time);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &mark_read_encr_methods, 0);
+void do_messages_mark_read_encr (struct telegram *instance, peer_id_t id, long long access_hash, int last_time) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_read_encrypted_history);
+  out_int (mtp, CODE_input_encrypted_chat);
+  out_int (mtp, get_peer_id (id));
+  out_long (mtp, access_hash);
+  out_int (mtp, last_time);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &mark_read_encr_methods, 0);
 }
 
-void do_mark_read (peer_id_t id) {
+void do_mark_read (struct telegram *instance, peer_id_t id) {
   peer_t *P = user_chat_get (id);
   if (!P) {
-    rprintf ("Unknown peer\n");
+    logprintf ("Unknown peer\n");
     return;
   }
   if (get_peer_type (id) == PEER_USER || get_peer_type (id) == PEER_CHAT) {
     if (!P->last) {
-      rprintf ("Unknown last peer message\n");
+      logprintf ("Unknown last peer message\n");
       return;
     }
-    do_messages_mark_read (id, P->last->id);
+    do_messages_mark_read (instance, id, P->last->id);
     return;
   }
   assert (get_peer_type (id) == PEER_ENCR_CHAT);
   if (P->last) {
-    do_messages_mark_read_encr (id, P->encr_chat.access_hash, P->last->date);
+    do_messages_mark_read_encr (instance, id, P->encr_chat.access_hash, P->last->date);
   } else {
-    do_messages_mark_read_encr (id, P->encr_chat.access_hash, time (0) - 10);
+    do_messages_mark_read_encr (instance, id, P->encr_chat.access_hash, time (0) - 10);
     
   }
 }
 /* }}} */
 
+struct get_hist_extra {
+  struct telegram *instance;
+  peer_id_t peer_id;
+};
+
 /* {{{ Get history */
 int get_history_on_answer (struct query *q UU) {
+  struct get_hist_extra *extra = q->extra;
+  struct telegram *instance = extra->instance;
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+  peer_id_t peer_id = extra->peer_id;
+
   static struct message *ML[10000];
   int i;
-  int x = fetch_int ();
+  int x = fetch_int (mtp);
   if (x == (int)CODE_messages_messages_slice) {
-    fetch_int ();
-    rprintf ("...\n");
+    fetch_int (mtp);
+    logprintf ("...\n");
   } else {
     assert (x == (int)CODE_messages_messages);
   }
-  assert (fetch_int () == CODE_vector);
-  int n = fetch_int ();
+  assert (fetch_int (mtp) == CODE_vector);
+  int n = fetch_int (mtp);
   for (i = 0; i < n; i++) {
-    struct message *M = fetch_alloc_message ();
+    struct message *M = fetch_alloc_message (mtp, instance);
     if (i <= 9999) {
       ML[i] = M;
     }
@@ -1110,21 +1088,23 @@ int get_history_on_answer (struct query *q UU) {
   if (n > 10000) { n = 10000; }
   int sn = n;
   for (i = n - 1; i >= 0; i--) {
-    print_message (ML[i]);
+    //print_message (ML[i]);
   }
-  assert (fetch_int () == CODE_vector);
-  n = fetch_int ();
+  assert (fetch_int (mtp) == CODE_vector);
+  n = fetch_int (mtp);
   for (i = 0; i < n; i++) {
-    fetch_alloc_chat ();
+    fetch_alloc_chat (mtp);
   }
-  assert (fetch_int () == CODE_vector);
-  n = fetch_int ();
+  assert (fetch_int (mtp) == CODE_vector);
+  n = fetch_int (mtp);
   for (i = 0; i < n; i++) {
-    fetch_alloc_user ();
+    fetch_alloc_user (mtp);
   }
+
   if (sn > 0 && q->extra) {
-    do_messages_mark_read (*(peer_id_t *)&(q->extra), ML[0]->id);
+    do_messages_mark_read (instance, peer_id, ML[0]->id);
   }
+  free(extra);
   return 0;
 }
 
@@ -1143,89 +1123,100 @@ void do_get_local_history (peer_id_t id, int limit) {
     count ++;
   }
   while (M) {
-    print_message (M);
+    //print_message (M);
     M = M->prev;
   }
 }
 
-void do_get_history (peer_id_t id, int limit) {
+void do_get_history (struct telegram *instance, peer_id_t id, int limit) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
   if (get_peer_type (id) == PEER_ENCR_CHAT || offline_mode) {
     do_get_local_history (id, limit);
-    do_mark_read (id);
+    do_mark_read (instance, id);
     return;
   }
-  clear_packet ();
-  out_int (CODE_messages_get_history);
-  out_peer_id (id);
-  out_int (0);
-  out_int (0);
-  out_int (limit);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_history_methods, (void *)*(long *)&id);
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_get_history);
+  out_peer_id (mtp, id);
+  out_int (mtp, 0);
+  out_int (mtp, 0);
+  out_int (mtp, limit);
+
+  struct get_hist_extra *extra = malloc(sizeof(struct get_hist_extra));
+  extra->instance = instance;
+  extra->peer_id = id;
+
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &get_history_methods, extra);
 }
 /* }}} */
 
 /* {{{ Get dialogs */
 int dialog_list_got;
 int get_dialogs_on_answer (struct query *q UU) {
-  unsigned x = fetch_int (); 
+  struct telegram *instance = q->extra;
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+  unsigned x = fetch_int (mtp); 
   assert (x == CODE_messages_dialogs || x == CODE_messages_dialogs_slice);
   if (x == CODE_messages_dialogs_slice) {
-    fetch_int (); // total_count
+    fetch_int (mtp); // total_count
   }
-  assert (fetch_int () == CODE_vector);
+  assert (fetch_int (mtp) == CODE_vector);
   int n, i;
-  n = fetch_int ();
+  n = fetch_int (mtp);
   static int dlist[2 * 100];
   static peer_id_t plist[100];
   int dl_size = n;
   for (i = 0; i < n; i++) {
-    assert (fetch_int () == CODE_dialog);
+    assert (fetch_int (mtp) == CODE_dialog);
     if (i < 100) {
-      plist[i] = fetch_peer_id ();
-      dlist[2 * i + 0] = fetch_int ();
-      dlist[2 * i + 1] = fetch_int ();
+      plist[i] = fetch_peer_id (mtp);
+      dlist[2 * i + 0] = fetch_int (mtp);
+      dlist[2 * i + 1] = fetch_int (mtp);
     } else {
-      fetch_peer_id ();
-      fetch_int ();
-      fetch_int ();
+      fetch_peer_id (mtp);
+      fetch_int (mtp);
+      fetch_int (mtp);
     }
   }
-  assert (fetch_int () == CODE_vector);
-  n = fetch_int ();
+  assert (fetch_int (mtp) == CODE_vector);
+  n = fetch_int (mtp);
   for (i = 0; i < n; i++) {
-    fetch_alloc_message ();
+    fetch_alloc_message (mtp, instance);
   }
-  assert (fetch_int () == CODE_vector);
-  n = fetch_int ();
+  assert (fetch_int (mtp) == CODE_vector);
+  n = fetch_int (mtp);
   for (i = 0; i < n; i++) {
-    fetch_alloc_chat ();
+    fetch_alloc_chat (mtp);
   }
-  assert (fetch_int () == CODE_vector);
-  n = fetch_int ();
+  assert (fetch_int (mtp) == CODE_vector);
+  n = fetch_int (mtp);
   for (i = 0; i < n; i++) {
-    fetch_alloc_user ();
+    fetch_alloc_user (mtp);
   }
-  print_start ();
-  push_color (COLOR_YELLOW);
+  //print_start ();
+  //push_color (COLOR_YELLOW);
   for (i = dl_size - 1; i >= 0; i--) {
-    peer_t *UC;
+
+    // TODO: use peer
+    peer_t *UC UU;
     switch (get_peer_type (plist[i])) {
     case PEER_USER:
       UC = user_chat_get (plist[i]);
       logprintf ("User ");
-      print_user_name (plist[i], UC);
+      //print_user_name (plist[i], UC);
       logprintf (": %d unread\n", dlist[2 * i + 1]);
       break;
     case PEER_CHAT:
       UC = user_chat_get (plist[i]);
       logprintf ("Chat ");
-      print_chat_name (plist[i], UC);
+      //print_chat_name (plist[i], UC);
       logprintf (": %d unread\n", dlist[2 * i + 1]);
       break;
     }
   }
-  pop_color ();
-  print_end ();
+  //pop_color ();
+  //print_end ();
 
   dialog_list_got = 1;
   return 0;
@@ -1236,13 +1227,15 @@ struct query_methods get_dialogs_methods = {
 };
 
 
-void do_get_dialog_list (void) {
-  clear_packet ();
-  out_int (CODE_messages_get_dialogs);
-  out_int (0);
-  out_int (0);
-  out_int (1000);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_dialogs_methods, 0);
+void do_get_dialog_list (struct telegram *instance) {
+  struct mtproto_connection *mtp = instance->connection;
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_get_dialogs);
+  out_int (mtp, 0);
+  out_int (mtp, 0);
+  out_int (mtp, 1000);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &get_dialogs_methods, instance);
 }
 /* }}} */
 
@@ -1266,22 +1259,22 @@ struct send_file {
   unsigned char *key;
 };
 
-void out_peer_id (peer_id_t id) {
+void out_peer_id (struct mtproto_connection *self, peer_id_t id) {
   peer_t *U;
   switch (get_peer_type (id)) {
   case PEER_CHAT:
-    out_int (CODE_input_peer_chat);
-    out_int (get_peer_id (id));
+    out_int (self, CODE_input_peer_chat);
+    out_int (self, get_peer_id (id));
     break;
   case PEER_USER:
     U = user_chat_get (id);
     if (U && U->user.access_hash) {
-      out_int (CODE_input_peer_foreign);
-      out_int (get_peer_id (id));
-      out_long (U->user.access_hash);
+      out_int (self, CODE_input_peer_foreign);
+      out_int (self, get_peer_id (id));
+      out_long (self, U->user.access_hash);
     } else {
-      out_int (CODE_input_peer_contact);
-      out_int (get_peer_id (id));
+      out_int (self, CODE_input_peer_contact);
+      out_int (self, get_peer_id (id));
     }
     break;
   default:
@@ -1289,48 +1282,62 @@ void out_peer_id (peer_id_t id) {
   }
 }
 
-void send_part (struct send_file *f);
+struct send_file_extra {
+  struct telegram *instance;
+  struct send_file *file;
+};
+
+void send_part (struct telegram *instance, struct send_file *f);
 int send_file_part_on_answer (struct query *q) {
-  assert (fetch_int () == (int)CODE_bool_true);
-  send_part (q->extra);
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  struct send_file_extra *extra = q->extra;
+  assert (fetch_int (mtp) == (int)CODE_bool_true);
+  send_part (extra->instance, extra->file);
   return 0;
 }
 
 int send_file_on_answer (struct query *q UU) {
-  assert (fetch_int () == (int)CODE_messages_stated_message);
-  struct message *M = fetch_alloc_message ();
-  assert (fetch_int () == CODE_vector);
+  struct telegram *instance = q->extra; 
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+  assert (fetch_int (mtp) == (int)CODE_messages_stated_message);
+ 
+  // TODO: use message
+  struct message *M UU = fetch_alloc_message (mtp, instance);
+
+  assert (fetch_int (mtp) == CODE_vector);
   int n, i;
-  n = fetch_int ();
+  n = fetch_int (mtp);
   for (i = 0; i < n; i++) {
-    fetch_alloc_chat ();
+    fetch_alloc_chat (mtp);
   }
-  assert (fetch_int () == CODE_vector);
-  n = fetch_int ();
+  assert (fetch_int (mtp) == CODE_vector);
+  n = fetch_int (mtp);
   for (i = 0; i < n; i++) {
-    fetch_alloc_user ();
+    fetch_alloc_user (mtp);
   }
-  fetch_pts ();
-  fetch_seq ();
-  print_message (M);
+  fetch_pts (mtp);
+  fetch_seq (mtp);
+  //print_message (M);
   return 0;
 }
 
 int send_encr_file_on_answer (struct query *q UU) {
-  if (prefetch_int () != (int)CODE_messages_sent_encrypted_file) {
-    hexdump_in ();
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+  if (prefetch_int (mtp) != (int)CODE_messages_sent_encrypted_file) {
+    hexdump_in (mtp);
   }
-  assert (fetch_int () == (int)CODE_messages_sent_encrypted_file);
+  assert (fetch_int (mtp) == (int)CODE_messages_sent_encrypted_file);
   struct message *M = q->extra;
-  M->date = fetch_int ();
-  assert (fetch_int () == CODE_encrypted_file);
-  M->media.encr_photo.id = fetch_long ();
-  M->media.encr_photo.access_hash = fetch_long ();
-  //M->media.encr_photo.size = fetch_int ();
-  fetch_int ();
-  M->media.encr_photo.dc_id = fetch_int ();
-  assert (fetch_int () == M->media.encr_photo.key_fingerprint);
-  print_message (M);
+  M->date = fetch_int (mtp);
+  assert (fetch_int (mtp) == CODE_encrypted_file);
+  M->media.encr_photo.id = fetch_long (mtp);
+  M->media.encr_photo.access_hash = fetch_long (mtp);
+  //M->media.encr_photo.size = fetch_int (mtp);
+  fetch_int (mtp);
+  M->media.encr_photo.dc_id = fetch_int (mtp);
+  assert (fetch_int (mtp) == M->media.encr_photo.key_fingerprint);
+  //print_message (M);
   message_insert (M);
   return 0;
 }
@@ -1347,21 +1354,23 @@ struct query_methods send_encr_file_methods = {
   .on_answer = send_encr_file_on_answer
 };
 
-void send_part (struct send_file *f) {
+void send_part (struct telegram *instance, struct send_file *f) {
+  struct mtproto_connection *mtp = instance->connection;
+  struct dc *DC_working = telegram_get_working_dc(instance);
   if (f->fd >= 0) {
     if (!f->part_num) {
       cur_uploading_bytes += f->size;
     }
-    clear_packet ();
+    clear_packet (mtp);
     if (f->size < (16 << 20)) {
-      out_int (CODE_upload_save_file_part);      
-      out_long (f->id);
-      out_int (f->part_num ++);
+      out_int (mtp, CODE_upload_save_file_part);      
+      out_long (mtp, f->id);
+      out_int (mtp, f->part_num ++);
     } else {
-      out_int (CODE_upload_save_big_file_part);      
-      out_long (f->id);
-      out_int (f->part_num ++);
-      out_int ((f->size + f->part_size - 1) / f->part_size);
+      out_int (mtp, CODE_upload_save_big_file_part);      
+      out_long (mtp, f->id);
+      out_int (mtp, f->part_num ++);
+      out_int (mtp, (f->size + f->part_size - 1) / f->part_size);
     }
     static char buf[512 << 10];
     int x = read (f->fd, buf, f->part_size);
@@ -1381,7 +1390,7 @@ void send_part (struct send_file *f) {
       AES_ige_encrypt ((void *)buf, (void *)buf, x, &aes_key, f->iv, 1);
       memset (&aes_key, 0, sizeof (aes_key));
     }
-    out_cstring (buf, x);
+    out_cstring (mtp, buf, x);
     if (verbosity >= 2) {
       logprintf ("offset=%lld size=%lld\n", f->offset, f->size);
     }
@@ -1391,116 +1400,120 @@ void send_part (struct send_file *f) {
     } else {
       assert (f->part_size == x);
     }
-    update_prompt ();
-    send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_file_part_methods, f);
+    //update_prompt ();
+
+    struct send_file_extra *extra = malloc(sizeof(struct send_file_extra));
+    extra->instance = instance;
+    extra->file = f;
+    send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &send_file_part_methods, extra);
   } else {
     cur_uploaded_bytes -= f->size;
     cur_uploading_bytes -= f->size;
-    update_prompt ();
-    clear_packet ();
+    //update_prompt ();
+    clear_packet (mtp);
     assert (f->media_type == CODE_input_media_uploaded_photo || f->media_type == CODE_input_media_uploaded_video || f->media_type == CODE_input_media_uploaded_thumb_video || f->media_type == CODE_input_media_uploaded_audio || f->media_type == CODE_input_media_uploaded_document || f->media_type == CODE_input_media_uploaded_thumb_document);
     if (!f->encr) {
-      out_int (CODE_messages_send_media);
-      out_peer_id (f->to_id);
-      out_int (f->media_type);
+      out_int (mtp, CODE_messages_send_media);
+      out_peer_id (mtp, f->to_id);
+      out_int (mtp, f->media_type);
       if (f->size < (16 << 20)) {
-        out_int (CODE_input_file);
+        out_int (mtp, CODE_input_file);
       } else {
-        out_int (CODE_input_file_big);
+        out_int (mtp, CODE_input_file_big);
       }
-      out_long (f->id);
-      out_int (f->part_num);
+      out_long (mtp, f->id);
+      out_int (mtp, f->part_num);
       char *s = f->file_name + strlen (f->file_name);
       while (s >= f->file_name && *s != '/') { s --;}
-      out_string (s + 1);
+      out_string (mtp, s + 1);
       if (f->size < (16 << 20)) {
-        out_string ("");
+        out_string (mtp, "");
       }
       if (f->media_type == CODE_input_media_uploaded_thumb_video || f->media_type == CODE_input_media_uploaded_thumb_document) {
-        out_int (CODE_input_file);
-        out_long (f->thumb_id);
-        out_int (1);
-        out_string ("thumb.jpg");
-        out_string ("");
+        out_int (mtp, CODE_input_file);
+        out_long (mtp, f->thumb_id);
+        out_int (mtp, 1);
+        out_string (mtp, "thumb.jpg");
+        out_string (mtp, "");
       }
       if (f->media_type == CODE_input_media_uploaded_video || f->media_type == CODE_input_media_uploaded_thumb_video) {
-        out_int (100);
-        out_int (100);
-        out_int (100);
+        out_int (mtp, 100);
+        out_int (mtp, 100);
+        out_int (mtp, 100);
       }
       if (f->media_type == CODE_input_media_uploaded_document || f->media_type == CODE_input_media_uploaded_thumb_document) {
-        out_string (s + 1);
-        out_string ("text");
+        out_string (mtp, s + 1);
+        out_string (mtp, "text");
       }
       if (f->media_type == CODE_input_media_uploaded_audio) {
-        out_int (60);
+        out_int (mtp, 60);
       }
 
-      out_long (-lrand48 () * (1ll << 32) - lrand48 ());
-      send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_file_methods, 0);
+      out_long (mtp, -lrand48 () * (1ll << 32) - lrand48 ());
+      send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &send_file_methods, instance);
     } else {
       struct message *M = talloc0 (sizeof (*M));
 
-      out_int (CODE_messages_send_encrypted_file);
-      out_int (CODE_input_encrypted_chat);
-      out_int (get_peer_id (f->to_id));
+      out_int (mtp, CODE_messages_send_encrypted_file);
+      out_int (mtp, CODE_input_encrypted_chat);
+      out_int (mtp, get_peer_id (f->to_id));
       peer_t *P = user_chat_get (f->to_id);
       assert (P);
-      out_long (P->encr_chat.access_hash);
+      out_long (mtp, P->encr_chat.access_hash);
       long long r = -lrand48 () * (1ll << 32) - lrand48 (); 
-      out_long (r);
-      encr_start ();
-      out_int (CODE_decrypted_message);
-      out_long (r);
-      out_random (15 + 4 * (lrand48 () % 3));
-      out_string ("");
+      out_long (mtp, r);
+      encr_start (mtp);
+      out_int (mtp, CODE_decrypted_message);
+      out_long (mtp, r);
+      out_random (mtp, 15 + 4 * (lrand48 () % 3));
+      out_string (mtp, "");
       if (f->media_type == CODE_input_media_uploaded_photo) {
-        out_int (CODE_decrypted_message_media_photo);
+        out_int (mtp, CODE_decrypted_message_media_photo);
         M->media.type = CODE_decrypted_message_media_photo;
       } else if (f->media_type == CODE_input_media_uploaded_video) {
-        out_int (CODE_decrypted_message_media_video);
+        out_int (mtp, CODE_decrypted_message_media_video);
         M->media.type = CODE_decrypted_message_media_video;
       } else if (f->media_type == CODE_input_media_uploaded_audio) {
-        out_int (CODE_decrypted_message_media_audio);
+        out_int (mtp, CODE_decrypted_message_media_audio);
         M->media.type = CODE_decrypted_message_media_audio;
       } else if (f->media_type == CODE_input_media_uploaded_document) {
-        out_int (CODE_decrypted_message_media_document);
+        out_int (mtp, CODE_decrypted_message_media_document);
         M->media.type = CODE_decrypted_message_media_document;;
       } else {
         assert (0);
       }
       if (f->media_type != CODE_input_media_uploaded_audio) {
-        out_cstring ((void *)thumb_file, thumb_file_size);
-        out_int (90);
-        out_int (90);
+        out_cstring (mtp, (void *)thumb_file, thumb_file_size);
+        out_int (mtp, 90);
+        out_int (mtp, 90);
       }
       if (f->media_type == CODE_input_media_uploaded_video) {
-        out_int (0);
+        out_int (mtp, 0);
       }
       if (f->media_type == CODE_input_media_uploaded_document) {
-        out_string (f->file_name);
-        out_string ("text");
+        out_string (mtp, f->file_name);
+        out_string (mtp, "text");
       }
       if (f->media_type == CODE_input_media_uploaded_audio) {
-        out_int (60);
+        out_int (mtp, 60);
       }
       if (f->media_type == CODE_input_media_uploaded_video || f->media_type == CODE_input_media_uploaded_photo) {
-        out_int (100);
-        out_int (100);
+        out_int (mtp, 100);
+        out_int (mtp, 100);
       }
-      out_int (f->size);
-      out_cstring ((void *)f->key, 32);
-      out_cstring ((void *)f->init_iv, 32);
-      encr_finish (&P->encr_chat);
+      out_int (mtp, f->size);
+      out_cstring (mtp, (void *)f->key, 32);
+      out_cstring (mtp, (void *)f->init_iv, 32);
+      encr_finish (mtp, &P->encr_chat);
       if (f->size < (16 << 20)) {
-        out_int (CODE_input_encrypted_file_uploaded);
+        out_int (mtp, CODE_input_encrypted_file_uploaded);
       } else {
-        out_int (CODE_input_encrypted_file_big_uploaded);
+        out_int (mtp, CODE_input_encrypted_file_big_uploaded);
       }
-      out_long (f->id);
-      out_int (f->part_num);
+      out_long (mtp, f->id);
+      out_int (mtp, f->part_num);
       if (f->size < (16 << 20)) {
-        out_string ("");
+        out_string (mtp, "");
       }
  
       unsigned char md5[16];
@@ -1508,7 +1521,7 @@ void send_part (struct send_file *f) {
       memcpy (str, f->key, 32);
       memcpy (str + 32, f->init_iv, 32);
       MD5 (str, 64, md5);
-      out_int ((*(int *)md5) ^ (*(int *)(md5 + 4)));
+      out_int (mtp, (*(int *)md5) ^ (*(int *)(md5 + 4)));
 
       tfree_secure (f->iv, 32);
       
@@ -1526,28 +1539,29 @@ void send_part (struct send_file *f) {
       M->id = r;
       M->date = time (0);
       
-      send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_encr_file_methods, M);
-
+      send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &send_encr_file_methods, M);
     }
     tfree_str (f->file_name);
     tfree (f, sizeof (*f));
   }
 }
 
-void send_file_thumb (struct send_file *f) {
-  clear_packet ();
+void send_file_thumb (struct telegram *instance, struct send_file *f) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+  clear_packet (mtp);
   f->thumb_id = lrand48 () * (1ll << 32) + lrand48 ();
-  out_int (CODE_upload_save_file_part);
-  out_long (f->thumb_id);
-  out_int (0);
-  out_cstring ((void *)thumb_file, thumb_file_size);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_file_part_methods, f);
+  out_int (mtp, CODE_upload_save_file_part);
+  out_long (mtp, f->thumb_id);
+  out_int (mtp, 0);
+  out_cstring (mtp, (void *)thumb_file, thumb_file_size);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &send_file_part_methods, f);
 }
 
-void do_send_photo (int type, peer_id_t to_id, char *file_name) {
+void do_send_photo (struct telegram *instance, int type, peer_id_t to_id, char *file_name) {
   int fd = open (file_name, O_RDONLY);
   if (fd < 0) {
-    rprintf ("No such file '%s'\n", file_name);
+    logprintf ("No such file '%s'\n", file_name);
     tfree_str (file_name);
     return;
   }
@@ -1555,7 +1569,7 @@ void do_send_photo (int type, peer_id_t to_id, char *file_name) {
   fstat (fd, &buf);
   long long size = buf.st_size;
   if (size <= 0) {
-    rprintf ("File has zero length\n");
+    logprintf ("File has zero length\n");
     tfree_str (file_name);
     close (fd);
     return;
@@ -1573,7 +1587,7 @@ void do_send_photo (int type, peer_id_t to_id, char *file_name) {
 
   if (f->part_size > (512 << 10)) {
     close (fd);
-    rprintf ("Too big file. Maximal supported size is %d.\n", (512 << 10) * 1000);
+    logprintf ("Too big file. Maximal supported size is %d.\n", (512 << 10) * 1000);
     tfree (f, sizeof (*f));
     tfree_str (file_name);
     return;
@@ -1594,34 +1608,39 @@ void do_send_photo (int type, peer_id_t to_id, char *file_name) {
   }
   if (f->media_type == CODE_input_media_uploaded_video && !f->encr) {
     f->media_type = CODE_input_media_uploaded_thumb_video;
-    send_file_thumb (f);
+    send_file_thumb (instance, f);
   } else if (f->media_type == CODE_input_media_uploaded_document && !f->encr) {
     f->media_type = CODE_input_media_uploaded_thumb_document;
-    send_file_thumb (f);
+    send_file_thumb (instance, f);
   } else {
-    send_part (f);
+    send_part (instance, f);
   }
 }
 /* }}} */
 
 /* {{{ Forward */
 int fwd_msg_on_answer (struct query *q UU) {
-  assert (fetch_int () == (int)CODE_messages_stated_message);
-  struct message *M = fetch_alloc_message ();
-  assert (fetch_int () == CODE_vector);
+  struct telegram *instance = q->extra;
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  assert (fetch_int (mtp) == (int)CODE_messages_stated_message);
+
+  // TODO: use message
+  struct message *M UU = fetch_alloc_message (mtp, instance);
+  assert (fetch_int (mtp) == CODE_vector);
   int n, i;
-  n = fetch_int ();
+  n = fetch_int (mtp);
   for (i = 0; i < n; i++) {
-    fetch_alloc_chat ();
+    fetch_alloc_chat (mtp);
   }
-  assert (fetch_int () == CODE_vector);
-  n = fetch_int ();
+  assert (fetch_int (mtp) == CODE_vector);
+  n = fetch_int (mtp);
   for (i = 0; i < n; i++) {
-    fetch_alloc_user ();
+    fetch_alloc_user (mtp);
   }
-  fetch_pts ();
-  fetch_seq ();
-  print_message (M);
+  fetch_pts (mtp);
+  fetch_seq (mtp);
+  //print_message (M);
   return 0;
 }
 
@@ -1629,38 +1648,45 @@ struct query_methods fwd_msg_methods = {
   .on_answer = fwd_msg_on_answer
 };
 
-void do_forward_message (peer_id_t id, int n) {
+void do_forward_message (struct telegram *instance, peer_id_t id, int n) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
   if (get_peer_type (id) == PEER_ENCR_CHAT) {
-    rprintf ("Can not forward messages from secret chat\n");
+    logprintf ("Can not forward messages from secret chat\n");
     return;
   }
-  clear_packet ();
-  out_int (CODE_messages_forward_message);
-  out_peer_id (id);
-  out_int (n);
-  out_long (lrand48 () * (1ll << 32) + lrand48 ());
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &fwd_msg_methods, 0);
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_forward_message);
+  out_peer_id (mtp, id);
+  out_int (mtp, n);
+  out_long (mtp, lrand48 () * (1ll << 32) + lrand48 ());
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &fwd_msg_methods, instance);
 }
 /* }}} */
 
 /* {{{ Rename chat */
 int rename_chat_on_answer (struct query *q UU) {
-  assert (fetch_int () == (int)CODE_messages_stated_message);
-  struct message *M = fetch_alloc_message ();
-  assert (fetch_int () == CODE_vector);
+  struct telegram *instance = q->extra; 
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  assert (fetch_int (mtp) == (int)CODE_messages_stated_message);
+
+  // TODO: use message
+  struct message *M UU = fetch_alloc_message (mtp, instance);
+  assert (fetch_int (mtp) == CODE_vector);
   int n, i;
-  n = fetch_int ();
+  n = fetch_int (mtp);
   for (i = 0; i < n; i++) {
-    fetch_alloc_chat ();
+    fetch_alloc_chat (mtp);
   }
-  assert (fetch_int () == CODE_vector);
-  n = fetch_int ();
+  assert (fetch_int (mtp) == CODE_vector);
+  n = fetch_int (mtp);
   for (i = 0; i < n; i++) {
-    fetch_alloc_user ();
+    fetch_alloc_user (mtp);
   }
-  fetch_pts ();
-  fetch_seq ();
-  print_message (M);
+  fetch_pts (mtp);
+  fetch_seq (mtp);
+  //print_message (M);
   return 0;
 }
 
@@ -1668,44 +1694,53 @@ struct query_methods rename_chat_methods = {
   .on_answer = rename_chat_on_answer
 };
 
-void do_rename_chat (peer_id_t id, char *name UU) {
-  clear_packet ();
-  out_int (CODE_messages_edit_chat_title);
+void do_rename_chat (struct telegram *instance, peer_id_t id, char *name UU) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_edit_chat_title);
   assert (get_peer_type (id) == PEER_CHAT);
-  out_int (get_peer_id (id));
-  out_string (name);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &rename_chat_methods, 0);
+  out_int (mtp, get_peer_id (id));
+  out_string (mtp, name);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &rename_chat_methods, instance);
 }
 /* }}} */
 
 /* {{{ Chat info */
 void print_chat_info (struct chat *C) {
-  peer_t *U = (void *)C;
-  print_start ();
-  push_color (COLOR_YELLOW);
+
+  // TODO: use peer_t
+  peer_t *U UU = (void *)C;
+
+  //print_start ();
+  //push_color (COLOR_YELLOW);
   logprintf ("Chat ");
-  print_chat_name (U->id, U);
+  //print_chat_name (U->id, U);
   logprintf (" members:\n");
   int i;
   for (i = 0; i < C->user_list_size; i++) {
     logprintf ("\t\t");
-    print_user_name (MK_USER (C->user_list[i].user_id), user_chat_get (MK_USER (C->user_list[i].user_id)));
+    //print_user_name (MK_USER (C->user_list[i].user_id), user_chat_get (MK_USER (C->user_list[i].user_id)));
     logprintf (" invited by ");
-    print_user_name (MK_USER (C->user_list[i].inviter_id), user_chat_get (MK_USER (C->user_list[i].inviter_id)));
+    //print_user_name (MK_USER (C->user_list[i].inviter_id), user_chat_get (MK_USER (C->user_list[i].inviter_id)));
     logprintf (" at ");
-    print_date_full (C->user_list[i].date);
+    //print_date_full (C->user_list[i].date);
     if (C->user_list[i].user_id == C->admin_id) {
       logprintf (" admin");
     }
     logprintf ("\n");
   }
-  pop_color ();
-  print_end ();
+  //pop_color ();
+  //print_end ();
 }
 
 int chat_info_on_answer (struct query *q UU) {
-  struct chat *C = fetch_alloc_chat_full ();
-  print_chat_info (C);
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  // TODO: use chat
+  struct chat *C UU = fetch_alloc_chat_full (mtp);
+
+  //print_chat_info (C);
   return 0;
 }
 
@@ -1713,32 +1748,36 @@ struct query_methods chat_info_methods = {
   .on_answer = chat_info_on_answer
 };
 
-void do_get_chat_info (peer_id_t id) {
+void do_get_chat_info (struct telegram *instance, peer_id_t id) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
   if (offline_mode) {
     peer_t *C = user_chat_get (id);
     if (!C) {
-      rprintf ("No such chat\n");
+      logprintf ("No such chat\n");
     } else {
-      print_chat_info (&C->chat);
+      //print_chat_info (&C->chat);
     }
     return;
   }
-  clear_packet ();
-  out_int (CODE_messages_get_full_chat);
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_get_full_chat);
   assert (get_peer_type (id) == PEER_CHAT);
-  out_int (get_peer_id (id));
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &chat_info_methods, 0);
+  out_int (mtp, get_peer_id (id));
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &chat_info_methods, 0);
 }
 /* }}} */
 
 /* {{{ User info */
 
 void print_user_info (struct user *U) {
-  peer_t *C = (void *)U;
-  print_start ();
-  push_color (COLOR_YELLOW);
+  // TODO: use peer
+  peer_t *C UU = (void *)U;
+
+  //print_start ();
+  //push_color (COLOR_YELLOW);
   logprintf ("User ");
-  print_user_name (U->id, C);
+  //print_user_name (U->id, C);
   logprintf (":\n");
   logprintf ("\treal name: %s %s\n", U->real_first_name, U->real_last_name);
   logprintf ("\tphone: %s\n", U->phone);
@@ -1746,16 +1785,19 @@ void print_user_info (struct user *U) {
     logprintf ("\tonline\n");
   } else {
     logprintf ("\toffline (was online ");
-    print_date_full (U->status.when);
+    //print_date_full (U->status.when);
     logprintf (")\n");
   }
-  pop_color ();
-  print_end ();
+  //pop_color ();
+  //print_end ();
 }
 
 int user_info_on_answer (struct query *q UU) {
-  struct user *U = fetch_alloc_user_full ();
-  print_user_info (U);
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  // TODO: Use user info
+  struct user *U UU = fetch_alloc_user_full (mtp);
+  //print_user_info (U);
   return 0;
 }
 
@@ -1763,39 +1805,42 @@ struct query_methods user_info_methods = {
   .on_answer = user_info_on_answer
 };
 
-void do_get_user_info (peer_id_t id) {
+void do_get_user_info (struct telegram *instance, peer_id_t id) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
   if (offline_mode) {
     peer_t *C = user_chat_get (id);
     if (!C) {
-      rprintf ("No such user\n");
+      logprintf ("No such user\n");
     } else {
-      print_user_info (&C->user);
+      //print_user_info (&C->user);
     }
     return;
   }
-  clear_packet ();
-  out_int (CODE_users_get_full_user);
+  clear_packet (mtp);
+  out_int (mtp, CODE_users_get_full_user);
   assert (get_peer_type (id) == PEER_USER);
   peer_t *U = user_chat_get (id);
   if (U && U->user.access_hash) {
-    out_int (CODE_input_user_foreign);
-    out_int (get_peer_id (id));
-    out_long (U->user.access_hash);
+    out_int (mtp, CODE_input_user_foreign);
+    out_int (mtp, get_peer_id (id));
+    out_long (mtp, U->user.access_hash);
   } else {
-    out_int (CODE_input_user_contact);
-    out_int (get_peer_id (id));
+    out_int (mtp, CODE_input_user_contact);
+    out_int (mtp, get_peer_id (id));
   }
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &user_info_methods, 0);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &user_info_methods, 0);
 }
 /* }}} */
 
 /* {{{ Get user info silently */
 int user_list_info_silent_on_answer (struct query *q UU) {
-  assert (fetch_int () == CODE_vector);
-  int n = fetch_int ();
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+  assert (fetch_int (mtp) == CODE_vector);
+  int n = fetch_int (mtp);
   int i;
   for (i = 0; i < n; i++) {
-    fetch_alloc_user ();
+    fetch_alloc_user (mtp);
   }
   return 0;
 }
@@ -1804,18 +1849,20 @@ struct query_methods user_list_info_silent_methods = {
   .on_answer = user_list_info_silent_on_answer
 };
 
-void do_get_user_list_info_silent (int num, int *list) {
-  clear_packet ();
-  out_int (CODE_users_get_users);
-  out_int (CODE_vector);
-  out_int (num);
+void do_get_user_list_info_silent (struct telegram *instance, int num, int *list) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+  clear_packet (mtp);
+  out_int (mtp, CODE_users_get_users);
+  out_int (mtp, CODE_vector);
+  out_int (mtp, num);
   int i;
   for (i = 0; i < num; i++) {
-    out_int (CODE_input_user_contact);
-    out_int (list[i]);
+    out_int (mtp, CODE_input_user_contact);
+    out_int (mtp, list[i]);
     //out_long (0);
   }
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &user_list_info_silent_methods, 0);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &user_list_info_silent_methods, 0);
 }
 /* }}} */
 
@@ -1841,7 +1888,7 @@ struct download {
 void end_load (struct download *D) {
   cur_downloading_bytes -= D->size;
   cur_downloaded_bytes -= D->size;
-  update_prompt ();
+  //update_prompt ();
   close (D->fd);
   if (D->next == 1) {
     logprintf ("Done: %s\n", D->name);
@@ -1864,22 +1911,33 @@ void end_load (struct download *D) {
   tfree (D, sizeof (*D));
 }
 
-void load_next_part (struct download *D);
+struct download_extra {
+  struct telegram *instance;
+  struct download *dl;
+};
+
+void load_next_part (struct telegram *instance, struct download *D);
 int download_on_answer (struct query *q) {
-  assert (fetch_int () == (int)CODE_upload_file);
-  unsigned x = fetch_int ();
+  struct download_extra *extra = q->extra;
+  struct telegram *instance = extra->instance;
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  struct download *D = extra->dl;
+  free(extra);
+
+  assert (fetch_int (mtp) == (int)CODE_upload_file);
+  unsigned x = fetch_int (mtp);
   assert (x);
-  struct download *D = q->extra;
   if (D->fd == -1) {
     D->fd = open (D->name, O_CREAT | O_WRONLY, 0640);
   }
-  fetch_int (); // mtime
-  int len = prefetch_strlen ();
+  fetch_int (mtp); // mtime
+  int len = prefetch_strlen (mtp);
   assert (len >= 0);
   cur_downloaded_bytes += len;
-  update_prompt ();
+  //update_prompt ();
   if (D->iv) {
-    unsigned char *ptr = (void *)fetch_str (len);
+    unsigned char *ptr = (void *)fetch_str (mtp, len);
     assert (!(len & 15));
     AES_KEY aes_key;
     AES_set_decrypt_key (D->key, 256, &aes_key);
@@ -1890,11 +1948,11 @@ int download_on_answer (struct query *q) {
     }
     assert (write (D->fd, ptr, len) == len);
   } else {
-    assert (write (D->fd, fetch_str (len), len) == len);
+    assert (write (D->fd, fetch_str (mtp, len), len) == len);
   }
   D->offset += len;
   if (D->offset < D->size) {
-    load_next_part (D);
+    load_next_part (instance, D);
     return 0;
   } else {
     end_load (D);
@@ -1906,14 +1964,15 @@ struct query_methods download_methods = {
   .on_answer = download_on_answer
 };
 
-void load_next_part (struct download *D) {
+void load_next_part (struct telegram *instance, struct download *D) {
+  struct mtproto_connection *mtp = instance->connection;
   if (!D->offset) {
     static char buf[PATH_MAX];
     int l;
     if (!D->id) {
-      l = tsnprintf (buf, sizeof (buf), "%s/download_%lld_%d", get_downloads_directory (), D->volume, D->local_id);
+      l = tsnprintf (buf, sizeof (buf), "%s/download_%lld_%d", instance->download_path, D->volume, D->local_id);
     } else {
-      l = tsnprintf (buf, sizeof (buf), "%s/download_%lld", get_downloads_directory (), D->id);
+      l = tsnprintf (buf, sizeof (buf), "%s/download_%lld", instance->download_path, D->id);
     }
     if (l >= (int) sizeof (buf)) {
       logprintf ("Download filename is too long");
@@ -1926,7 +1985,7 @@ void load_next_part (struct download *D) {
       if (D->offset >= D->size) {
         cur_downloading_bytes += D->size;
         cur_downloaded_bytes += D->offset;
-        rprintf ("Already downloaded\n");
+        logprintf ("Already downloaded\n");
         end_load (D);
         return;
       }
@@ -1934,33 +1993,38 @@ void load_next_part (struct download *D) {
     
     cur_downloading_bytes += D->size;
     cur_downloaded_bytes += D->offset;
-    update_prompt ();
+    //update_prompt ();
   }
-  clear_packet ();
-  out_int (CODE_upload_get_file);
+  clear_packet (mtp);
+  out_int (mtp, CODE_upload_get_file);
   if (!D->id) {
-    out_int (CODE_input_file_location);
-    out_long (D->volume);
-    out_int (D->local_id);
-    out_long (D->secret);
+    out_int (mtp, CODE_input_file_location);
+    out_long (mtp, D->volume);
+    out_int (mtp, D->local_id);
+    out_long (mtp, D->secret);
   } else {
     if (D->iv) {
-      out_int (CODE_input_encrypted_file_location);
+      out_int (mtp, CODE_input_encrypted_file_location);
     } else {
-      out_int (D->type);
+      out_int (mtp, D->type);
     }
-    out_long (D->id);
-    out_long (D->access_hash);
+    out_long (mtp, D->id);
+    out_long (mtp, D->access_hash);
   }
-  out_int (D->offset);
-  out_int (1 << 14);
-  send_query (DC_list[D->dc], packet_ptr - packet_buffer, packet_buffer, &download_methods, D);
+  out_int (mtp, D->offset);
+  out_int (mtp, 1 << 14);
+
+  struct download_extra *extra = malloc(sizeof(struct download_extra));
+  extra->instance = instance;
+  extra->dl = D;
+
+  send_query (instance->auth.DC_list[D->dc], mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &download_methods, extra);
   //send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &download_methods, D);
 }
 
-void do_load_photo_size (struct photo_size *P, int next) {
+void do_load_photo_size (struct telegram *instance, struct photo_size *P, int next) {
   if (!P->loc.dc) {
-    rprintf ("Bad video thumb\n");
+    logprintf ("Bad video thumb\n");
     return;
   }
   
@@ -1977,10 +2041,10 @@ void do_load_photo_size (struct photo_size *P, int next) {
   D->next = next;
   D->name = 0;
   D->fd = -1;
-  load_next_part (D);
+  load_next_part (instance, D);
 }
 
-void do_load_photo (struct photo *photo, int next) {
+void do_load_photo (struct telegram *instance, struct photo *photo, int next) {
   if (!photo->sizes_num) { return; }
   int max = -1;
   int maxi = 0;
@@ -1991,18 +2055,18 @@ void do_load_photo (struct photo *photo, int next) {
       maxi = i;
     }
   }
-  do_load_photo_size (&photo->sizes[maxi], next);
+  do_load_photo_size (instance, &photo->sizes[maxi], next);
 }
 
-void do_load_video_thumb (struct video *video, int next) {
-  do_load_photo_size (&video->thumb, next);
+void do_load_video_thumb (struct telegram *instance, struct video *video, int next) {
+  do_load_photo_size (instance, &video->thumb, next);
 }
 
-void do_load_document_thumb (struct document *video, int next) {
-  do_load_photo_size (&video->thumb, next);
+void do_load_document_thumb (struct telegram *instance, struct document *video, int next) {
+  do_load_photo_size (instance, &video->thumb, next);
 }
 
-void do_load_video (struct video *V, int next) {
+void do_load_video (struct telegram *instance, struct video *V, int next) {
   assert (V);
   assert (next);
   struct download *D = talloc0 (sizeof (*D));
@@ -2015,10 +2079,10 @@ void do_load_video (struct video *V, int next) {
   D->name = 0;
   D->fd = -1;
   D->type = CODE_input_video_file_location;
-  load_next_part (D);
+  load_next_part (instance, D);
 }
 
-void do_load_audio (struct video *V, int next) {
+void do_load_audio (struct telegram *instance, struct video *V, int next) {
   assert (V);
   assert (next);
   struct download *D = talloc0 (sizeof (*D));
@@ -2031,10 +2095,10 @@ void do_load_audio (struct video *V, int next) {
   D->name = 0;
   D->fd = -1;
   D->type = CODE_input_audio_file_location;
-  load_next_part (D);
+  load_next_part (instance, D);
 }
 
-void do_load_document (struct document *V, int next) {
+void do_load_document (struct telegram *instance, struct document *V, int next) {
   assert (V);
   assert (next);
   struct download *D = talloc0 (sizeof (*D));
@@ -2047,10 +2111,10 @@ void do_load_document (struct document *V, int next) {
   D->name = 0;
   D->fd = -1;
   D->type = CODE_input_document_file_location;
-  load_next_part (D);
+  load_next_part (instance, D);
 }
 
-void do_load_encr_video (struct encr_video *V, int next) {
+void do_load_encr_video (struct telegram *instance, struct encr_video *V, int next) {
   assert (V);
   assert (next);
   struct download *D = talloc0 (sizeof (*D));
@@ -2065,7 +2129,7 @@ void do_load_encr_video (struct encr_video *V, int next) {
   D->key = V->key;
   D->iv = talloc (32);
   memcpy (D->iv, V->iv, 32);
-  load_next_part (D);
+  load_next_part (instance, D);
       
   unsigned char md5[16];
   unsigned char str[64];
@@ -2087,16 +2151,18 @@ int isn_export_auth_str (void) {
 }
 
 int export_auth_on_answer (struct query *q UU) {
-  assert (fetch_int () == (int)CODE_auth_exported_authorization);
-  int l = fetch_int ();
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  assert (fetch_int (mtp) == (int)CODE_auth_exported_authorization);
+  int l = fetch_int (mtp);
   if (!our_id) {
     our_id = l;
   } else {
     assert (our_id == l);
   }
-  l = prefetch_strlen ();
+  l = prefetch_strlen (mtp);
   char *s = talloc (l);
-  memcpy (s, fetch_str (l), l);
+  memcpy (s, fetch_str (mtp, l), l);
   export_auth_str_len = l;
   export_auth_str = s;
   return 0;
@@ -2107,21 +2173,24 @@ struct query_methods export_auth_methods = {
   .on_error = fail_on_error
 };
 
-void do_export_auth (int num) {
+void do_export_auth (struct telegram *instance, int num) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
   export_auth_str = 0;
-  clear_packet ();
-  out_int (CODE_auth_export_authorization);
-  out_int (num);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &export_auth_methods, 0);
-  net_loop (0, is_export_auth_str);
+  clear_packet (mtp);
+  out_int (mtp, CODE_auth_export_authorization);
+  out_int (mtp, num);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &export_auth_methods, 0);
 }
 /* }}} */
 
 /* {{{ Import auth */
 int import_auth_on_answer (struct query *q UU) {
-  assert (fetch_int () == (int)CODE_auth_authorization);
-  fetch_int (); // expires
-  fetch_alloc_user ();
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+  assert (fetch_int (mtp) == (int)CODE_auth_authorization);
+
+  fetch_int (mtp); // expires
+  fetch_alloc_user (mtp);
   tfree_str (export_auth_str);
   export_auth_str = 0;
   return 0;
@@ -2132,21 +2201,23 @@ struct query_methods import_auth_methods = {
   .on_error = fail_on_error
 };
 
-void do_import_auth (int num) {
-  clear_packet ();
-  out_int (CODE_auth_import_authorization);
-  out_int (our_id);
-  out_cstring (export_auth_str, export_auth_str_len);
-  send_query (DC_list[num], packet_ptr - packet_buffer, packet_buffer, &import_auth_methods, 0);
-  net_loop (0, isn_export_auth_str);
+void do_import_auth (struct telegram *instance, int num) {
+  struct mtproto_connection *mtp = instance->connection;
+  clear_packet (mtp);
+  out_int (mtp, CODE_auth_import_authorization);
+  out_int (mtp, our_id);
+  out_cstring (mtp, export_auth_str, export_auth_str_len);
+  send_query (instance->auth.DC_list[num], mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &import_auth_methods, 0);
 }
 /* }}} */
 
 /* {{{ Add contact */
 int add_contact_on_answer (struct query *q UU) {
-  assert (fetch_int () == (int)CODE_contacts_imported_contacts);
-  assert (fetch_int () == CODE_vector);
-  int n = fetch_int ();
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  assert (fetch_int (mtp) == (int)CODE_contacts_imported_contacts);
+  assert (fetch_int (mtp) == CODE_vector);
+  int n = fetch_int (mtp);
   if (n > 0) {
     logprintf ("Added successfully");
   } else {
@@ -2154,19 +2225,19 @@ int add_contact_on_answer (struct query *q UU) {
   }
   int i;
   for (i = 0; i < n ; i++) {
-    assert (fetch_int () == (int)CODE_imported_contact);
-    fetch_int (); // uid
-    fetch_long (); // client_id
+    assert (fetch_int (mtp) == (int)CODE_imported_contact);
+    fetch_int (mtp); // uid
+    fetch_long (mtp); // client_id
   }
-  assert (fetch_int () == CODE_vector);
-  n = fetch_int ();
+  assert (fetch_int (mtp) == CODE_vector);
+  n = fetch_int (mtp);
   for (i = 0; i < n ; i++) {
-    struct user *U = fetch_alloc_user ();
-    print_start ();
-    push_color (COLOR_YELLOW);
+    struct user *U = fetch_alloc_user (mtp);
+    //print_start ();
+    //push_color (COLOR_YELLOW);
     logprintf ("User #%d: ", get_peer_id (U->id));
-    print_user_name (U->id, (peer_t *)U);
-    push_color (COLOR_GREEN);
+    //print_user_name (U->id, (peer_t *)U);
+    //push_color (COLOR_GREEN);
     logprintf (" (");
     logprintf ("%s", U->print_name);
     if (U->phone) {
@@ -2174,20 +2245,20 @@ int add_contact_on_answer (struct query *q UU) {
       logprintf ("%s", U->phone);
     }
     logprintf (") ");
-    pop_color ();
+    //pop_color ();
     if (U->status.online > 0) {
       logprintf ("online\n");
     } else {
       if (U->status.online < 0) {
         logprintf ("offline. Was online ");
-        print_date_full (U->status.when);
+        //print_date_full (U->status.when);
       } else {
         logprintf ("offline permanent");
       }
       logprintf ("\n");
     }
-    pop_color ();
-    print_end ();
+    //pop_color ();
+    //print_end ();
 
   }
   return 0;
@@ -2197,18 +2268,20 @@ struct query_methods add_contact_methods = {
   .on_answer = add_contact_on_answer,
 };
 
-void do_add_contact (const char *phone, int phone_len, const char *first_name, int first_name_len, const char *last_name, int last_name_len, int force) {
-  clear_packet ();
-  out_int (CODE_contacts_import_contacts);
-  out_int (CODE_vector);
-  out_int (1);
-  out_int (CODE_input_phone_contact);
-  out_long (lrand48 () * (1ll << 32) + lrand48 ());
-  out_cstring (phone, phone_len);
-  out_cstring (first_name, first_name_len);
-  out_cstring (last_name, last_name_len);
-  out_int (force ? CODE_bool_true : CODE_bool_false);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &add_contact_methods, 0);
+void do_add_contact (struct telegram *instance, const char *phone, int phone_len, const char *first_name, int first_name_len, const char *last_name, int last_name_len, int force) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+  clear_packet (mtp);
+  out_int (mtp, CODE_contacts_import_contacts);
+  out_int (mtp, CODE_vector);
+  out_int (mtp, 1);
+  out_int (mtp, CODE_input_phone_contact);
+  out_long (mtp, lrand48 () * (1ll << 32) + lrand48 ());
+  out_cstring (mtp, phone, phone_len);
+  out_cstring (mtp, first_name, first_name_len);
+  out_cstring (mtp, last_name, last_name_len);
+  out_int (mtp, force ? CODE_bool_true : CODE_bool_false);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &add_contact_methods, 0);
 }
 /* }}} */
 
@@ -2221,53 +2294,57 @@ struct query_methods msg_search_methods = {
   .on_answer = msg_search_on_answer
 };
 
-void do_msg_search (peer_id_t id, int from, int to, int limit, const char *s) {
+void do_msg_search (struct telegram *instance, peer_id_t id, int from, int to, int limit, const char *s) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
   if (get_peer_type (id) == PEER_ENCR_CHAT) {
-    rprintf ("Can not search in secure chat\n");
+    logprintf ("Can not search in secure chat\n");
     return;
   }
-  clear_packet ();
-  out_int (CODE_messages_search);
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_search);
   if (get_peer_type (id) == PEER_UNKNOWN) {
-    out_int (CODE_input_peer_empty);
+    out_int (mtp, CODE_input_peer_empty);
   } else {
-    out_peer_id (id);
+    out_peer_id (mtp, id);
   }
-  out_string (s);
-  out_int (CODE_input_messages_filter_empty);
-  out_int (from);
-  out_int (to);
-  out_int (0); // offset
-  out_int (0); // max_id
-  out_int (limit);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &msg_search_methods, 0);
+  out_string (mtp, s);
+  out_int (mtp, CODE_input_messages_filter_empty);
+  out_int (mtp, from);
+  out_int (mtp, to);
+  out_int (mtp, 0); // offset
+  out_int (mtp, 0); // max_id
+  out_int (mtp, limit);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &msg_search_methods, 0);
 }
 /* }}} */
 
 /* {{{ Contacts search */
 int contacts_search_on_answer (struct query *q UU) {
-  assert (fetch_int () == CODE_contacts_found);
-  assert (fetch_int () == CODE_vector);
-  int n = fetch_int ();
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+ 
+  assert (fetch_int (mtp) == CODE_contacts_found);
+  assert (fetch_int (mtp) == CODE_vector);
+  int n = fetch_int (mtp);
   int i;
   for (i = 0; i < n; i++) {
-    assert (fetch_int () == (int)CODE_contact_found);
-    fetch_int ();
+    assert (fetch_int (mtp) == (int)CODE_contact_found);
+    fetch_int (mtp);
   }
-  assert (fetch_int () == CODE_vector);
-  n = fetch_int ();
-  print_start ();
-  push_color (COLOR_YELLOW);
+  assert (fetch_int (mtp) == CODE_vector);
+  n = fetch_int (mtp);
+  //print_start ();
+  //push_color (COLOR_YELLOW);
   for (i = 0; i < n; i++) {
-    struct user *U = fetch_alloc_user ();
+    struct user *U = fetch_alloc_user (mtp);
     logprintf ("User ");
-    push_color  (COLOR_RED);
+    //push_color  (COLOR_RED);
     logprintf ("%s %s", U->first_name, U->last_name); 
-    pop_color ();
+    //pop_color ();
     logprintf (". Phone %s\n", U->phone);
   }
-  pop_color ();
-  print_end ();
+  //pop_color ();
+  //print_end ();
   return 0;
 }
 
@@ -2275,57 +2352,62 @@ struct query_methods contacts_search_methods = {
   .on_answer = contacts_search_on_answer
 };
 
-void do_contacts_search (int limit, const char *s) {
-  clear_packet ();
-  out_int (CODE_contacts_search);
-  out_string (s);
-  out_int (limit);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &contacts_search_methods, 0);
+void do_contacts_search (struct telegram *instance, int limit, const char *s) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+   
+  clear_packet (mtp);
+  out_int (mtp, CODE_contacts_search);
+  out_string (mtp, s);
+  out_int (mtp, limit);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &contacts_search_methods, 0);
 }
 /* }}} */
 
 /* {{{ Encr accept */
 int send_encr_accept_on_answer (struct query *q UU) {
-  struct secret_chat *E = fetch_alloc_encrypted_chat ();
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+  struct secret_chat *E = fetch_alloc_encrypted_chat (mtp);
 
   if (E->state == sc_ok) {
-    print_start ();
-    push_color (COLOR_YELLOW);
+    //print_start ();
+    //push_color (COLOR_YELLOW);
     logprintf ("Encrypted connection with ");
-    print_encr_chat_name (E->id, (void *)E);
+    ////print_encr_chat_name (E->id, (void *)E);
     logprintf (" established\n");
-    pop_color ();
-    print_end ();
+    //pop_color ();
+    //print_end ();
   } else {
-    print_start ();
-    push_color (COLOR_YELLOW);
+    //print_start ();
+    //push_color (COLOR_YELLOW);
     logprintf ("Encrypted connection with ");
-    print_encr_chat_name (E->id, (void *)E);
+    ////print_encr_chat_name (E->id, (void *)E);
     logprintf (" failed\n");
-    pop_color ();
-    print_end ();
+    //pop_color ();
+    //print_end ();
   }
   return 0;
 }
 
 int send_encr_request_on_answer (struct query *q UU) {
-  struct secret_chat *E = fetch_alloc_encrypted_chat ();
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+  struct secret_chat *E = fetch_alloc_encrypted_chat (mtp);
   if (E->state == sc_deleted) {
-    print_start ();
-    push_color (COLOR_YELLOW);
+    //print_start ();
+    //push_color (COLOR_YELLOW);
     logprintf ("Encrypted connection with ");
-    print_encr_chat_name (E->id, (void *)E);
+    //print_encr_chat_name (E->id, (void *)E);
     logprintf (" can not be established\n");
-    pop_color ();
-    print_end ();
+    //pop_color ();
+    //print_end ();
   } else {
-    print_start ();
-    push_color (COLOR_YELLOW);
+    //print_start ();
+    //push_color (COLOR_YELLOW);
     logprintf ("Establishing connection with ");
-    print_encr_chat_name (E->id, (void *)E);
+    //print_encr_chat_name (E->id, (void *)E);
     logprintf ("\n");
-    pop_color ();
-    print_end ();
+    //pop_color ();
+    //print_end ();
 
     assert (E->state == sc_waiting);
   }
@@ -2345,7 +2427,9 @@ unsigned char *encr_prime;
 int encr_param_version;
 BN_CTX *ctx;
 
-void do_send_accept_encr_chat (struct secret_chat *E, unsigned char *random) {
+void do_send_accept_encr_chat (struct telegram *instance, struct secret_chat *E, unsigned char *random) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
   int i;
   int ok = 0;
   for (i = 0; i < 64; i++) {
@@ -2383,28 +2467,28 @@ void do_send_accept_encr_chat (struct secret_chat *E, unsigned char *random) {
   static unsigned char sha_buffer[20];
   sha1 (kk, 256, sha_buffer);
 
-  bl_do_set_encr_chat_key (E, kk, *(long long *)(sha_buffer + 12));
+  bl_do_set_encr_chat_key (mtp->bl, mtp, E, kk, *(long long *)(sha_buffer + 12));
 
-  clear_packet ();
-  out_int (CODE_messages_accept_encryption);
-  out_int (CODE_input_encrypted_chat);
-  out_int (get_peer_id (E->id));
-  out_long (E->access_hash);
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_accept_encryption);
+  out_int (mtp, CODE_input_encrypted_chat);
+  out_int (mtp, get_peer_id (E->id));
+  out_long (mtp, E->access_hash);
   
   ensure (BN_set_word (g_a, encr_root));
   ensure (BN_mod_exp (r, g_a, b, p, ctx));
   static unsigned char buf[256];
   memset (buf, 0, sizeof (buf));
   BN_bn2bin (r, buf);
-  out_cstring ((void *)buf, 256);
+  out_cstring (mtp, (void *)buf, 256);
 
-  out_long (E->key_fingerprint);
+  out_long (mtp, E->key_fingerprint);
   BN_clear_free (b);
   BN_clear_free (g_a);
   BN_clear_free (p);
   BN_clear_free (r);
 
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_encr_accept_methods, E);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &send_encr_accept_methods, E);
 }
 
 void do_create_keys_end (struct secret_chat *U) {
@@ -2456,7 +2540,10 @@ void do_create_keys_end (struct secret_chat *U) {
   BN_clear_free (a);
 }
 
-void do_send_create_encr_chat (void *x, unsigned char *random) {
+void do_send_create_encr_chat (struct telegram *instance, void *x, unsigned char *random) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+   
   int user_id = (long)x;
   int i;
   unsigned char random_here[256];
@@ -2495,59 +2582,72 @@ void do_send_create_encr_chat (void *x, unsigned char *random) {
     t = lrand48 ();
   }
 
-  bl_do_encr_chat_init (t, user_id, (void *)random, (void *)g_a);
+  bl_do_encr_chat_init (mtp->bl, mtp, t, user_id, (void *)random, (void *)g_a);
   peer_t *_E = user_chat_get (MK_ENCR_CHAT (t));
   assert (_E);
   struct secret_chat *E = &_E->encr_chat;
   
-  clear_packet ();
-  out_int (CODE_messages_request_encryption);
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_request_encryption);
   peer_t *U = user_chat_get (MK_USER (E->user_id));
   assert (U);
   if (U && U->user.access_hash) {
-    out_int (CODE_input_user_foreign);
-    out_int (E->user_id);
-    out_long (U->user.access_hash);
+    out_int (mtp, CODE_input_user_foreign);
+    out_int (mtp, E->user_id);
+    out_long (mtp, U->user.access_hash);
   } else {
-    out_int (CODE_input_user_contact);
-    out_int (E->user_id);
+    out_int (mtp, CODE_input_user_contact);
+    out_int (mtp, E->user_id);
   }
-  out_int (get_peer_id (E->id));
-  out_cstring (g_a, 256);
-  write_secret_chat_file ();
+  out_int (mtp, get_peer_id (E->id));
+  out_cstring (mtp, g_a, 256);
+  // TODO: properly...
+  write_secret_chat_file ("/home/dev-jessie/.telegram/+4915736384600/secret");
   
   BN_clear_free (g);
   BN_clear_free (p);
   BN_clear_free (r);
 
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &send_encr_request_methods, E);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &send_encr_request_methods, E);
 }
 
+struct create_encr_chat_extra {
+   void (*callback) (struct telegram *instance, struct secret_chat *E, unsigned char *random);
+   void *data;
+   struct telegram *instance;
+};
+
 int get_dh_config_on_answer (struct query *q UU) {
-  unsigned x = fetch_int ();
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  unsigned x = fetch_int (mtp);
   assert (x == CODE_messages_dh_config || x == CODE_messages_dh_config_not_modified || LOG_DH_CONFIG);
   if (x == CODE_messages_dh_config || x == LOG_DH_CONFIG)  {
-    int a = fetch_int ();
-    int l = prefetch_strlen ();
+    int a = fetch_int (mtp);
+    int l = prefetch_strlen (mtp);
     assert (l == 256);
-    char *s = fetch_str (l);
-    int v = fetch_int ();
-    bl_do_set_dh_params (a, (void *)s, v);
+    char *s = fetch_str (mtp, l);
+    int v = fetch_int (mtp);
+    bl_do_set_dh_params (mtp->bl, mtp, a, (void *)s, v);
 
     BIGNUM *p = BN_bin2bn ((void *)s, 256, 0);
     ensure_ptr (p);
-    assert (check_DH_params (p, a) >= 0);
+    assert (check_DH_params (mtp, p, a) >= 0);
     BN_free (p);      
   }
   if (x == LOG_DH_CONFIG) { return 0; }
-  int l = prefetch_strlen ();
+  int l = prefetch_strlen (mtp);
   assert (l == 256);
   unsigned char *random = talloc (256);
-  memcpy (random, fetch_str (256), 256);
+  memcpy (random, fetch_str (mtp, 256), 256);
   if (q->extra) {
-    void **x = q->extra;
-    ((void (*)(void *, void *))(*x))(x[1], random);
-    tfree (x, 2 * sizeof (void *));
+    //((void (*)(void *, void *))(*x))(x[1], random);
+
+    struct create_encr_chat_extra *extra = q->extra;
+    extra->callback(extra->instance, extra->data, random);
+    free(extra);
+    //tfree (x, 2 * sizeof (void *));
+
     tfree_secure (random, 256);
   } else {
     tfree_secure (random, 256);
@@ -2559,28 +2659,37 @@ struct query_methods get_dh_config_methods  = {
   .on_answer = get_dh_config_on_answer
 };
 
-void do_accept_encr_chat_request (struct secret_chat *E) {
+void do_accept_encr_chat_request (struct telegram *instance, struct secret_chat *E) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
   assert (E->state == sc_request);
   
-  clear_packet ();
-  out_int (CODE_messages_get_dh_config);
-  out_int (encr_param_version);
-  out_int (256);
-  void **x = talloc (2 * sizeof (void *));
-  x[0] = do_send_accept_encr_chat;
-  x[1] = E;
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_dh_config_methods, x);
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_get_dh_config);
+  out_int (mtp, encr_param_version);
+  out_int (mtp, 256);
+
+  struct create_encr_chat_extra *extra = malloc(sizeof(struct create_encr_chat_extra));
+  extra->callback = do_send_accept_encr_chat;
+  extra->instance = instance;
+  extra->data = (void*)E;
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &get_dh_config_methods, extra);
 }
 
-void do_create_encr_chat_request (int user_id) {
-  clear_packet ();
-  out_int (CODE_messages_get_dh_config);
-  out_int (encr_param_version);
-  out_int (256);
-  void **x = talloc (2 * sizeof (void *));
-  x[0] = do_send_create_encr_chat;
-  x[1] = (void *)(long)(user_id);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_dh_config_methods, x);
+void do_create_encr_chat_request (struct telegram *instance, int user_id) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_get_dh_config);
+  out_int (mtp, encr_param_version);
+  out_int (mtp, 256);
+
+  struct create_encr_chat_extra *extra = malloc(sizeof(struct create_encr_chat_extra));
+  extra->callback = do_send_accept_encr_chat;
+  extra->instance = instance;
+  extra->data = (void *)(long)user_id;
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &get_dh_config_methods, extra);
 }
 /* }}} */
 
@@ -2589,79 +2698,84 @@ int unread_messages;
 int difference_got;
 int seq, pts, qts, last_date;
 int get_state_on_answer (struct query *q UU) {
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
   logprintf("get_state_on_answer()\n");
-  assert (fetch_int () == (int)CODE_updates_state);
-  bl_do_set_pts (fetch_int ());
-  bl_do_set_qts (fetch_int ());
-  bl_do_set_date (fetch_int ());
-  bl_do_set_seq (fetch_int ());
-  unread_messages = fetch_int ();
-  write_state_file ();
+  assert (fetch_int (mtp) == (int)CODE_updates_state);
+  bl_do_set_pts (mtp->bl, mtp, fetch_int (mtp));
+  bl_do_set_qts (mtp->bl, mtp, fetch_int (mtp));
+  bl_do_set_date (mtp->bl, mtp, fetch_int (mtp));
+  bl_do_set_seq (mtp->bl, mtp, fetch_int (mtp));
+  unread_messages = fetch_int (mtp);
+  //write_state_file ();
   difference_got = 1;
   return 0;
 }
 
 int get_difference_active;
 int get_difference_on_answer (struct query *q UU) {
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+  struct telegram *instance = q->extra;
+
   logprintf("get_difference_on_answer()\n");
   get_difference_active = 0;
-  unsigned x = fetch_int ();
+  unsigned x = fetch_int (mtp);
   if (x == CODE_updates_difference_empty) {
-    bl_do_set_date (fetch_int ());
-    bl_do_set_seq (fetch_int ());
+    bl_do_set_date (mtp->bl, mtp, fetch_int (mtp));
+    bl_do_set_seq (mtp->bl, mtp, fetch_int (mtp));
     difference_got = 1;
   } else if (x == CODE_updates_difference || x == CODE_updates_difference_slice) {
     int n, i;
-    assert (fetch_int () == CODE_vector);
-    n = fetch_int ();
+    assert (fetch_int (mtp) == CODE_vector);
+    n = fetch_int (mtp);
     static struct message *ML[10000];
     int ml_pos = 0;
     for (i = 0; i < n; i++) {
       if (ml_pos < 10000) {
-        ML[ml_pos ++] = fetch_alloc_message ();
+        ML[ml_pos ++] = fetch_alloc_message (mtp, instance);
       } else {
-        fetch_alloc_message ();
+        fetch_alloc_message (mtp, instance);
       }
     }
-    assert (fetch_int () == CODE_vector);
-    n = fetch_int ();
+    assert (fetch_int (mtp) == CODE_vector);
+    n = fetch_int (mtp);
     for (i = 0; i < n; i++) {
       if (ml_pos < 10000) {
-        ML[ml_pos ++] = fetch_alloc_encrypted_message ();
+        ML[ml_pos ++] = fetch_alloc_encrypted_message (mtp, instance);
       } else {
-        fetch_alloc_encrypted_message ();
+        fetch_alloc_encrypted_message (mtp, instance);
       }
     }
-    assert (fetch_int () == CODE_vector);
-    n = fetch_int ();
+    assert (fetch_int (mtp) == CODE_vector);
+    n = fetch_int (mtp);
     for (i = 0; i < n; i++) {
       work_update (0, 0);
     }
-    assert (fetch_int () == CODE_vector);
-    n = fetch_int ();
+    assert (fetch_int (mtp) == CODE_vector);
+    n = fetch_int (mtp);
     logprintf("Found %d chats\n", n);
     for (i = 0; i < n; i++) {
-      fetch_alloc_chat ();
+      fetch_alloc_chat (mtp);
     }
-    assert (fetch_int () == CODE_vector);
-    n = fetch_int ();
+    assert (fetch_int (mtp) == CODE_vector);
+    n = fetch_int (mtp);
     logprintf("Found %d users\n", n);
     for (i = 0; i < n; i++) {
-      fetch_alloc_user ();
+      fetch_alloc_user (mtp);
     }
-    assert (fetch_int () == (int)CODE_updates_state);
-    bl_do_set_pts (fetch_int ());
-    bl_do_set_qts (fetch_int ());
-    bl_do_set_date (fetch_int ());
-    bl_do_set_seq (fetch_int ());
-    unread_messages = fetch_int ();
-    write_state_file ();
+    assert (fetch_int (mtp) == (int)CODE_updates_state);
+    bl_do_set_pts (mtp->bl, mtp, fetch_int (mtp));
+    bl_do_set_qts (mtp->bl, mtp, fetch_int (mtp));
+    bl_do_set_date (mtp->bl, mtp, fetch_int (mtp));
+    bl_do_set_seq (mtp->bl, mtp, fetch_int (mtp));
+    unread_messages = fetch_int (mtp);
+    //write_state_file ();
     for (i = 0; i < ml_pos; i++) {
-	  event_update_new_message(ML[i]);
-      //print_message (ML[i]);
+	  event_update_new_message (instance, ML[i]);
+      ////print_message (ML[i]);
     }
     if (x == CODE_updates_difference_slice) {
-      do_get_difference ();
+      do_get_difference (instance);
     } else {
       difference_got = 1;
     }
@@ -2679,87 +2793,92 @@ struct query_methods get_difference_methods = {
   .on_answer = get_difference_on_answer
 };
 
-void do_get_difference (void) {
+void do_get_difference (struct telegram *instance) {
+  struct mtproto_connection *mtp = instance->connection;
+  struct dc *DC_working = telegram_get_working_dc(instance);
+
   logprintf("do_get_difference()\n");
   get_difference_active = 1;
   difference_got = 0;
-  clear_packet ();
-  do_insert_header ();
+  clear_packet (mtp);
+  do_insert_header (mtp);
   if (seq > 0 || sync_from_start) {
     if (pts == 0) { pts = 1; }
     if (qts == 0) { qts = 1; }
     if (last_date == 0) { last_date = 1; }
-    out_int (CODE_updates_get_difference);
-    out_int (pts);
-    out_int (last_date);
-    out_int (qts);
-    send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_difference_methods, 0);
+    out_int (mtp, CODE_updates_get_difference);
+    out_int (mtp, pts);
+    out_int (mtp, last_date);
+    out_int (mtp, qts);
+    send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &get_difference_methods, instance);
   } else {
-    out_int (CODE_updates_get_state);
-    send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_state_methods, 0);
+    out_int (mtp, CODE_updates_get_state);
+    send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &get_state_methods, 0);
   }
 }
 /* }}} */
 
 /* {{{ Visualize key */
-char *colors[4] = {COLOR_GREY, COLOR_CYAN, COLOR_BLUE, COLOR_GREEN};
+//char *colors[4] = {COLOR_GREY, COLOR_CYAN, COLOR_BLUE, COLOR_GREEN};
 
 void do_visualize_key (peer_id_t id) {
   assert (get_peer_type (id) == PEER_ENCR_CHAT);
   peer_t *P = user_chat_get (id);
   assert (P);
   if (P->encr_chat.state != sc_ok) {
-    rprintf ("Chat is not initialized yet\n");
+    logprintf ("Chat is not initialized yet\n");
     return;
   }
   unsigned char buf[20];
   SHA1 ((void *)P->encr_chat.key, 256, buf);
-  print_start ();
+  //print_start ();
   int i;
   for (i = 0; i < 16; i++) {
     int x = buf[i];
     int j;
     for (j = 0; j < 4; j ++) {    
-      push_color (colors[x & 3]);
-      push_color (COLOR_INVERSE);
-      logprintf ("  ");
-      pop_color ();
-      pop_color ();
+      ////push_color (colors[x & 3]);
+      ////push_color (COLOR_INVERSE);
+      //logprintf ("  ");
+      ////pop_color ();
+      ////pop_color ();
       x = x >> 2;
     }
     if (i & 1) { logprintf ("\n"); }
   }
-  print_end ();
+  //print_end ();
 }
 /* }}} */
 
 /* {{{ Get suggested */
 int get_suggested_on_answer (struct query *q UU) {
-  assert (fetch_int () == CODE_contacts_suggested);
-  assert (fetch_int () == CODE_vector);
-  int n = fetch_int ();
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  assert (fetch_int (mtp) == CODE_contacts_suggested);
+  assert (fetch_int (mtp) == CODE_vector);
+  int n = fetch_int (mtp);
   logprintf ("n = %d\n", n);
   assert (n <= 200);
   int l[400];
   int i;
   for (i = 0; i < n; i++) {
-    assert (fetch_int () == CODE_contact_suggested);
-    l[2 * i] = fetch_int ();
-    l[2 * i + 1] = fetch_int ();
+    assert (fetch_int (mtp) == CODE_contact_suggested);
+    l[2 * i] = fetch_int (mtp);
+    l[2 * i + 1] = fetch_int (mtp);
   }
-  assert (fetch_int () == CODE_vector);
-  int m = fetch_int ();
+  assert (fetch_int (mtp) == CODE_vector);
+  int m = fetch_int (mtp);
   assert (n == m);
-  print_start ();
-  push_color (COLOR_YELLOW);
+  //print_start ();
+  //push_color (COLOR_YELLOW);
   for (i = 0; i < m; i++) {
-    peer_t *U = (void *)fetch_alloc_user ();
+    peer_t *U = (void *)fetch_alloc_user (mtp);
     assert (get_peer_id (U->id) == l[2 * i]);
-    print_user_name (U->id, U);
+    //print_user_name (U->id, U);
     logprintf (" phone %s: %d mutual friends\n", U->user.phone, l[2 * i + 1]);
   }
-  pop_color ();
-  print_end ();
+  //pop_color ();
+  //print_end ();
   return 0;
 }
 
@@ -2767,11 +2886,13 @@ struct query_methods get_suggested_methods = {
   .on_answer = get_suggested_on_answer
 };
 
-void do_get_suggested (void) {
-  clear_packet ();
-  out_int (CODE_contacts_get_suggested);
-  out_int (100);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &get_suggested_methods, 0);
+void do_get_suggested (struct telegram *instance) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+  clear_packet (mtp);
+  out_int (mtp, CODE_contacts_get_suggested);
+  out_int (mtp, 100);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &get_suggested_methods, 0);
 }
 /* }}} */
 
@@ -2781,56 +2902,60 @@ struct query_methods add_user_to_chat_methods = {
   .on_answer = fwd_msg_on_answer
 };
 
-void do_add_user_to_chat (peer_id_t chat_id, peer_id_t id, int limit) {
-  clear_packet ();
-  out_int (CODE_messages_add_chat_user);
-  out_int (get_peer_id (chat_id));
+void do_add_user_to_chat (struct telegram *instance, peer_id_t chat_id, peer_id_t id, int limit) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_add_chat_user);
+  out_int (mtp, get_peer_id (chat_id));
   
   assert (get_peer_type (id) == PEER_USER);
   peer_t *U = user_chat_get (id);
   if (U && U->user.access_hash) {
-    out_int (CODE_input_user_foreign);
-    out_int (get_peer_id (id));
-    out_long (U->user.access_hash);
+    out_int (mtp, CODE_input_user_foreign);
+    out_int (mtp, get_peer_id (id));
+    out_long (mtp, U->user.access_hash);
   } else {
-    out_int (CODE_input_user_contact);
-    out_int (get_peer_id (id));
+    out_int (mtp, CODE_input_user_contact);
+    out_int (mtp, get_peer_id (id));
   }
-  out_int (limit);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &add_user_to_chat_methods, 0);
+  out_int (mtp, limit);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &add_user_to_chat_methods, 0);
 }
 
-void do_del_user_from_chat (peer_id_t chat_id, peer_id_t id) {
-  clear_packet ();
-  out_int (CODE_messages_delete_chat_user);
-  out_int (get_peer_id (chat_id));
+void do_del_user_from_chat (struct telegram *instance, peer_id_t chat_id, peer_id_t id) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_delete_chat_user);
+  out_int (mtp, get_peer_id (chat_id));
   
   assert (get_peer_type (id) == PEER_USER);
   peer_t *U = user_chat_get (id);
   if (U && U->user.access_hash) {
-    out_int (CODE_input_user_foreign);
-    out_int (get_peer_id (id));
-    out_long (U->user.access_hash);
+    out_int (mtp, CODE_input_user_foreign);
+    out_int (mtp, get_peer_id (id));
+    out_long (mtp, U->user.access_hash);
   } else {
-    out_int (CODE_input_user_contact);
-    out_int (get_peer_id (id));
+    out_int (mtp, CODE_input_user_contact);
+    out_int (mtp, get_peer_id (id));
   }
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &add_user_to_chat_methods, 0);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &add_user_to_chat_methods, 0);
 }
 /* }}} */
 
 /* {{{ Create secret chat */
 char *create_print_name (peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4);
 
-void do_create_secret_chat (peer_id_t id) {
+void do_create_secret_chat (struct telegram *instance, peer_id_t id) {
   assert (get_peer_type (id) == PEER_USER);
   peer_t *U = user_chat_get (id);
   if (!U) { 
-    rprintf ("Can not create chat with unknown user\n");
+    logprintf ("Can not create chat with unknown user\n");
     return;
   }
 
-  do_create_encr_chat_request (get_peer_id (id)); 
+  do_create_encr_chat_request (instance, get_peer_id (id)); 
 }
 /* }}} */
 
@@ -2839,27 +2964,28 @@ struct query_methods create_group_chat_methods = {
   .on_answer = fwd_msg_on_answer
 };
 
-void do_create_group_chat (peer_id_t id, char *chat_topic) {
+void do_create_group_chat (struct telegram *instance, peer_id_t id, char *chat_topic) {
+  struct mtproto_connection *mtp = instance->connection;
   assert (get_peer_type (id) == PEER_USER);
   peer_t *U = user_chat_get (id);
   if (!U) { 
-    rprintf ("Can not create chat with unknown user\n");
+    logprintf ("Can not create chat with unknown user\n");
     return;
   }
-  clear_packet ();
-  out_int (CODE_messages_create_chat);
-  out_int (CODE_vector);
-  out_int (1); // Number of users, currently we support only 1 user.
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_create_chat);
+  out_int (mtp, CODE_vector);
+  out_int (mtp, 1); // Number of users, currently we support only 1 user.
   if (U && U->user.access_hash) {
-    out_int (CODE_input_user_foreign);
-    out_int (get_peer_id (id));
-    out_long (U->user.access_hash);
+    out_int (mtp, CODE_input_user_foreign);
+    out_int (mtp, get_peer_id (id));
+    out_long (mtp, U->user.access_hash);
   } else {
-    out_int (CODE_input_user_contact);
-    out_int (get_peer_id (id));
+    out_int (mtp, CODE_input_user_contact);
+    out_int (mtp, get_peer_id (id));
   }
-  out_string (chat_topic);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &create_group_chat_methods, 0);
+  out_string (mtp, chat_topic);
+  send_query (telegram_get_working_dc(instance), mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &create_group_chat_methods, 0);
 }
 /* }}} */
 
@@ -2867,9 +2993,11 @@ void do_create_group_chat (peer_id_t id, char *chat_topic) {
 /* {{{ Delete msg */
 
 int delete_msg_on_answer (struct query *q UU) {
-  assert (fetch_int () == CODE_vector);
-  int n = fetch_int ();
-  fetch_skip (n);
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  assert (fetch_int (mtp) == CODE_vector);
+  int n = fetch_int (mtp);
+  fetch_skip (mtp, n);
   logprintf ("Deleted %d messages\n", n);
   return 0;
 }
@@ -2878,22 +3006,26 @@ struct query_methods delete_msg_methods = {
   .on_answer = delete_msg_on_answer
 };
 
-void do_delete_msg (long long id) {
-  clear_packet ();
-  out_int (CODE_messages_delete_messages);
-  out_int (CODE_vector);
-  out_int (1);
-  out_int (id);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &delete_msg_methods, 0);
+void do_delete_msg (struct telegram *instance, long long id) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_delete_messages);
+  out_int (mtp, CODE_vector);
+  out_int (mtp, 1);
+  out_int (mtp, id);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &delete_msg_methods, 0);
 }
 /* }}} */
 
 /* {{{ Restore msg */
 
 int restore_msg_on_answer (struct query *q UU) {
-  assert (fetch_int () == CODE_vector);
-  int n = fetch_int ();
-  fetch_skip (n);
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  assert (fetch_int (mtp) == CODE_vector);
+  int n = fetch_int (mtp);
+  fetch_skip (mtp, n);
   logprintf ("Restored %d messages\n", n);
   return 0;
 }
@@ -2902,17 +3034,21 @@ struct query_methods restore_msg_methods = {
   .on_answer = restore_msg_on_answer
 };
 
-void do_restore_msg (long long id) {
-  clear_packet ();
-  out_int (CODE_messages_restore_messages);
-  out_int (CODE_vector);
-  out_int (1);
-  out_int (id);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &restore_msg_methods, 0);
+void do_restore_msg (struct telegram *instance, long long id) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_restore_messages);
+  out_int (mtp, CODE_vector);
+  out_int (mtp, 1);
+  out_int (mtp, id);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &restore_msg_methods, 0);
 }
 /* }}} */
 int update_status_on_answer (struct query *q UU) {
-  fetch_bool ();
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+
+  fetch_bool (mtp);
   return 0;
 }
 
@@ -2920,10 +3056,13 @@ struct query_methods update_status_methods = {
   .on_answer = update_status_on_answer
 };
 
-void do_update_status (int online UU) {
-  clear_packet ();
-  out_int (CODE_account_update_status);
-  out_int (online ? CODE_bool_false : CODE_bool_true);
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &update_status_methods, 0);
+void do_update_status (struct telegram *instance, int online UU) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+  clear_packet (mtp);
+  out_int (mtp, CODE_account_update_status);
+  out_int (mtp, online ? CODE_bool_false : CODE_bool_true);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &update_status_methods, 0);
 }
+
 

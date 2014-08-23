@@ -2,8 +2,11 @@
  *  libtelegram
  *  ===========
  *
- * Telegram library based on the telegram cli application, that was originally made by vysheng (see https://github.com/vysheng/tg)
+ * struct telegram library based on the telegram cli application, that was originally made by vysheng (see https://github.com/vysheng/tg)
  */
+
+#ifndef __TELEGRAM_H__
+#define __TELEGRAM_H__
 
 #define MAX_DC_NUM 9
 #define MAX_PEER_NUM 100000
@@ -13,75 +16,269 @@
 #endif
 
 #include <sys/types.h>
-#include "net.h"
-#include "mtproto-common.h"
-#include "structures.h"
+#include "glib.h"
+#include "loop.h"
+//#include "mtproto-client.h"
 
+// forward declarations
+struct message;
+struct protocol_state;
+struct authorization_state;
+
+/*
+ * telegram states
+ */
+
+#define STATE_INITIALISED 0
+#define STATE_DISCONNECTED 1
+
+// Error
+#define STATE_ERROR 2
+
+// intermediate authorization states already present and handled in mtproto-client.c
+//#define STATE_PQ_REQUESTED 3
+//#define STATE_DH_REQUESTED 4
+//#define STATE_CDH_REQUESTED 5
+#define STATE_AUTHORIZED 6
+
+// dc discovery
+#define STATE_CONFIG_REQUESTED 7
+#define STATE_EXPORTING_CONFIG 8
+#define STATE_DISCONNECTED_SWITCH_DC 9
+#define STATE_CONFIG_RECEIVED 11
+
+// login
+
+// - Phone Registration
+#define STATE_PHONE_NOT_REGISTERED 13
+#define STATE_PHONE_CODE_REQUESTED 14
+#define STATE_PHONE_CODE_NOT_ENTERED 15
+#define STATE_PHONE_CODE_ENTERED 16
+
+// - Client Registration
+#define STATE_CLIENT_IS_REGISTERED_SENT 17
+#define STATE_CLIENT_NOT_REGISTERED 18
+#define STATE_CLIENT_CODE_REQUESTED 19
+#define STATE_CLIENT_CODE_NOT_ENTERED 20
+#define STATE_CLIENT_CODE_ENTERED 21
+
+// Ready for sending and receiving messages
+#define STATE_READY 22
+
+/**
+ * Binary log
+ */
+
+#define BINLOG_BUFFER_SIZE (1 << 20)
+struct binlog {
+  int binlog_buffer[BINLOG_BUFFER_SIZE];
+  int *rptr;
+  int *wptr;
+  int test_dc; // = 0
+  int in_replay_log;
+  int binlog_enabled; // = 0;
+  int binlog_fd;
+  long long binlog_pos;
+
+  int s[1000];
+};
+
+struct telegram;
+
+/**
+ * Contains all options and pointer to callback functions required by telegram
+ */
+struct telegram_config {
+
+    /**
+     * The base path containing the telegram configuration
+     */
+    const char* base_config_path;
+    
+    /**
+     * Called when there is pending network output
+     */
+    void (*on_output)(struct telegram *instance);
+
+    /**
+     * A callback function that delivers a connections to the given hostname
+     * and port by calling telegram_set_proxy. This is useful for tunelling
+     * the connection through a proxy server.
+     */
+    void (*proxy_request_cb)(struct telegram *instance, const char *ip, int port);
+    
+    /**
+     * A callback function that is called once the proxy connection is no longer
+     * needed. This is useful for freeing all used resources.
+     */
+     void (*proxy_close_cb)(struct telegram *instance, int fd);
+
+    /**
+     * A callback function that is called when a phone registration is required. 
+     *
+     * This callback must query first name, last name and the 
+     * authentication code from the user and call do_send_code_result_auth once done
+     */
+    void (*on_phone_registration_required) (struct telegram *instance);
+
+    /**
+     * A callback function that is called when a client registration is required. 
+     *
+     * This callback must query the authentication code from the user and
+     * call do_send_code_result once done
+     */
+    void (*on_client_registration_required) (struct telegram *instance);
+
+    /** 
+     * A callback function that is called when telegram is ready
+     */
+    void (*on_ready) (struct telegram *instance);
+
+    /** 
+     * A callback function that is called when telegram is disconnected
+     */
+    void (*on_disconnected) (struct telegram *instance);
+
+    /**
+     * A callback function that is called when a new message was allocated. This is useful
+     * for adding new messages to the GUI.
+     */
+    void (*on_msg_handler)(struct telegram *instance, struct message *M);
+
+    /**
+     * A callback function that is called when a new peer was allocated. This is useful
+     * for populating the GUI with new peers.
+     */
+    void (*on_peer_allocated_handler)(struct telegram *instance, void *peer);
+};
 
 /**
  * A telegram session
  *
- * Contains all globals from the telegram-cli application and should
- * be passed to 
+ * Contains all globals from the telegram-cli application is passed to every
+ * query call
  */
 struct telegram {
-
-    /*
-     * Read and save the configuration files into this directory
-     *
-     * Every distinct account needs its own configuration directory, that
-     * will be used to store encryption data and the protocol state for this
-     * specific user
-     */
-    char *config_dir;
-
-    /* 
-     * Reserved for custom protocol data
-     */
     void *protocol_data; 
-       
+    //int curr_dc;
+
+    char *login;
+    char *config_path;
+    char *download_path;
+    char *auth_path;
+    char *state_path;
+    char *secret_path;
+
+    int session_state;
+    struct telegram_config *config;
+    
     /*
-     * Events and Callbacks
+     * protocol state
      */
-    // TODO: Insert definitions for all function pointers for event and logging
+    struct protocol_state proto;
+    struct authorization_state auth;
 
-    /* 
-     * Internal protocol state
+    /*
+     * connection
      */
-    // TODO: Insert *all* global variables from the telegram-implementation
+    struct mtproto_connection *connection;
 
+    /*
+     * binlog
+     */
+    struct binlog *bl;
+
+    // TODO: Bind this to the current data center, since the code hash is only
+    // valid in its context
+    char *phone_code_hash;
+
+    void *extra;
 };
 
-/*
- * Constructor
+/**
+ * Create a new telegram application
+ *
+ * @param DC            The initial data center to use
+ * @param login         The phone number to use as login name
+ * @param config        Contains all callbacks used for the telegram instance
  */
-void telegram_create( /* struct telegram, struct configuration config */ );
-    // TODO: Initiate a new telegram instance 
+struct telegram *telegram_new(struct dc *DC, const char* login, struct telegram_config *config);
 
-/*
+/**
+ * Resume the session to 
+ */
+void telegram_restore_session(struct telegram *instance);
+
+/**
+ * Store
+ */
+void telegram_store_session(struct telegram *instance);
+
+/**
  * Destructor
  */
-void telegram_destroy(struct telegram instance);
-    // TODO: Write clean-up functions to free all allocated resources of this session
-
-// Export functions for plugins
-
-int tg_login ();
-
-void running_for_first_time ();
-void parse_config ();
-void store_config ();
-void read_auth_file ();
+void telegram_free(struct telegram *instance);
 
 /** 
- * Read and write until all queries received a response or errored
+ * Get the currently active connection
  */
-void flush_queries ();
+struct connection *telegram_get_connection(struct telegram *instance);
+
+/**
+ * Return the current working dc
+ */
+struct dc *telegram_get_working_dc(struct telegram *instance);
+
+/* 
+ * Events
+ */
+
+/**
+ * Change the state of the given telegram instance and execute all event handlers
+ *
+ * @param instance  The telegram instance that changed its state
+ * @param state     The changed state
+ * @param data      Extra data that depends on switched state
+ */
+void telegram_change_state(struct telegram *instance, int state, void *data);
 
 /**
  * Connect to the telegram network with the given configuration
  */
-void network_connect();
+void telegram_network_connect(struct telegram *instance);
+
+int telegram_login (struct telegram *instance);
+
+/**
+ * Read the authorization_state stored in the given file
+ */
+
+// Export functions for plugins
+void running_for_first_time ();
+
+/**
+ * Read and process all available input from the network
+ */
+void telegram_read_input (struct telegram *instance);
+
+/**
+ * Write all available output to the network
+ */
+int telegram_write_output (struct telegram *instance);
+
+/**
+ * Return whether there is pending output.
+ */
+int telegram_has_output (struct telegram *instance);
+
+/**
+ * Try to interpret RPC calls and apply the changes to the current telegram state
+ */
+void try_rpc_interpret(struct telegram *instance, int op, int len);
+
+/* 
+ * TODO: Refactor all old calls to take a telegrma instance
+ */
 
 /**
  * Request a registration code
@@ -127,62 +324,30 @@ void session_update_contact_list();
 /* 
  * Events
  */
-void on_update_new_message(void (*on_msg)(struct message *M));
-void event_update_new_message(struct message *M);
-
-void on_update_user_typing();
-void on_update_chat_user_typing();
-void on_update_user_status();
-void on_update_user_name();
-void on_update_user_photo();
-void on_update_chat_participants();
+void event_update_new_message(struct telegram *instance, struct message *M);
 
 /*
  * Load known users and chats on connect
  */
-
-void on_peer_allocated(void (*handler)(peer_t *peer));
-void event_peer_allocated(peer_t *peer);
-
-// template
-//void on_blarg(void (*on_msg)(struct message *M));
-//void event_blarg(struct message *M);
+void event_peer_allocated(struct telegram *instance, void *peer);
 
 /**
  * Set a function to use as a handle to read from a network resource
  * instead of the regular socket read function
  */
-void set_net_read_cb(int (*cb)(int fd, void *buff, size_t size));
+void set_net_read_cb(ssize_t (*cb)(int fd, void *buff, size_t size));
 
 /**
  * Set a function to use as handle to write to a newtork resource
  * instead of the regular socket write function
  */
-void set_net_write_cb(int (*cb)(int fd, const void *buff, size_t size));
+void set_net_write_cb(ssize_t (*cb)(int fd, const void *buff, size_t size));
 
 /**
- * The current proxy connection source.
- */
-extern void (*proxy_connection_source)(const char *host, int port, void (*on_connection_created)(int fd));
-
-/**
- * The connection data passed to the connection source.
- */
-extern void *proxy_connection_data;
-
-/**
- * Set an alternative connection_source which is used to create open connections instead of the
- *  regular function.
+ * Set the proxy-connection to use
  *
- * @param connection_source Called when a new connection is needed. A connection source must accept
- *                           host and port and pass a valid file descriptor to an open TCP-Socket to the
- *                           callback function on_connection_created
- * @param data              Additional connection data, that will be passed to the callback and may be
- *                          needed for establishing the connection.
+ * NOTE: you may only call this function from the 
  */
-void set_proxy_connection_source (void (*connection_source)(const char *host, int port, void (*on_connection_created)(int fd)), void* data);
+void telegram_set_proxy(struct telegram *instance, int fd);
 
-/**
- * 
- */
-void set_default_username ();
+#endif

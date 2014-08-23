@@ -17,10 +17,6 @@
     Copyright Vitaly Valtman 2013
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #define _GNU_SOURCE
 
 #include <assert.h>
@@ -30,8 +26,8 @@
 #include <openssl/err.h>
 #include <zlib.h>
 
-#include "interface.h"
 #include "tools.h"
+#include "msglog.h"
 
 #ifdef DEBUG
 #define RES_PRE 8
@@ -213,7 +209,7 @@ int tinflate (void *input, int ilen, void *output, int olen) {
       logprintf ( "inflated %d bytes\n", (int) strm.total_out);
     }
   }
-  if (verbosity && err != Z_STREAM_END) {
+  if (err != Z_STREAM_END) {
     logprintf ( "inflate error = %d\n", err);
     logprintf ( "inflated %d bytes\n", (int) strm.total_out);
   }

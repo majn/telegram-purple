@@ -17,14 +17,14 @@
     Copyright Vitaly Valtman 2013
 */
 
-#ifndef __TOOLS_H__
-#define __TOOLS_H__
+#pragma once
 
 void *talloc (size_t size);
 void *trealloc (void *ptr, size_t old_size, size_t size);
 void *talloc0 (size_t size);
 char *tstrdup (const char *s);
 char *tstrndup (const char *s, size_t n);
+//char *stradd(const char *, ...);
 int tinflate (void *input, int ilen, void *output, int olen);
 void ensure (int r);
 void ensure_ptr (void *p);
@@ -40,5 +40,4 @@ int tasprintf (char **res, const char *format, ...) __attribute__ ((format (prin
 #ifdef DEBUG
 void tcheck (void);
 void texists (void *ptr, int size);
-#endif
 #endif

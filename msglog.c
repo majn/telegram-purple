@@ -50,6 +50,12 @@ void logprintf(const char *format, ...)
    va_end (ap);
 }
 
+void hexdump (int *in_ptr, int *in_end) {
+  int *ptr = in_ptr;
+  while (ptr < in_end) { printf (" %08x", *(ptr ++)); }
+  printf ("\n");
+}
+
 /*
 TODO: implement different log levels
 
