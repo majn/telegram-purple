@@ -195,7 +195,7 @@ void assure_file_exists(const char *dir, const char *file)
 {
     g_mkdir_with_parents(dir, 0700);
     char *f = g_strdup_printf("%s/%s", dir, file);
-    close(open(f, O_RDWR | O_CREAT, S_IRUSR, S_IWUSR));
+    close(open(f, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR));
     assert_file_usable(f);
     g_free(f);
 }
