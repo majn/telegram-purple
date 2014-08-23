@@ -44,8 +44,6 @@
 #include "eventloop.h"
 #include "request.h"
 
-// struct telegram Includes
-
 // telegram-purple includes
 #include "telegram.h"
 #include "telegram-purple.h"
@@ -71,7 +69,7 @@ void tg_cli_log_cb(const char* format, va_list ap)
     purple_debug_info(PLUGIN_ID, "%s", buffer);
 }
 
-void on_new_message (struct telegram *instance, struct message *M);
+void message_allocated_handler (struct telegram *instance, struct message *M);
 void peer_allocated_handler (struct telegram *instance, void *user);
 void telegram_on_phone_registration (struct telegram *instance);
 void elegram_on_client_registration (struct telegram *instance);
@@ -262,7 +260,7 @@ void telegram_on_ready (struct telegram *instance)
      tggroup = purple_find_group("Telegram");
      if (tggroup == NULL) {
          purple_debug_info (PLUGIN_ID, "PurpleGroup = NULL, creating");
-         tggroup = purple_group_new ("struct telegram");
+         tggroup = purple_group_new ("Telegram");
          purple_blist_add_group (tggroup, NULL);
      }
 
@@ -319,7 +317,7 @@ struct telegram_config tgconf = {
     telegram_on_ready,
     telegram_on_disconnected,
 
-    on_new_message,
+    message_allocated_handler,
     peer_allocated_handler
 };
 
@@ -351,16 +349,27 @@ static void tgprpl_login(PurpleAccount * acct)
     telegram_network_connect(tg);
 }
 
-void on_new_message(struct telegram *tg, struct message *M)
+void message_allocated_handler(struct telegram *tg, struct message *M)
 {
+    logprintf ("message_allocated_handler\n");
     telegram_conn *conn = tg->extra;
     PurpleConnection *gc = conn->gc;
 
-   purple_debug_info(PLUGIN_ID, "New Message: %s\n", M->message);
-   // TODO: this should probably be freed again somwhere
-   char *who = g_strdup_printf("%d", get_peer_id(M->from_id));
-   serv_got_im(gc, who, M->message, PURPLE_MESSAGE_RECV, time(NULL));
-   g_free(who);
+    // TODO: this should probably be freed again somwhere
+    int id = get_peer_id(M->from_id);
+    logprintf ("id: %d\n", id);
+    char *who = g_strdup_printf("%d", id);
+    if (who) {
+        logprintf ("who: %s\n", who);
+        if (M->service) {
+           // TODO: handle service messages properly, currently adding them 
+           // causes a segfault for an unknown reason
+           logprintf ("service message, skipping...\n");
+           return;
+        }
+        serv_got_im(gc, who, M->message, PURPLE_MESSAGE_RECV, time(NULL));
+        g_free(who);
+    }
 }
 
 

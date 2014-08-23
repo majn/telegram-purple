@@ -1827,6 +1827,9 @@ struct message *fetch_alloc_message (struct mtproto_connection *mtp, struct tele
     M->instance = instance;
     message_insert_tree (M);
     messages_allocated ++;
+    fetch_message (mtp, M);
+    event_update_new_message (instance, M);
+    return M;
   }
   M->instance = instance;
   fetch_message (mtp, M);
