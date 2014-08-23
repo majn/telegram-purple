@@ -96,6 +96,19 @@ static const char *tgprpl_list_icon(PurpleAccount * acct, PurpleBuddy * buddy)
 static void tgprpl_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo * info, gboolean full)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_tooltip_text()\n");
+	peer_id_t *peer = purple_buddy_get_protocol_data(buddy);
+	if(peer == NULL)
+	{
+		purple_notify_user_info_add_pair_plaintext(info, "Status", "Offline");
+		return;
+	}
+	peer_t *P = user_chat_get (*peer);
+		
+	purple_notify_user_info_add_pair_plaintext(info, "Status", P->user.status.online == 1 ? "Online" : "Offline");
+	struct tm *tm = localtime ((void *)&P->user.status.when);
+	char buffer [21];
+	sprintf  (buffer, "[%04d/%02d/%02d %02d:%02d:%02d]", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+	purple_notify_user_info_add_pair_plaintext(info, "Last seen: ", buffer);
 }
 
 
@@ -413,44 +426,6 @@ void on_new_user_status(struct telegram *tg, void *peer)
     else
         purple_prpl_got_user_status(account, who, "unavailable", "message", "", NULL);
     g_free(who);
-
-/*
-<<<<<<< HEAD
-    const char *status;
-    peer_id_t *peer = purple_buddy_get_protocol_data(buddy);
-    peer_t *P = user_chat_get (*peer);
-
-    if (P->user.status.online == 1)
-        status = "Online";
-    else
-        status = "Offline";
-        
-    purple_notify_user_info_add_pair_plaintext(info, "Status", status);
-
-    struct tm *tm = localtime ((void *)&P->user.status.when);
-    char buffer [21];
-    sprintf  (buffer, "[%04d/%02d/%02d %02d:%02d:%02d]", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
-    purple_notify_user_info_add_pair_plaintext(info, "Last seen: ", buffer);
-	const char *status;
-	peer_id_t *peer = purple_buddy_get_protocol_data(buddy);
-	if(peer == NULL)
-	{
-		purple_notify_user_info_add_pair_plaintext(info, "Status", "Offline");
-		return;
-	}
-	peer_t *P = user_chat_get (*peer);
-
-	if (P->user.status.online == 1)
-		status = "Online";
-	else
-		status = "Offline";
-		
-	purple_notify_user_info_add_pair_plaintext(info, "Status", status);
-	struct tm *tm = localtime ((void *)&P->user.status.when);
-	char buffer [21];
-	sprintf  (buffer, "[%04d/%02d/%02d %02d:%02d:%02d]", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
-	purple_notify_user_info_add_pair_plaintext(info, "Last seen: ", buffer);
-    */
 }
 
 void on_user_typing(struct telegram *tg, void *peer)
