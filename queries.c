@@ -276,6 +276,7 @@ double next_timer_in (void) {
 }
 
 void work_timers (void) {
+  logprintf ("work_timers ()\n");
   double t = get_double_time ();
   while (timer_tree) {
     struct event_timer *ev = tree_get_min_timer (timer_tree);
@@ -709,7 +710,6 @@ int get_contacts_on_answer (struct query *q UU) {
 struct query_methods get_contacts_methods = {
   .on_answer = get_contacts_on_answer,
 };
-
 
 void do_update_contact_list (struct telegram *instance) {
   struct mtproto_connection *mtp = instance->connection;
@@ -2699,6 +2699,7 @@ int difference_got;
 int seq, pts, qts, last_date;
 int get_state_on_answer (struct query *q UU) {
   struct mtproto_connection *mtp = query_get_mtproto(q);
+  struct telegram *instance = q->extra;
 
   logprintf("get_state_on_answer()\n");
   assert (fetch_int (mtp) == (int)CODE_updates_state);
@@ -2709,6 +2710,7 @@ int get_state_on_answer (struct query *q UU) {
   unread_messages = fetch_int (mtp);
   //write_state_file ();
   difference_got = 1;
+  telegram_store_session (instance);
   return 0;
 }
 
@@ -2771,7 +2773,7 @@ int get_difference_on_answer (struct query *q UU) {
     unread_messages = fetch_int (mtp);
     //write_state_file ();
     for (i = 0; i < ml_pos; i++) {
-	  event_update_new_message (instance, ML[i]);
+      event_update_new_message (instance, ML[i]);
       ////print_message (ML[i]);
     }
     if (x == CODE_updates_difference_slice) {
@@ -2782,6 +2784,7 @@ int get_difference_on_answer (struct query *q UU) {
   } else {
     assert (0);
   }
+  telegram_store_session (instance);
   return 0;   
 }
 
@@ -2813,7 +2816,7 @@ void do_get_difference (struct telegram *instance) {
     send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &get_difference_methods, instance);
   } else {
     out_int (mtp, CODE_updates_get_state);
-    send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &get_state_methods, 0);
+    send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &get_state_methods, instance);
   }
 }
 /* }}} */
@@ -3065,4 +3068,23 @@ void do_update_status (struct telegram *instance, int online UU) {
   send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &update_status_methods, 0);
 }
 
+int update_typing_on_answer (struct query *q UU) {
+  fetch_bool (query_get_mtproto (q));
+  return 0;
+}
+
+struct query_methods update_typing_methods = {
+  .on_answer = update_typing_on_answer
+};
+
+void do_update_typing (struct telegram *instance, peer_id_t id) {
+  struct dc *DC_working = telegram_get_working_dc(instance);
+  struct mtproto_connection *mtp = instance->connection;
+
+  clear_packet (mtp);
+  out_int (mtp, CODE_messages_set_typing);
+  out_peer_id (mtp, id);
+  out_int (mtp, CODE_bool_true);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &update_typing_methods, 0);
+}
 

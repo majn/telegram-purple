@@ -1531,22 +1531,22 @@ static int id_cmp (struct message *M1, struct message *M2) {
 
 struct user *fetch_alloc_user (struct mtproto_connection *mtp) {
   logprintf("fetch_alloc_user()\n");
-  int send_event = 0;
   int data[2];
   prefetch_data (mtp, data, 8);
   peer_t *U = user_chat_get (MK_USER (data[1]));
   if (!U) {
-    send_event = 1;
     users_allocated ++;
     U = talloc0 (sizeof (*U));
     U->id = MK_USER (data[1]);
     peer_tree = tree_insert_peer (peer_tree, U, lrand48 ());
     assert (peer_num < MAX_PEER_NUM);
     Peers[peer_num ++] = U;
-  }
-  fetch_user (mtp, &U->user);
-  if (send_event) {
+    fetch_user (mtp, &U->user);
+    event_update_user_status(mtp->connection->instance, U);
     event_peer_allocated(mtp->connection->instance, U);
+  } else {
+    fetch_user (mtp, &U->user);
+    event_update_user_status(mtp->connection->instance, U);
   }
   return &U->user;
 }

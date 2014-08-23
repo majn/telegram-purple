@@ -108,7 +108,7 @@ run: install
 
 .PHONY: debug
 debug: install
-	gdb -tui -ex "$(shell echo $$GDB_BPOINTS )" pidgin
+	ddd pidgin
 
 clean:
 	rm -rf *.so *.a *.o telegram config.log config.status $(PRPL_C_OBJS) $(PRPL_LIBNAME) > /dev/null || echo "all clean"

@@ -150,6 +150,16 @@ struct telegram_config {
      * for populating the GUI with new peers.
      */
     void (*on_peer_allocated_handler)(struct telegram *instance, void *peer);
+
+    /**
+     * A callback function that is called when a user's status has changed
+     */ 
+    void (*on_update_user_status_handler) (struct telegram *instance, void *peer);
+
+    /**
+     * A callback function that is called when a user starts or stops typing
+     */
+    void (*on_update_uesr_typing_handler) (struct telegram *instance, void *peer);
 };
 
 /**
@@ -325,6 +335,8 @@ void session_update_contact_list();
  * Events
  */
 void event_update_new_message(struct telegram *instance, struct message *M);
+void event_update_user_status(struct telegram *instance, void *peer);
+void event_update_user_typing(struct telegram *instance, void *peer);
 
 /*
  * Load known users and chats on connect

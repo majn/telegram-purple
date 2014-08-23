@@ -21,7 +21,7 @@
 void event_update_new_message(struct telegram *instance, struct message *M) 
 {
     if (instance->config->on_msg_handler) {
-        instance->config->on_msg_handler(instance, M);
+        instance->config->on_msg_handler (instance, M);
     }
 }
 
@@ -31,9 +31,31 @@ void event_update_new_message(struct telegram *instance, struct message *M)
 void event_peer_allocated(struct telegram *instance, void *peer) 
 {
     if (instance->config->on_peer_allocated_handler) {
-        instance->config->on_peer_allocated_handler(instance, peer);
+        instance->config->on_peer_allocated_handler (instance, peer);
     }
 }
+
+/*
+ * User status changed
+ */
+void event_update_user_status (struct telegram *instance, void *peer) 
+{
+    if (instance->config->on_update_user_status_handler) {
+        instance->config->on_update_user_status_handler (instance, peer);
+    }
+}
+
+/*
+ * User typing changed
+ */
+void event_update_user_typing (struct telegram *instance, void *peer) 
+{
+    if (instance->config->on_update_uesr_typing_handler) {
+        instance->config->on_update_uesr_typing_handler (instance, peer);
+    }
+}
+
+
 
 /**
  * Calculate the configuration path for the given config file and the given instance
@@ -319,3 +341,4 @@ int telegram_has_output (struct telegram *instance)
 {
     return instance->connection->queries_num > 0;
 }
+

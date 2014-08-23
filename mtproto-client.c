@@ -914,6 +914,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
     {
       peer_id_t id = MK_USER (fetch_int (self));
       peer_t *U UU = user_chat_get (id);
+	  event_update_user_typing (tg, U);
       if (log_level >= 2) {
         //print_start ();
         //push_color (COLOR_YELLOW);
@@ -932,6 +933,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       peer_id_t id = MK_USER (fetch_int (self));
       peer_t *C UU = user_chat_get (chat_id);
       peer_t *U UU = user_chat_get (id);
+	  event_update_user_typing(tg, U);
       if (log_level >= 2) {
         //print_start ();
         //push_color (COLOR_YELLOW);
@@ -952,6 +954,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       peer_t *U = user_chat_get (user_id);
       if (U) {
         fetch_user_status (self, &U->user.status);
+		event_update_user_status(tg, U);
         if (log_level >= 3) {
           //print_start ();
           //push_color (COLOR_YELLOW);
@@ -1252,6 +1255,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       //print_start ();
       //push_color (COLOR_YELLOW);
       //print_date (time (0));
+	  event_update_user_typing(tg, P);
       if (P) {
         printf (" User ");
         peer_id_t user_id UU = MK_USER (P->encr_chat.user_id);
