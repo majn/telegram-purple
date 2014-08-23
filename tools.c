@@ -17,10 +17,6 @@
     Copyright Vitaly Valtman 2013
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #define _GNU_SOURCE
 
 #include <assert.h>
@@ -30,8 +26,8 @@
 #include <openssl/err.h>
 #include <zlib.h>
 
-#include "interface.h"
 #include "tools.h"
+#include "msglog.h"
 
 #ifdef DEBUG
 #define RES_PRE 8
@@ -104,32 +100,6 @@ void tfree (void *ptr, int size __attribute__ ((unused))) {
   free (ptr);
 #endif
 }
-
-/**
- * Add a variable amount of strings together
- */
-//char *stradd(const char *strs, ...)
-//{
-//   va_list args;
-//   size_t size = 0; 
-//   char *result;
-//
-//   // count strlen
-//   va_start(args, strs);
-//   for (int i = 0; strs[i] != '\0'; i++) {
-//      size += strlen(va_arg(args, char*));
-//   }
-//   va_end(args);
-//
-//   // create the new string
-//   result = talloc0(size + 1);
-//   va_start(args, strs);
-//   for (int i = 0; strs[i] != '\0'; i++) {
-//      strcat(result, va_arg(args, char*));
-//   }
-//   va_end(args);
-//   return result;
-//}
 
 void tfree_str (void *ptr) {
   if (!ptr) { return; }

@@ -129,8 +129,6 @@ struct connection {
   void *extra;
   struct event_timer ev;
   double last_receive_time;
-  
-  // backreference to corrent telegram instance
   struct telegram *instance;
   struct mtproto_connection *mtconnection;
 };

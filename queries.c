@@ -17,10 +17,6 @@
     Copyright Vitaly Valtman 2013
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #define _FILE_OFFSET_BITS 64
 #include <string.h>
 #include <memory.h>
@@ -705,34 +701,6 @@ int get_contacts_on_answer (struct query *q UU) {
   n = fetch_int (mtp);
   for (i = 0; i < n; i++) {
     fetch_alloc_user (mtp);
-	/*
-    //print_start ();
-    //push_color (COLOR_YELLOW);
-    logprintf ("User #%d: ", get_peer_id (U->id));
-    //print_user_name (U->id, (peer_t *)U);
-    //push_color (COLOR_GREEN);
-    logprintf (" (");
-    logprintf ("%s", U->print_name);
-    if (U->phone) {
-      logprintf (" ");
-      logprintf ("%s", U->phone);
-    }
-    logprintf (") ");
-    //pop_color ();
-    if (U->status.online > 0) {
-      logprintf ("online\n");
-    } else {
-      if (U->status.online < 0) {
-        logprintf ("offline. Was online ");
-        //print_date_full (U->status.when);
-      } else {
-        logprintf ("offline permanent");
-      }
-      logprintf ("\n");
-    }
-    //pop_color ();
-    //print_end ();
-	*/
   }
   contacts_got = 1;
   return 0;

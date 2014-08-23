@@ -17,10 +17,6 @@
     Copyright Vitaly Valtman 2013
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #define _GNU_SOURCE
 #include <string.h>
 #include <stdlib.h>
@@ -42,7 +38,6 @@
 #include "include.h"
 #include "mtproto-client.h"
 #include "tree.h"
-#include "interface.h"
 
 #ifndef POLLRDHUP
 #define POLLRDHUP 0

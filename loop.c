@@ -17,10 +17,6 @@
     Copyright Vitaly Valtman 2013
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #define _GNU_SOURCE
 #define READLINE_CALLBACKS
 
@@ -28,13 +24,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef READLINE_GNU
 #include <readline/readline.h>
 #include <readline/history.h>
-#else
-#include <readline/readline.h>
-#include <readline/history.h>
-#endif
 
 #include <errno.h>
 #include <poll.h>
@@ -49,7 +40,6 @@
 #include "telegram.h"
 #include "loop.h"
 #include "binlog.h"
-#include "lua-tg.h"
 
 //
 
@@ -70,65 +60,6 @@ extern int safe_quit;
 
 int unread_messages;
 void got_it (char *line, int len);
-/*
-void net_loop (int flags, int (*is_end)(void)) {
-  logprintf("starting net_loop()\n");
-  while (!is_end ()) {
-    struct pollfd fds[101];
-    int cc = 0;
-    if (flags & 3) {
-      fds[0].fd = 0;
-      fds[0].events = POLLIN;
-      cc ++;
-    }
-
-    logprintf("writing_state_file()\n");
-    write_state_file ();
-	// Ensure that all connections are active?
-    int x = connections_make_poll_array (fds + cc, 101 - cc) + cc;
-    double timer = next_timer_in ();
-
-	// Wait until file descriptors are ready
-    if (timer > 1000) { timer = 1000; }
-    if (poll (fds, x, timer) < 0) {
-	  logprintf("poll returned -1, wait a little bit.\n");
-      work_timers ();
-      continue;
-    }
-
-	// Execute all timers that are currently due
-    work_timers ();
-	
-	// ?
-    if ((flags & 3) && (fds[0].revents & POLLIN)) {
-      unread_messages = 0;
-      if (flags & 1) {
-        rl_callback_read_char ();
-      } else {
-        char *line = 0;
-        size_t len = 0;
-        assert (getline (&line, &len, stdin) >= 0);
-        got_it (line, strlen (line));
-      }
-    }
-
-	// 
-    connections_poll_result (fds + cc, x - cc);
-    #ifdef USE_LUA
-      lua_do_all ();
-    #endif
-    if (safe_quit && !queries_num) {
-      logprintf ("All done. Exit\n");
-      rl_callback_handler_remove ();
-      exit (0);
-    }
-    if (unknown_user_list_pos) {
-      do_get_user_list_info_silent (unknown_user_list_pos, unknown_user_list);
-      unknown_user_list_pos = 0;
-    }
-  }
-}
-*/
 
 char **_s;
 size_t *_l;
@@ -146,33 +77,8 @@ int is_got_it (void) {
   return got_it_ok;
 }
 
-/*
-int net_getline (char **s, size_t *l) {
-  fflush (stdout);
-//  rl_already_prompted = 1;
-  got_it_ok = 0;
-  _s = s;
-  _l = l;
-//  rl_callback_handler_install (0, got_it);
-  //net_loop (2, is_got_it);
-  return 0;
-}
-*/
-
 int ret1 (void) { return 0; }
 
-/*
-int main_loop (void) {
-  net_loop (1, ret1);
-  return 0;
-}
-*/
-
-
-//struct dc *DC_list[MAX_DC_ID + 1];
-//struct dc *DC_working;
-//int dc_working_num;
-//int auth_state;
 char *get_auth_key_filename (void);
 char *get_state_filename (void);
 int zero[512];
@@ -513,217 +419,3 @@ int readline_active;
 int new_dc_num;
 int wait_dialog_list;
 
-
-/**
- * Discover the network and authorise with all data centers
-void network_connect (struct telegram *instance) {
-  verbosity = 0;
-  on_start ();
-  // will return empty default values on empty files
-  instance->auth = read_auth_file ("/home/dev-jessie/.telegram/auth_file");
-  instance->proto = read_state_file ("/home/dev-jessie/.telegram/auth_file");
-
-  struct dc *DC_list = (struct dc*)instance->auth.DC_list;
-  struct dc *DC_working = NULL;
-
-  assert (DC_list[dc_working_num]);
-  if (!DC_working || !DC_working->auth_key_id) {
-//  if (auth_state == 0) {
-    logprintf("No working DC or not start_loopd.\n");
-    DC_working = &DC_list[instance->auth.dc_working_num];
-    assert (!DC_working->auth_key_id);
-    dc_authorize (DC_working);
-    assert (DC_working->auth_key_id);
-    auth_state = 100;
-    write_auth_file (instance->auth);
-    logprintf("Authorized DataCentre: auth_key_id: %lld \n", DC_working->auth_key_id);
-  } else {
-  }
-
-  if (verbosity) {
-    logprintf ("Requesting info about DC...\n");
-  }
-  do_help_get_config ();
-  logprintf("net_loop\n");
-  net_loop (0, mcs);
-  logprintf("net_loop done...\n");
-  if (verbosity) {
-    logprintf ("DC_info: %d new DC got\n", new_dc_num);
-  }
-  // read saved connection state
-  //read_state_file ();
-  read_secret_chat_file ();
-}
- */
-
-/**
- * Return if the given phone is registered
- */
- /*
-int network_phone_is_registered() {
-	int res = do_auth_check_phone (default_username);
-	assert(res >= 0);
-	return res;
-}
-*/
-
-
-/**
- * Verify the phone number by providing the sms_code and the real name
- *
- * NOTE: This should be called when the phone number was previously
- * unknown to the telegram network.
- */
- /*
-int network_verify_phone_registration(const char* code, const char *sms_hash, 
-	const char *first ,const char *last) 
-{
-    logprintf("Registering with code:%s, hash:%s, first:%s, last:%s\n", code, sms_hash, 
-		first, last);
-	return 0;
-}
-*/
-
-/**
- * Export current authentication state to all known data centers.
- */
-//void network_export_registration()
-//{
-//    int i;
-//    for (i = 0; i <= MAX_DC_NUM; i++) if (DC_list[i] && !DC_list[i]->has_auth) {
-//        do_export_auth (i);
-//        do_import_auth (i);
-//        bl_do_dc_signed (i);
-//        write_auth_file ();
-//    }
-//    write_auth_file ();
-//    fflush (stdout);
-//    fflush (stderr);
-//}
-
-//int start_loop (char* code, char* auth_mode) {
-//  logprintf("Calling start_loop()\n");
-//  logprintf("auth_state %i\n", auth_state);
-//  if (auth_state == 100 || !(DC_working->has_auth)) {
-//    logprintf("auth_state == 100 || !(DC_working->has_auth)");
-//    int res = do_auth_check_phone (default_username);
-//    assert (res >= 0);
-//    logprintf ("%s\n", res > 0 ? "phone registered" : "phone not registered");
-//    if (res > 0 && !register_mode) {
-//      // Register Mode 1
-//	  logprintf ("Register Mode 1\n");
-//      if (code) {
-//	    /*
-//        if (do_send_code_result (code) >= 0) {
-//          logprintf ("Authentication successfull, state = 300\n");
-//          auth_state = 300;
-//        }
-//		*/
-//      } else {
-//	      logprintf("No code given, attempting to register\n");
-//          // Send Code
-//		  logprintf ("auth mode %s\n", auth_mode);
-//		  /*
-//          if (strcmp(TELEGRAM_AUTH_MODE_SMS"sms", auth_mode)) {
-//		  */
-//              do_send_code (default_username);
-//              logprintf ("Code from sms (if you did not receive an SMS and want to be called, type \"call\"): ");
-//			  logprintf("storing current state in auth file...\n");
-//    		  write_auth_file ();
-//			  logprintf("exitting...\n");
-//			  return 0;
-//			  /*
-//          } else {
-//              logprintf ("You typed \"call\", switching to phone system.\n");
-//              do_phone_call (default_username);
-//              logprintf ("Calling you!");
-//          }
-//		  */
-//      }
-//    } else {
-//      logprintf ("User is not registered. Do you want to register? [Y/n] ");
-//      logprintf ("ERROR THIS IS NOT POSSIBLE!\n");
-//	  return 1;
-//      // Register Mode 2
-//      // TODO: Requires first and last name, decide how to handle this.
-//      //    - We need some sort of switch between registration modes
-//      //    - When this mode is selected First and Last name should be added to the form
-//      // Currently Requires Manuel Entry in Terminal.
-//      size_t size;
-//      char *first_name;
-//      logprintf ("First name: ");
-//      if (net_getline (&first_name, &size) == -1) {
-//        perror ("getline()");
-//        exit (EXIT_FAILURE);
-//      }
-//      char *last_name;
-//      logprintf ("Last name: ");
-//      if (net_getline (&last_name, &size) == -1) {
-//        perror ("getline()");
-//        exit (EXIT_FAILURE);
-//      }
-//
-//      int dc_num = do_get_nearest_dc ();
-//      assert (dc_num >= 0 && dc_num <= MAX_DC_NUM && DC_list[dc_num]);
-//      dc_working_num = dc_num;
-//      DC_working = DC_list[dc_working_num];
-//
-//      if (*code) {
-//         if (do_send_code_result_auth (code, "-", first_name, last_name) >= 0) {
-//             auth_state = 300;
-//         }
-//      } else {
-//         if (strcmp(TELEGRAM_AUTH_MODE_SMS, auth_mode)) {
-//             do_send_code (default_username);
-//             logprintf ("Code from sms (if you did not receive an SMS and want to be called, type \"call\"): ");
-//         } else {
-//             logprintf ("You typed \"call\", switching to phone system.\n");
-//             do_phone_call (default_username);
-//             logprintf ("Calling you! Code: ");
-//         }
-//      }
-//    }
-//  }
-//  logprintf("Authentication done\n");
-//
-//  int i;
-//  for (i = 0; i <= MAX_DC_NUM; i++) if (DC_list[i] && !DC_list[i]->has_auth) {
-//    do_export_auth (i);
-//    do_import_auth (i);
-//    bl_do_dc_signed (i);
-//    write_auth_file ();
-//  }
-//  write_auth_file ();
-//
-//  fflush (stdout);
-//  fflush (stderr);
-//
-//  // read saved connection state
-//  read_state_file ();
-//  read_secret_chat_file ();
-//	
-//  // callbacks for interface functions
-//  set_interface_callbacks ();
-//
-//  do_get_difference ();
-//  net_loop (0, dgot);
-//  #ifdef USE_LUA
-//    lua_diff_end ();
-//  #endif
-//  send_all_unsent ();
-//
-//  do_get_dialog_list ();
-//  if (wait_dialog_list) {
-//    dialog_list_got = 0;
-//    net_loop (0, dlgot);
-//  }
-//
-//  return 0; //main_loop ();
-//}
-
-/*
-int loop (void) {
-    network_connect();
-    return start_loop(NULL, NULL);
-}
-*/

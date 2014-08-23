@@ -18,10 +18,6 @@
     Copyright Vitaly Valtman 2013
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #define _FILE_OFFSET_BITS 64
 
 #include <assert.h>
@@ -72,20 +68,6 @@ int log_level = 2;
 int verbosity = 0;
 int allow_weak_random = 0;
 int disable_auto_accept = 0;
-
-/*
-enum dc_state c_state;
-char nonce[256];
-char new_nonce[256];
-char server_nonce[256];
-extern int binlog_enabled;
-extern int disable_auto_accept;
-extern int allow_weak_random;
-
-int total_packets_sent;
-long long total_data_sent;
-*/
-
 
 int rpc_execute (struct connection *c, int op, int len);
 int rpc_becomes_ready (struct connection *c);
@@ -1467,23 +1449,6 @@ void work_new_session_created (struct connection *c, long long msg_id UU) {
   fetch_long (c->mtconnection); // unique_id
   GET_DC(c)->server_salt = fetch_long (c->mtconnection);
   logprintf ("new server_salt = %lld\n", GET_DC(c)->server_salt);
-    
-  
-  /*
-  // create a new empty session
-  assert (DC->working_sess + 1 < 3);
-  assert (!DC->sessions[++ DC->working_sess]);
-  struct session *s = DC->sessions[DC->working_sess] = alloc_session();
-
-  // DC->session_id = fetch_long ();
-  // long las_id = fetch_long (c->mtconnection);
-  long ses_id = fetch_long (c->mtconnection);
-  //s->session_id = ses_id;
-  logprintf ("new sess_id = %ld\n", ses_id);
-
-  // fetch_long (c->mtconnection); // unique_id
-  DC->server_salt = fetch_long (c->mtconnection);
-  */
 }
 
 void work_msgs_ack (struct connection *c UU, long long msg_id UU) {
@@ -1832,26 +1797,6 @@ void on_start (struct mtproto_connection *self) {
   }
   pk_fingerprint = compute_rsa_key_fingerprint (pubKey);
 }
-
-/*
-int auth_ok (void) {
-  return auth_success;
-}
-*/
-
-/*
-void dc_authorize (struct dc *DC) {
-  c_state = 0;
-  auth_success = 0;
-  if (!DC->sessions[0]) {
-    dc_create_session (DC);
-  }
-  if (verbosity) {
-    logprintf ( "Starting authorization for DC #%d: %s:%d\n", DC->id, DC->ip, DC->port);
-  }
-  net_loop (0, auth_ok);
-}
-*/
 
 
 struct connection_methods mtproto_methods = {

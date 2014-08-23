@@ -17,10 +17,6 @@
     Copyright Vitaly Valtman 2013
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -55,8 +51,6 @@ char *get_binlog_file_name()
    return "/home/dev-jessie/.telegram/binlog";
 }
 
-//extern struct dc *DC_list[];
-//extern int dc_working_num;
 extern int our_id;
 int binlog_enabled = 0;
 extern int encr_root;

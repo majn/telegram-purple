@@ -1,9 +1,5 @@
 AC_PREREQ([2.68])
-AC_INIT([telegram], [0.1])
-AC_CONFIG_SRCDIR([config.h.in])
-AC_CONFIG_HEADERS([config.h])
-
-m4_include([ax_lua.m4])
+AC_INIT([telegram-purple], [0.1])
 
 # Checks for programs.
 AC_PROG_CC
@@ -32,54 +28,6 @@ AC_CHECK_LIB([readline], [rl_save_prompt],
     [ EXTRA_LIBS="${EXTRA_LIBS} -ledit" ; ]
   ]
 )
-
-AC_MSG_CHECKING([for libconfig])
-AC_ARG_ENABLE(libconfig,[--enable-libconfig/--disable-libconfig],
-  [ 
-  if test "x$enableval" = "xno" ; then
-    AC_MSG_RESULT([disabled])
-  else
-    AC_MSG_RESULT([enabled])
-    AC_CHECK_LIB([config],[config_init],[],AC_MSG_ERROR([No libconfig found. Try --disable-libconfig]))
-  fi 
-  ],[
-    AC_MSG_RESULT([enabled])
-    AC_CHECK_LIB([config],[config_init],[],AC_MSG_ERROR([No libconfig found. Try --disable-libconfig]))
-  ])
-
-AC_MSG_CHECKING([for liblua])
-AC_ARG_ENABLE(liblua,[--enable-liblua/--disable-liblua],
-  [ 
-  if test "x$enableval" = "xno" ; then
-    AC_MSG_RESULT([disabled])
-  else
-    AC_MSG_RESULT([enabled])
-    AX_PROG_LUA([],[],
-      [
-        AX_LUA_HEADERS([],[AC_MSG_ERROR([No lua headers found. Try --disable-liblua])])
-        AX_LUA_LIBS([],[AC_MSG_ERROR([No lua libs found. Try --disable-liblua])])
-        [EXTRA_LIBS="${EXTRA_LIBS} ${LUA_LIB}" ; ]
-        [CPPFLAGS="${CPPFLAGS} ${LUA_INCLUDE}" ; ]
-        AC_DEFINE(USE_LUA,1,[use lua])
-      ],
-      [
-        AC_MSG_ERROR([No lua found. Try --disable-liblua])
-      ])
-  fi 
-  ],[
-    AC_MSG_RESULT([enabled])
-    AX_PROG_LUA([],[],
-      [
-        AX_LUA_HEADERS([],[AC_MSG_ERROR([No lua headers found. Try --disable-liblua])])
-        AX_LUA_LIBS([],[AC_MSG_ERROR([No lua libs found. Try --disable-liblua])])
-        [EXTRA_LIBS="${EXTRA_LIBS} ${LUA_LIB}" ; ]
-        [CPPFLAGS="${CPPFLAGS} ${LUA_INCLUDE}" ; ]
-        AC_DEFINE(USE_LUA,1,[use lua])
-      ],
-      [
-        AC_MSG_ERROR([No lua found. Try --disable-liblua])
-      ])
-  ])
 
 #check for custom prog name
 AC_ARG_WITH(progname,[--with-progname=<name>],
