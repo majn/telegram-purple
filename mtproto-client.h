@@ -279,7 +279,6 @@ static inline void out_ints (struct mtproto_connection *self, const int *what, i
 
 
 static inline void out_int (struct mtproto_connection *self, int x) {
-  logprintf("out_int(): packet_ptr:%p, packet_buffer:%p\n", self->packet_ptr, self->packet_buffer);
   assert (self->packet_ptr + 1 <= self->packet_buffer + PACKET_BUFFER_SIZE);
   *self->packet_ptr++ = x;
 }

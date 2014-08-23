@@ -44,8 +44,16 @@ void event_peer_allocated(struct telegram *instance, void *peer)
  */
 char *telegram_get_config(struct telegram *instance, char *config)
 {
-    return g_strdup_printf("%s/%s", instance->config_path, config);
+    return g_strdup_printf("%s/%s", instance->config->base_config_path, config);
 }
+
+/**
+ * Return whether the current client is registered.
+ */
+int telegram_is_registered(struct telegram *tg) {
+    return telegram_get_working_dc(tg)->has_auth;
+}
+
 
 /**
  * Handle state changes of the telegram instance
@@ -92,8 +100,10 @@ void telegram_change_state (struct telegram *instance, int state, void *data)
             do_send_code(instance, instance->login);
         break;
 
-        case STATE_PHONE_CODE_REQUESTED:
+        case STATE_PHONE_CODE_NOT_ENTERED:
             logprintf("phone authenticion, user needs to enter code, first and last name.\n");
+            assert (instance->config->on_phone_registration_required);
+            instance->config->on_phone_registration_required (instance);
             // wait for user input ...
             break;
 
@@ -103,7 +113,9 @@ void telegram_change_state (struct telegram *instance, int state, void *data)
         break;
 
         case STATE_CLIENT_CODE_NOT_ENTERED:
-            logprintf("client authentication, user needs to enter code");
+            logprintf("client authentication, user needs to enter code.\n");
+            assert (instance->config->on_client_registration_required);
+            instance->config->on_client_registration_required (instance);
             // wait for user input ...
         break;
         
@@ -175,6 +187,7 @@ void telegram_free(struct telegram *this)
 
 void assert_file_usable(const char *file)
 {
+    logprintf ("assert_file_usable (%s)\n", file);
     assert(access(file, W_OK | R_OK | F_OK) != -1);
 }
 
@@ -231,7 +244,7 @@ void telegram_restore_session(struct telegram *instance)
 }
 
 /**
- * Load the current session state from a file
+ * Load the current session state
  */
 void telegram_store_session(struct telegram *instance)
 {
@@ -306,4 +319,3 @@ int telegram_has_output (struct telegram *instance)
 {
     return instance->connection->queries_num > 0;
 }
-

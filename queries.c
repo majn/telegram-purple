@@ -392,7 +392,6 @@ void do_help_get_config (struct telegram *instance) {
 /* }}} */
 
 /* {{{ Send code */
-char *phone_code_hash;
 int send_code_on_answer (struct query *q UU) {
   struct telegram *instance = q->extra;
   struct mtproto_connection *mtp = query_get_mtproto(q);
@@ -400,19 +399,16 @@ int send_code_on_answer (struct query *q UU) {
   assert (fetch_int (mtp) == (int)CODE_auth_sent_code);
   fetch_bool (mtp);
   int l = prefetch_strlen (mtp);
-  char *s = fetch_str (mtp, l);
-  if (phone_code_hash) {
-    tfree_str (phone_code_hash);
-  }
-  phone_code_hash = tstrndup (s, l);
+  char *phone_code_hash = tstrndup (fetch_str (mtp, l), l);
+  instance->phone_code_hash = phone_code_hash;
   logprintf("telegram: phone_code_hash: %s\n", phone_code_hash);
   fetch_int (mtp); 
   fetch_bool (mtp);
   want_dc_num = -1;
   if (instance->session_state == STATE_PHONE_CODE_REQUESTED) {
-    telegram_change_state(instance, STATE_PHONE_CODE_NOT_ENTERED, phone_code_hash); 
+    telegram_change_state(instance, STATE_PHONE_CODE_NOT_ENTERED, NULL); 
   } else if (instance->session_state == STATE_CLIENT_CODE_REQUESTED) {
-    telegram_change_state(instance, STATE_CLIENT_CODE_NOT_ENTERED, phone_code_hash); 
+    telegram_change_state(instance, STATE_CLIENT_CODE_NOT_ENTERED, NULL); 
   } else {
     logprintf("send_code_on_answer(): Invalid State %d ", instance->session_state);
     telegram_change_state(instance, STATE_ERROR, NULL);
@@ -507,7 +503,7 @@ void do_phone_call (struct telegram *instance, const char *user) {
   do_insert_header (mtp);
   out_int (mtp, CODE_auth_send_call);
   out_string (mtp, user);
-  out_string (mtp, phone_code_hash);
+  out_string (mtp, instance->phone_code_hash);
 
   logprintf ("do_phone_call: dc_num = %d\n", instance->auth.dc_working_num);
   send_query (telegram_get_working_dc(instance), mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &phone_call_methods, 0);
@@ -527,17 +523,10 @@ int check_phone_on_answer (struct query *q UU) {
   check_phone_result = fetch_bool (mtp);
   fetch_bool (mtp);
 
-  if (mtp->connection->instance->session_state != STATE_CONFIG_RECEIVED) {
-     logprintf("check_phone_on_answer(): invalid state: %d\n", mtp->connection->instance->session_state);
-     telegram_change_state(mtp->connection->instance, STATE_ERROR, NULL);
-     return -1;
-  }
-  logprintf("check_phone_result=%d\n", check_phone_result);
-  if (check_phone_result) { 
-    telegram_change_state(mtp->connection->instance, STATE_CLIENT_NOT_REGISTERED, NULL);
-  } else {
-    telegram_change_state(mtp->connection->instance, STATE_PHONE_NOT_REGISTERED, NULL);
-  } 
+  assert (mtp->connection->instance->session_state == STATE_CONFIG_RECEIVED);
+  logprintf ("check_phone_result=%d\n", check_phone_result);
+  telegram_change_state (mtp->connection->instance, 
+     check_phone_result ? STATE_CLIENT_NOT_REGISTERED : STATE_PHONE_NOT_REGISTERED, NULL);
   return 0;
 }
 
@@ -583,7 +572,8 @@ void do_auth_check_phone (struct telegram *instance, const char *user) {
   out_string (mtp, user);
   check_phone_result = -1;
   struct dc *DC_working = telegram_get_working_dc(instance);
-  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &check_phone_methods, instance);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, 
+    &check_phone_methods, instance);
 }
 /* }}} */
 
@@ -629,17 +619,14 @@ void do_get_nearest_dc (struct telegram *instance) {
 /* }}} */
 
 /* {{{ Sign in / Sign up */
-int sign_in_ok;
 int our_id;
-int sign_in_is_ok (void) {
-  return sign_in_ok;
-}
 
 struct user User;
 
-int sign_in_on_answer (struct query *q UU) {
+int sign_in_on_answer (struct query *q) {
+  logprintf ("sign_in_on_answer()\n");
   struct mtproto_connection *mtp = query_get_mtproto(q);
-  struct dc *DC_working = telegram_get_working_dc(q->extra);
+  struct dc *DC_working = telegram_get_working_dc(mtp->connection->instance);
   assert (fetch_int (mtp) == (int)CODE_auth_authorization);
   int expires = fetch_int (mtp);
   fetch_user (mtp, &User);
@@ -647,28 +634,20 @@ int sign_in_on_answer (struct query *q UU) {
     our_id = get_peer_id (User.id);
     bl_do_set_our_id (mtp->bl, mtp, our_id);
   }
-  sign_in_ok = 1;
-  logprintf ( "telegram: authorized successfully: name = '%s %s', phone = '%s', expires = %d\n", User.first_name, User.last_name, User.phone, (int)(expires - get_double_time ()));
+  logprintf ( "telegram: authorized successfully: name = '%s %s', phone = '%s', expires = %d\n", 
+    User.first_name, User.last_name, User.phone, (int)(expires - get_double_time ()));
   DC_working->has_auth = 1;
 
   bl_do_dc_signed (mtp->bl, mtp, DC_working->id);
-
+  telegram_change_state (mtp->connection->instance, STATE_READY, NULL);
   return 0;
 }
 
-char lasterror[75];
-const char *get_last_err()
-{
-   return lasterror;
-}
-
 int sign_in_on_error (struct query *q UU, int error_code, int l, char *error) {
+  logprintf ("sign_in_on_error()\n");
+  struct mtproto_connection *mtp = query_get_mtproto(q);
   logprintf ( "error_code = %d, error = %.*s\n", error_code, l, error);
-  if (sizeof(lasterror) >= strlen(error)) {
-    int dest = memcmp(lasterror, error, strlen(error));
-	logprintf("memcpy-state: %d", dest);
-  }
-  sign_in_ok = -1;
+  telegram_change_state (mtp->connection->instance, STATE_CLIENT_CODE_NOT_ENTERED, NULL);
   return 0;
 }
 
@@ -677,26 +656,29 @@ struct query_methods sign_in_methods  = {
   .on_error = sign_in_on_error
 };
 
-void do_send_code_result (struct telegram *instance, const char *code, const char *sms_hash) {
+void do_send_code_result (struct telegram *instance, const char *code) {
+  logprintf ("do_send_code_result()\n");
   struct mtproto_connection *mtp = instance->connection;
+  assert (instance->session_state == STATE_CLIENT_CODE_NOT_ENTERED);
  
   struct dc *DC_working = telegram_get_working_dc(instance);
   clear_packet (mtp);
   out_int (mtp, CODE_auth_sign_in);
   out_string (mtp, suser);
-  out_string(mtp, sms_hash);
+  out_string(mtp, instance->phone_code_hash);
   out_string (mtp, code);
-  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &sign_in_methods, instance);
+  send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, 
+    &sign_in_methods, NULL);
 }
 
-void do_send_code_result_auth (struct telegram *instance, const char *code, const char *sms_hash, const char *first_name, const char *last_name) {
+void do_send_code_result_auth (struct telegram *instance, const char *code, const char *first_name, const char *last_name) {
   struct dc *DC_working = telegram_get_working_dc(instance);
   struct mtproto_connection *mtp = instance->connection;
 
   clear_packet (mtp);
   out_int (mtp, CODE_auth_sign_up);
   out_string (mtp ,suser);
-  out_string (mtp, sms_hash);
+  out_string (mtp, instance->phone_code_hash);
   out_string (mtp, code);
   out_string (mtp, first_name);
   out_string (mtp, last_name);
@@ -1760,7 +1742,7 @@ void do_rename_chat (struct telegram *instance, peer_id_t id, char *name UU) {
 void print_chat_info (struct chat *C) {
 
   // TODO: use peer_t
-  peer_t *U  UU= (void *)C;
+  peer_t *U UU = (void *)C;
 
   //print_start ();
   //push_color (COLOR_YELLOW);
@@ -2821,7 +2803,7 @@ int get_difference_on_answer (struct query *q UU) {
     unread_messages = fetch_int (mtp);
     //write_state_file ();
     for (i = 0; i < ml_pos; i++) {
-	  event_update_new_message(ML[i]);
+	  event_update_new_message (instance, ML[i]);
       ////print_message (ML[i]);
     }
     if (x == CODE_updates_difference_slice) {
@@ -3114,4 +3096,5 @@ void do_update_status (struct telegram *instance, int online UU) {
   out_int (mtp, online ? CODE_bool_false : CODE_bool_true);
   send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &update_status_methods, 0);
 }
+
 

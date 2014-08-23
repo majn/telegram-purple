@@ -42,6 +42,7 @@
 #include "prefs.h"
 #include "util.h"
 #include "eventloop.h"
+#include "request.h"
 
 // struct telegram Includes
 

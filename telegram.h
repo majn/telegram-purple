@@ -188,6 +188,9 @@ struct telegram {
      */
     struct binlog *bl;
 
+    // TODO: Bind this to the current data center, since the code hash is only
+    // valid in its context
+    char *phone_code_hash;
 
     void *extra;
 };

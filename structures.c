@@ -1550,7 +1550,7 @@ struct user *fetch_alloc_user (struct mtproto_connection *mtp) {
   }
   fetch_user (mtp, &U->user);
   if (send_event) {
-    event_peer_allocated(U);
+    event_peer_allocated(mtp->connection->instance, U);
   }
   return &U->user;
 }
@@ -1569,7 +1569,7 @@ struct secret_chat *fetch_alloc_encrypted_chat (struct mtproto_connection *mtp) 
     Peers[peer_num ++] = U;
   }
   fetch_encrypted_chat (mtp, &U->encr_chat);
-  event_peer_allocated(U);
+  event_peer_allocated(mtp->connection->instance, U);
   return &U->encr_chat;
 }
 
@@ -1820,14 +1820,15 @@ struct message *fetch_alloc_message (struct mtproto_connection *mtp, struct tele
   int data[2];
   prefetch_data (mtp, data, 8);
   struct message *M = message_get (data[1]);
-  M->instance = instance;
 
   if (!M) {
     M = talloc0 (sizeof (*M));
     M->id = data[1];
+    M->instance = instance;
     message_insert_tree (M);
     messages_allocated ++;
   }
+  M->instance = instance;
   fetch_message (mtp, M);
   return M;
 }
@@ -1926,7 +1927,7 @@ struct chat *fetch_alloc_chat (struct mtproto_connection *mtp) {
     Peers[peer_num ++] = U;
   }
   fetch_chat (mtp, &U->chat);
-  event_peer_allocated(U);
+  event_peer_allocated(mtp->connection->instance, U);
   return &U->chat;
 }
 
