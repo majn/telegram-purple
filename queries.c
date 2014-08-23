@@ -75,7 +75,7 @@ extern int sync_from_start;
 int sync_from_start = 0;
 
 void telegram_flush_queries (struct telegram *instance) {
-   instance->on_output(instance);
+   instance->config->on_output(instance);
 }
 
 void out_peer_id (struct mtproto_connection *self, peer_id_t id);
@@ -153,8 +153,10 @@ struct query *send_query (struct dc *DC, int ints, void *data, struct query_meth
       logprintf ( "%lld %lld\n", q->msg_id, queries_tree->x->msg_id);
     }
   }
+
   queries_tree = tree_insert_query (queries_tree, q, lrand48 ());
-  logprintf("queries_num: %d\n", ++ mtc->queries_num);
+  struct mtproto_connection *mtp = query_get_mtproto(q);
+  logprintf("queries_num: %d\n", ++ mtp->queries_num);
 
   q->ev.alarm = (void *)alarm_query;
   q->ev.timeout = get_double_time () + QUERY_TIMEOUT;

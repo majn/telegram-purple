@@ -73,8 +73,10 @@ void tg_cli_log_cb(const char* format, va_list ap)
     purple_debug_info(PLUGIN_ID, "%s", buffer);
 }
 
-void on_new_message(struct message *M);
-void peer_allocated_handler(void *user);
+void on_new_message (struct telegram *instance, struct message *M);
+void peer_allocated_handler (struct telegram *instance, void *user);
+void telegram_on_phone_registration (struct telegram *instance);
+void elegram_on_client_registration (struct telegram *instance);
 
 /**
  * Returns the base icon name for the given buddy and account.
@@ -99,26 +101,7 @@ static void tgprpl_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo * info
 }
 
 /**
- * Request a verification key, save the returned verification_hash in the account settings
- *  for later usage and inform the user.
-static void login_request_verification(PurpleAccount *acct)
-{
-    // TODO: we should find a way to request the key
-    //            only once.
-    purple_debug_info(PLUGIN_ID, "No code provided, requesting new authentication code.\n");
-    char *new_hash = network_request_registration();
-    purple_debug_info(PLUGIN_ID, "Saving verification_hash: '%s'", new_hash);
-    purple_account_set_string(acct, "verification_hash", new_hash);
-
-    purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Please Verify", 
-         "You need to verify this device, please enter the code struct telegram has sent to you by SMS.", 
-         NULL, NULL, NULL);
-}
- */
-
-/**
- * Handle a failed verification, by removing the invalid sms code and
- *     notifying the user
+ * Handle a failed verification by removing the invalid sms code and notifying the user
  */
 static void login_verification_fail(PurpleAccount *acct)
 {
@@ -179,89 +162,6 @@ static void tgprpl_has_input(struct telegram *tg)
     }
 }
 
-static void tgprpl_on_state_change(struct telegram *instance, int state, void *data)
-{
-    telegram_conn *conn = instance->extra;
-    switch (state) {
-        case STATE_PHONE_NOT_REGISTERED:
-            // TODO: Request first and last name
-            // TODO: Fetch PurpleAccount and don't use global
-            purple_debug_info(PLUGIN_ID, "Phone is not registered, registering...\n");
-            const char *first_name = purple_account_get_string(conn->pa, "first_name", NULL);
-            const char *last_name  = purple_account_get_string(conn->pa, "last_name", NULL);
-            const char *code = purple_account_get_string(conn->pa, "verification_key", NULL);
-            const char *hash = purple_account_get_string(conn->pa, "verification_hash", NULL);
-            purple_debug_info(PLUGIN_ID, "code: %s\n", code);
-            purple_debug_info(PLUGIN_ID, "verification_hash: %s\n", hash);
-            if (!first_name || !last_name || !strlen(first_name) > 0 || !strlen(last_name) > 0) {
-                purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Registration Needed", 
-                    "Enter your first and last name to register this phone number with the telegram network.", 
-                    NULL, NULL, NULL);
-                return;
-            }
-
-            do_send_code_result_auth (instance, code, hash, first_name, last_name);
-        break;
-
-        case STATE_PHONE_CODE_NOT_ENTERED: {
-            char *hash = data;
-            const char *code = purple_account_get_string(conn->pa, "verification_key", NULL);
-            do_send_code_result(instance, code, hash);
-            // TODO: Request SMS code
-        }
-        break;
-
-        case STATE_CLIENT_CODE_NOT_ENTERED: {
-            char *hash = data;
-            const char *code = purple_account_get_string(conn->pa, "verification_key", NULL);
-            //const char *hash = purple_account_get_string(conn->pa, "verification_hash", NULL);
-            do_send_code_result(instance, code, hash);
-            // enter SMS code
-        }
-        break;
-
-        case STATE_READY:
-            // ready
-            purple_debug_info(PLUGIN_ID, "Logged in...\n");
-            purple_connection_set_state(conn->gc, PURPLE_CONNECTED);
-            char const *username = purple_account_get_username(conn->pa);
-            purple_connection_set_display_name(conn->gc, username);
-            purple_blist_add_account(conn->pa);
-
-            tggroup = purple_find_group("struct telegram");
-            if (tggroup == NULL) {
-                purple_debug_info(PLUGIN_ID, "PurpleGroup = NULL, creating");
-                tggroup = purple_group_new("struct telegram");
-                purple_blist_add_group(tggroup, NULL);
-            }
-
-            on_update_new_message(on_new_message);
-            on_peer_allocated(peer_allocated_handler);
-
-            // get all current contacts
-            purple_debug_info(PLUGIN_ID, "Fetching all current contacts...\n");
-            do_update_contact_list(instance);
-
-            purple_debug_info(PLUGIN_ID, "Fetching all current chats...\n");
-            do_get_dialog_list(instance);
-
-            // get new messages
-            purple_debug_info(PLUGIN_ID, "Fetching new messages...\n");
-            do_get_difference(instance);
-
-            tgprpl_has_output(instance);
-            //telegram_flush_queries(instance);
-        break;
-
-        case STATE_ERROR: {
-            const char* err = data;
-            logprintf("Connection errored: %s\n", err);
-            
-        }
-        break;
-    }
-}
-
 static void init_dc_settings(PurpleAccount *acc, struct dc *DC)
 {
     DC->port = purple_account_get_int(acc, "port", TELEGRAM_DEFAULT_PORT);
@@ -293,6 +193,101 @@ void telegram_on_proxy_close(struct telegram *instance, int fd UU)
     purple_input_remove (conn->wh);
 }
 
+void telegram_on_phone_registration (struct telegram *instance)
+{
+    telegram_conn *conn = instance->extra;
+
+    // TODO: Request first and last name
+    // TODO: Fetch PurpleAccount and don't use global
+    purple_debug_info(PLUGIN_ID, "Phone is not registered, registering...\n");
+    const char *first_name = purple_account_get_string(conn->pa, "first_name", NULL);
+    const char *last_name  = purple_account_get_string(conn->pa, "last_name", NULL);
+    const char *code = purple_account_get_string(conn->pa, "verification_key", NULL);
+
+    if (!first_name || !last_name || !strlen(first_name) > 0 || !strlen(last_name) > 0) {
+        purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Registration Needed", 
+            "Enter your first and last name to register this phone number with the telegram network.", 
+            NULL, NULL, NULL);
+        return;
+    }
+
+    do_send_code_result_auth (instance, code, first_name, last_name);
+}
+
+void client_registration_entered (gpointer data, const gchar *code)
+{
+    struct telegram *tg = data;
+    do_send_code_result (tg, code);
+    tgprpl_has_output (tg);
+}
+
+void client_registration_canceled (gpointer data)
+{
+    struct telegram *tg = data;
+    // TODO: disconnect and exit
+}
+
+void telegram_on_client_registration (struct telegram *instance)
+{
+    purple_debug_info(PLUGIN_ID, "Client is not registered, registering...\n");
+    telegram_conn *conn = instance->extra;
+
+    purple_request_input(
+        conn->gc, // handle   (the PurpleAccount) 
+        "Telegram Code",     // title 
+        "Enter Telegram Code", // primary 
+        "Telegram wants to verify your identity, please enter the code, that you have received via SMS.", // secondary 
+        NULL,     // default_value 
+        FALSE,    // multiline     
+        FALSE,    // masked         
+        "code",   // hint 
+        "OK",     // ok_text      
+        G_CALLBACK(client_registration_entered), // ok_cb 
+        "Cancel", // cancel_text 
+        G_CALLBACK(client_registration_canceled), // cancel_cb 
+        conn->pa, // account    
+        NULL,     // who 
+        NULL,     // conv  
+        conn->tg  // user_data      
+    );
+}
+
+void telegram_on_ready (struct telegram *instance)
+{
+     purple_debug_info(PLUGIN_ID, "telegram_on_ready().\n");
+     telegram_conn *conn = instance->extra;
+
+     purple_connection_set_state(conn->gc, PURPLE_CONNECTED);
+     purple_connection_set_display_name(conn->gc, purple_account_get_username(conn->pa));
+
+     purple_blist_add_account(conn->pa);
+     tggroup = purple_find_group("Telegram");
+     if (tggroup == NULL) {
+         purple_debug_info (PLUGIN_ID, "PurpleGroup = NULL, creating");
+         tggroup = purple_group_new ("struct telegram");
+         purple_blist_add_group (tggroup, NULL);
+     }
+
+     // get all current contacts
+     purple_debug_info(PLUGIN_ID, "Fetching all current contacts...\n");
+     do_update_contact_list(instance);
+
+     purple_debug_info(PLUGIN_ID, "Fetching all current chats...\n");
+     do_get_dialog_list(instance);
+
+     // get new messages
+     purple_debug_info(PLUGIN_ID, "Fetching new messages...\n");
+     do_get_difference(instance);
+
+     tgprpl_has_output(instance);
+}
+
+void telegram_on_disconnected (struct telegram *tg)
+{
+     logprintf ("telegram_on_disconnected()\n");
+     assert (0);
+}
+
 /**
  * A proxy connection was created by purple
  *
@@ -314,31 +309,17 @@ void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_messa
     conn->rh = purple_input_add(fd, PURPLE_INPUT_READ, tgprpl_input_cb, tg);
 
     telegram_set_proxy(tg, fd);
+}
 
-    // // load all settings: the known network topology, secret keys, logs and configuration file paths
-    // purple_debug_info(PLUGIN_ID, "parse_config()\n");
-    // parse_config ();
-    // purple_debug_info(PLUGIN_ID, "set_default_username()\n");
-    //set_default_username (username);
-
-    // Connect to the network
-    // Assure phone number registration
-    /*
-    if (!network_phone_is_registered()) {
-        if (code && strlen(code) > 0 && hash && strlen(hash) > 0) {
-            int registered = network_verify_phone_registration(code, hash, first_name, last_name);
-            if (registered) {
-                store_config();
-            } else {
-                login_verification_fail(acct);
-                return;
-            }
-        } else {
-            login_request_verification(acct);
-            return;
-        }
-    } 
-    */
+struct telegram_config tgconf = {
+    "/home/dev-jessie/.telegram",
+    NULL, // on output
+    telegram_on_proxy_request,
+    telegram_on_proxy_close,
+    telegram_on_phone_registration,
+    telegram_on_client_registration,
+    telegram_on_ready,
+    telegram_on_disconnected,
 
     // Assure client registration
     /*
@@ -362,7 +343,9 @@ void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_messa
         }
     } 
     */
-}
+    on_new_message,
+    peer_allocated_handler
+};
 
 /**
  * This must be implemented.
@@ -380,9 +363,7 @@ static void tgprpl_login(PurpleAccount * acct)
 
     // TODO: fetch current home directory
     // use this as root
-    struct telegram *tg = telegram_new(&DC, username, "/home/dev-jessie/.telegram", 
-        telegram_on_proxy_request, telegram_on_proxy_close);
-    telegram_add_state_change_listener(tg, tgprpl_on_state_change);
+    struct telegram *tg = telegram_new (&DC, username, &tgconf); 
     telegram_restore_session(tg);
 
     telegram_conn *conn = g_new0(telegram_conn, 1);
@@ -396,7 +377,7 @@ static void tgprpl_login(PurpleAccount * acct)
     telegram_network_connect(tg);
 }
 
-void on_new_message(struct message *M)
+void on_new_message(struct telegram *tg, struct message *M)
 {
    purple_debug_info(PLUGIN_ID, "New Message: %s\n", M->message);
    // TODO: this should probably be freed again somwhere
@@ -439,7 +420,7 @@ static PurpleChat *blist_find_chat_by_id(PurpleConnection *gc, const char *id)
 }
 
 
-void peer_allocated_handler(void *usr)
+void peer_allocated_handler(struct telegram *tg, void *usr)
 {
     peer_t *user = usr;
     gchar *name = g_strdup_printf("%d", get_peer_id(user->id));

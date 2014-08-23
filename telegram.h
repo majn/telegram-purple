@@ -83,6 +83,75 @@ struct binlog {
   int s[1000];
 };
 
+struct telegram;
+
+/**
+ * Contains all options and pointer to callback functions required by telegram
+ */
+struct telegram_config {
+
+    /**
+     * The base path containing the telegram configuration
+     */
+    const char* base_config_path;
+    
+    /**
+     * Called when there is pending network output
+     */
+    void (*on_output)(struct telegram *instance);
+
+    /**
+     * A callback function that delivers a connections to the given hostname
+     * and port by calling telegram_set_proxy. This is useful for tunelling
+     * the connection through a proxy server.
+     */
+    void (*proxy_request_cb)(struct telegram *instance, const char *ip, int port);
+    
+    /**
+     * A callback function that is called once the proxy connection is no longer
+     * needed. This is useful for freeing all used resources.
+     */
+     void (*proxy_close_cb)(struct telegram *instance, int fd);
+
+    /**
+     * A callback function that is called when a phone registration is required. 
+     *
+     * This callback must query first name, last name and the 
+     * authentication code from the user and call do_send_code_result_auth once done
+     */
+    void (*on_phone_registration_required) (struct telegram *instance);
+
+    /**
+     * A callback function that is called when a client registration is required. 
+     *
+     * This callback must query the authentication code from the user and
+     * call do_send_code_result once done
+     */
+    void (*on_client_registration_required) (struct telegram *instance);
+
+    /** 
+     * A callback function that is called when telegram is ready
+     */
+    void (*on_ready) (struct telegram *instance);
+
+    /** 
+     * A callback function that is called when telegram is disconnected
+     */
+    void (*on_disconnected) (struct telegram *instance);
+
+    /**
+     * A callback function that is called when a new message was allocated. This is useful
+     * for adding new messages to the GUI.
+     */
+    void (*on_msg_handler)(struct telegram *instance, struct message *M);
+
+    /**
+     * A callback function that is called when a new peer was allocated. This is useful
+     * for populating the GUI with new peers.
+     */
+    void (*on_peer_allocated_handler)(struct telegram *instance, void *peer);
+};
+
 /**
  * A telegram session
  *
@@ -101,14 +170,13 @@ struct telegram {
     char *secret_path;
 
     int session_state;
+    struct telegram_config *config;
     
     /*
      * protocol state
      */
     struct protocol_state proto;
     struct authorization_state auth;
-
-    GList *change_state_listeners;
 
     /*
      * connection
@@ -120,12 +188,6 @@ struct telegram {
      */
     struct binlog *bl;
 
-    /*
-     * callbacks
-     */
-    void (*on_output)(struct telegram *instance);
-    void (*proxy_request_cb)(struct telegram *instance, const char *ip, int port);
-    void (*proxy_close_cb)(struct telegram *instance, int fd);
 
     void *extra;
 };
@@ -133,18 +195,11 @@ struct telegram {
 /**
  * Create a new telegram application
  *
- * @param DC               The initial data center to use
- * @param login            The phone number to use as login name
- * @param config_path      The configuration path used to store the content
- * @param proxy_request_cb A callback function that delivers a connections to the given hostname
- *                         and port by calling telegram_set_proxy. This is useful for tunelling
- *                         the connection through a proxy server
- * @param proxy_close_cb   A callback function that is called once the proxy connection is no longer
- *                         needed. This is useful for freeing all used resources
+ * @param DC            The initial data center to use
+ * @param login         The phone number to use as login name
+ * @param config        Contains all callbacks used for the telegram instance
  */
-struct telegram *telegram_new(struct dc *DC, const char* login, const char* config_path, 
-    void (*proxy_request_cb)(struct telegram *instance, const char *ip, int port),
-    void (*proxy_close_cb)(struct telegram *instance, int fd));
+struct telegram *telegram_new(struct dc *DC, const char* login, struct telegram_config *config);
 
 /**
  * Resume the session to 
@@ -174,23 +229,6 @@ struct dc *telegram_get_working_dc(struct telegram *instance);
 /* 
  * Events
  */
-
-/**
- * Handler to process a state change 
- *
- * @param instance  The telegram instance that changed its state
- * @param state     The changed state
- * @param data      Extra data that depends on switched state
- */
-typedef void (*state_listener_t)(struct telegram *instance, int state, void *data);
-
-/**
- * Execute this listener when the state has changed
- *
- * @param instance  The telegram instance
- * @param listener  The listener to execute
- */
-void telegram_add_state_change_listener(struct telegram *instance, state_listener_t listener);
 
 /**
  * Change the state of the given telegram instance and execute all event handlers
@@ -283,14 +321,12 @@ void session_update_contact_list();
 /* 
  * Events
  */
-void on_update_new_message(void (*on_msg)(struct message *M));
-void event_update_new_message(struct message *M);
+void event_update_new_message(struct telegram *instance, struct message *M);
 
 /*
  * Load known users and chats on connect
  */
-void on_peer_allocated(void (*handler)(void *peer));
-void event_peer_allocated(void *peer);
+void event_peer_allocated(struct telegram *instance, void *peer);
 
 /**
  * Set a function to use as a handle to read from a network resource

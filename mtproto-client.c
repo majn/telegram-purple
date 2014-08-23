@@ -890,7 +890,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       assert (M);
       fetch_pts (self);
       self->unread_messages ++;
-	  event_update_new_message(M);
+	  event_update_new_message (tg, M);
       //print_message (M);
       //update_prompt ();
       break;

@@ -18,49 +18,21 @@
 /*
  * New message received
  */
-void (*on_msg_handler)(struct message *M);
-void on_update_new_message(void (*on_msg)(struct message *M)) 
+void event_update_new_message(struct telegram *instance, struct message *M) 
 {
-    on_msg_handler = on_msg;
-}
-void event_update_new_message(struct message *M) 
-{
-    if (on_msg_handler) {
-        on_msg_handler(M);
+    if (instance->config->on_msg_handler) {
+        instance->config->on_msg_handler(instance, M);
     }
 }
 
 /*
  * Peer allocated
  */
-void (*on_peer_allocated_handler)(void *peer);
-void on_peer_allocated(void (*handler)(void *peer)) 
+void event_peer_allocated(struct telegram *instance, void *peer) 
 {
-    on_peer_allocated_handler = handler;
-}
-void event_peer_allocated(void *peer) 
-{
-    if (on_peer_allocated_handler) {
-        on_peer_allocated_handler(peer);
+    if (instance->config->on_peer_allocated_handler) {
+        instance->config->on_peer_allocated_handler(instance, peer);
     }
-}
-
-/*
- * State changed
- */
-GList *change_listeners = NULL;
-void telegram_add_state_change_listener(struct telegram *instance, state_listener_t listener) 
-{
-    instance->change_state_listeners = g_list_append(instance->change_state_listeners, listener);
-}
-void telegram_change_state(struct telegram *instance, int state, void *data) 
-{
-    logprintf("telegram connection state changed to: %d\n", state);
-    instance->session_state = state;
-    GList *curr = instance->change_state_listeners; 
-    do {
-       ((state_listener_t)curr->data)(instance, state, data);
-    } while ((curr = g_list_next(change_listeners)) != NULL);
 }
 
 /**
@@ -82,8 +54,9 @@ char *telegram_get_config(struct telegram *instance, char *config)
  * the authorization and registration steps needed to connect the client to the telegram network, 
  * and will either trigger RPC queries or callbacks to the GUI to request input from the user.
  */
-void on_state_change(struct telegram *instance, int state, void *data) 
+void telegram_change_state (struct telegram *instance, int state, void *data) 
 {
+    instance->session_state = state;
     logprintf("on_state_change: %d\n", state);
     switch (state) {
         case STATE_ERROR: {
@@ -139,11 +112,9 @@ void on_state_change(struct telegram *instance, int state, void *data)
 
             // close old connection and mark it for destruction
             mtproto_close (instance->connection);
-            if (instance->proxy_request_cb) {
-                // tell the proxy to close all connections
-                instance->proxy_close_cb (instance, 
-                    instance->connection->connection->fd);
-            }
+            assert (instance->config->proxy_request_cb);
+            // tell the proxy to close all connections
+            instance->config->proxy_close_cb (instance, instance->connection->connection->fd);
             
             // start a new connection to the demanded data center. The pointer to the
             // currently working dc should have already been updated by the 
@@ -154,20 +125,16 @@ void on_state_change(struct telegram *instance, int state, void *data)
     }
 }
 
-struct telegram *telegram_new(struct dc *DC, const char* login, const char *config_path, 
-    void (*proxy_request_cb)(struct telegram *instance, const char *ip, int port),
-    void (*proxy_close_cb)(struct telegram *instance, int fd))
+struct telegram *telegram_new(struct dc *DC, const char* login, struct telegram_config *config)
 {
     struct telegram *this = talloc0(sizeof(struct telegram));
     this->protocol_data = NULL;
     this->auth.DC_list[0] = DC;
-    this->change_state_listeners = NULL;
     this->bl = talloc0 (sizeof(struct binlog));
-    this->proxy_request_cb = proxy_request_cb;
-    this->proxy_close_cb = proxy_close_cb;
+    this->config = config;
 
     this->login = g_strdup(login);
-    this->config_path = g_strdup_printf("%s/%s", config_path, login);
+    this->config_path = g_strdup_printf("%s/%s", config->base_config_path, login);
     this->download_path = telegram_get_config(this, "downloads");
     this->auth_path = telegram_get_config(this, "auth");
     this->state_path = telegram_get_config(this, "state");
@@ -180,14 +147,12 @@ struct telegram *telegram_new(struct dc *DC, const char* login, const char *conf
     logprintf("%s\n", this->state_path);
     logprintf("%s\n", this->secret_path);
 
-    telegram_add_state_change_listener(this, on_state_change);
     telegram_change_state(this, STATE_INITIALISED, NULL);
     return this;
 }
 
 void telegram_free(struct telegram *this) 
 {
-    g_list_free(this->change_state_listeners);
     g_free(this->login);
     g_free(this->config_path);
     g_free(this->download_path);
@@ -279,8 +244,8 @@ void telegram_network_connect(struct telegram *instance)
        assert(0);
     }
     struct dc *DC_working = telegram_get_working_dc (instance);
-    assert (instance->proxy_request_cb);
-    instance->proxy_request_cb (instance, DC_working->ip, DC_working->port);
+    assert (instance->config->proxy_request_cb);
+    instance->config->proxy_request_cb (instance, DC_working->ip, DC_working->port);
 }
 
 /**
