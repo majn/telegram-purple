@@ -56,9 +56,6 @@
 #define BUDDYNAME_MAX_LENGTH 128
 
 static PurplePlugin *_telegram_protocol = NULL;
-
-PurpleConnection *_gc;
-PurpleAccount *_pa;
 PurpleGroup *tggroup;
 
 void tgprpl_login_on_connected();
@@ -334,8 +331,6 @@ static void tgprpl_login(PurpleAccount * acct)
     purple_debug_info(PLUGIN_ID, "tgprpl_login()\n");
     PurpleConnection *gc = purple_account_get_connection(acct);
     char const *username = purple_account_get_username(acct);
-    _gc = gc;
-    _pa = acct;
 
     struct dc DC;
     init_dc_settings(acct, &DC);
@@ -358,10 +353,13 @@ static void tgprpl_login(PurpleAccount * acct)
 
 void on_new_message(struct telegram *tg, struct message *M)
 {
+    telegram_conn *conn = tg->extra;
+    PurpleConnection *gc = conn->gc;
+
    purple_debug_info(PLUGIN_ID, "New Message: %s\n", M->message);
    // TODO: this should probably be freed again somwhere
    char *who = g_strdup_printf("%d", get_peer_id(M->from_id));
-   serv_got_im(_gc, who, M->message, PURPLE_MESSAGE_RECV, time(NULL));
+   serv_got_im(gc, who, M->message, PURPLE_MESSAGE_RECV, time(NULL));
    g_free(who);
 }
 
@@ -401,6 +399,10 @@ static PurpleChat *blist_find_chat_by_id(PurpleConnection *gc, const char *id)
 
 void peer_allocated_handler(struct telegram *tg, void *usr)
 {
+    telegram_conn *conn = tg->extra;
+    PurpleConnection *gc = conn->gc;
+    PurpleAccount *pa = conn->pa;
+
     peer_t *user = usr;
     gchar *name = g_strdup_printf("%d", get_peer_id(user->id));
     logprintf("Allocated peer: %s\n", name);
@@ -415,10 +417,10 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
                     get_peer_id(user->id));
                 return;
             }
-            PurpleBuddy *buddy = purple_find_buddy(_pa, name);
+            PurpleBuddy *buddy = purple_find_buddy(pa, name);
             if (!buddy) { 
                 purple_debug_info(PLUGIN_ID, "Adding %s to buddy list\n", name);
-                buddy = purple_buddy_new(_pa, name, alias);
+                buddy = purple_buddy_new(pa, name, alias);
                 purple_blist_add_buddy(buddy, NULL, tggroup, NULL);
             }
             purple_buddy_set_protocol_data(buddy, (gpointer)&user->id);
@@ -427,7 +429,7 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
         break;
         case PEER_CHAT: {
             logprintf("Peer type: chat.\n");
-            PurpleChat *ch = blist_find_chat_by_id(_gc, name);
+            PurpleChat *ch = blist_find_chat_by_id(gc, name);
             if (!ch) {
                 gchar *admin = g_strdup_printf("%d", user->chat.admin_id);
                 GHashTable *htable = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
@@ -435,7 +437,7 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
                 g_hash_table_insert(htable, g_strdup("id"), name);
                 g_hash_table_insert(htable, g_strdup("owner"), admin);
                 logprintf("Adding chat to blist: %s (%s, %s)\n", user->chat.title, name, admin);
-                ch = purple_chat_new(_pa, user->chat.title, htable);
+                ch = purple_chat_new(pa, user->chat.title, htable);
                 purple_blist_add_chat(ch, NULL, NULL);
             }
             
@@ -443,7 +445,7 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
             //char const *id = g_hash_table_lookup(gh, "id");
             char const *owner = g_hash_table_lookup(gh, "owner");
     
-            PurpleConversation *conv = purple_find_chat(_gc, atoi(name));
+            PurpleConversation *conv = purple_find_chat(gc, atoi(name));
 
             purple_conv_chat_clear_users(purple_conversation_get_chat_data(conv));
             if (conv) {
@@ -495,8 +497,10 @@ static void tgprpl_close(PurpleConnection * gc)
 static int tgprpl_send_im(PurpleConnection * gc, const char *who, const char *message, PurpleMessageFlags flags)
 {
     telegram_conn *conn = purple_connection_get_protocol_data(gc);
+    PurpleAccount *pa = conn->pa;
+
     purple_debug_info(PLUGIN_ID, "tgprpl_send_im()\n");
-    PurpleBuddy *b = purple_find_buddy(_pa, who);
+    PurpleBuddy *b = purple_find_buddy(pa, who);
     peer_id_t *peer = purple_buddy_get_protocol_data(b);
     do_send_message(conn->tg, *peer, message, strlen(message));
     return 1;
