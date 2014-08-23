@@ -476,29 +476,6 @@ void do_send_code (struct telegram *instance, const char *user) {
     telegram_change_state(instance, STATE_ERROR, NULL);
   }
   // TODO: Phone Code Hash
-  /*
-  net_loop (0, code_is_sent);
-
-  if (want_dc_num == -1) { return phone_code_hash; }
-  bl_do_set_working_dc (dc_working_num);
-
-  logprintf ("send_code: dc_num = %d\n", dc_working_num);
-  want_dc_num = 0;
-  clear_packet (mtp);
-  do_insert_header ();
-  out_int (CODE_auth_send_code);
-  out_string (user);
-  out_int (0);
-  out_int (TG_APP_ID);
-  out_string (TG_APP_HASH);
-  out_string ("en");
-
-  send_query (telegram_get_working_dc(instance), packet_ptr - packet_buffer, packet_buffer, &send_code_methods, 0);
-  net_loop (0, code_is_sent);
-  assert (want_dc_num == -1);
-
-  return phone_code_hash;
-  */
 }
 
 
@@ -607,12 +584,6 @@ void do_auth_check_phone (struct telegram *instance, const char *user) {
   check_phone_result = -1;
   struct dc *DC_working = telegram_get_working_dc(instance);
   send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &check_phone_methods, instance);
-  /*
-  net_loop (0, cr_f);
-  check_phone_result = -1;
-  send_query (DC_working, packet_ptr - packet_buffer, packet_buffer, &check_phone_methods, instance);
-  net_loop (0, cr_f);
-  */
 }
 /* }}} */
 
@@ -716,11 +687,6 @@ void do_send_code_result (struct telegram *instance, const char *code, const cha
   out_string(mtp, sms_hash);
   out_string (mtp, code);
   send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &sign_in_methods, instance);
-  /*
-  sign_in_ok = 0;
-  //net_loop (0, sign_in_is_ok);
-  return sign_in_ok;
-  */
 }
 
 void do_send_code_result_auth (struct telegram *instance, const char *code, const char *sms_hash, const char *first_name, const char *last_name) {
@@ -735,11 +701,6 @@ void do_send_code_result_auth (struct telegram *instance, const char *code, cons
   out_string (mtp, first_name);
   out_string (mtp, last_name);
   send_query (DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &sign_in_methods, instance);
-  /*
-  sign_in_ok = 0;
-  net_loop (0, sign_in_is_ok);
-  return sign_in_ok;
-  */
 }
 /* }}} */
 

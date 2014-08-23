@@ -321,28 +321,6 @@ struct telegram_config tgconf = {
     telegram_on_ready,
     telegram_on_disconnected,
 
-    // Assure client registration
-    /*
-    if (!network_client_is_registered()) {
-        purple_debug_info(PLUGIN_ID, "Client is not registered\n");
-    
-        if (code && strlen(code) > 0 && hash && strlen(hash) > 0) {
-           purple_debug_info(PLUGIN_ID, "SMS code provided, trying to verify \n");
-           purple_debug_info(PLUGIN_ID, "strlen - code: %lu hash: %lu\n", strlen(code), strlen(hash));
-           purple_debug_info(PLUGIN_ID, "pointer - code: %p hash: %p\n", code, hash);
-           purple_debug_info(PLUGIN_ID, "string - code: %s hash: %s\n", code, hash);
-           if (verified) {
-              store_config();
-           } else {
-              login_verification_fail(acct);
-              return;
-           }
-        } else {
-           login_request_verification(acct);
-           return;
-        }
-    } 
-    */
     on_new_message,
     peer_allocated_handler
 };
