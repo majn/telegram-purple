@@ -74,6 +74,10 @@ void telegram_change_state (struct telegram *instance, int state, void *data)
         case STATE_AUTHORIZED:
             logprintf("requesting configuration\n");
             telegram_change_state(instance, STATE_CONFIG_REQUESTED, NULL);
+            if (telegram_is_registered(instance)) {
+                telegram_change_state (instance, STATE_READY, NULL);
+                return;
+            }
             do_help_get_config (instance);
         break;
 
@@ -101,6 +105,12 @@ void telegram_change_state (struct telegram *instance, int state, void *data)
         case STATE_CLIENT_CODE_NOT_ENTERED:
             logprintf("client authentication, user needs to enter code");
             // wait for user input ...
+        break;
+        
+        case STATE_READY:
+            logprintf("telegram is registered and ready.\n");
+            telegram_store_session (instance);
+            instance->config->on_ready (instance);
         break;
 
         case STATE_DISCONNECTED_SWITCH_DC: {

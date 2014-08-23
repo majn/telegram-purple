@@ -567,12 +567,6 @@ int network_phone_is_registered() {
 }
 */
 
-/**
- * Return whether the current client is registered.
- */
-int network_client_is_registered(struct telegram *tg) {
-  return !(tg->auth.auth_state == 100 || !(telegram_get_working_dc(tg)->has_auth));
-}
 
 /**
  * Verify the phone number by providing the sms_code and the real name
