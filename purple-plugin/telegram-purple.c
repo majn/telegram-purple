@@ -136,11 +136,7 @@ static void tgprpl_output_cb(gpointer data, gint source, PurpleInputCondition co
     logprintf("tgprpl_output_cb()\n");
     struct telegram *tg = data;
     telegram_conn *conn = tg->extra;
-
-    int written = telegram_write_output(tg);
-    
-    logprintf("written(%d): %d.\n", telegram_get_connection(tg)->fd, written);
-    if (written == 0) {
+    if (telegram_write_output(tg) == 0) {
         logprintf("no output, removing output...\n");
         purple_input_remove(conn->wh);
         conn->wh = 0;
@@ -219,7 +215,6 @@ void telegram_on_phone_registration (struct telegram *instance)
     telegram_conn *conn = instance->extra;
 
     // TODO: Request first and last name
-    // TODO: Fetch PurpleAccount and don't use global
     purple_debug_info(PLUGIN_ID, "Phone is not registered, registering...\n");
     const char *first_name = purple_account_get_string(conn->pa, "first_name", NULL);
     const char *last_name  = purple_account_get_string(conn->pa, "last_name", NULL);
@@ -290,10 +285,8 @@ void telegram_on_ready (struct telegram *instance)
 {
      purple_debug_info(PLUGIN_ID, "telegram_on_ready().\n");
      telegram_conn *conn = instance->extra;
-
      purple_connection_set_state(conn->gc, PURPLE_CONNECTED);
      purple_connection_set_display_name(conn->gc, purple_account_get_username(conn->pa));
-
      purple_blist_add_account(conn->pa);
      tggroup = purple_find_group("Telegram");
      if (tggroup == NULL) {
