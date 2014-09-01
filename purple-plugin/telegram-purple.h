@@ -40,8 +40,6 @@ typedef struct {
 	PurpleAccount *pa;
 	PurpleConnection *gc;
 
-    int updated;
-
     /**
      * Write handler returned by purple_input_add
      */
@@ -51,6 +49,12 @@ typedef struct {
      * Read handler returned by purple_input_add
      */
     guint rh;
+        
+    /**
+     * Whether the state of the protocol has changed since the last save
+     */
+    int updated;
+
     /**
      * The used purple timeout handler
      */

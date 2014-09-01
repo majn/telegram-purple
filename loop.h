@@ -17,33 +17,56 @@
     Copyright Vitaly Valtman 2013
 */
 
+#include "telegram.h"
+
 #ifndef __LOOP_H__
 #define __LOOP_H__
 // forward declarations
 
 struct dc;
+struct telegram;
 
-#ifndef __TELEGRAM_H__
-struct authorization_state;
-struct protocol_state;
-#endif
 
-int loop();
-void write_secret_chat_file (const char *filename);
-
-struct protocol_state {
-  int pts;
-  int qts;
-  int seq;
-  int last_date;
-};
-
+/**
+ * The authorization state, storing all known data centers of the telegram
+ * network and associated shared keys for transport encryption
+ */
 struct authorization_state {
   int dc_working_num;
   int auth_state;
   struct dc* DC_list[11];
   int our_id;
 };
+
+/**
+ * Stores the current update state of a client
+ */
+struct protocol_state {
+
+    /**
+     * Number of events occured in a text box
+     */
+    int pts;
+
+    /**
+     * Position within a siccession of unconfirmed updates, used for encrypted
+     * messages
+     */
+    int qts;
+
+    /**
+     * Number of sent updates
+     */
+    int seq;
+
+    /**
+     * Last update
+     */
+    int last_date;
+};
+
+int loop();
+void write_secret_chat_file (struct telegram *instance, const char *filename);
 
 void write_auth_file (struct authorization_state *state, const char *filename);
 struct authorization_state read_auth_file (const char *filename);
