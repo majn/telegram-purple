@@ -8,6 +8,7 @@
 #ifndef __TELEGRAM_H__
 #define __TELEGRAM_H__
 
+#define MAX_PACKED_SIZE (1 << 24)
 #define MAX_DC_NUM 9
 #define MAX_PEER_NUM 100000
 
@@ -18,12 +19,17 @@
 #include <sys/types.h>
 #include "glib.h"
 #include "loop.h"
-//#include "mtproto-client.h"
+#include "tree.h"
+#include "queries.h"
+#include <openssl/bn.h>
 
 // forward declarations
 struct message;
 struct protocol_state;
 struct authorization_state;
+struct tree_query;
+struct tree_timer;
+
 
 /*
  * telegram states
@@ -65,11 +71,15 @@ struct authorization_state;
 // Ready for sending and receiving messages
 #define STATE_READY 22
 
+struct tree_peer;
+struct tree_peer_by_name;
+struct tree_message;
+
+#define BINLOG_BUFFER_SIZE (1 << 20)
+
 /**
  * Binary log
  */
-
-#define BINLOG_BUFFER_SIZE (1 << 20)
 struct binlog {
   int binlog_buffer[BINLOG_BUFFER_SIZE];
   int *rptr;
@@ -81,6 +91,21 @@ struct binlog {
   long long binlog_pos;
 
   int s[1000];
+
+  // 
+  struct tree_peer *peer_tree;
+  struct tree_peer_by_name *peer_by_name_tree;
+  struct tree_message *message_tree;
+  struct tree_message *message_unsent_tree;
+  
+  int users_allocated;
+  int chats_allocated;
+  int messages_allocated;
+  int peer_num;
+  int encr_chats_allocated;
+  int geo_chats_allocated;
+
+  peer_t *Peers[MAX_PEER_NUM];
 };
 
 struct telegram;
@@ -105,13 +130,13 @@ struct telegram_config {
      * and port by calling telegram_set_proxy. This is useful for tunelling
      * the connection through a proxy server.
      */
-    void (*proxy_request_cb)(struct telegram *instance, const char *ip, int port);
+    void (*proxy_request_cb) (struct telegram *instance, const char *ip, int port);
     
     /**
      * A callback function that is called once the proxy connection is no longer
      * needed. This is useful for freeing all used resources.
      */
-     void (*proxy_close_cb)(struct telegram *instance, int fd);
+     void (*proxy_close_cb) (struct telegram *instance, int fd);
 
     /**
      * A callback function that is called when a phone registration is required. 
@@ -143,13 +168,13 @@ struct telegram_config {
      * A callback function that is called when a new message was allocated. This is useful
      * for adding new messages to the GUI.
      */
-    void (*on_msg_handler)(struct telegram *instance, struct message *M);
+    void (*on_msg_handler) (struct telegram *instance, struct message *M);
 
     /**
      * A callback function that is called when a new peer was allocated. This is useful
      * for populating the GUI with new peers.
      */
-    void (*on_peer_allocated_handler)(struct telegram *instance, void *peer);
+    void (*on_peer_allocated_handler) (struct telegram *instance, void *peer);
 
     /**
      * A callback function that is called when a user's status has changed
@@ -202,6 +227,40 @@ struct telegram {
     // valid in its context
     char *phone_code_hash;
 
+    int unread_messages;
+    long long cur_uploading_bytes;
+    long long cur_uploaded_bytes;
+    long long cur_downloading_bytes;
+    long long cur_downloaded_bytes;
+    int our_id;
+    struct user User;
+    BN_CTX *ctx;
+    int encr_root;
+    unsigned char *encr_prime;
+    int encr_param_version;
+    int max_chat_size;
+    int max_bcast_size;
+    int want_dc_num;
+    int new_dc_num;
+    int out_message_num;
+    char *suser;
+    int nearest_dc_num;
+    int packed_buffer[MAX_PACKED_SIZE / 4];
+    struct tree_query *queries_tree;
+    struct tree_timer *timer_tree;
+    char *export_auth_str;
+    int export_auth_str_len;
+    char g_a[256];
+    // do_get_difference
+    int get_difference_active;
+    struct message *ML[MSG_STORE_SIZE];
+
+    int cs;
+    struct mtproto_connection *Cs[100]; 
+
+    /*
+     * additional user data
+     */
     void *extra;
 };
 

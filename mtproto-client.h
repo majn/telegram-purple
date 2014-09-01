@@ -213,6 +213,8 @@ struct mtproto_connection {
 
     int longpoll_count, good_messages;
 
+    // TODO: decide whether this should be in struct telegram
+    // or in struct mtproto_client
     int unread_messages;
     int our_id;
     int pts;
@@ -243,6 +245,11 @@ struct mtproto_connection {
     // marks this connection for destruction, so it
     // will be freed once all queries received a response or timed out
     int destroy;
+
+    // 
+    // the corresponding telegram instance
+    //
+    struct telegram *instance;
 };
 
 void mtproto_connection_init (struct mtproto_connection *c);
@@ -498,7 +505,7 @@ static inline void hexdump_out (struct mtproto_connection *self) {
 #endif
 void my_clock_gettime (int clock_id, struct timespec *T);
 
-void mtproto_free_closed ();
+void mtproto_free_closed (struct telegram *tg);
 
 #endif
 

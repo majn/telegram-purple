@@ -22,6 +22,7 @@
 
 // forward-declrataions
 struct mtproto_connection;
+struct binlog;
 typedef struct { int type; int id; } peer_id_t;
 
 #include <assert.h>
@@ -43,6 +44,7 @@ typedef struct { int type; int id; } peer_id_t;
 
 #define FLAG_ENCRYPTED 4096
 #define FLAG_PENDING 8192
+
 
 struct file_location {
   int dc;
@@ -359,29 +361,29 @@ void message_insert_tree (struct message *M);
 void free_user (struct user *U);
 void free_chat (struct chat *U);
 
-char *create_print_name (peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4);
+char *create_print_name (struct binlog *bl, peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4);
 
-int print_stat (char *s, int len);
-peer_t *user_chat_get (peer_id_t id);
-struct message *message_get (long long id);
+int print_stat (struct binlog *bl, char *s, int len);
+peer_t *user_chat_get (struct binlog *bl, peer_id_t id);
+struct message *message_get (struct binlog *bl, long long id);
 void update_message_id (struct message *M, long long id);
 void message_insert (struct message *M);
 void fetch_photo (struct mtproto_connection *mtp, struct photo *P);
-void insert_encrypted_chat (peer_t *P);
-void insert_user (peer_t *P);
-void insert_chat (peer_t *P);
+void insert_encrypted_chat (struct binlog *bl, peer_t *P);
+void insert_user (struct binlog *bl, peer_t *P);
+void insert_chat (struct binlog *bl, peer_t *P);
 void free_photo (struct photo *P);
 void message_insert_unsent (struct message *M);
 void message_remove_unsent (struct message *M);
-void send_all_unsent (void);
+void send_all_unsent (struct binlog *bl);
 void message_remove_tree (struct message *M);
 void message_add_peer (struct message *M);
 void message_del_peer (struct message *M);
 void free_message (struct message *M);
 void message_del_use (struct message *M);
-void peer_insert_name (peer_t *P);
-void peer_delete_name (peer_t *P);
-peer_t *peer_lookup_name (const char *s);
+void peer_insert_name (struct binlog *bl, peer_t *P);
+void peer_delete_name (struct binlog *bl, peer_t *P);
+peer_t *peer_lookup_name (struct binlog *bl, const char *s);
 
 int user_get_alias(peer_t *user, char *buffer, int maxlen);
 

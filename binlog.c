@@ -37,11 +37,6 @@
 
 #include <openssl/sha.h>
 
-extern int pts;
-extern int qts;
-extern int last_date;
-extern int seq;
-
 #define MAX_LOG_EVENT_SIZE (1 << 17)
 
 // TODO: remove this completely
@@ -51,12 +46,7 @@ char *get_binlog_file_name()
    return "/home/dev-jessie/.telegram/binlog";
 }
 
-extern int our_id;
 int binlog_enabled = 0;
-extern int encr_root;
-extern unsigned char *encr_prime;
-extern int encr_param_version;
-extern int messages_allocated;
 
 void *alloc_log_event (struct binlog *bl, int l UU) {
   return bl->binlog_buffer;
@@ -119,7 +109,7 @@ void replay_log_event (struct telegram *instance) {
   case LOG_OUR_ID:
     bl->rptr ++;
     {
-      our_id = *(bl->rptr ++);
+      instance->our_id = *(bl->rptr ++);
     }
     break;
   case LOG_DC_SIGNED:
@@ -158,7 +148,7 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
-      struct secret_chat *U = (void *)user_chat_get (id);
+      struct secret_chat *U = (void *)user_chat_get (bl, id);
       assert (U);
       U->key_fingerprint = *(long long *)bl->rptr;
       bl->rptr += 2;
@@ -170,7 +160,7 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
-      struct secret_chat *U = (void *)user_chat_get (id);
+      struct secret_chat *U = (void *)user_chat_get (bl, id);
       assert (U);
       U->key_fingerprint = *(long long *)bl->rptr;
       bl->rptr += 2;
@@ -187,27 +177,27 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
-      struct secret_chat *U = (void *)user_chat_get (id);
+      struct secret_chat *U = (void *)user_chat_get (bl, id);
       assert (!U || !(U->flags & FLAG_CREATED));
       if (!U) {
         U = talloc0 (sizeof (peer_t));
         U->id = id;
-        insert_encrypted_chat ((void *)U);
+        insert_encrypted_chat (bl, (void *)U);
       }
       U->flags |= FLAG_CREATED;
       U->user_id = *(bl->rptr ++);
       memcpy (U->key, bl->rptr, 256);
       bl->rptr += 64;
       if (!U->print_name) {  
-        peer_t *P = user_chat_get (MK_USER (U->user_id));
+        peer_t *P = user_chat_get (bl, MK_USER (U->user_id));
         if (P) {
-          U->print_name = create_print_name (U->id, "!", P->user.first_name, P->user.last_name, 0);
+          U->print_name = create_print_name (bl, U->id, "!", P->user.first_name, P->user.last_name, 0);
         } else {
           static char buf[100];
           tsnprintf (buf, 99, "user#%d", U->user_id);
-          U->print_name = create_print_name (U->id, "!", buf, 0, 0);
+          U->print_name = create_print_name (bl, U->id, "!", buf, 0, 0);
         }
-        peer_insert_name ((void *)U);
+        peer_insert_name (bl, (void *)U);
       }
     };
     break;
@@ -215,11 +205,11 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
-      struct secret_chat *U = (void *)user_chat_get (id);
+      struct secret_chat *U = (void *)user_chat_get (bl, id);
       if (!U) {
         U = talloc0 (sizeof (peer_t));
         U->id = id;
-        insert_encrypted_chat ((void *)U);
+        insert_encrypted_chat (bl, (void *)U);
       }
       U->flags |= FLAG_CREATED;
       U->state = sc_deleted;
@@ -229,7 +219,7 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
-      struct secret_chat *U = (void *)user_chat_get (id);
+      struct secret_chat *U = (void *)user_chat_get (bl, id);
       assert (U);
       U->state = sc_waiting;
       U->date = *(bl->rptr ++);
@@ -243,11 +233,11 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
-      struct secret_chat *U = (void *)user_chat_get (id);
+      struct secret_chat *U = (void *)user_chat_get (bl, id);
       if (!U) {
         U = talloc0 (sizeof (peer_t));
         U->id = id;
-        insert_encrypted_chat ((void *)U);
+        insert_encrypted_chat (bl, (void *)U);
       }
       U->flags |= FLAG_CREATED;
       U->state = sc_request;
@@ -256,15 +246,15 @@ void replay_log_event (struct telegram *instance) {
       U->user_id = *(bl->rptr ++);
       U->access_hash = *(long long *)bl->rptr;
       if (!U->print_name) {  
-        peer_t *P = user_chat_get (MK_USER (U->user_id));
+        peer_t *P = user_chat_get (bl, MK_USER (U->user_id));
         if (P) {
-          U->print_name = create_print_name (U->id, "!", P->user.first_name, P->user.last_name, 0);
+          U->print_name = create_print_name (bl, U->id, "!", P->user.first_name, P->user.last_name, 0);
         } else {
           static char buf[100];
           tsnprintf (buf, 99, "user#%d", U->user_id);
-          U->print_name = create_print_name (U->id, "!", buf, 0, 0);
+          U->print_name = create_print_name (bl, U->id, "!", buf, 0, 0);
         }
-        peer_insert_name ((void *)U);
+        peer_insert_name (bl, (void *)U);
       }
       bl->rptr += 2;
     };
@@ -273,7 +263,7 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
-      struct secret_chat *U = (void *)user_chat_get (id);
+      struct secret_chat *U = (void *)user_chat_get (bl, id);
       assert (U);
       U->state = sc_ok;
     }
@@ -282,24 +272,24 @@ void replay_log_event (struct telegram *instance) {
     self->in_ptr ++;
     {
       peer_id_t id = MK_USER (fetch_int (self));
-      peer_t *_U = user_chat_get (id);
+      peer_t *_U = user_chat_get (bl, id);
       if (!_U) {
         _U = talloc0 (sizeof (*_U));
         _U->id = id;
-        insert_user (_U);
+        insert_user (bl, _U);
       } else {
         assert (!(_U->flags & FLAG_CREATED));
       }
       struct user *U = (void *)_U;
       U->flags |= FLAG_CREATED;
-      if (get_peer_id (id) == our_id) {
+      if (get_peer_id (id) == instance->our_id) {
         U->flags |= FLAG_USER_SELF;
       }
       U->first_name = fetch_str_dup (self);
       U->last_name = fetch_str_dup (self);
       assert (!U->print_name);
-      U->print_name = create_print_name (U->id, U->first_name, U->last_name, 0, 0);
-      peer_insert_name ((void *)U);
+      U->print_name = create_print_name (bl, U->id, U->first_name, U->last_name, 0, 0);
+      peer_insert_name (bl, (void *)U);
       U->access_hash = fetch_long (self);
       U->phone = fetch_str_dup (self);
       if (fetch_int (self)) {
@@ -312,7 +302,7 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_USER (*(bl->rptr ++));
-      peer_t *U = user_chat_get (id);
+      peer_t *U = user_chat_get (bl, id);
       assert (U);
       U->flags |= FLAG_DELETED;
     }
@@ -321,7 +311,7 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_USER (*(bl->rptr ++));
-      peer_t *U = user_chat_get (id);
+      peer_t *U = user_chat_get (bl, id);
       assert (U);
       U->user.access_hash = *(long long *)bl->rptr;
       bl->rptr += 2;
@@ -331,7 +321,7 @@ void replay_log_event (struct telegram *instance) {
     self->in_ptr ++;
     {
       peer_id_t id = MK_USER (fetch_int (self));
-      peer_t *U = user_chat_get (id);
+      peer_t *U = user_chat_get (bl, id);
       assert (U);
       if (U->user.phone) { tfree_str (U->user.phone); }
       U->user.phone = fetch_str_dup (self);
@@ -342,7 +332,7 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_USER (*(bl->rptr ++));
-      peer_t *U = user_chat_get (id);
+      peer_t *U = user_chat_get (bl, id);
       assert (U);
       int friend = *(bl->rptr ++);
       if (friend) { U->flags |= FLAG_USER_CONTACT; }
@@ -353,7 +343,7 @@ void replay_log_event (struct telegram *instance) {
     self->in_ptr ++;
     {
       peer_id_t id = MK_USER (fetch_int (self));
-      peer_t *U = user_chat_get (id);
+      peer_t *U = user_chat_get (bl, id);
       assert (U);
       if (U->flags & FLAG_HAS_PHOTO) {
         free_photo (&U->user.photo);
@@ -366,7 +356,7 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_USER (*(bl->rptr ++));
-      peer_t *U = user_chat_get (id);
+      peer_t *U = user_chat_get (bl, id);
       assert (U);
       U->user.blocked = *(bl->rptr ++);
     }
@@ -375,7 +365,7 @@ void replay_log_event (struct telegram *instance) {
     self->in_ptr ++;
     {
       peer_id_t id = MK_USER (fetch_int (self));
-      peer_t *U = user_chat_get (id);
+      peer_t *U = user_chat_get (bl, id);
       assert (U);
       if (U->user.real_first_name) { tfree_str (U->user.real_first_name); }
       if (U->user.real_last_name) { tfree_str (U->user.real_last_name); }
@@ -388,7 +378,7 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
-      peer_t *_U = user_chat_get (id);
+      peer_t *_U = user_chat_get (bl, id);
       assert (_U);
       struct secret_chat *U = &_U->encr_chat;
       memset (U->key, 0, sizeof (U->key));
@@ -408,11 +398,11 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
-      peer_t *_U = user_chat_get (id);
+      peer_t *_U = user_chat_get (bl, id);
       if (!_U) {
         _U = talloc0 (sizeof (*_U));
         _U->id = id;
-        insert_encrypted_chat (_U);
+        insert_encrypted_chat (bl, _U);
       } else {
         assert (!(_U->flags & FLAG_CREATED));
       }
@@ -423,16 +413,16 @@ void replay_log_event (struct telegram *instance) {
       U->admin_id = *(bl->rptr ++);
       U->user_id = *(bl->rptr ++);
 
-      peer_t *Us = user_chat_get (MK_USER (U->user_id));
+      peer_t *Us = user_chat_get (bl, MK_USER (U->user_id));
       assert (!U->print_name);
       if (Us) {
-        U->print_name = create_print_name (id, "!", Us->user.first_name, Us->user.last_name, 0);
+        U->print_name = create_print_name (bl, id, "!", Us->user.first_name, Us->user.last_name, 0);
       } else {
         static char buf[100];
         tsnprintf (buf, 99, "user#%d", U->user_id);
-        U->print_name = create_print_name (id, "!", buf, 0, 0);
+        U->print_name = create_print_name (bl, id, "!", buf, 0, 0);
       }
-      peer_insert_name ((void *)U);
+      peer_insert_name (bl, (void *)U);
       U->g_key = talloc (256);
       U->nonce = talloc (256);
       memcpy (U->g_key, bl->rptr, 256);
@@ -448,7 +438,7 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
-      peer_t *U = user_chat_get (id);
+      peer_t *U = user_chat_get (bl, id);
       assert (U);
       U->encr_chat.access_hash = *(long long *)bl->rptr;
       bl->rptr += 2;
@@ -458,7 +448,7 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
-      peer_t *U = user_chat_get (id);
+      peer_t *U = user_chat_get (bl, id);
       assert (U);
       U->encr_chat.date = *(bl->rptr ++);
     }
@@ -467,7 +457,7 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
-      peer_t *U = user_chat_get (id);
+      peer_t *U = user_chat_get (bl, id);
       assert (U);
       U->encr_chat.state = *(bl->rptr ++);
     }
@@ -476,7 +466,7 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
-      peer_t *_U = user_chat_get (id);
+      peer_t *_U = user_chat_get (bl, id);
       assert (_U);
       struct secret_chat *U = &_U->encr_chat;
       if (!U->g_key) {
@@ -492,7 +482,7 @@ void replay_log_event (struct telegram *instance) {
       U->key_fingerprint = *(long long *)bl->rptr;
       bl->rptr += 2;
       if (U->state == sc_waiting) {
-        do_create_keys_end (U);
+        do_create_keys_end (instance, U);
       }
       U->state = sc_ok;
     }
@@ -501,7 +491,7 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_ENCR_CHAT (*(bl->rptr ++));
-      peer_t *_U = user_chat_get (id);
+      peer_t *_U = user_chat_get (bl, id);
       assert (_U);
       struct secret_chat *U = &_U->encr_chat;
       memcpy (U->key, bl->rptr, 256);
@@ -513,12 +503,12 @@ void replay_log_event (struct telegram *instance) {
   case CODE_binlog_set_dh_params:
     bl->rptr ++;
     {
-      if (encr_prime) { tfree (encr_prime, 256); }
-      encr_root = *(bl->rptr ++);
-      encr_prime = talloc (256);
-      memcpy (encr_prime, bl->rptr, 256);
+      if (instance->encr_prime) { tfree (instance->encr_prime, 256); }
+      instance->encr_root = *(bl->rptr ++);
+      instance->encr_prime = talloc (256);
+      memcpy (instance->encr_prime, bl->rptr, 256);
       bl->rptr += 64;
-      encr_param_version = *(bl->rptr ++);
+      instance->encr_param_version = *(bl->rptr ++);
     }
     break;
   case CODE_binlog_encr_chat_init:
@@ -526,14 +516,14 @@ void replay_log_event (struct telegram *instance) {
     {
       peer_t *P = talloc0 (sizeof (*P));
       P->id = MK_ENCR_CHAT (*(bl->rptr ++));
-      assert (!user_chat_get (P->id));
+      assert (!user_chat_get (bl, P->id));
       P->encr_chat.user_id = *(bl->rptr ++);
-      P->encr_chat.admin_id = our_id;
-      insert_encrypted_chat (P);
-      peer_t *Us = user_chat_get (MK_USER (P->encr_chat.user_id));
+      P->encr_chat.admin_id = instance->our_id;
+      insert_encrypted_chat (bl, P);
+      peer_t *Us = user_chat_get (bl, MK_USER (P->encr_chat.user_id));
       assert (Us);
-      P->print_name = create_print_name (P->id, "!", Us->user.first_name, Us->user.last_name, 0);
-      peer_insert_name (P);
+      P->print_name = create_print_name (bl, P->id, "!", Us->user.first_name, Us->user.last_name, 0);
+      peer_insert_name (bl, P);
       memcpy (P->encr_chat.key, bl->rptr, 256);
       bl->rptr += 64;
       P->encr_chat.g_key = talloc (256);
@@ -544,29 +534,29 @@ void replay_log_event (struct telegram *instance) {
     break;
   case CODE_binlog_set_pts:
     bl->rptr ++;
-    pts = *(bl->rptr ++);
+    instance->proto.pts = *(bl->rptr ++);
     break;
   case CODE_binlog_set_qts:
     bl->rptr ++;
-    qts = *(bl->rptr ++);
+    instance->proto.qts = *(bl->rptr ++);
     break;
   case CODE_binlog_set_date:
     bl->rptr ++;
-    last_date = *(bl->rptr ++);
+    instance->proto.last_date = *(bl->rptr ++);
     break;
   case CODE_binlog_set_seq:
     bl->rptr ++;
-    seq = *(bl->rptr ++);
+    instance->proto.seq = *(bl->rptr ++);
     break;
   case CODE_binlog_chat_create:
     self->in_ptr ++;
     {
       peer_id_t id = MK_CHAT (fetch_int (self));
-      peer_t *_C = user_chat_get (id);
+      peer_t *_C = user_chat_get (bl, id);
       if (!_C) {
         _C = talloc0 (sizeof (*_C));
         _C->id = id;
-        insert_chat (_C);
+        insert_chat (bl, _C);
       } else {
         assert (!(_C->flags & FLAG_CREATED));
       }
@@ -574,8 +564,8 @@ void replay_log_event (struct telegram *instance) {
       C->flags = FLAG_CREATED | fetch_int (self);
       C->title = fetch_str_dup (self);
       assert (!C->print_title);
-      C->print_title = create_print_name (id, C->title, 0, 0, 0);
-      peer_insert_name ((void *)C);
+      C->print_title = create_print_name (bl, id, C->title, 0, 0, 0);
+      peer_insert_name (bl, (void *)C);
       C->users_num = fetch_int (self);
       C->date = fetch_int (self);
       C->version = fetch_int (self);
@@ -587,7 +577,7 @@ void replay_log_event (struct telegram *instance) {
   case CODE_binlog_chat_change_flags:
     bl->rptr ++;
     {
-      peer_t *C = user_chat_get (MK_CHAT (*(bl->rptr ++)));
+      peer_t *C = user_chat_get (bl, MK_CHAT (*(bl->rptr ++)));
       assert (C && (C->flags & FLAG_CREATED));
       C->flags |= *(bl->rptr ++);
       C->flags &= ~*(bl->rptr ++);
@@ -596,24 +586,24 @@ void replay_log_event (struct telegram *instance) {
   case CODE_binlog_set_chat_title:
     self->in_ptr ++;
     {
-      peer_t *_C = user_chat_get (MK_CHAT (fetch_int (self)));
+      peer_t *_C = user_chat_get (bl, MK_CHAT (fetch_int (self)));
       assert (_C && (_C->flags & FLAG_CREATED));
       struct chat *C = &_C->chat;
       if (C->title) { tfree_str (C->title); }
       C->title = fetch_str_dup (self);
       if (C->print_title) { 
-        peer_delete_name ((void *)C);
+        peer_delete_name (bl, (void *)C);
         tfree_str (C->print_title); 
       }
-      C->print_title = create_print_name (C->id, C->title, 0, 0, 0);
-      peer_insert_name ((void *)C);
+      C->print_title = create_print_name (bl, C->id, C->title, 0, 0, 0);
+      peer_insert_name (bl, (void *)C);
     };
     bl->rptr = self->in_ptr;
     break;
   case CODE_binlog_set_chat_photo:
     self->in_ptr ++;
     {
-      peer_t *C = user_chat_get (MK_CHAT (fetch_int (self)));
+      peer_t *C = user_chat_get (bl, MK_CHAT (fetch_int (self)));
       assert (C && (C->flags & FLAG_CREATED));
       fetch_data (self, &C->photo_big, sizeof (struct file_location));
       fetch_data (self, &C->photo_small, sizeof (struct file_location));
@@ -623,7 +613,7 @@ void replay_log_event (struct telegram *instance) {
   case CODE_binlog_set_chat_date:
     bl->rptr ++;
     {
-      peer_t *C = user_chat_get (MK_CHAT (*(bl->rptr ++)));
+      peer_t *C = user_chat_get (bl, MK_CHAT (*(bl->rptr ++)));
       assert (C && (C->flags & FLAG_CREATED));
       C->chat.date = *(bl->rptr ++);
     };
@@ -631,7 +621,7 @@ void replay_log_event (struct telegram *instance) {
   case CODE_binlog_set_chat_version:
     bl->rptr ++;
     {
-      peer_t *C = user_chat_get (MK_CHAT (*(bl->rptr ++)));
+      peer_t *C = user_chat_get (bl, MK_CHAT (*(bl->rptr ++)));
       assert (C && (C->flags & FLAG_CREATED));
       C->chat.version = *(bl->rptr ++);
       C->chat.users_num = *(bl->rptr ++);
@@ -640,7 +630,7 @@ void replay_log_event (struct telegram *instance) {
   case CODE_binlog_set_chat_admin:
     bl->rptr ++;
     {
-      peer_t *C = user_chat_get (MK_CHAT (*(bl->rptr ++)));
+      peer_t *C = user_chat_get (bl, MK_CHAT (*(bl->rptr ++)));
       assert (C && (C->flags & FLAG_CREATED));
       C->chat.admin_id = *(bl->rptr ++);
     };
@@ -648,7 +638,7 @@ void replay_log_event (struct telegram *instance) {
   case CODE_binlog_set_chat_participants:
     bl->rptr ++;
     {
-      peer_t *C = user_chat_get (MK_CHAT (*(bl->rptr ++)));
+      peer_t *C = user_chat_get (bl, MK_CHAT (*(bl->rptr ++)));
       assert (C && (C->flags & FLAG_CREATED));
       C->chat.user_list_version = *(bl->rptr ++);
       if (C->chat.user_list) { tfree (C->chat.user_list, 12 * C->chat.user_list_size); }
@@ -662,7 +652,7 @@ void replay_log_event (struct telegram *instance) {
     self->in_ptr ++;
     {
       peer_id_t id = MK_CHAT (fetch_int (self));
-      peer_t *U = user_chat_get (id);
+      peer_t *U = user_chat_get (bl, id);
       assert (U && (U->flags & FLAG_CREATED));
       if (U->flags & FLAG_HAS_PHOTO) {
         free_photo (&U->chat.photo);
@@ -675,7 +665,7 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_CHAT (*(bl->rptr ++));
-      peer_t *_C = user_chat_get (id);
+      peer_t *_C = user_chat_get (bl, id);
       assert (_C && (_C->flags & FLAG_CREATED));
       struct chat *C = &_C->chat;
 
@@ -701,7 +691,7 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr ++;
     {
       peer_id_t id = MK_CHAT (*(bl->rptr ++));
-      peer_t *_C = user_chat_get (id);
+      peer_t *_C = user_chat_get (bl, id);
       assert (_C && (_C->flags & FLAG_CREATED));
       struct chat *C = &_C->chat;
 
@@ -734,12 +724,13 @@ void replay_log_event (struct telegram *instance) {
       } else {
         id = fetch_long (self);
       }
-      struct message *M = message_get (id);
+      struct message *M = message_get(bl, id);
       if (!M) {
         M = talloc0 (sizeof (*M));
         M->id = id;
+        M->instance = instance;
         message_insert_tree (M);
-        messages_allocated ++;
+        bl->messages_allocated ++;
       } else {
         assert (!(M->flags & FLAG_CREATED));
       }
@@ -764,7 +755,7 @@ void replay_log_event (struct telegram *instance) {
         M->media.type = CODE_message_media_empty;
       }
       M->unread = 1;
-      M->out = get_peer_id (M->from_id) == our_id;
+      M->out = get_peer_id (M->from_id) == instance->our_id;
 
       message_insert (M);
       if (op == CODE_binlog_send_message_text) {
@@ -778,12 +769,12 @@ void replay_log_event (struct telegram *instance) {
     self->in_ptr ++;
     {
       int id = fetch_int (self);
-      struct message *M = message_get (id);
+      struct message *M = message_get(bl, id);
       if (!M) {
         M = talloc0 (sizeof (*M));
         M->id = id;
         message_insert_tree (M);
-        messages_allocated ++;
+        bl->messages_allocated ++;
       } else {
         assert (!(M->flags & FLAG_CREATED));
       }
@@ -803,7 +794,7 @@ void replay_log_event (struct telegram *instance) {
       
       M->media.type = CODE_message_media_empty;
       M->unread = 1;
-      M->out = get_peer_id (M->from_id) == our_id;
+      M->out = get_peer_id (M->from_id) == instance->our_id;
 
       message_insert (M);
     }
@@ -813,12 +804,12 @@ void replay_log_event (struct telegram *instance) {
     self->in_ptr ++;
     {
       int id = fetch_int (self);
-      struct message *M = message_get (id);
+      struct message *M = message_get(bl, id);
       if (!M) {
         M = talloc0 (sizeof (*M));
         M->id = id;
         message_insert_tree (M);
-        messages_allocated ++;
+        bl->messages_allocated ++;
       } else {
         assert (!(M->flags & FLAG_CREATED));
       }
@@ -836,7 +827,7 @@ void replay_log_event (struct telegram *instance) {
 
       fetch_message_media (self, &M->media);
       M->unread = 1;
-      M->out = get_peer_id (M->from_id) == our_id;
+      M->out = get_peer_id (M->from_id) == instance->our_id;
 
       message_insert (M);
     }
@@ -846,12 +837,12 @@ void replay_log_event (struct telegram *instance) {
     self->in_ptr ++;
     {
       long long id = fetch_long (self);
-      struct message *M = message_get (id);
+      struct message *M = message_get(bl, id);
       if (!M) {
         M = talloc0 (sizeof (*M));
         M->id = id;
         message_insert_tree (M);
-        messages_allocated ++;
+        bl->messages_allocated ++;
       } else {
         assert (!(M->flags & FLAG_CREATED));
       }
@@ -871,7 +862,7 @@ void replay_log_event (struct telegram *instance) {
       fetch_encrypted_message_file (self, &M->media);
 
       M->unread = 1;
-      M->out = get_peer_id (M->from_id) == our_id;
+      M->out = get_peer_id (M->from_id) == instance->our_id;
 
       message_insert (M);
     }
@@ -881,12 +872,12 @@ void replay_log_event (struct telegram *instance) {
     self->in_ptr ++;
     {
       int id = fetch_int (self);
-      struct message *M = message_get (id);
+      struct message *M = message_get(bl, id);
       if (!M) {
         M = talloc0 (sizeof (*M));
         M->id = id;
         message_insert_tree (M);
-        messages_allocated ++;
+        bl->messages_allocated ++;
       } else {
         assert (!(M->flags & FLAG_CREATED));
       }
@@ -906,7 +897,7 @@ void replay_log_event (struct telegram *instance) {
 
       fetch_message_media (self, &M->media);
       M->unread = 1;
-      M->out = get_peer_id (M->from_id) == our_id;
+      M->out = get_peer_id (M->from_id) == instance->our_id;
 
       message_insert (M);
     }
@@ -916,12 +907,12 @@ void replay_log_event (struct telegram *instance) {
     self->in_ptr ++;
     {
       int id = fetch_int (self);
-      struct message *M = message_get (id);
+      struct message *M = message_get(bl, id);
       if (!M) {
         M = talloc0 (sizeof (*M));
         M->id = id;
         message_insert_tree (M);
-        messages_allocated ++;
+        bl->messages_allocated ++;
       } else {
         assert (!(M->flags & FLAG_CREATED));
       }
@@ -933,7 +924,7 @@ void replay_log_event (struct telegram *instance) {
 
       fetch_message_action (self, &M->action);
       M->unread = 1;
-      M->out = get_peer_id (M->from_id) == our_id;
+      M->out = get_peer_id (M->from_id) == instance->our_id;
       M->service = 1;
 
       message_insert (M);
@@ -944,12 +935,12 @@ void replay_log_event (struct telegram *instance) {
     self->in_ptr ++;
     {
       long long id = fetch_long (self);
-      struct message *M = message_get (id);
+      struct message *M = message_get(bl, id);
       if (!M) {
         M = talloc0 (sizeof (*M));
         M->id = id;
         message_insert_tree (M);
-        messages_allocated ++;
+        bl->messages_allocated ++;
       } else {
         assert (!(M->flags & FLAG_CREATED));
       }
@@ -962,7 +953,7 @@ void replay_log_event (struct telegram *instance) {
       fetch_message_action_encrypted (self, &M->action); 
       
       M->unread = 1;
-      M->out = get_peer_id (M->from_id) == our_id;
+      M->out = get_peer_id (M->from_id) == instance->our_id;
       M->service = 1;
 
       message_insert (M);
@@ -973,12 +964,12 @@ void replay_log_event (struct telegram *instance) {
     self->in_ptr ++;
     {
       int id = fetch_int (self);
-      struct message *M = message_get (id);
+      struct message *M = message_get(bl, id);
       if (!M) {
         M = talloc0 (sizeof (*M));
         M->id = id;
         message_insert_tree (M);
-        messages_allocated ++;
+        bl->messages_allocated ++;
       } else {
         assert (!(M->flags & FLAG_CREATED));
       }
@@ -991,7 +982,7 @@ void replay_log_event (struct telegram *instance) {
       M->fwd_date = fetch_int (self);
       fetch_message_action (self, &M->action);
       M->unread = 1;
-      M->out = get_peer_id (M->from_id) == our_id;
+      M->out = get_peer_id (M->from_id) == instance->our_id;
       M->service = 1;
 
       message_insert (M);
@@ -1001,7 +992,7 @@ void replay_log_event (struct telegram *instance) {
   case CODE_binlog_set_unread:
     bl->rptr ++;
     {
-      struct message *M = message_get (*(bl->rptr ++));
+      struct message *M = message_get(bl, *(bl->rptr ++));
       assert (M);
       M->unread = 0;
     }
@@ -1009,7 +1000,7 @@ void replay_log_event (struct telegram *instance) {
   case CODE_binlog_set_message_sent:
     bl->rptr ++;
     {
-      struct message *M = message_get (*(long long *)bl->rptr);
+      struct message *M = message_get(bl, *(long long *)bl->rptr);
       bl->rptr += 2;
       assert (M);
       message_remove_unsent (M);
@@ -1019,7 +1010,7 @@ void replay_log_event (struct telegram *instance) {
   case CODE_binlog_set_msg_id:
     bl->rptr ++;
     {
-      struct message *M = message_get (*(long long *)bl->rptr);
+      struct message *M = message_get(bl, *(long long *)bl->rptr);
       bl->rptr += 2;
       assert (M);
       if (M->flags & FLAG_PENDING) {
@@ -1029,7 +1020,7 @@ void replay_log_event (struct telegram *instance) {
       message_remove_tree (M);
       message_del_peer (M);
       M->id = *(bl->rptr ++);
-      if (message_get (M->id)) {
+      if (message_get(bl, M->id)) {
         free_message (M);
         tfree (M, sizeof (*M));
       } else {
@@ -1041,7 +1032,7 @@ void replay_log_event (struct telegram *instance) {
   case CODE_binlog_delete_msg:
     bl->rptr ++;
     {
-      struct message *M = message_get (*(long long *)bl->rptr);
+      struct message *M = message_get(bl, *(long long *)bl->rptr);
       bl->rptr += 2;
       assert (M);
       if (M->flags & FLAG_PENDING) {
@@ -1250,7 +1241,6 @@ void bl_do_user_delete (struct binlog *bl, struct mtproto_connection *self, stru
   add_log_event (bl, self, ev, 8);
 }
 
-extern int last_date;
 void bl_do_set_user_profile_photo (struct binlog *bl, struct mtproto_connection *self, struct user *U, 
     long long photo_id, struct file_location *big, struct file_location *small) {
   if (photo_id == U->photo_id) { return; }
@@ -1258,7 +1248,7 @@ void bl_do_set_user_profile_photo (struct binlog *bl, struct mtproto_connection 
     int *ev = alloc_log_event (bl, 20);
     ev[0] = CODE_update_user_photo;
     ev[1] = get_peer_id (U->id);
-    ev[2] = last_date;
+    ev[2] = self->connection->instance->proto.last_date;
     ev[3] = CODE_user_profile_photo_empty;
     ev[4] = CODE_bool_false;
     add_log_event (bl, self, ev, 20);
@@ -1266,7 +1256,7 @@ void bl_do_set_user_profile_photo (struct binlog *bl, struct mtproto_connection 
     clear_packet (self);
     out_int (self, CODE_update_user_photo);
     out_int (self, get_peer_id (U->id));
-    out_int (self, last_date);
+    out_int (self, self->connection->instance->proto.last_date);
     out_int (self, CODE_user_profile_photo);
     out_long (self, photo_id);
     if (small->dc >= 0) {

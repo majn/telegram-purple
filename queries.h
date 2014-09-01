@@ -22,11 +22,12 @@
 #pragma once
 #include "structures.h"
 
-// forward declare telegram
 struct telegram;
 struct encr_video;
 struct document;
 struct secret_chat;
+struct tree_query;
+struct tree_timer;
 
 #define QUERY_ACK_RECEIVED 1
 
@@ -57,16 +58,16 @@ struct query {
 };
 
 
-struct query *send_query (struct dc *DC, int len, void *data, struct query_methods *methods, void *extra);
-void query_ack (long long id);
-void query_error (long long id);
-void query_result (long long id);
-void query_restart (long long id);
+struct query *send_query (struct telegram *instance, struct dc *DC, int len, void *data, struct query_methods *methods, void *extra);
+void query_ack (struct telegram *instance, long long id);
+void query_error (struct telegram *instance, long long id);
+void query_result (struct telegram *instance, long long id);
+void query_restart (struct telegram *instance, long long id);
 
-void insert_event_timer (struct event_timer *ev);
-void remove_event_timer (struct event_timer *ev);
-double next_timer_in (void);
-void work_timers (void);
+void insert_event_timer (struct telegram *instance, struct event_timer *ev);
+void remove_event_timer (struct telegram *instance, struct event_timer *ev);
+double next_timer_in (struct telegram *instance);
+void work_timers (struct telegram *instance);
 
 extern struct query_methods help_get_config_methods;
 
@@ -113,8 +114,8 @@ void do_msg_search (struct telegram *instance, peer_id_t id, int from, int to, i
 void do_accept_encr_chat_request (struct telegram *instance, struct secret_chat *E);
 void do_get_difference (struct telegram*);
 void do_mark_read (struct telegram *instance, peer_id_t id);
-void do_visualize_key (peer_id_t id);
-void do_create_keys_end (struct secret_chat *U);
+void do_visualize_key (struct binlog *bl, peer_id_t id);
+void do_create_keys_end (struct telegram *, struct secret_chat *U);
 
 void do_add_user_to_chat (struct telegram *instance, peer_id_t chat_id, peer_id_t id, int limit);
 void do_del_user_from_chat (struct telegram *instance, peer_id_t chat_id, peer_id_t id);
@@ -128,6 +129,8 @@ void do_restore_msg (struct telegram *instance, long long id);
 
 int get_dh_config_on_answer (struct query *q);
 void fetch_dc_option (struct telegram *instance);
+void free_queries (struct telegram *instance);
+void free_timers (struct telegram *instance);
 #endif
 
 const char *get_last_err();

@@ -116,14 +116,14 @@ int ping_alarm (struct connection *c) {
 }
 
 void stop_ping_timer (struct connection *c) {
-  remove_event_timer (&c->ev);
+  remove_event_timer (c->instance, &c->ev);
 }
 
 void start_ping_timer (struct connection *c) {
   c->ev.timeout = get_double_time () + PING_TIMEOUT;
   c->ev.alarm = (void *)ping_alarm;
   c->ev.self = c;
-  insert_event_timer (&c->ev);
+  insert_event_timer (c->instance, &c->ev);
 }
 
 void restart_connection (struct connection *c);
@@ -138,7 +138,7 @@ void start_fail_timer (struct connection *c) {
   c->ev.timeout = get_double_time () + 10;
   c->ev.alarm = (void *)fail_alarm;
   c->ev.self = c;
-  insert_event_timer (&c->ev);
+  insert_event_timer (c->instance, &c->ev);
 }
 
 struct connection_buffer *new_connection_buffer (int size) {
@@ -636,17 +636,16 @@ int send_all_acks (struct session *S) {
 
 void insert_msg_id (struct session *S, long long id) {
   if (!S->ack_tree) {
+    logprintf ("Creating ack_tree pointing to session %p\n");
     S->ev.alarm = (void *)send_all_acks;
     S->ev.self = (void *)S;
     S->ev.timeout = get_double_time () + ACK_TIMEOUT;
-    insert_event_timer (&S->ev);
+    insert_event_timer (S->c->instance, &S->ev);
   }
   if (!tree_lookup_long (S->ack_tree, id)) {
     S->ack_tree = tree_insert_long (S->ack_tree, id, lrand48 ());
   }
 }
-
-extern struct dc *DC_list[];
 
 struct dc *alloc_dc (struct dc* DC_list[], int id, char *ip, int port UU) {
   assert (!DC_list[id]);

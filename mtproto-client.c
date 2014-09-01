@@ -797,24 +797,26 @@ void fetch_seq (struct mtproto_connection *self) {
 }
 
 void work_update_binlog (struct mtproto_connection *self) {
+  struct binlog *bl = self->bl;
+
   unsigned op = fetch_int (self);
   switch (op) {
   case CODE_update_user_name:
     {
       peer_id_t user_id = MK_USER (fetch_int (self));
-      peer_t *UC = user_chat_get (user_id);
+      peer_t *UC = user_chat_get (bl, user_id);
       if (UC) {
         struct user *U = &UC->user;
         if (U->first_name) { tfree_str (U->first_name); }
         if (U->last_name) { tfree_str (U->last_name); }
         if (U->print_name) {
-          peer_delete_name (UC);
+          peer_delete_name (bl, UC);
           tfree_str (U->print_name);
         }
         U->first_name = fetch_str_dup (self);
         U->last_name = fetch_str_dup (self);
-        U->print_name = create_print_name (U->id, U->first_name, U->last_name, 0, 0);
-        peer_insert_name ((void *)U);
+        U->print_name = create_print_name (bl, U->id, U->first_name, U->last_name, 0, 0);
+        peer_insert_name (bl, (void *)U);
       } else {
         fetch_skip_str (self);
         fetch_skip_str (self);
@@ -824,7 +826,7 @@ void work_update_binlog (struct mtproto_connection *self) {
   case CODE_update_user_photo:
     {
       peer_id_t user_id = MK_USER (fetch_int (self));
-      peer_t *UC = user_chat_get (user_id);
+      peer_t *UC = user_chat_get (bl, user_id);
       fetch_date (self);
       if (UC) {
         struct user *U = &UC->user;
@@ -860,8 +862,9 @@ void work_update_binlog (struct mtproto_connection *self) {
 }
 
 void work_update (struct mtproto_connection *self, long long msg_id UU) {
-  struct connection *c UU = self->connection;
+  struct connection *c = self->connection;
   struct telegram *tg = c->instance;
+  struct binlog *bl = self->bl;
 
   unsigned op = fetch_int (self);
   logprintf("work_update(): OP:%d\n", op);
@@ -881,7 +884,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
     {
       int id = fetch_int (self); // id
       int new = fetch_long (self); // random_id
-      struct message *M = message_get (new);
+      struct message *M = message_get (bl, new);
       if (M) {
         bl_do_set_msg_id (self->bl, self, M, id);
       }
@@ -894,7 +897,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       int i;
       for (i = 0; i < n; i++) {
         int id = fetch_int (self);
-        struct message *M = message_get (id);
+        struct message *M = message_get (bl, id);
         if (M) {
           bl_do_set_unread (self->bl, self, M, 0);
         }
@@ -913,7 +916,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
   case CODE_update_user_typing:
     {
       peer_id_t id = MK_USER (fetch_int (self));
-      peer_t *U UU = user_chat_get (id);
+      peer_t *U UU = user_chat_get (bl, id);
 	  event_update_user_typing (tg, U);
       if (log_level >= 2) {
         //print_start ();
@@ -931,8 +934,8 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
     {
       peer_id_t chat_id = MK_CHAT (fetch_int (self));
       peer_id_t id = MK_USER (fetch_int (self));
-      peer_t *C UU = user_chat_get (chat_id);
-      peer_t *U UU = user_chat_get (id);
+      peer_t *C UU = user_chat_get (bl, chat_id);
+      peer_t *U UU = user_chat_get (bl, id);
 	  event_update_user_typing(tg, U);
       if (log_level >= 2) {
         //print_start ();
@@ -951,7 +954,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
   case CODE_update_user_status:
     {
       peer_id_t user_id = MK_USER (fetch_int (self));
-      peer_t *U = user_chat_get (user_id);
+      peer_t *U = user_chat_get (bl, user_id);
       if (U) {
         fetch_user_status (self, &U->user.status);
 		event_update_user_status(tg, U);
@@ -975,7 +978,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
   case CODE_update_user_name:
     {
       peer_id_t user_id = MK_USER (fetch_int (self));
-      peer_t *UC = user_chat_get (user_id);
+      peer_t *UC = user_chat_get (bl, user_id);
       if (UC && (UC->flags & FLAG_CREATED)) {
         int l1 = prefetch_strlen (self);
         char *f = fetch_str (self, l1);
@@ -1002,7 +1005,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
   case CODE_update_user_photo:
     {
       peer_id_t user_id = MK_USER (fetch_int (self));
-      peer_t *UC = user_chat_get (user_id);
+      peer_t *UC = user_chat_get (bl, user_id);
       fetch_date (self);
       if (UC && (UC->flags & FLAG_CREATED)) {
         struct user *U = &UC->user;
@@ -1080,7 +1083,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       assert (x == CODE_chat_participants || x == CODE_chat_participants_forbidden);
       peer_id_t chat_id = MK_CHAT (fetch_int (self));
       int n = 0;
-      peer_t *C = user_chat_get (chat_id);
+      peer_t *C = user_chat_get (bl, chat_id);
       if (C && (C->flags & FLAG_CREATED)) {
         if (x == CODE_chat_participants) {
           bl_do_set_chat_admin (self->bl, self, &C->chat, fetch_int (self));
@@ -1123,7 +1126,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
   case CODE_update_contact_registered:
     {
       peer_id_t user_id = MK_USER (fetch_int (self));
-      peer_t *U UU = user_chat_get (user_id);
+      peer_t *U UU = user_chat_get (bl, user_id);
       fetch_int (self); // date
       //print_start ();
       //push_color (COLOR_YELLOW);
@@ -1138,7 +1141,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
   case CODE_update_contact_link:
     {
       peer_id_t user_id = MK_USER (fetch_int (self));
-      peer_t *U UU = user_chat_get (user_id);
+      peer_t *U UU = user_chat_get (bl, user_id);
       //print_start ();
       //push_color (COLOR_YELLOW);
       //print_date (time (0));
@@ -1162,7 +1165,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
   case CODE_update_activation:
     {
       peer_id_t user_id = MK_USER (fetch_int (self));
-      peer_t *U UU = user_chat_get (user_id);
+      peer_t *U UU = user_chat_get (bl, user_id);
       //print_start ();
       //push_color (COLOR_YELLOW);
       //print_date (time (0));
@@ -1251,7 +1254,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
   case CODE_update_encrypted_chat_typing:
     {
       peer_id_t id = MK_ENCR_CHAT (fetch_int (self));
-      peer_t *P = user_chat_get (id);
+      peer_t *P = user_chat_get (bl, id);
       //print_start ();
       //push_color (COLOR_YELLOW);
       //print_date (time (0));
@@ -1259,7 +1262,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       if (P) {
         printf (" User ");
         peer_id_t user_id UU = MK_USER (P->encr_chat.user_id);
-        //print_user_name (user_id, user_chat_get (user_id));
+        //print_user_name (user_id, user_chat_get (bl, user_id));
         printf (" typing in secret chat ");
         //print_encr_chat_name (id, P);
         printf ("\n");
@@ -1275,7 +1278,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       peer_id_t id = MK_ENCR_CHAT (fetch_int (self)); // chat_id
       fetch_int (self); // max_date
       fetch_int (self); // date
-      peer_t *P = user_chat_get (id);
+      peer_t *P = user_chat_get (bl, id);
       int x = -1;
       if (P && P->last) {
         x = 0;
@@ -1293,7 +1296,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
         //push_color (COLOR_YELLOW);
         //print_date (time (0));
         printf (" Encrypted chat ");
-        //print_encr_chat_name_full (id, user_chat_get (id));
+        //print_encr_chat_name_full (id, user_chat_get (bl, id));
         printf (": %d messages marked read \n", x);
         //pop_color ();
         //print_end ();
@@ -1307,7 +1310,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       peer_id_t inviter_id = MK_USER (fetch_int (self));
       int  version = fetch_int (self);
 
-      peer_t *C = user_chat_get (chat_id);
+      peer_t *C = user_chat_get (bl, chat_id);
       if (C && (C->flags & FLAG_CREATED)) {
         bl_do_chat_add_user (self->bl, self, &C->chat, version, get_peer_id (user_id), get_peer_id (inviter_id), time (0));
       }
@@ -1316,11 +1319,11 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       //push_color (COLOR_YELLOW);
       //print_date (time (0));
       printf (" Chat ");
-      //print_chat_name (chat_id, user_chat_get (chat_id));
+      //print_chat_name (chat_id, user_chat_get (bl, chat_id));
       printf (": user ");
-      //print_user_name (user_id, user_chat_get (user_id));
+      //print_user_name (user_id, user_chat_get (bl, user_id));
       printf (" added by user ");
-      //print_user_name (inviter_id, user_chat_get (inviter_id));
+      //print_user_name (inviter_id, user_chat_get (bl, inviter_id));
       printf ("\n");
       //pop_color ();
       //print_end ();
@@ -1332,7 +1335,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       peer_id_t user_id = MK_USER (fetch_int (self));
       int version = fetch_int (self);
 
-      peer_t *C = user_chat_get (chat_id);
+      peer_t *C = user_chat_get (bl, chat_id);
       if (C && (C->flags & FLAG_CREATED)) {
         bl_do_chat_del_user (self->bl, self, &C->chat, version, get_peer_id (user_id));
       }
@@ -1341,9 +1344,9 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       //push_color (COLOR_YELLOW);
       //print_date (time (0));
       printf (" Chat ");
-      //print_chat_name (chat_id, user_chat_get (chat_id));
+      //print_chat_name (chat_id, user_chat_get (bl, chat_id));
       printf (": user ");
-      //print_user_name (user_id, user_chat_get (user_id));
+      //print_user_name (user_id, user_chat_get (bl, user_id));
       printf (" deleted\n");
       //pop_color ();
       //print_end ();
@@ -1464,7 +1467,7 @@ void work_msgs_ack (struct connection *c UU, long long msg_id UU) {
   for (i = 0; i < n; i++) {
     long long id = fetch_long (c->mtconnection);
     logprintf ("ack for %lld\n", id);
-    query_ack (id);
+    query_ack (c->instance, id);
   }
 }
 
@@ -1474,9 +1477,9 @@ void work_rpc_result (struct connection *c UU, long long msg_id UU) {
   long long id = fetch_long (c->mtconnection);
   int op = prefetch_int (c->mtconnection);
   if (op == CODE_rpc_error) {
-    query_error (id);
+    query_error (c->instance, id);
   } else {
-    query_result (id);
+    query_result (c->instance, id);
   }
 }
 
@@ -1510,7 +1513,7 @@ void work_packed (struct connection *c, long long msg_id) {
 void work_bad_server_salt (struct connection *c UU, long long msg_id UU) {
   assert (fetch_int (c->mtconnection) == (int)CODE_bad_server_salt);
   long long id = fetch_long (c->mtconnection);
-  query_restart (id);
+  query_restart (c->instance, id);
   fetch_int (c->mtconnection); // seq_no
   fetch_int (c->mtconnection); // error_code
   long long new_server_salt = fetch_long (c->mtconnection);
@@ -1809,19 +1812,15 @@ struct connection_methods mtproto_methods = {
   .close = rpc_close
 };
 
-// TODO: use a list or tree instead
-struct mtproto_connection *Cs[100]; 
-
 /**
  * Create a new struct mtproto_connection connection using the giving datacenter for authorization and 
  *  session handling
  */
 struct mtproto_connection *mtproto_new(struct dc *DC, int fd, struct telegram *tg)
 {
-    static int cs = 0;
-    struct mtproto_connection *mtp = talloc(sizeof(struct mtproto_connection));
-    Cs[cs++] = mtp;
-    memset(mtp, 0, sizeof(struct mtproto_connection));
+    struct mtproto_connection *mtp = talloc0(sizeof(struct mtproto_connection));
+    tg->Cs[tg->cs++] = mtp;
+    mtp->instance = tg;
     mtp->packet_buffer = mtp->__packet_buffer + 16;
     mtp->connection = fd_create_connection(DC, fd, tg, &mtproto_methods, mtp);
 
@@ -1875,14 +1874,14 @@ void mtproto_destroy (struct mtproto_connection *self) {
 void mtproto_free_closed () {
     int i;
     for (i = 0; i < 100; i++) {
-        if (Cs[i] == NULL) continue; 
-        struct mtproto_connection *c = Cs[i];
+        if (tg->Cs[i] == NULL) continue; 
+        struct mtproto_connection *c = tg->Cs[i];
         logprintf ("checking mtproto_connection %d: c_state:%d destroy:%d, quries_num:%d\n", 
             i, c->c_state, c->destroy, c->queries_num);
         if (c->destroy == 0) continue;
         if (c->queries_num > 0) continue;
         mtproto_destroy (c);
-        Cs[i] = NULL;
+        tg->Cs[i] = NULL;
     }
 }
 

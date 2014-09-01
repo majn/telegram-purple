@@ -45,23 +45,7 @@ struct message message_list = {
   .prev_use = &message_list
 };
 
-struct tree_peer *peer_tree;
-struct tree_peer_by_name *peer_by_name_tree;
-struct tree_message *message_tree;
-struct tree_message *message_unsent_tree;
-
-int users_allocated;
-int chats_allocated;
-int messages_allocated;
-int peer_num;
-int encr_chats_allocated;
-int geo_chats_allocated;
-
-int our_id;
 int verbosity;
-
-peer_t *Peers[MAX_PEER_NUM];
-
 
 void fetch_skip_photo (struct mtproto_connection *mtp);
 
@@ -141,7 +125,7 @@ int fetch_skip_user_status (struct mtproto_connection *mtp) {
   return 0;
 }
 
-char *create_print_name (peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4) {
+char *create_print_name (struct binlog *bl, peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4) {
   const char *d[4];
   d[0] = a1; d[1] = a2; d[2] = a3; d[3] = a4;
   static char buf[10000];
@@ -163,7 +147,7 @@ char *create_print_name (peer_id_t id, const char *a1, const char *a2, const cha
   int fl = strlen (s);
   int cc = 0;
   while (1) {
-    peer_t *P = peer_lookup_name (s);
+    peer_t *P = peer_lookup_name (bl, s);
     if (!P || !cmp_peer_id (P->id, id)) {
       break;
     }
@@ -216,6 +200,8 @@ int user_get_alias(peer_t *user, char *buffer, int maxlen)
 }
 
 int fetch_user (struct mtproto_connection *mtp, struct user *U) {
+  struct telegram *instance = mtp->instance;
+
   unsigned x = fetch_int (mtp);
   code_assert (x == CODE_user_empty || x == CODE_user_self || x == CODE_user_contact ||  x == CODE_user_request || x == CODE_user_foreign || x == CODE_user_deleted);
   U->id = MK_USER (fetch_int (mtp));
@@ -224,8 +210,8 @@ int fetch_user (struct mtproto_connection *mtp, struct user *U) {
   }
   
   if (x == CODE_user_self) {
-    assert (!our_id || (our_id == get_peer_id (U->id)));
-    if (!our_id) {
+    assert (!instance->our_id || (instance->our_id == get_peer_id (U->id)));
+    if (!instance->our_id) {
       bl_do_set_our_id (mtp->bl, mtp, get_peer_id (U->id));
       // TODO: What to do here?
       //write_auth_file ();
@@ -306,6 +292,8 @@ int fetch_user (struct mtproto_connection *mtp, struct user *U) {
 }
 
 void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U) {
+  struct telegram *instance = mtp->instance;
+
   unsigned x = fetch_int (mtp);
   assert (x == CODE_encrypted_chat_empty || x == CODE_encrypted_chat_waiting || x == CODE_encrypted_chat_requested ||  x == CODE_encrypted_chat || x == CODE_encrypted_chat_discarded);
   U->id = MK_ENCR_CHAT (fetch_int (mtp));
@@ -322,7 +310,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
     bl_do_encr_chat_delete (mtp->bl, mtp, U);
 
     // TODO: properly
-    write_secret_chat_file ("/home/dev-jessie/.telegram/+4915736384600/secret");
+    write_secret_chat_file (instance, "/home/dev-jessie/.telegram/+4915736384600/secret");
     return;
   }
 
@@ -332,7 +320,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
     long long access_hash = fetch_long (mtp);
     int date = fetch_int (mtp);
     int admin_id = fetch_int (mtp);
-    int user_id = fetch_int (mtp) + admin_id - our_id;
+    int user_id = fetch_int (mtp) + admin_id - instance->our_id;
 
     if (x == CODE_encrypted_chat_waiting) {
       logprintf ("Unknown chat in waiting state. May be we forgot something...\n");
@@ -371,7 +359,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
     }
 
     bl_do_encr_chat_requested (mtp->bl, mtp, U, access_hash, date, admin_id, user_id, (void *)g_key, (void *)nonce);
-    write_secret_chat_file ("/home/dev-jessie/.telegram/+4915736384600/secret");
+    write_secret_chat_file (instance, "/home/dev-jessie/.telegram/+4915736384600/secret");
   } else {
     bl_do_set_encr_chat_access_hash (mtp->bl, mtp, U, fetch_long (mtp));
     bl_do_set_encr_chat_date (mtp->bl, mtp, U, fetch_int (mtp));
@@ -379,13 +367,13 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
       logprintf ("Changed admin in secret chat. WTF?\n");
       return;
     }
-    if (U->user_id != U->admin_id + fetch_int (mtp) - our_id) {
+    if (U->user_id != U->admin_id + fetch_int (mtp) - instance->our_id) {
       logprintf ("Changed partner in secret chat. WTF?\n");
       return;
     }
     if (x == CODE_encrypted_chat_waiting) {
       bl_do_set_encr_chat_state (mtp->bl, mtp, U, sc_waiting);
-      write_secret_chat_file ("/home/dev-jessie/.telegram/+4915736384600/secret");
+      write_secret_chat_file (instance, "/home/dev-jessie/.telegram/+4915736384600/secret");
       return; // We needed only access hash from here
     }
     
@@ -417,7 +405,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
     }
     bl_do_encr_chat_accepted (mtp->bl, mtp, U, (void *)g_key, (void *)nonce, fetch_long (mtp));
   }
-  write_secret_chat_file ("/home/dev-jessie/.telegram/+4915736384600/secret");
+  write_secret_chat_file (instance, "/home/dev-jessie/.telegram/+4915736384600/secret");
 }
 
 void fetch_notify_settings (struct mtproto_connection *mtp);
@@ -870,12 +858,14 @@ void fetch_skip_message_action (struct mtproto_connection *mtp) {
 }
 
 void fetch_message_short (struct mtproto_connection *mtp, struct message *M) {
+  struct telegram *instance = mtp->instance;
+  
   int new = !(M->flags & FLAG_CREATED);
 
   if (new) {
     int id = fetch_int (mtp);
     int from_id = fetch_int (mtp);
-    int to_id = our_id;
+    int to_id = instance->our_id;
     int l = prefetch_strlen (mtp);
     char *s = fetch_str (mtp, l);
     
@@ -1405,6 +1395,8 @@ int decrypt_encrypted_message (struct secret_chat *E) {
 }
 
 void fetch_encrypted_message (struct mtproto_connection *mtp, struct message *M) {
+  struct binlog *bl = mtp->bl;
+
   unsigned x = fetch_int (mtp);
   assert (x == CODE_encrypted_message || x == CODE_encrypted_message_service);
   unsigned sx = x;
@@ -1414,7 +1406,7 @@ void fetch_encrypted_message (struct mtproto_connection *mtp, struct message *M)
   peer_id_t chat = MK_ENCR_CHAT (to_id);
   int date = fetch_int (mtp);
   
-  peer_t *P = user_chat_get (chat);
+  peer_t *P = user_chat_get (bl, chat);
   if (!P) {
     logprintf ("Encrypted message to unknown chat. Dropping\n");
     M->flags |= FLAG_MESSAGE_EMPTY;
@@ -1530,17 +1522,19 @@ static int id_cmp (struct message *M1, struct message *M2) {
 }
 
 struct user *fetch_alloc_user (struct mtproto_connection *mtp) {
+  struct binlog *bl = mtp->instance->bl;
+
   logprintf("fetch_alloc_user()\n");
   int data[2];
   prefetch_data (mtp, data, 8);
-  peer_t *U = user_chat_get (MK_USER (data[1]));
+  peer_t *U = user_chat_get (bl, MK_USER (data[1]));
   if (!U) {
-    users_allocated ++;
+    bl->users_allocated ++;
     U = talloc0 (sizeof (*U));
     U->id = MK_USER (data[1]);
-    peer_tree = tree_insert_peer (peer_tree, U, lrand48 ());
-    assert (peer_num < MAX_PEER_NUM);
-    Peers[peer_num ++] = U;
+    bl->peer_tree = tree_insert_peer (bl->peer_tree, U, lrand48 ());
+    assert (bl->peer_num < MAX_PEER_NUM);
+    bl->Peers[bl->peer_num ++] = U;
     fetch_user (mtp, &U->user);
     event_update_user_status(mtp->connection->instance, U);
     event_peer_allocated(mtp->connection->instance, U);
@@ -1552,59 +1546,62 @@ struct user *fetch_alloc_user (struct mtproto_connection *mtp) {
 }
 
 struct secret_chat *fetch_alloc_encrypted_chat (struct mtproto_connection *mtp) {
+  struct binlog *bl = mtp->bl;
+
   logprintf("fetch_alloc_encrypted_chat()\n");
   int data[2];
   prefetch_data (mtp, data, 8);
-  peer_t *U = user_chat_get (MK_ENCR_CHAT (data[1]));
+  peer_t *U = user_chat_get (bl, MK_ENCR_CHAT (data[1]));
   if (!U) {
     U = talloc0 (sizeof (*U));
     U->id = MK_ENCR_CHAT (data[1]);
-    encr_chats_allocated ++;
-    peer_tree = tree_insert_peer (peer_tree, U, lrand48 ());
-    assert (peer_num < MAX_PEER_NUM);
-    Peers[peer_num ++] = U;
+    bl->encr_chats_allocated ++;
+    bl->peer_tree = tree_insert_peer (bl->peer_tree, U, lrand48 ());
+    assert (bl->peer_num < MAX_PEER_NUM);
+    bl->Peers[bl->peer_num ++] = U;
   }
   fetch_encrypted_chat (mtp, &U->encr_chat);
   event_peer_allocated(mtp->connection->instance, U);
   return &U->encr_chat;
 }
 
-void insert_encrypted_chat (peer_t *P) {
-  encr_chats_allocated ++;
-  peer_tree = tree_insert_peer (peer_tree, P, lrand48 ());
-  assert (peer_num < MAX_PEER_NUM);
-  Peers[peer_num ++] = P;
+void insert_encrypted_chat (struct binlog *bl, peer_t *P) {
+  bl->encr_chats_allocated ++;
+  bl->peer_tree = tree_insert_peer (bl->peer_tree, P, lrand48 ());
+  assert (bl->peer_num < MAX_PEER_NUM);
+  bl->Peers[bl->peer_num ++] = P;
 }
 
-void insert_user (peer_t *P) {
-  users_allocated ++;
-  peer_tree = tree_insert_peer (peer_tree, P, lrand48 ());
-  assert (peer_num < MAX_PEER_NUM);
-  Peers[peer_num ++] = P;
+void insert_user (struct binlog *bl, peer_t *P) {
+  bl->users_allocated ++;
+  bl->peer_tree = tree_insert_peer (bl->peer_tree, P, lrand48 ());
+  assert (bl->peer_num < MAX_PEER_NUM);
+  bl->Peers[bl->peer_num ++] = P;
 }
 
-void insert_chat (peer_t *P) {
-  chats_allocated ++;
-  peer_tree = tree_insert_peer (peer_tree, P, lrand48 ());
-  assert (peer_num < MAX_PEER_NUM);
-  Peers[peer_num ++] = P;
+void insert_chat (struct binlog *bl, peer_t *P) {
+  bl->chats_allocated ++;
+  bl->peer_tree = tree_insert_peer (bl->peer_tree, P, lrand48 ());
+  assert (bl->peer_num < MAX_PEER_NUM);
+  bl->Peers[bl->peer_num ++] = P;
 }
 
 struct user *fetch_alloc_user_full (struct mtproto_connection *mtp) {
+  struct binlog *bl = mtp->bl;
   int data[3];
   prefetch_data (mtp, data, 12);
-  peer_t *U = user_chat_get (MK_USER (data[2]));
+  peer_t *U = user_chat_get (bl, MK_USER (data[2]));
   if (U) {
     fetch_user_full (mtp, &U->user);
     return &U->user;
   } else {
-    users_allocated ++;
+    bl->users_allocated ++;
     U = talloc0 (sizeof (*U));
     U->id = MK_USER (data[2]);
-    peer_tree = tree_insert_peer (peer_tree, U, lrand48 ());
+    bl->peer_tree = tree_insert_peer (bl->peer_tree, U, lrand48 ());
     fetch_user_full (mtp, &U->user);
-    assert (peer_num < MAX_PEER_NUM);
-    Peers[peer_num ++] = U;
+    assert (bl->peer_num < MAX_PEER_NUM);
+    bl->Peers[bl->peer_num ++] = U;
     return &U->user;
   }
 }
@@ -1735,33 +1732,34 @@ void message_add_use (struct message *M) {
 }
 
 void message_add_peer (struct message *M) {
+  struct binlog *bl = M->instance->bl;
   peer_id_t id;
-  if (!cmp_peer_id (M->to_id, MK_USER (our_id))) {
+  if (!cmp_peer_id (M->to_id, MK_USER (M->instance->our_id))) {
     id = M->from_id;
   } else {
     id = M->to_id;
   }
-  peer_t *P = user_chat_get (id);
+  peer_t *P = user_chat_get (bl, id);
   if (!P) {
     P = talloc0 (sizeof (*P));
     P->id = id;
     switch (get_peer_type (id)) {
     case PEER_USER:
-      users_allocated ++;
+      bl->users_allocated ++;
       break;
     case PEER_CHAT:
-      chats_allocated ++;
+      bl->chats_allocated ++;
       break;
     case PEER_GEO_CHAT:
-      geo_chats_allocated ++;
+      bl->geo_chats_allocated ++;
       break;
     case PEER_ENCR_CHAT:
-      encr_chats_allocated ++;
+      bl->encr_chats_allocated ++;
       break;
     }
-    peer_tree = tree_insert_peer (peer_tree, P, lrand48 ());
-    assert (peer_num < MAX_PEER_NUM);
-    Peers[peer_num ++] = P;
+    bl->peer_tree = tree_insert_peer (bl->peer_tree, P, lrand48 ());
+    assert (bl->peer_num < MAX_PEER_NUM);
+    bl->Peers[bl->peer_num ++] = P;
   }
   if (!P->last) {
     P->last = M;
@@ -1794,12 +1792,12 @@ void message_add_peer (struct message *M) {
 
 void message_del_peer (struct message *M) {
   peer_id_t id;
-  if (!cmp_peer_id (M->to_id, MK_USER (our_id))) {
+  if (!cmp_peer_id (M->to_id, MK_USER (M->instance->our_id))) {
     id = M->from_id;
   } else {
     id = M->to_id;
   }
-  peer_t *P = user_chat_get (id);
+  peer_t *P = user_chat_get (M->instance->bl, id);
   if (M->prev) {
     M->prev->next = M->next;
   }
@@ -1812,19 +1810,20 @@ void message_del_peer (struct message *M) {
 }
 
 struct message *fetch_alloc_message (struct mtproto_connection *mtp, struct telegram *instance) {
+  struct binlog *bl = mtp->bl;
+
   logprintf("fetch_alloc_message()\n");
   int data[2];
   prefetch_data (mtp, data, 8);
-  struct message *M = message_get (data[1]);
+  struct message *M = message_get (bl, data[1]);
 
   if (!M) {
     M = talloc0 (sizeof (*M));
     M->id = data[1];
     M->instance = instance;
     message_insert_tree (M);
-    messages_allocated ++;
+    mtp->bl->messages_allocated ++;
     fetch_message (mtp, M);
-    event_update_new_message (instance, M);
     return M;
   }
   M->instance = instance;
@@ -1837,8 +1836,8 @@ struct message *fetch_alloc_geo_message (struct mtproto_connection *mtp, struct 
   struct message *M = talloc (sizeof (*M));
   M->instance = instance;
   fetch_geo_message (mtp, M);
-  struct message *M1 = tree_lookup_message (message_tree, M);
-  messages_allocated ++;
+  struct message *M1 = tree_lookup_message (mtp->bl->message_tree, M);
+  mtp->bl->messages_allocated ++;
   if (M1) {
     message_del_use (M1);
     message_del_peer (M1);
@@ -1847,30 +1846,31 @@ struct message *fetch_alloc_geo_message (struct mtproto_connection *mtp, struct 
     tfree (M, sizeof (*M));
     message_add_use (M1);
     message_add_peer (M1);
-    messages_allocated --;
+    mtp->bl->messages_allocated --;
     return M1;
   } else {
     message_add_use (M);
     message_add_peer (M);
-    message_tree = tree_insert_message (message_tree, M, lrand48 ());
+    mtp->bl->message_tree = tree_insert_message (mtp->bl->message_tree, M, lrand48 ());
     return M;
   }
 }
 
 struct message *fetch_alloc_encrypted_message (struct mtproto_connection *mtp, 
     struct telegram *instance) {
+  struct binlog *bl = mtp->bl;
   logprintf("fetch_alloc_encrypted_message()\n");
   int data[3];
   prefetch_data (mtp, data, 12);
-  struct message *M = message_get (*(long long *)(data + 1));
+  struct message *M = message_get (bl, *(long long *)(data + 1));
   M->instance = instance;
 
   if (!M) {
     M = talloc0 (sizeof (*M));
     M->id = *(long long *)(data + 1);
     message_insert_tree (M);
-    messages_allocated ++;
-    assert (message_get (M->id) == M);
+    mtp->bl->messages_allocated ++;
+    assert (message_get (bl, M->id) == M);
     logprintf ("id = %lld\n", M->id);
   }
   fetch_encrypted_message (mtp, M);
@@ -1879,51 +1879,54 @@ struct message *fetch_alloc_encrypted_message (struct mtproto_connection *mtp,
 
 struct message *fetch_alloc_message_short (struct mtproto_connection *mtp, 
     struct telegram *instance) {
+  struct binlog *bl = mtp->bl;
   int data[1];
   prefetch_data (mtp, data, 4);
-  struct message *M = message_get (data[0]);
+  struct message *M = message_get (bl, data[0]);
   M->instance = instance;
 
   if (!M) {
     M = talloc0 (sizeof (*M));
     M->id = data[0];
     message_insert_tree (M);
-    messages_allocated ++;
+    mtp->bl->messages_allocated ++;
   }
   fetch_message_short (mtp, M);
   return M;
 }
 
 struct message *fetch_alloc_message_short_chat (struct mtproto_connection *mtp, struct telegram *instance) {
+  struct binlog *bl = mtp->bl;
   int data[1];
   prefetch_data (mtp, data, 4);
-  struct message *M = message_get (data[0]);
+  struct message *M = message_get (bl, data[0]);
   M->instance = instance;
 
   if (!M) {
     M = talloc0 (sizeof (*M));
     M->id = data[0];
     message_insert_tree (M);
-    messages_allocated ++;
+    mtp->bl->messages_allocated ++;
   }
   fetch_message_short_chat (mtp, M);
   return M;
 }
 
 struct chat *fetch_alloc_chat (struct mtproto_connection *mtp) {
+  struct binlog *bl = mtp->bl;
   logprintf("fetch_alloc_chat()\n");
   int data[2];
   prefetch_data (mtp, data, 8);
-  peer_t *U = user_chat_get (MK_CHAT (data[1]));
+  peer_t *U = user_chat_get (bl, MK_CHAT (data[1]));
   logprintf("id %d\n", U->id.id);
   logprintf("type %d\n", U->id.type);
   if (!U) {
-    chats_allocated ++;
+    bl->chats_allocated ++;
     U = talloc0 (sizeof (*U));
     U->id = MK_CHAT (data[1]);
-    peer_tree = tree_insert_peer (peer_tree, U, lrand48 ());
-    assert (peer_num < MAX_PEER_NUM);
-    Peers[peer_num ++] = U;
+    bl->peer_tree = tree_insert_peer (bl->peer_tree, U, lrand48 ());
+    assert (bl->peer_num < MAX_PEER_NUM);
+    bl->Peers[bl->peer_num ++] = U;
   }
   fetch_chat (mtp, &U->chat);
   event_peer_allocated(mtp->connection->instance, U);
@@ -1931,20 +1934,21 @@ struct chat *fetch_alloc_chat (struct mtproto_connection *mtp) {
 }
 
 struct chat *fetch_alloc_chat_full (struct mtproto_connection *mtp) {
+  struct binlog *bl = mtp->bl;
   int data[3];
   prefetch_data (mtp, data, 12);
-  peer_t *U = user_chat_get (MK_CHAT (data[2]));
+  peer_t *U = user_chat_get (bl, MK_CHAT (data[2]));
   if (U) {
     fetch_chat_full (mtp, &U->chat);
     return &U->chat;
   } else {
-    chats_allocated ++;
+    bl->chats_allocated ++;
     U = talloc0 (sizeof (*U));
     U->id = MK_CHAT (data[2]);
-    peer_tree = tree_insert_peer (peer_tree, U, lrand48 ());
+    bl->peer_tree = tree_insert_peer (bl->peer_tree, U, lrand48 ());
     fetch_chat_full (mtp, &U->chat);
-    assert (peer_num < MAX_PEER_NUM);
-    Peers[peer_num ++] = U;
+    assert (bl->peer_num < MAX_PEER_NUM);
+    bl->Peers[bl->peer_num ++] = U;
     return &U->chat;
   }
 }
@@ -1954,47 +1958,50 @@ void free_chat (struct chat *U) {
   if (U->print_title) { tfree_str (U->print_title); }
 }
 
-int print_stat (char *s, int len) {
+int print_stat (struct binlog *bl, char *s, int len) {
   return tsnprintf (s, len, 
-    "users_allocated\t%d\n"
-    "chats_allocated\t%d\n"
-    "secret_chats_allocated\t%d\n"
-    "peer_num\t%d\n"
-    "messages_allocated\t%d\n",
-    users_allocated,
-    chats_allocated,
-    encr_chats_allocated,
-    peer_num,
-    messages_allocated
-    );
+    "bl->users_allocated\t%d\n"
+    "bl->chats_allocated\t%d\n"
+    "secret_bl->chats_allocated\t%d\n"
+    "bl->peer_num\t%d\n"
+    "bl->messages_allocated\t%d\n",
+    bl->users_allocated,
+    bl->chats_allocated,
+    bl->encr_chats_allocated,
+    bl->peer_num,
+    bl->messages_allocated
+  );
 }
 
-peer_t *user_chat_get (peer_id_t id) {
+peer_t *user_chat_get (struct binlog *bl, peer_id_t id) {
   static peer_t U;
   U.id = id;
-  return tree_lookup_peer (peer_tree, &U);
+  return tree_lookup_peer (bl->peer_tree, &U);
 }
 
-struct message *message_get (long long id) {
+struct message *message_get (struct binlog *bl, long long id) {
   struct message M;
   M.id = id;
-  return tree_lookup_message (message_tree, &M);
+  return tree_lookup_message (bl->message_tree, &M);
 }
 
 void update_message_id (struct message *M, long long id) {
-  message_tree = tree_delete_message (message_tree, M);
+  struct binlog *bl = M->instance->bl;
+  bl->message_tree = tree_delete_message (bl->message_tree, M);
   M->id = id;
-  message_tree = tree_insert_message (message_tree, M, lrand48 ());
+  bl->message_tree = tree_insert_message (bl->message_tree, M, lrand48 ());
 }
 
 void message_insert_tree (struct message *M) {
+  struct binlog *bl = M->instance->bl;
   assert (M->id);
-  message_tree = tree_insert_message (message_tree, M, lrand48 ());
+  bl->message_tree = tree_insert_message (bl->message_tree, M, lrand48 ());
 }
 
 void message_remove_tree (struct message *M) {
+  struct binlog *bl = M->instance->bl;
   assert (M->id);
-  message_tree = tree_delete_message (message_tree, M);
+  bl->message_tree = tree_delete_message (bl->message_tree, M);
 }
 
 void message_insert (struct message *M) {
@@ -2003,11 +2010,13 @@ void message_insert (struct message *M) {
 }
 
 void message_insert_unsent (struct message *M) {
-  message_unsent_tree = tree_insert_message (message_unsent_tree, M, lrand48 ());
+  struct binlog *bl = M->instance->bl;
+  bl->message_unsent_tree = tree_insert_message (bl->message_unsent_tree, M, lrand48 ());
 }
 
 void message_remove_unsent (struct message *M) {
-  message_unsent_tree = tree_delete_message (message_unsent_tree, M);
+  struct binlog *bl = M->instance->bl;
+  bl->message_unsent_tree = tree_delete_message (bl->message_unsent_tree, M);
 }
 
 void __send_msg (struct message *M) {
@@ -2018,25 +2027,54 @@ void __send_msg (struct message *M) {
   do_send_msg (M->instance, M);
 }
 
-void send_all_unsent (void ) {
-  tree_act_message (message_unsent_tree, __send_msg);
+void send_all_unsent (struct binlog *bl) {
+  tree_act_message (bl->message_unsent_tree, __send_msg);
 }
 
-void peer_insert_name (peer_t *P) {
+void peer_insert_name (struct binlog *bl, peer_t *P) {
   //if (!P->print_name || !strlen (P->print_name)) { return; }
   //logprintf ("+%s\n", P->print_name);
-  peer_by_name_tree = tree_insert_peer_by_name (peer_by_name_tree, P, lrand48 ());
+  bl->peer_by_name_tree = tree_insert_peer_by_name (bl->peer_by_name_tree, P, lrand48 ());
 }
 
-void peer_delete_name (peer_t *P) {
+void peer_delete_name (struct binlog *bl, peer_t *P) {
   //if (!P->print_name || !strlen (P->print_name)) { return; }
   //logprintf ("-%s\n", P->print_name);
-  peer_by_name_tree = tree_delete_peer_by_name (peer_by_name_tree, P);
+  bl->peer_by_name_tree = tree_delete_peer_by_name (bl->peer_by_name_tree, P);
 }
 
-peer_t *peer_lookup_name (const char *s) {
+peer_t *peer_lookup_name (struct binlog *bl, const char *s) {
   static peer_t P;
   P.print_name = (void *)s;
-  peer_t *R = tree_lookup_peer_by_name (peer_by_name_tree, &P);
+  peer_t *R = tree_lookup_peer_by_name (bl->peer_by_name_tree, &P);
   return R;
 }
+
+void free_messages (struct binlog *bl)
+{
+  while (bl->message_tree) {
+    struct message *M = tree_get_min_message (bl->message_tree);
+    assert (M);
+    logprintf ("freeing message: %lld\n", M->id);
+    bl->message_tree = tree_delete_message (bl->message_tree, M);
+    bl->messages_allocated --;
+    free_message (M);
+  }
+}
+
+void free_peers (struct binlog *bl)
+{
+  while (bl->peer_by_name_tree) {
+    bl->peer_by_name_tree = tree_delete_peer_by_name (bl->peer_by_name_tree, 
+        tree_get_min_peer_by_name(bl->peer_by_name_tree));
+  }
+  while (bl->peer_tree) {
+    union peer *P = tree_get_min_peer (bl->peer_tree);
+    assert (P);
+    bl->peer_tree = tree_delete_peer (bl->peer_tree, P);
+    bl->peer_num --;
+    free (P->print_name);
+    tfree (P, sizeof (union peer));
+  }
+}
+
