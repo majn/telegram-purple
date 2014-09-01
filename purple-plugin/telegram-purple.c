@@ -90,20 +90,28 @@ static const char *tgprpl_list_icon(PurpleAccount * acct, PurpleBuddy * buddy)
     return "telegram";
 }
 
+static telegram_conn *get_conn_from_buddy (PurpleBuddy *buddy)
+{
+     telegram_conn *c = purple_connection_get_protocol_data (
+        purple_account_get_connection (purple_buddy_get_account (buddy)));
+     return c;
+}
+
 /**
  * Allows the prpl to add text to a buddy's tooltip.
  */
 static void tgprpl_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo * info, gboolean full)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_tooltip_text()\n");
+
+    logprintf ("purple_buddy_get_protocol_data: %s\n", buddy->name);
 	peer_id_t *peer = purple_buddy_get_protocol_data(buddy);
 	if(peer == NULL)
 	{
 		purple_notify_user_info_add_pair_plaintext(info, "Status", "Offline");
 		return;
 	}
-	peer_t *P = user_chat_get (*peer);
-		
+	peer_t *P = user_chat_get (get_conn_from_buddy(buddy)->tg->bl, *peer);
 	purple_notify_user_info_add_pair_plaintext(info, "Status", P->user.status.online == 1 ? "Online" : "Offline");
 	struct tm *tm = localtime ((void *)&P->user.status.when);
 	char buffer [21];
@@ -342,7 +350,8 @@ struct telegram_config tgconf = {
     message_allocated_handler,
     peer_allocated_handler,
     on_new_user_status,
-    on_user_typing
+    on_user_typing,
+    NULL
 };
 
 
@@ -659,13 +668,14 @@ static void tgprpl_rem_deny(PurpleConnection * gc, const char *name)
  */
 static unsigned int tgprpl_send_typing(PurpleConnection * gc, const char *who, PurpleTypingState typing)
 {
-    telegram_conn *conn = purple_connection_get_protocol_data(gc);
-
     purple_debug_info(PLUGIN_ID, "tgprpl_send_typing()\n");
+    telegram_conn *conn = purple_connection_get_protocol_data(gc);
     PurpleBuddy *b = purple_find_buddy(conn->pa, who);
     if (b) {
         peer_id_t *peer = purple_buddy_get_protocol_data(b);
-        do_update_typing (conn->tg, *peer);
+        if (peer) {
+            do_update_typing (conn->tg, *peer);
+        }
     }
     return 0;
 }
@@ -1003,8 +1013,8 @@ static PurplePluginInfo info = {
     "Adds support for the telegram protocol to libpurple.",
     "Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>, Matthias Jentsch <mtthsjntsch@gmail.com>",
     "https://bitbucket.org/telegrampurple/telegram-purple",
-    NULL,    // on load
-    NULL,  // on unload
+    NULL,           // on load
+    NULL,           // on unload
     NULL,           // on destroy
     NULL,           // ui specific struct
     &prpl_info,     // plugin info struct
