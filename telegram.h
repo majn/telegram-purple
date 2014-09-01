@@ -174,6 +174,8 @@ struct telegram_config {
     void (*on_update_uesr_typing_handler) (struct telegram *instance, void *peer);
 };
 
+#define MSG_STORE_SIZE 10000
+
 /**
  * A telegram session
  *
