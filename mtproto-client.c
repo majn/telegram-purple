@@ -1839,7 +1839,7 @@ void mtproto_connect(struct mtproto_connection *c)
     c->connection->methods->ready(c->connection);
 
     // Don't ping TODO: Really? Timeout callback functions of libpurple
-    //start_ping_timer (c->connection);
+    start_ping_timer (c->connection);
 }
 
 /**
@@ -1849,29 +1849,32 @@ void mtproto_close(struct mtproto_connection *mtp) {
     logprintf ("closing mtproto_connection...\n");
     mtp->destroy = 1;
 
-    // TODO: Use Pings?
-    // stop_ping_timer (c->connection);
-
-    // TODO: Set destruction timeout?
-    // add_destruction_timer (c, 5000)
-    /* 
-        Timout:
-        - alle queries und acks löschen?
-        - was passiert wenn eine antwort auf eine query 
-            in einer neuen instanz ankommt?
-    */
+    // send all pending acks on this connection so the server won't 
+    // resend messages. We might not be able to send the acknowledgements later
+    // in case the session is switched and this DC is not reachable anymore
+    send_all_acks (mtp->connection->session);
+    
+    // remove all ping timer that point to this connection
+    stop_ping_timer (mtp->connection);
 }
 
+/**
+ * Close the connection and 
+ */
 void mtproto_destroy (struct mtproto_connection *self) {
     logprintf("destroying mtproto_connection: %p\n", self);
 
-    // TODO: Remove all pending timers, queries, acks
     // TODO: Call destruction callback
     fd_close_connection(self->connection);
     tfree(self->connection, sizeof(struct connection));
+    tfree(self, sizeof(struct mtproto_connection));
 }
 
-void mtproto_free_closed () {
+
+/**
+ * Free all destroyed connections
+ */
+void mtproto_free_closed (struct telegram *tg) {
     int i;
     for (i = 0; i < 100; i++) {
         if (tg->Cs[i] == NULL) continue; 
@@ -1879,9 +1882,13 @@ void mtproto_free_closed () {
         logprintf ("checking mtproto_connection %d: c_state:%d destroy:%d, quries_num:%d\n", 
             i, c->c_state, c->destroy, c->queries_num);
         if (c->destroy == 0) continue;
-        if (c->queries_num > 0) continue;
+        if (c->queries_num > 0) {
+            logprintf ("still pending queries left, skipping connection...\n");
+            continue;
+        }
         mtproto_destroy (c);
         tg->Cs[i] = NULL;
+        tg->connection = NULL;
     }
 }
 

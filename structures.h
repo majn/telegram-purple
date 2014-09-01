@@ -417,4 +417,7 @@ static inline int cmp_peer_id (peer_id_t a, peer_id_t b) {
   return memcmp (&a, &b, sizeof (a));
 }
 
+void free_messages (struct binlog *bl);
+void free_peers (struct binlog *bl);
 #endif
+

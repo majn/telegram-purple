@@ -159,4 +159,8 @@ struct connection *fd_create_connection (struct dc *DC, int fd, struct telegram 
     struct connection_methods *methods, struct mtproto_connection *mtp);
 void fd_close_connection(struct connection *c);
 
+void start_ping_timer (struct connection *c);
+void stop_ping_timer (struct connection *c);
+int send_all_acks (struct session *S);
+
 #endif

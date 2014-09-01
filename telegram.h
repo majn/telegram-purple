@@ -286,7 +286,7 @@ void telegram_store_session(struct telegram *instance);
 /**
  * Destructor
  */
-void telegram_free(struct telegram *instance);
+void telegram_destroy(struct telegram *instance);
 
 /** 
  * Get the currently active connection

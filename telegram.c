@@ -96,7 +96,7 @@ void telegram_change_state (struct telegram *instance, int state, void *data)
             }
             logprintf("telegram errored: %s\n", err);
 
-            // close the connection
+            // mark the connection for closing
             mtproto_close (instance->connection);
         }
         break;
@@ -195,16 +195,43 @@ struct telegram *telegram_new(struct dc *DC, const char* login, struct telegram_
     return this;
 }
 
-void telegram_free(struct telegram *this) 
+void free_bl (struct binlog *bl);
+void telegram_destroy(struct telegram *this) 
 {
+    // close all open connections
+    int i = 0; 
+    for (; i < 100; i++) {
+      if (this->Cs[i] != NULL && !this->Cs[i]->destroy) {
+        mtproto_close (this->Cs[i]);
+      }
+    }
+    free_queries (this);
+    free_timers (this);
+    mtproto_free_closed (this);
+
+    free_bl (this->bl);
+
     g_free(this->login);
     g_free(this->config_path);
     g_free(this->download_path);
     g_free(this->auth_path);
     g_free(this->state_path);
     g_free(this->secret_path);
-    tfree(this->bl, sizeof(struct binlog));
+   
+    // TODO: BN_CTX *ctx
+    free (this->phone_code_hash);
+    free (this->suser);
+    free (this->export_auth_str);
+    //tfree (this->ML, sizeof(struct message) * MSG_STORE_SIZE);
     tfree(this, sizeof(struct telegram));
+}
+
+void free_bl (struct binlog *bl)
+{
+    // TODO: rptr, wptr
+    free_peers (bl);
+    free_messages (bl);
+    tfree (bl, sizeof (struct binlog));
 }
 
 void assert_file_usable(const char *file)
@@ -317,10 +344,10 @@ void on_authorized(struct mtproto_connection *c, void *data)
 
 void telegram_read_input (struct telegram *instance)
 {
-    try_read(instance->connection->connection);
-    mtproto_free_closed();
-    // free all mtproto_connections that may have errored through
-    // a received query
+    try_read (instance->connection->connection);
+
+    // free all mtproto_connections that may have errored
+    mtproto_free_closed(instance);
 }
 
 void telegram_set_proxy(struct telegram *instance, int fd)

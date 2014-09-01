@@ -278,6 +278,29 @@ void work_timers (struct telegram *instance) {
   }
 }
 
+void free_timers (struct telegram *instance)
+{
+  while (instance->timer_tree) {
+    struct event_timer *ev = tree_get_min_timer (instance->timer_tree);
+    assert (ev);
+    logprintf ("freeing event timer with timeout: %d\n", ev->timeout);
+    remove_event_timer (instance, ev);
+    tfree (ev, sizeof(struct event_timer));
+  }
+}
+
+void free_queries (struct telegram *instance)
+{
+  while (instance->queries_tree) {
+    struct query *q = tree_get_min_query (instance->queries_tree);
+    assert (q);
+    logprintf ("freeing query with msg_id %d and len\n", q->msg_id, q->data_len);
+    instance->queries_tree = tree_delete_query (instance->queries_tree, q);
+    tfree (q->data, 4 * q->data_len);
+    tfree (q, sizeof (struct query));
+  }
+}
+
 //extern struct dc *DC_list[];
 //extern struct dc *DC_working;
 

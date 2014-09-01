@@ -51,6 +51,11 @@ typedef struct {
      * Read handler returned by purple_input_add
      */
     guint rh;
+    /**
+     * The used purple timeout handler
+     */
+    guint timer;
+
 } telegram_conn;
 
 #endif

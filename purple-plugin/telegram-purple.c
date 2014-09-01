@@ -240,6 +240,19 @@ void client_registration_canceled (gpointer data)
     // TODO: disconnect and exit
 }
 
+gboolean queries_timerfunc (gpointer data) {
+   logprintf ("queries_timerfunc()\n");
+   telegram_conn *conn = data;
+   work_timers (conn->tg);
+
+   if (conn->updated) {
+       logprintf ("State updated, storing current session...\n");
+       conn->updated = 0;
+       telegram_store_session (conn->tg);
+   }
+   return 1;
+}
+
 void telegram_on_client_registration (struct telegram *instance)
 {
     purple_debug_info(PLUGIN_ID, "Client is not registered, registering...\n");
@@ -293,6 +306,7 @@ void telegram_on_ready (struct telegram *instance)
      do_get_difference(instance);
 
      tgprpl_has_output(instance);
+     conn->timer = purple_timeout_add (4000, queries_timerfunc, conn);
 }
 
 void telegram_on_disconnected (struct telegram *tg)
@@ -313,7 +327,7 @@ void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_messa
     telegram_conn *conn = tg->extra;
     if (fd == -1) {
         logprintf("purple_proxy_connect failed: %s\n", error_message);
-        telegram_free(tg);
+        telegram_destroy(tg);
         return;
     }
 
@@ -339,20 +353,6 @@ struct telegram_config tgconf = {
     on_new_user_status,
     on_user_typing
 };
-
-gboolean queries_timerfunc (gpointer data) {
-   logprintf ("queries_timerfunc()\n");
-   telegram_conn *conn = data;
-   // work_timers ();
-   // TODO: work pending timers
-
-   if (conn->updated) {
-       logprintf ("State updated, storing current session...\n");
-       conn->updated = 0;
-       telegram_store_session (conn->tg);
-   }
-   return 1;
-}
 
 
 /**
@@ -382,7 +382,15 @@ static void tgprpl_login(PurpleAccount * acct)
     purple_connection_set_state (conn->gc, PURPLE_CONNECTING);
     telegram_network_connect (tg);
 
-    purple_timeout_add (2000, queries_timerfunc, conn);
+/**
+ * This must be implemented.
+ */
+static void tgprpl_close(PurpleConnection * gc)
+{
+    purple_debug_info(PLUGIN_ID, "tgprpl_close()\n");
+    telegram_conn *conn = purple_connection_get_protocol_data(gc);
+    purple_timeout_remove(conn->timer);
+    telegram_destroy(conn->tg);
 }
 
 void message_allocated_handler(struct telegram *tg, struct message *M)
@@ -555,14 +563,6 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
             logprintf("Peer type: unknown.\n");
         break;
     }
-}
-
-/**
- * This must be implemented.
- */
-static void tgprpl_close(PurpleConnection * gc)
-{
-    purple_debug_info(PLUGIN_ID, "tgprpl_close()\n");
 }
 
 /**
