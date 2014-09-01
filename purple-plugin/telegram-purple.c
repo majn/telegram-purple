@@ -293,18 +293,9 @@ void telegram_on_ready (struct telegram *instance)
          tggroup = purple_group_new ("Telegram");
          purple_blist_add_group (tggroup, NULL);
      }
-
-     // get all current contacts
-     purple_debug_info(PLUGIN_ID, "Fetching all current contacts...\n");
      do_update_contact_list(instance);
-
-     purple_debug_info(PLUGIN_ID, "Fetching all current chats...\n");
      do_get_dialog_list(instance);
-
-     // get new messages
-     purple_debug_info(PLUGIN_ID, "Fetching new messages...\n");
      do_get_difference(instance);
-
      tgprpl_has_output(instance);
      conn->timer = purple_timeout_add (4000, queries_timerfunc, conn);
 }
@@ -401,7 +392,6 @@ void message_allocated_handler(struct telegram *tg, struct message *M)
 
     // TODO: this should probably be freed again somwhere
     int id = get_peer_id(M->from_id);
-    logprintf ("id: %d\n", id);
     char *who = g_strdup_printf("%d", id);
     if (who) {
         logprintf ("who: %s\n", who);

@@ -254,14 +254,7 @@ struct protocol_state read_state_file (const char *filename) {
 }
 
 void write_state_file (struct protocol_state *state, const char* filename) {
-  /*
-  static int wseq;
-  static int wpts;
-  static int wqts;
-  static int wdate;
-  if (wseq >= seq && wpts >= pts && wqts >= qts && wdate >= last_date) { return; }
-  */
-  int state_file_fd = open (filename /*get_state_filename ()*/, O_CREAT | O_RDWR, 0600);
+  int state_file_fd = open (filename, O_CREAT | O_RDWR, 0600);
   if (state_file_fd < 0) {
     return;
   }
@@ -274,7 +267,6 @@ void write_state_file (struct protocol_state *state, const char* filename) {
   x[5] = state->last_date;
   assert (write (state_file_fd, x, 24) == 24);
   close (state_file_fd);
-  //wseq = seq; wpts = pts; wqts = qts; wdate = last_date;
 }
 
 extern peer_t *Peers[];

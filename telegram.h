@@ -1,10 +1,3 @@
-/* 
- *  libtelegram
- *  ===========
- *
- * struct telegram library based on the telegram cli application, that was originally made by vysheng (see https://github.com/vysheng/tg)
- */
-
 #ifndef __TELEGRAM_H__
 #define __TELEGRAM_H__
 
@@ -37,15 +30,9 @@ struct tree_timer;
 
 #define STATE_INITIALISED 0
 #define STATE_DISCONNECTED 1
-
-// Error
 #define STATE_ERROR 2
-
-// intermediate authorization states already present and handled in mtproto-client.c
-//#define STATE_PQ_REQUESTED 3
-//#define STATE_DH_REQUESTED 4
-//#define STATE_CDH_REQUESTED 5
 #define STATE_AUTHORIZED 6
+
 
 // dc discovery
 #define STATE_CONFIG_REQUESTED 7
@@ -273,19 +260,8 @@ struct telegram {
  */
 struct telegram *telegram_new(struct dc *DC, const char* login, struct telegram_config *config);
 
-/**
- * Resume the session to 
- */
 void telegram_restore_session(struct telegram *instance);
-
-/**
- * Store
- */
 void telegram_store_session(struct telegram *instance);
-
-/**
- * Destructor
- */
 void telegram_destroy(struct telegram *instance);
 
 /** 
