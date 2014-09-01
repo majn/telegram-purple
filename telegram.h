@@ -290,7 +290,7 @@ void telegram_change_state(struct telegram *instance, int state, void *data);
 /**
  * Connect to the telegram network with the given configuration
  */
-void telegram_network_connect(struct telegram *instance);
+void telegram_connect(struct telegram *instance);
 
 int telegram_login (struct telegram *instance);
 
@@ -396,5 +396,10 @@ void set_net_write_cb(ssize_t (*cb)(int fd, const void *buff, size_t size));
  * NOTE: you may only call this function from the 
  */
 void telegram_set_proxy(struct telegram *instance, int fd);
+
+/**
+ * Return wether telegram is authenticated with the currently active data center
+ */
+int telegram_authenticated (struct telegram *instance);
 
 #endif

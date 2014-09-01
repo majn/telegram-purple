@@ -371,7 +371,8 @@ static void tgprpl_login(PurpleAccount * acct)
     tg->extra = conn;
 
     purple_connection_set_state (conn->gc, PURPLE_CONNECTING);
-    telegram_network_connect (tg);
+    telegram_connect (tg);
+}
 
 /**
  * This must be implemented.

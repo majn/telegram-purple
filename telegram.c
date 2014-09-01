@@ -161,9 +161,8 @@ void telegram_change_state (struct telegram *instance, int state, void *data)
             instance->config->proxy_close_cb (instance, instance->connection->connection->fd);
             
             // start a new connection to the demanded data center. The pointer to the
-            // currently working dc should have already been updated by the 
-            // on_error function of the query
-            telegram_network_connect (instance);
+            // new dc should was already updated by the on_error function of the query
+            telegram_connect (instance);
         }
         break;
     }
@@ -308,7 +307,7 @@ void on_authorized(struct mtproto_connection *c, void* data);
 /**
  * Connect to the currently active data center
  */
-void telegram_network_connect(struct telegram *instance)
+void telegram_connect (struct telegram *instance)
 {
     logprintf ("telegram_network_connect()\n");
     if (! instance->auth.DC_list) {
@@ -364,8 +363,9 @@ int telegram_write_output (struct telegram *instance)
     return try_write(instance->connection->connection);
 }
 
-int telegram_has_output (struct telegram *instance)
+int telegram_authenticated (struct telegram *instance)
 {
-    return instance->connection->queries_num > 0;
+    return telegram_get_working_dc (instance)->auth_key_id > 0;
 }
+
 
