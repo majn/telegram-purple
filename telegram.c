@@ -195,6 +195,7 @@ struct telegram *telegram_new(struct dc *DC, const char* login, struct telegram_
 }
 
 void free_bl (struct binlog *bl);
+void free_auth (struct dc* DC_list[], int count);
 void telegram_destroy(struct telegram *this) 
 {
     // close all open connections
@@ -209,6 +210,7 @@ void telegram_destroy(struct telegram *this)
     mtproto_free_closed (this);
 
     free_bl (this->bl);
+    free_auth (this->auth.DC_list, 11);
 
     g_free(this->login);
     g_free(this->config_path);
@@ -231,6 +233,14 @@ void free_bl (struct binlog *bl)
     free_peers (bl);
     free_messages (bl);
     tfree (bl, sizeof (struct binlog));
+}
+
+void free_auth (struct dc* DC_list[], int count) 
+{
+    int i;
+    for (i = 0; i < count; i++ ) if (DC_list[i]) {
+        tfree (DC_list[i], sizeof(struct dc));
+    }
 }
 
 void assert_file_usable(const char *file)
