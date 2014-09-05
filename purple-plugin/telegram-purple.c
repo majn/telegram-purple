@@ -72,7 +72,7 @@ void tg_cli_log_cb(const char* format, va_list ap)
 void message_allocated_handler (struct telegram *instance, struct message *M);
 void peer_allocated_handler (struct telegram *instance, void *user);
 void telegram_on_phone_registration (struct telegram *instance);
-void elegram_on_client_registration (struct telegram *instance);
+void telegram_on_client_registration (struct telegram *instance);
 void on_new_user_status(struct telegram *instance, void *user);
 void on_user_typing(struct telegram *instance, void *user);
 
