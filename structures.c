@@ -309,8 +309,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
     }
     bl_do_encr_chat_delete (mtp->bl, mtp, U);
 
-    // TODO: properly
-    write_secret_chat_file (instance, "/home/dev-jessie/.telegram/+4915736384600/secret");
+    write_secret_chat_file (instance, instance->secret_path);
     return;
   }
 
@@ -359,7 +358,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
     }
 
     bl_do_encr_chat_requested (mtp->bl, mtp, U, access_hash, date, admin_id, user_id, (void *)g_key, (void *)nonce);
-    write_secret_chat_file (instance, "/home/dev-jessie/.telegram/+4915736384600/secret");
+    write_secret_chat_file (instance, instance->secret_path);
   } else {
     bl_do_set_encr_chat_access_hash (mtp->bl, mtp, U, fetch_long (mtp));
     bl_do_set_encr_chat_date (mtp->bl, mtp, U, fetch_int (mtp));
@@ -373,7 +372,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
     }
     if (x == CODE_encrypted_chat_waiting) {
       bl_do_set_encr_chat_state (mtp->bl, mtp, U, sc_waiting);
-      write_secret_chat_file (instance, "/home/dev-jessie/.telegram/+4915736384600/secret");
+      write_secret_chat_file (instance, instance->secret_path);
       return; // We needed only access hash from here
     }
     
@@ -405,7 +404,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
     }
     bl_do_encr_chat_accepted (mtp->bl, mtp, U, (void *)g_key, (void *)nonce, fetch_long (mtp));
   }
-  write_secret_chat_file (instance, "/home/dev-jessie/.telegram/+4915736384600/secret");
+  write_secret_chat_file (instance, instance->secret_path);
 }
 
 void fetch_notify_settings (struct mtproto_connection *mtp);

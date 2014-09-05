@@ -237,7 +237,6 @@ void write_state_file (struct protocol_state *state, const char* filename) {
   close (state_file_fd);
 }
 
-// TODO: Refactor 
 void read_secret_chat_file (struct telegram *instance, const char *file) {
   struct binlog *bl = instance->bl;
 

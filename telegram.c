@@ -12,6 +12,7 @@
 #include "tools.h"
 #include "mtproto-client.h"
 #include "binlog.h"
+#include "loop.h"
 
 
 
@@ -66,7 +67,7 @@ void event_update_user_typing (struct telegram *instance, void *peer)
  */
 char *telegram_get_config(struct telegram *instance, char *config)
 {
-    return g_strdup_printf("%s/%s", instance->config->base_config_path, config);
+    return g_strdup_printf("%s/%s", instance->config_path, config);
 }
 
 /**
@@ -299,6 +300,7 @@ void telegram_restore_session(struct telegram *instance)
     g_mkdir_with_parents(instance->config_path, 0700);
     instance->auth = read_auth_file(instance->auth_path);
     instance->proto = read_state_file(instance->state_path);
+    read_secret_chat_file (instance, instance->secret_path);
 }
 
 /**
@@ -308,8 +310,10 @@ void telegram_store_session(struct telegram *instance)
 {
     assure_file_exists(instance->config_path, "auth");
     assure_file_exists(instance->config_path, "state");
+    assure_file_exists(instance->config_path, "secret");
     write_auth_file(&instance->auth, instance->auth_path);
     write_state_file(&instance->proto, instance->state_path);
+    write_secret_chat_file(instance, instance->state_path);
 }
 
 void on_authorized(struct mtproto_connection *c, void* data);

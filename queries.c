@@ -2587,7 +2587,7 @@ void do_send_create_encr_chat (struct telegram *instance, void *x, unsigned char
   out_int (mtp, get_peer_id (E->id));
   out_cstring (mtp, instance->g_a, 256);
   // TODO: properly...
-  write_secret_chat_file (instance, "/home/dev-jessie/.telegram/+4915736384600/secret");
+  write_secret_chat_file (instance, instance->secret_path);
   
   BN_clear_free (g);
   BN_clear_free (p);
