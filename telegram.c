@@ -160,6 +160,10 @@ void telegram_change_state (struct telegram *instance, int state, void *data)
             assert (instance->config->proxy_request_cb);
             // tell the proxy to close all connections
             instance->config->proxy_close_cb (instance, instance->connection->connection->fd);
+
+            // remove all left over queries and timers
+            free_timers (instance);
+            free_queries (instance);
             
             // start a new connection to the demanded data center. The pointer to the
             // new dc should was already updated by the on_error function of the query

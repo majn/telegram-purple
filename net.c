@@ -619,6 +619,11 @@ void connections_poll_result (struct pollfd *fds, int max) {
 }
 
 int send_all_acks (struct session *S) {
+  logprintf ("send_all_acks()\n");
+  if (!S->c) {
+    logprintf ("WARNING: cannot send acks, session has no active connection");
+    return -1;
+  }
   struct mtproto_connection *mt = S->c->mtconnection;
   
   clear_packet (mt);

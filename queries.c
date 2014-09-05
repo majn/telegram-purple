@@ -3075,6 +3075,9 @@ void do_update_typing (struct telegram *instance, peer_id_t id) {
 
 int telegram_has_output (struct telegram *instance)
 {
+    if (!instance->connection) {
+        return 0;
+    }
     if (instance->session_state == STATE_READY) {
         return tree_count_query (instance->queries_tree) > 0;
     }

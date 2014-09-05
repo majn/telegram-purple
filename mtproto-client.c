@@ -1856,6 +1856,9 @@ void mtproto_close(struct mtproto_connection *mtp) {
     
     // remove all ping timer that point to this connection
     stop_ping_timer (mtp->connection);
+
+    // 
+    mtp->connection->session->c = 0;
 }
 
 /**
