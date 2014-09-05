@@ -46,34 +46,6 @@
 #include "purple-plugin/telegram-purple.h"
 //
 
-
-
-int test_dc = 0;
-int default_dc_num;
-extern int binlog_enabled;
-
-int register_mode;
-
-void got_it (char *line, int len);
-
-char **_s;
-size_t *_l;
-int got_it_ok;
-
-void got_it (char *line, int len) {
-  assert (len > 0);
-  line[-- len] = 0; // delete end of line
-  *_s = line;
-  *_l = len;
-  got_it_ok = 1;
-}
-
-int is_got_it (void) {
-  return got_it_ok;
-}
-
-int ret1 (void) { return 0; }
-
 char *get_auth_key_filename (void);
 char *get_state_filename (void);
 int zero[512];
@@ -95,8 +67,6 @@ void write_dc (int auth_file_fd, struct dc *DC) {
   assert (write (auth_file_fd, &DC->server_salt, 8) == 8);
   assert (write (auth_file_fd, &DC->has_auth, 4) == 4);
 }
-
-int our_id;
 
 void write_auth_file (struct authorization_state *state, const char *filename) {
   logprintf("Writing to auth_file: %s\n", filename);
@@ -152,7 +122,7 @@ void empty_auth_file (const char *filename) {
   memset(state.DC_list, 0, 11 * sizeof(void *));
 
   logprintf("empty_auth_file()\n");
-  alloc_dc (state.DC_list, 1, tstrdup (test_dc ? TG_SERVER_TEST : TG_SERVER), 443);
+  alloc_dc (state.DC_list, 1, tstrdup (TG_SERVER), 443);
   state.dc_working_num = 1;
   state.auth_state = 0;
   write_auth_file (&state, filename);
@@ -223,8 +193,6 @@ struct authorization_state read_auth_file (const char *filename) {
   return state;
 }
 
-int pts, qts, seq, last_date;
-
 struct protocol_state read_state_file (const char *filename) {
   logprintf("read_state_file()\n");
   struct protocol_state state = {0, 0, 0, 0};
@@ -269,18 +237,10 @@ void write_state_file (struct protocol_state *state, const char* filename) {
   close (state_file_fd);
 }
 
-extern peer_t *Peers[];
-extern int peer_num;
-
-extern int encr_root;
-extern unsigned char *encr_prime;
-extern int encr_param_version;
-extern int dialog_list_got;
 // TODO: Refactor 
 void read_secret_chat_file (struct telegram *instance, const char *file) {
   struct binlog *bl = instance->bl;
 
-  if (binlog_enabled) { return; }
   int fd = open (file, O_CREAT | O_RDWR, 0600);
   if (fd < 0) {
     return;
@@ -340,7 +300,6 @@ void read_secret_chat_file (struct telegram *instance, const char *file) {
 void write_secret_chat_file (struct telegram *instance, const char *filename) {
   struct binlog *bl = instance->bl;
 
-  if (binlog_enabled) { return; }
   int fd = open (filename, O_CREAT | O_RDWR, 0600);
   if (fd < 0) {
     return;
@@ -390,8 +349,4 @@ void write_secret_chat_file (struct telegram *instance, const char *filename) {
   }
   close (fd);
 }
-
-int readline_active;
-int new_dc_num;
-int wait_dialog_list;
 

@@ -297,13 +297,6 @@ void telegram_connect(struct telegram *instance);
 int telegram_login (struct telegram *instance);
 
 /**
- * Read the authorization_state stored in the given file
- */
-
-// Export functions for plugins
-void running_for_first_time ();
-
-/**
  * Read and process all available input from the network
  */
 void telegram_read_input (struct telegram *instance);

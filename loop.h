@@ -65,7 +65,6 @@ struct protocol_state {
     int last_date;
 };
 
-int loop();
 void write_secret_chat_file (struct telegram *instance, const char *filename);
 
 void write_auth_file (struct authorization_state *state, const char *filename);
@@ -73,7 +72,5 @@ struct authorization_state read_auth_file (const char *filename);
 
 void write_state_file (struct protocol_state *state, const char *filename);
 struct protocol_state read_state_file (const char *filename);
-
-void on_start();
 
 #endif
