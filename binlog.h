@@ -93,15 +93,15 @@ void bl_do_dc_option (struct binlog *bl, struct mtproto_connection *self, int id
 
 void bl_do_set_our_id (struct binlog *bl, struct mtproto_connection *self, int id);
 void bl_do_new_user (struct binlog *bl, struct mtproto_connection *self, int id, const char *f, int fl, const char *l, int ll, long long access_token, const char *p, int pl, int contact);
-void bl_do_user_delete (struct binlog *bl, struct mtproto_connection *self, struct user *U);
-void bl_do_set_user_profile_photo (struct binlog *bl, struct mtproto_connection *self, struct user *U, long long photo_id, struct file_location *big, struct file_location *small);
-void bl_do_set_user_name (struct binlog *bl, struct mtproto_connection *self, struct user *U, const char *f, int fl, const char *l, int ll);
-void bl_do_set_user_access_token (struct binlog *bl, struct mtproto_connection *self, struct user *U, long long access_token);
-void bl_do_set_user_phone (struct binlog *bl, struct mtproto_connection *self, struct user *U, const char *p, int pl);
-void bl_do_set_user_friend (struct binlog *bl, struct mtproto_connection *self, struct user *U, int friend);
-void bl_do_set_user_full_photo (struct binlog *bl, struct mtproto_connection *self, struct user *U, const int *start, int len);
-void bl_do_set_user_blocked (struct binlog *bl, struct mtproto_connection *self, struct user *U, int blocked);
-void bl_do_set_user_real_name (struct binlog *bl, struct mtproto_connection *self, struct user *U, const char *f, int fl, const char *l, int ll);
+void bl_do_user_delete (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U);
+void bl_do_set_user_profile_photo (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U, long long photo_id, struct file_location *big, struct file_location *small);
+void bl_do_set_user_name (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U, const char *f, int fl, const char *l, int ll);
+void bl_do_set_user_access_token (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U, long long access_token);
+void bl_do_set_user_phone (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U, const char *p, int pl);
+void bl_do_set_user_friend (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U, int friend);
+void bl_do_set_user_full_photo (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U, const int *start, int len);
+void bl_do_set_user_blocked (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U, int blocked);
+void bl_do_set_user_real_name (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U, const char *f, int fl, const char *l, int ll);
 
 void bl_do_encr_chat_delete (struct binlog *bl, struct mtproto_connection *self, struct secret_chat *U);
 void bl_do_encr_chat_requested (struct binlog *bl, struct mtproto_connection *self, struct secret_chat *U, long long access_hash, int date, int admin_id, int user_id, unsigned char g_key[], unsigned char nonce[]);

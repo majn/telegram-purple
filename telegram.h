@@ -251,7 +251,7 @@ struct telegram {
     long long cur_downloading_bytes;
     long long cur_downloaded_bytes;
     int our_id;
-    struct user User;
+    struct tgl_user User;
     BN_CTX *ctx;
     int encr_root;
     unsigned char *encr_prime;

@@ -806,7 +806,7 @@ void work_update_binlog (struct mtproto_connection *self) {
       peer_id_t user_id = MK_USER (fetch_int (self));
       peer_t *UC = user_chat_get (bl, user_id);
       if (UC) {
-        struct user *U = &UC->user;
+        struct tgl_user *U = &UC->user;
         if (U->first_name) { tfree_str (U->first_name); }
         if (U->last_name) { tfree_str (U->last_name); }
         if (U->print_name) {
@@ -829,7 +829,7 @@ void work_update_binlog (struct mtproto_connection *self) {
       peer_t *UC = user_chat_get (bl, user_id);
       fetch_date (self);
       if (UC) {
-        struct user *U = &UC->user;
+        struct tgl_user *U = &UC->user;
 
         unsigned y = fetch_int (self);
         if (y == CODE_user_profile_photo_empty) {

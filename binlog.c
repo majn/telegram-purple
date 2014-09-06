@@ -273,7 +273,7 @@ void replay_log_event (struct telegram *instance) {
       } else {
         assert (!(_U->flags & FLAG_CREATED));
       }
-      struct user *U = (void *)_U;
+      struct tgl_user *U = (void *)_U;
       U->flags |= FLAG_CREATED;
       if (get_peer_id (id) == instance->our_id) {
         U->flags |= FLAG_USER_SELF;
@@ -1114,7 +1114,7 @@ void bl_do_new_user (struct binlog *bl, struct mtproto_connection *self, int id,
   add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_user_delete (struct binlog *bl, struct mtproto_connection *self, struct user *U) {
+void bl_do_user_delete (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U) {
   if (U->flags & FLAG_DELETED) { return; }
   int *ev = alloc_log_event (bl, 8);
   ev[0] = CODE_binlog_user_delete;
@@ -1122,7 +1122,7 @@ void bl_do_user_delete (struct binlog *bl, struct mtproto_connection *self, stru
   add_log_event (bl, self, ev, 8);
 }
 
-void bl_do_set_user_profile_photo (struct binlog *bl, struct mtproto_connection *self, struct user *U, 
+void bl_do_set_user_profile_photo (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U, 
     long long photo_id, struct file_location *big, struct file_location *small) {
   if (photo_id == U->photo_id) { return; }
   if (!photo_id) {
@@ -1169,7 +1169,7 @@ void bl_do_set_user_profile_photo (struct binlog *bl, struct mtproto_connection 
   }
 }
 
-void bl_do_set_user_name (struct binlog *bl, struct mtproto_connection *self, struct user *U, const char *f, 
+void bl_do_set_user_name (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U, const char *f, 
     int fl, const char *l, int ll) {
   if ((U->first_name && (int)strlen (U->first_name) == fl && !strncmp (U->first_name, f, fl)) && 
       (U->last_name  && (int)strlen (U->last_name)  == ll && !strncmp (U->last_name,  l, ll))) {
@@ -1183,7 +1183,7 @@ void bl_do_set_user_name (struct binlog *bl, struct mtproto_connection *self, st
   add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_set_user_access_token (struct binlog *bl, struct mtproto_connection *self, struct user *U, long long access_token) {
+void bl_do_set_user_access_token (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U, long long access_token) {
   if (U->access_hash == access_token) { return; }
   int *ev = alloc_log_event (bl, 16);
   ev[0] = CODE_binlog_set_user_access_token;
@@ -1192,7 +1192,7 @@ void bl_do_set_user_access_token (struct binlog *bl, struct mtproto_connection *
   add_log_event (bl, self, ev, 16);
 }
 
-void bl_do_set_user_phone (struct binlog *bl, struct mtproto_connection *self, struct user *U, 
+void bl_do_set_user_phone (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U, 
 const char *p, int pl) {
   if (U->phone && (int)strlen (U->phone) == pl && !strncmp (U->phone, p, pl)) {
     return;
@@ -1204,7 +1204,7 @@ const char *p, int pl) {
   add_log_event (bl, self, self->packet_buffer, 4 * (self->packet_ptr - self->packet_buffer));
 }
 
-void bl_do_set_user_friend (struct binlog *bl, struct mtproto_connection *self, struct user *U, int friend) {
+void bl_do_set_user_friend (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U, int friend) {
   if (friend == ((U->flags & FLAG_USER_CONTACT) != 0)) { return ; }
   int *ev = alloc_log_event (bl, 12);
   ev[0] = CODE_binlog_set_user_friend;
@@ -1242,7 +1242,7 @@ void bl_do_set_working_dc (struct binlog *bl, struct mtproto_connection *self, i
   add_log_event (bl, self, ev, 8);
 }
 
-void bl_do_set_user_full_photo (struct binlog *bl, struct mtproto_connection *self, struct user *U, const int *start, int len) {
+void bl_do_set_user_full_photo (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U, const int *start, int len) {
   if (U->photo.id == *(long long *)(start + 1)) { return; }
   int *ev = alloc_log_event (bl, len + 8);
   ev[0] = CODE_binlog_user_full_photo;
@@ -1251,7 +1251,7 @@ void bl_do_set_user_full_photo (struct binlog *bl, struct mtproto_connection *se
   add_log_event (bl, self, ev, len + 8);
 }
 
-void bl_do_set_user_blocked (struct binlog *bl, struct mtproto_connection *self, struct user *U, int blocked) {
+void bl_do_set_user_blocked (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U, int blocked) {
   if (U->blocked == blocked) { return; }
   int *ev = alloc_log_event (bl, 12);
   ev[0] = CODE_binlog_user_blocked;
@@ -1260,7 +1260,7 @@ void bl_do_set_user_blocked (struct binlog *bl, struct mtproto_connection *self,
   add_log_event (bl, self, ev, 12);
 }
 
-void bl_do_set_user_real_name (struct binlog *bl, struct mtproto_connection *self, struct user *U, const char *f, int fl, const char *l, int ll) {
+void bl_do_set_user_real_name (struct binlog *bl, struct mtproto_connection *self, struct tgl_user *U, const char *f, int fl, const char *l, int ll) {
   if ((U->real_first_name && (int)strlen (U->real_first_name) == fl && !strncmp (U->real_first_name, f, fl)) && 
       (U->real_last_name  && (int)strlen (U->real_last_name)  == ll && !strncmp (U->real_last_name,  l, ll))) {
     return;
