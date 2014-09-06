@@ -835,7 +835,7 @@ int msg_send_on_answer (struct query *q UU) {
       if (b == CODE_contacts_foreign_link_requested) {
         fetch_bool (mtp);
       }
-      struct user *U = fetch_alloc_user (mtp);
+      struct tgl_user *U = fetch_alloc_user (mtp);
   
       U->flags &= ~(FLAG_USER_IN_CONTACT | FLAG_USER_OUT_CONTACT);
       if (a == CODE_contacts_my_link_contact) {
@@ -1760,7 +1760,7 @@ void do_get_chat_info (struct telegram *instance, peer_id_t id) {
 
 /* {{{ User info */
 
-void print_user_info (struct user *U) {
+void print_user_info (struct tgl_user *U) {
   // TODO: use peer
   peer_t *C UU = (void *)U;
 
@@ -1790,7 +1790,7 @@ int user_info_on_answer (struct query *q UU) {
   struct mtproto_connection *mtp = query_get_mtproto(q);
   struct show_info_extra *extra = q->extra;
 
-  struct user *U = fetch_alloc_user_full (mtp);
+  struct tgl_user *U = fetch_alloc_user_full (mtp);
   event_user_info_received_handler (mtp->instance, U, extra->show_info);
   tfree (extra, sizeof(struct show_info_extra));
   //print_user_info (U);
@@ -2233,7 +2233,7 @@ int add_contact_on_answer (struct query *q UU) {
   assert (fetch_int (mtp) == CODE_vector);
   n = fetch_int (mtp);
   for (i = 0; i < n ; i++) {
-    struct user *U = fetch_alloc_user (mtp);
+    struct tgl_user *U = fetch_alloc_user (mtp);
     //print_start ();
     //push_color (COLOR_YELLOW);
     debug ("User #%d: ", get_peer_id (U->id));
@@ -2337,7 +2337,7 @@ int contacts_search_on_answer (struct query *q UU) {
   //print_start ();
   //push_color (COLOR_YELLOW);
   for (i = 0; i < n; i++) {
-    struct user *U = fetch_alloc_user (mtp);
+    struct tgl_user *U = fetch_alloc_user (mtp);
     debug ("User ");
     //push_color  (COLOR_RED);
     debug ("%s %s", U->first_name, U->last_name); 
