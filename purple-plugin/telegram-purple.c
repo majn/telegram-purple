@@ -353,8 +353,8 @@ void telegram_on_client_registration (struct telegram *instance)
         "Enter Telegram Code", // primary 
         "Telegram wants to verify your identity, please enter the code, that you have received via SMS.", // secondary 
         NULL,     // default_value 
-        FALSE,    // multiline     
-        FALSE,    // masked         
+        0,    // multiline     
+        0,    // masked         
         "code",   // hint 
         "OK",     // ok_text      
         G_CALLBACK(client_registration_entered), // ok_cb 
@@ -591,7 +591,7 @@ static PurpleChat *blist_find_chat_by_hasht_cond(PurpleConnection *gc, int (*fn)
                     return ch;
             }
         }
-        node = purple_blist_node_next(node, FALSE);
+        node = purple_blist_node_next(node, 0);
     }
     return NULL;
 }
@@ -682,7 +682,7 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
                     const char *cuname = g_strdup_printf("%d", cu->user_id);
                     debug("Adding user %s to chat %s\n", cuname, name);
                     purple_conv_chat_add_user(purple_conversation_get_chat_data(conv), cuname, "", 
-                        PURPLE_CBFLAGS_NONE | (!strcmp(owner, cuname) ? PURPLE_CBFLAGS_FOUNDER : 0), FALSE);
+                        PURPLE_CBFLAGS_NONE | (!strcmp(owner, cuname) ? PURPLE_CBFLAGS_FOUNDER : 0), 0);
                 }
             }
         }
@@ -896,19 +896,19 @@ static void tgprpl_set_buddy_icon(PurpleConnection * gc, PurpleStoredImage * img
 static gboolean tgprpl_can_receive_file(PurpleConnection * gc, const char *who)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_can_receive_file()\n");
-    return FALSE;
+    return 0;
 }
 
 /**
  *  Checks whether offline messages to @a buddy are supported.
 
- *  @return @c TRUE if @a buddy can be sent messages while they are
- *          offline, or @c FALSE if not.
+ *  @return @c 1 if @a buddy can be sent messages while they are
+ *          offline, or @c 0 if not.
  */
 static gboolean tgprpl_offline_message(const PurpleBuddy * buddy)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_offline_message()\n");
-    return FALSE;
+    return 0;
 }
 
 /**
@@ -922,14 +922,14 @@ static GList *tgprpl_status_types(PurpleAccount * acct)
     GList *types = NULL;
     PurpleStatusType *type;
     type = purple_status_type_new_with_attrs(PURPLE_STATUS_AVAILABLE, "available", NULL, 
-        TRUE, TRUE, FALSE, "message", "Message", purple_value_new(PURPLE_TYPE_STRING), NULL);
+        1, 1, 0, "message", "Message", purple_value_new(PURPLE_TYPE_STRING), NULL);
     types = g_list_prepend(types, type);
 
-    type = purple_status_type_new_with_attrs(PURPLE_STATUS_AWAY, "unavailable", NULL, TRUE, 
-        TRUE, FALSE, "message", "Message", purple_value_new(PURPLE_TYPE_STRING), NULL);
+    type = purple_status_type_new_with_attrs(PURPLE_STATUS_AWAY, "unavailable", NULL, 1, 
+        1, 0, "message", "Message", purple_value_new(PURPLE_TYPE_STRING), NULL);
     types = g_list_prepend(types, type);
 
-    type = purple_status_type_new(PURPLE_STATUS_OFFLINE, NULL, NULL, TRUE);
+    type = purple_status_type_new(PURPLE_STATUS_OFFLINE, NULL, NULL, 1);
     types = g_list_append(types, type);
 
     return g_list_reverse(types);
