@@ -1272,7 +1272,7 @@ static PurplePluginInfo plugin_info = {
     "Telegram",
     "0.1",
     "Telegram protocol",
-    "Adds support for the telegram protocol to libpurple.",
+    "Support for the protocol of the Telegram messenger.",
     "Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>, Matthias Jentsch <mtthsjntsch@gmail.com>",
     "https://bitbucket.org/telegrampurple/telegram-purple",
     NULL,           // on load
