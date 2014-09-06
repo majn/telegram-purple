@@ -20,6 +20,8 @@
 		C4877C2619BB6D11006FA91F /* telegram16.png in Resources */ = {isa = PBXBuildFile; fileRef = C4877C2119BB6D11006FA91F /* telegram16.png */; };
 		C4877C2719BB6D11006FA91F /* telegram22.png in Resources */ = {isa = PBXBuildFile; fileRef = C4877C2219BB6D11006FA91F /* telegram22.png */; };
 		C4877C2819BB6D11006FA91F /* telegram48.png in Resources */ = {isa = PBXBuildFile; fileRef = C4877C2319BB6D11006FA91F /* telegram48.png */; };
+		C49A915619BBC278001B3DC0 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C49A915519BBC278001B3DC0 /* libcrypto.a */; };
+		C49A915819BBC5C5001B3DC0 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C49A915719BBC5C5001B3DC0 /* libz.dylib */; };
 		C4BF98FF19BB75260038D507 /* libglib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C4BF98FE19BB75250038D507 /* libglib.framework */; };
 		C4BF990119BB87C00038D507 /* libpurple.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C4BF990019BB87C00038D507 /* libpurple.framework */; };
 		C4BF991C19BB8B4D0038D507 /* binlog.c in Sources */ = {isa = PBXBuildFile; fileRef = C4BF990419BB8B4D0038D507 /* binlog.c */; };
@@ -55,6 +57,8 @@
 		C4877C2119BB6D11006FA91F /* telegram16.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = telegram16.png; path = "../purple-plugin/telegram16.png"; sourceTree = "<group>"; };
 		C4877C2219BB6D11006FA91F /* telegram22.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = telegram22.png; path = "../purple-plugin/telegram22.png"; sourceTree = "<group>"; };
 		C4877C2319BB6D11006FA91F /* telegram48.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = telegram48.png; path = "../purple-plugin/telegram48.png"; sourceTree = "<group>"; };
+		C49A915519BBC278001B3DC0 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libcrypto.a; sourceTree = "<group>"; };
+		C49A915719BBC5C5001B3DC0 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
 		C4BF98FE19BB75250038D507 /* libglib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = libglib.framework; sourceTree = "<group>"; };
 		C4BF990019BB87C00038D507 /* libpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = libpurple.framework; sourceTree = "<group>"; };
 		C4BF990419BB8B4D0038D507 /* binlog.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = binlog.c; path = ../binlog.c; sourceTree = "<group>"; };
@@ -88,8 +92,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C49A915819BBC5C5001B3DC0 /* libz.dylib in Frameworks */,
 				C410949F19BB36A70083BF3F /* AdiumLibpurple.framework in Frameworks */,
 				C4BF990119BB87C00038D507 /* libpurple.framework in Frameworks */,
+				C49A915619BBC278001B3DC0 /* libcrypto.a in Frameworks */,
 				C410948A19BB2D7D0083BF3F /* CoreFoundation.framework in Frameworks */,
 				C4BF98FF19BB75260038D507 /* libglib.framework in Frameworks */,
 				C410949D19BB34BE0083BF3F /* Adium.framework in Frameworks */,
@@ -128,6 +134,8 @@
 		C410948819BB2D7D0083BF3F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				C49A915719BBC5C5001B3DC0 /* libz.dylib */,
+				C49A915519BBC278001B3DC0 /* libcrypto.a */,
 				C4BF990019BB87C00038D507 /* libpurple.framework */,
 				C4BF98FE19BB75250038D507 /* libglib.framework */,
 				C410949E19BB36A70083BF3F /* AdiumLibpurple.framework */,
@@ -332,6 +340,7 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
@@ -365,6 +374,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
@@ -394,6 +404,10 @@
 				);
 				INFOPLIST_FILE = "telegram-adium/telegram-adium-Info.plist";
 				INSTALL_PATH = "$(HOME)/Library/Application Support/Adium 2.0/PlugIns/";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = AdiumPlugin;
 			};
@@ -422,6 +436,10 @@
 				);
 				INFOPLIST_FILE = "telegram-adium/telegram-adium-Info.plist";
 				INSTALL_PATH = "$(HOME)/Library/Application Support/Adium 2.0/PlugIns/";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = AdiumPlugin;
 			};
