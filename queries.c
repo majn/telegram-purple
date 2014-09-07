@@ -1732,11 +1732,8 @@ void print_chat_info (struct chat *C) {
 
 int chat_info_on_answer (struct query *q UU) {
   struct mtproto_connection *mtp = query_get_mtproto(q);
-
-  // TODO: use chat
-  struct chat *C UU = fetch_alloc_chat_full (mtp);
-
-  //print_chat_info (C);
+  struct chat *C = fetch_alloc_chat_full (mtp);
+  mtp->instance->config->on_chat_info_received (mtp->instance, C->id);
   return 0;
 }
 
@@ -1745,6 +1742,7 @@ struct query_methods chat_info_methods = {
 };
 
 void do_get_chat_info (struct telegram *instance, peer_id_t id) {
+  logprintf ("do_get_chat_info (peer_id=%d)", id.id);
   struct dc *DC_working = telegram_get_working_dc(instance);
   struct mtproto_connection *mtp = instance->connection;
   if (offline_mode) {

@@ -50,8 +50,7 @@
 // telegram-purple includes
 #include "telegram.h"
 #include "telegram-purple.h"
-
-// telegram-cli
+#include "structures.h"
 #include "net.h"
 
 #define BUDDYNAME_MAX_LENGTH 128
@@ -78,6 +77,7 @@ void telegram_on_phone_registration (struct telegram *instance);
 void telegram_on_client_registration (struct telegram *instance);
 void on_new_user_status(struct telegram *instance, void *user);
 void on_user_typing(struct telegram *instance, void *user);
+void on_chat_joined (struct telegram *instance, peer_id_t chatid);
 
 /**
  * Returns the base icon name for the given buddy and account.
@@ -301,7 +301,7 @@ void telegram_on_ready (struct telegram *instance)
      do_get_dialog_list(instance);
      do_get_difference(instance);
      tgprpl_has_output(instance);
-     conn->timer = purple_timeout_add (4000, queries_timerfunc, conn);
+     conn->timer = purple_timeout_add (10000, queries_timerfunc, conn);
 }
 
 void telegram_on_disconnected (struct telegram *tg)
@@ -346,7 +346,8 @@ struct telegram_config tgconf = {
     message_allocated_handler,
     peer_allocated_handler,
     on_new_user_status,
-    on_user_typing
+    on_user_typing,
+    on_chat_joined
 };
 
 
@@ -473,6 +474,10 @@ static PurpleChat *blist_find_chat_by_id(PurpleConnection *gc, const char *id)
     return blist_find_chat_by_hasht_cond(gc, hasht_cmp_id, &id);
 }
 
+static char *peer_get_peer_id_as_string(peer_t *user)
+{
+    return g_strdup_printf("%d", get_peer_id(user->id));
+}
 
 void peer_allocated_handler(struct telegram *tg, void *usr)
 {
@@ -481,7 +486,7 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
     PurpleAccount *pa = conn->pa;
 
     peer_t *user = usr;
-    gchar *name = g_strdup_printf("%d", get_peer_id(user->id));
+    gchar *name = peer_get_peer_id_as_string(user); //g_strdup_printf("%d", get_peer_id(user->id));
     logprintf("Allocated peer: %s\n", name);
     switch (user->id.type) {
         case PEER_USER: {
@@ -601,7 +606,14 @@ static int tgprpl_send_im(PurpleConnection * gc, const char *who, const char *me
 static int tgprpl_send_chat(PurpleConnection * gc, int id, const char *message, PurpleMessageFlags flags)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_send_chat()\n");
-    return -1;
+    telegram_conn *conn = purple_connection_get_protocol_data (gc);
+    PurpleConversation *convo = purple_find_chat(gc, id);
+    do_send_message (conn->tg, MK_CHAT(id), message, strlen(message));
+
+    char *me = conn->tg->User.print_name;
+    logprintf ("Current user: '%s'\n", me);
+    purple_conv_chat_write(PURPLE_CONV_CHAT(convo), me, message, PURPLE_MESSAGE_SEND, time(NULL));
+    return 1;
 }
 
 /**
@@ -775,7 +787,13 @@ static void tgprpl_rename_group(PurpleConnection * gc, const char *old_name, Pur
 static GList *tgprpl_chat_join_info(PurpleConnection * gc)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_chat_join_info()\n");
-    return NULL;
+    struct proto_chat_entry *pce;
+
+    pce = g_new0(struct proto_chat_entry, 1);
+    pce->label = "_Subject:";
+    pce->identifier = "subject";
+    pce->required = TRUE;
+    return g_list_append(NULL, pce);
 }
 
 /**
@@ -807,6 +825,52 @@ static GHashTable *tgprpl_chat_info_defaults(PurpleConnection * gc, const char *
 static void tgprpl_chat_join(PurpleConnection * gc, GHashTable * data)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_chat_join()\n");
+
+    telegram_conn *conn = purple_connection_get_protocol_data(gc);
+    const char *groupname = g_hash_table_lookup(data, "subject");
+
+    char *id = g_hash_table_lookup(data, "id");
+    if (!id) { 
+        logprintf ("Got no chat id, aborting...\n");
+        return;
+    }
+    if (!purple_find_chat(gc, atoi(id))) {
+        char *subject, *owner, *part;
+        do_get_chat_info (conn->tg, MK_CHAT(atoi(id)));
+    }
+}
+
+void on_chat_joined (struct telegram *instance, peer_id_t chatid)
+{
+    logprintf ("on_chat_joined(%d)\n", chatid.id);
+    telegram_conn *conn = instance->extra;
+
+    peer_t *peer = user_chat_get (instance->bl, chatid);
+    if (!peer) {
+        logprintf ("ERROR: chat with given id %d is not existing.\n", chatid.id);
+        return;
+    }
+    if (!peer->id.type == PEER_CHAT) {
+        logprintf ("ERROR: peer with given id %d and type %d is not a chat.\n", peer->id.id, peer->id.type);
+        return;
+    } 
+    PurpleConversation *conv = serv_got_joined_chat(conn->gc, chatid.id, peer->chat.title);
+    int cnt = peer->chat.user_list_size;
+    struct chat_user *curr = peer->chat.user_list;
+    int i;
+    for (i = 0; i < cnt; i++) {
+        peer_id_t part_id = MK_USER((curr + i)->user_id);
+        char *name = g_strdup_printf ("%d", part_id.id);
+        int flags = PURPLE_CBFLAGS_NONE | peer->chat.admin_id == part_id.id ? PURPLE_CBFLAGS_FOUNDER : 0;
+        logprintf ("purple_conv_chat_add_user (..., name=%s, ..., flags=%d)", name, flags);
+        purple_conv_chat_add_user(
+            purple_conversation_get_chat_data(conv), 
+            name, 
+            "", 
+            flags, 
+            0
+        );
+    }
 }
 
 /**
@@ -832,7 +896,7 @@ static void tgprpl_chat_invite(PurpleConnection * gc, int id, const char *messag
 static char *tgprpl_get_chat_name(GHashTable * data)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_get_chat_name()\n");
-    return "chat name";
+    return g_strdup(g_hash_table_lookup(data, "subject"));
 }
 
 /**

@@ -172,6 +172,11 @@ struct telegram_config {
      * A callback function that is called when a user starts or stops typing
      */
     void (*on_update_uesr_typing_handler) (struct telegram *instance, void *peer);
+
+    /**
+     * A callback function that is called when chat info is received
+     */
+    void (*on_chat_info_received) (struct telegram *instance, peer_id_t chatid); 
 };
 
 #define MSG_STORE_SIZE 10000

@@ -1818,14 +1818,13 @@ struct message *fetch_alloc_message (struct mtproto_connection *mtp, struct tele
 
   if (!M) {
     M = talloc0 (sizeof (*M));
-    M->id = data[1];
     M->instance = instance;
+    M->id = data[1];
     message_insert_tree (M);
     mtp->bl->messages_allocated ++;
     fetch_message (mtp, M);
     return M;
   }
-  M->instance = instance;
   fetch_message (mtp, M);
   return M;
 }
@@ -1862,10 +1861,10 @@ struct message *fetch_alloc_encrypted_message (struct mtproto_connection *mtp,
   int data[3];
   prefetch_data (mtp, data, 12);
   struct message *M = message_get (bl, *(long long *)(data + 1));
-  M->instance = instance;
 
   if (!M) {
     M = talloc0 (sizeof (*M));
+    M->instance = instance;
     M->id = *(long long *)(data + 1);
     message_insert_tree (M);
     mtp->bl->messages_allocated ++;
@@ -1882,10 +1881,10 @@ struct message *fetch_alloc_message_short (struct mtproto_connection *mtp,
   int data[1];
   prefetch_data (mtp, data, 4);
   struct message *M = message_get (bl, data[0]);
-  M->instance = instance;
 
   if (!M) {
     M = talloc0 (sizeof (*M));
+    M->instance = instance;
     M->id = data[0];
     message_insert_tree (M);
     mtp->bl->messages_allocated ++;
@@ -1899,10 +1898,10 @@ struct message *fetch_alloc_message_short_chat (struct mtproto_connection *mtp, 
   int data[1];
   prefetch_data (mtp, data, 4);
   struct message *M = message_get (bl, data[0]);
-  M->instance = instance;
 
   if (!M) {
     M = talloc0 (sizeof (*M));
+    M->instance = instance;
     M->id = data[0];
     message_insert_tree (M);
     mtp->bl->messages_allocated ++;
