@@ -105,7 +105,7 @@ struct telegram_config {
     /**
      * The base path containing the telegram configuration
      */
-    const char* base_config_path;
+    char* base_config_path;
     
     /**
      * Called when there is pending network output

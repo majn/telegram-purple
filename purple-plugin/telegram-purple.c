@@ -21,6 +21,9 @@
 #include <stdlib.h>
 #include <time.h>
 #include <assert.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 // Libpurple Plugin Includes
 #include "notify.h"
@@ -331,7 +334,7 @@ void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_messa
 }
 
 struct telegram_config tgconf = {
-    "/home/dev-jessie/.telegram",
+    NULL,
     NULL, // on output
     telegram_on_proxy_request,
     telegram_on_proxy_close,
@@ -343,8 +346,7 @@ struct telegram_config tgconf = {
     message_allocated_handler,
     peer_allocated_handler,
     on_new_user_status,
-    on_user_typing,
-    NULL
+    on_user_typing
 };
 
 
@@ -939,6 +941,15 @@ static PurplePluginProtocolInfo prpl_info = {
 
 static void tgprpl_init(PurplePlugin *plugin)
 {
+    const char *dir = ".telegram";
+    if (!tgconf.base_config_path) {
+        struct passwd *pw = getpwuid(getuid());
+        int len = strlen (dir) + strlen (pw->pw_dir) + 2;    
+        tgconf.base_config_path = talloc (len);
+        tsnprintf (tgconf.base_config_path, len, "%s/%s", pw->pw_dir, dir);
+        logprintf ("base configuration path: %s", tgconf.base_config_path);
+    }
+
     PurpleAccountOption *option;
     PurpleAccountUserSplit *split;
     GList *verification_values = NULL;
