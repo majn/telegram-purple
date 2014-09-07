@@ -301,7 +301,7 @@ void telegram_on_ready (struct telegram *instance)
      do_get_dialog_list(instance);
      do_get_difference(instance);
      tgprpl_has_output(instance);
-     conn->timer = purple_timeout_add (10000, queries_timerfunc, conn);
+     conn->timer = purple_timeout_add (500, queries_timerfunc, conn);
 }
 
 void telegram_on_disconnected (struct telegram *tg)
@@ -399,6 +399,7 @@ void message_allocated_handler(struct telegram *tg, struct message *M)
     // TODO: this should probably be freed again somwhere
     int id = get_peer_id(M->from_id);
     char *who = g_strdup_printf("%d", id);
+        
     if (who) {
         logprintf ("who: %s\n", who);
         if (M->service) {
@@ -408,7 +409,22 @@ void message_allocated_handler(struct telegram *tg, struct message *M)
            return;
         }
         logprintf ("fwd_date: %d\n", M->date);
-        serv_got_im(gc, who, M->message, PURPLE_MESSAGE_RECV, time((time_t *) &M->date));
+        switch (M->to_id.type) {
+        case PEER_USER: {
+            serv_got_im(gc, who, M->message, PURPLE_MESSAGE_RECV, time((time_t *) &M->date));
+        }
+        break;
+        case PEER_CHAT: {
+            logprintf ("PEER_CHAT\n");
+            peer_t *fromPeer = user_chat_get (tg->bl, M->from_id);
+            char *alias = malloc(BUDDYNAME_MAX_LENGTH);
+            user_get_alias(fromPeer, alias, BUDDYNAME_MAX_LENGTH);
+            serv_got_chat_in(gc, get_peer_id(M->to_id), alias, PURPLE_MESSAGE_RECV, M->message, time((time_t *) &M->date));
+            g_free(alias);
+        }
+        break;
+    }
+        
         g_free(who);
     }
 
@@ -610,9 +626,15 @@ static int tgprpl_send_chat(PurpleConnection * gc, int id, const char *message, 
     PurpleConversation *convo = purple_find_chat(gc, id);
     do_send_message (conn->tg, MK_CHAT(id), message, strlen(message));
 
-    char *me = conn->tg->User.print_name;
+    peer_t *peer = user_chat_get(conn->tg->bl, MK_USER (conn->tg->our_id));
+   
+    char *me = malloc(BUDDYNAME_MAX_LENGTH);
+    user_get_alias(peer, me, BUDDYNAME_MAX_LENGTH);
+    
     logprintf ("Current user: '%s'\n", me);
     purple_conv_chat_write(PURPLE_CONV_CHAT(convo), me, message, PURPLE_MESSAGE_SEND, time(NULL));
+    tgprpl_has_output (conn->tg);
+    g_free(me);
     return 1;
 }
 
@@ -837,6 +859,7 @@ static void tgprpl_chat_join(PurpleConnection * gc, GHashTable * data)
     if (!purple_find_chat(gc, atoi(id))) {
         char *subject, *owner, *part;
         do_get_chat_info (conn->tg, MK_CHAT(atoi(id)));
+        tgprpl_has_output (conn->tg);
     }
 }
 
@@ -871,6 +894,7 @@ void on_chat_joined (struct telegram *instance, peer_id_t chatid)
             0
         );
     }
+
 }
 
 /**
