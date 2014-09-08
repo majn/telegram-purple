@@ -871,7 +871,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
   switch (op) {
   case CODE_update_new_message:
     {
-      struct message *M = fetch_alloc_message (self, tg);
+      struct message *M UU = fetch_alloc_message (self, tg);
       assert (M);
       fetch_pts (self);
       self->unread_messages ++;
@@ -1195,8 +1195,9 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
     break;
   case CODE_update_new_geo_chat_message:
     {
-      struct message *M UU = fetch_alloc_geo_message (self, tg);
+      struct message *M = fetch_alloc_geo_message (self, tg);
       self->unread_messages ++;
+      event_update_new_message (self->instance, M);
       //print_message (M);
       //update_prompt ();
     }
@@ -1205,6 +1206,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
     {
       struct message *M UU = fetch_alloc_encrypted_message (self, tg);
       self->unread_messages ++;
+      event_update_new_message (self->instance, M);
       //print_message (M);
       //update_prompt ();
       fetch_qts (self);
@@ -1407,6 +1409,7 @@ void work_update_short_message (struct connection *c UU, long long msg_id UU) {
   assert (fetch_int (c->mtconnection) == (int)CODE_update_short_message);
   struct message *M = fetch_alloc_message_short (self, c->instance);
   c->mtconnection->unread_messages ++;
+  event_update_new_message (self->instance, M);
   //print_message (M);
   //update_prompt ();
   if (M->date > c->mtconnection->last_date) {
@@ -1421,6 +1424,7 @@ void work_update_short_chat_message (struct connection *c, long long msg_id UU) 
   struct message *M = fetch_alloc_message_short_chat (self, c->instance);
   c->mtconnection->unread_messages ++;
   //print_message (M);
+  event_update_new_message (self->instance, M);
   ////update_prompt ();
   if (M->date > c->mtconnection->last_date) {
     c->mtconnection->last_date = M->date;

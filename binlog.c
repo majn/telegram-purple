@@ -731,6 +731,7 @@ void replay_log_event (struct telegram *instance) {
         M->instance = instance;
         message_insert_tree (M);
         bl->messages_allocated ++;
+	    event_update_new_message (instance, M);
       } else {
         assert (!(M->flags & FLAG_CREATED));
       }
