@@ -1843,7 +1843,7 @@ void mtproto_connect(struct mtproto_connection *c)
     c->connection->methods->ready(c->connection);
 
     // Don't ping TODO: Really? Timeout callback functions of libpurple
-    start_ping_timer (c->connection);
+    //start_ping_timer (c->connection);
 }
 
 /**
@@ -1859,7 +1859,7 @@ void mtproto_close(struct mtproto_connection *mtp) {
     send_all_acks (mtp->connection->session);
     
     // remove all ping timer that point to this connection
-    stop_ping_timer (mtp->connection);
+    //stop_ping_timer (mtp->connection);
 
     // 
     mtp->connection->session->c = 0;
