@@ -78,6 +78,47 @@ void telegram_on_client_registration (struct telegram *instance);
 void on_new_user_status(struct telegram *instance, void *user);
 void on_user_typing(struct telegram *instance, void *user);
 void on_chat_joined (struct telegram *instance, peer_id_t chatid);
+static PurpleChat *blist_find_chat_by_id(PurpleConnection *gc, const char *id);
+static void tgprpl_has_output(struct telegram *tg);
+
+static const char *chat_id_get_comp_val (PurpleConnection *gc, int id, char *value)
+{
+    gchar *name = g_strdup_printf ("%d", id);
+    PurpleChat *ch = blist_find_chat_by_id(gc, name);
+    g_free (name);
+    GHashTable *table = purple_chat_get_components(ch);
+    return g_hash_table_lookup(table, value);
+}
+
+/**
+ * Assure that the given chat is opened
+ */
+static PurpleConversation *chat_show (PurpleConnection *gc, int id)
+{
+    logprintf ("show chat");
+    PurpleConversation *convo = purple_find_chat(gc, id);
+    if (convo) {
+        if (purple_conv_chat_has_left(PURPLE_CONV_CHAT(convo)))
+        {
+            serv_got_joined_chat(gc, id, chat_id_get_comp_val(gc, id, "subject"));
+        }
+    } else {
+        // join chat first
+        logprintf ("joining chat first...\n");
+        telegram_conn *conn = purple_connection_get_protocol_data(gc);
+        do_get_chat_info (conn->tg, MK_CHAT(id));
+        tgprpl_has_output (conn->tg);
+    }
+    return convo;
+}
+
+static PurpleChat *get_chat_by_id (PurpleConnection *gc, int id)
+{
+    gchar *name = g_strdup_printf ("%d", id);
+    PurpleChat *chat = blist_find_chat_by_id (gc, name);
+    g_free (name);
+    return chat;
+}
 
 /**
  * Returns the base icon name for the given buddy and account.
@@ -398,20 +439,51 @@ void message_allocated_handler(struct telegram *tg, struct message *M)
 
     // TODO: this should probably be freed again somwhere
     int id = get_peer_id(M->from_id);
-    char *who = g_strdup_printf("%d", id);
-    if (who) {
-        logprintf ("who: %s\n", who);
-        if (M->service) {
-           // TODO: handle service messages properly, currently adding them 
-           // causes a segfault for an unknown reason
-           logprintf ("service message, skipping...\n");
-           return;
-        }
-        logprintf ("fwd_date: %d\n", M->date);
-        serv_got_im(gc, who, M->message, PURPLE_MESSAGE_RECV, time((time_t *) &M->date));
-        g_free(who);
+
+    if (M->service) {
+       // TODO: handle service messages properly, currently adding them 
+       // causes a segfault for an unknown reason
+       logprintf ("service message, skipping...\n");
+       return;
     }
 
+    //
+    peer_id_t to_id = M->to_id;
+    char *from = g_strdup_printf("%d", id);
+    char *to = g_strdup_printf("%d", to_id.id);
+    logprintf ("from: %s\n", from);
+    logprintf ("fwd_date: %d\n", M->date);
+    switch (to_id.type) {
+        case PEER_CHAT:
+            logprintf ("PEER_CHAT\n");
+            chat_show (gc, to_id.id);
+            if (M->from_id.id == tg->our_id) {
+                serv_got_chat_in(gc, get_peer_id(M->to_id), "You", PURPLE_MESSAGE_RECV, M->message, time((time_t *) &M->date));
+            } else {
+                peer_t *fromPeer = user_chat_get (tg->bl, M->from_id);
+                char *alias = malloc(BUDDYNAME_MAX_LENGTH);
+                user_get_alias(fromPeer, alias, BUDDYNAME_MAX_LENGTH);
+                serv_got_chat_in(gc, get_peer_id(M->to_id), alias, PURPLE_MESSAGE_RECV, M->message, time((time_t *) &M->date));
+                g_free(alias);
+            }
+        break;
+
+        case PEER_USER:
+            logprintf ("PEER_USER\n");
+            if (M->from_id.id == tg->our_id) {
+                serv_got_im(gc, to, M->message, PURPLE_MESSAGE_SEND, time((time_t *) &M->date));
+            } else {
+                serv_got_im(gc, from, M->message, PURPLE_MESSAGE_RECV, time((time_t *) &M->date));
+            }
+        break;
+
+        case PEER_ENCR_CHAT:
+        break;
+
+        case PEER_GEO_CHAT:
+        break;
+    }
+    g_free(from);
     conn->updated = 1;
 }
 
@@ -500,8 +572,10 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
             }
             PurpleBuddy *buddy = purple_find_buddy(pa, name);
             if (!buddy) { 
+                char *actual = user->id.id == tg->our_id ? "You" : alias;
                 purple_debug_info(PLUGIN_ID, "Adding %s to buddy list\n", name);
-                buddy = purple_buddy_new(pa, name, alias);
+                purple_debug_info(PLUGIN_ID, "Alias %s\n", actual);
+                buddy = purple_buddy_new(pa, name, actual);
                 purple_blist_add_buddy(buddy, NULL, tggroup, NULL);
             }
             purple_buddy_set_protocol_data(buddy, (gpointer)&user->id);
@@ -512,6 +586,7 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
             else
                 purple_prpl_got_user_status(account, name, "unavailable", "message", "", NULL);
         
+            g_free(alias);
             g_free(name);
         }
         break;
@@ -607,12 +682,12 @@ static int tgprpl_send_chat(PurpleConnection * gc, int id, const char *message, 
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_send_chat()\n");
     telegram_conn *conn = purple_connection_get_protocol_data (gc);
-    PurpleConversation *convo = purple_find_chat(gc, id);
+    //PurpleConversation *convo = purple_find_chat(gc, id);
     do_send_message (conn->tg, MK_CHAT(id), message, strlen(message));
 
-    char *me = conn->tg->User.print_name;
-    logprintf ("Current user: '%s'\n", me);
-    purple_conv_chat_write(PURPLE_CONV_CHAT(convo), me, message, PURPLE_MESSAGE_SEND, time(NULL));
+    char *who = g_strdup_printf("%d", id);
+    serv_got_chat_in(gc, id, "You", PURPLE_MESSAGE_RECV, message, time(NULL));
+    g_free(who);
     return 1;
 }
 
@@ -835,8 +910,13 @@ static void tgprpl_chat_join(PurpleConnection * gc, GHashTable * data)
         return;
     }
     if (!purple_find_chat(gc, atoi(id))) {
+        logprintf ("chat now known\n");
         char *subject, *owner, *part;
         do_get_chat_info (conn->tg, MK_CHAT(atoi(id)));
+        tgprpl_has_output (conn->tg);
+    } else {
+        logprintf ("chat already known\n");
+        serv_got_joined_chat(conn->gc, atoi(id), groupname);
     }
 }
 
