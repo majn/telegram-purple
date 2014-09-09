@@ -342,7 +342,7 @@ void telegram_on_ready (struct telegram *instance)
      do_get_dialog_list(instance);
      do_get_difference(instance);
      tgprpl_has_output(instance);
-     conn->timer = purple_timeout_add (10000, queries_timerfunc, conn);
+     conn->timer = purple_timeout_add (500, queries_timerfunc, conn);
 }
 
 void telegram_on_disconnected (struct telegram *tg)
@@ -685,9 +685,21 @@ static int tgprpl_send_chat(PurpleConnection * gc, int id, const char *message, 
     //PurpleConversation *convo = purple_find_chat(gc, id);
     do_send_message (conn->tg, MK_CHAT(id), message, strlen(message));
 
+<<<<<<< HEAD
     char *who = g_strdup_printf("%d", id);
     serv_got_chat_in(gc, id, "You", PURPLE_MESSAGE_RECV, message, time(NULL));
     g_free(who);
+=======
+    peer_t *peer = user_chat_get(conn->tg->bl, MK_USER (conn->tg->our_id));
+   
+    char *me = malloc(BUDDYNAME_MAX_LENGTH);
+    user_get_alias(peer, me, BUDDYNAME_MAX_LENGTH);
+    
+    logprintf ("Current user: '%s'\n", me);
+    purple_conv_chat_write(PURPLE_CONV_CHAT(convo), me, message, PURPLE_MESSAGE_SEND, time(NULL));
+    tgprpl_has_output (conn->tg);
+    g_free(me);
+>>>>>>> 95347fdee590c47fa850bbf2ef30b7b01d2ae3f6
     return 1;
 }
 
@@ -914,9 +926,12 @@ static void tgprpl_chat_join(PurpleConnection * gc, GHashTable * data)
         char *subject, *owner, *part;
         do_get_chat_info (conn->tg, MK_CHAT(atoi(id)));
         tgprpl_has_output (conn->tg);
+<<<<<<< HEAD
     } else {
         logprintf ("chat already known\n");
         serv_got_joined_chat(conn->gc, atoi(id), groupname);
+=======
+>>>>>>> 95347fdee590c47fa850bbf2ef30b7b01d2ae3f6
     }
 }
 
@@ -951,6 +966,7 @@ void on_chat_joined (struct telegram *instance, peer_id_t chatid)
             0
         );
     }
+
 }
 
 /**
