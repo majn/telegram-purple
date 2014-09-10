@@ -285,7 +285,7 @@ void free_timers (struct telegram *instance)
     assert (ev);
     logprintf ("freeing event timer with timeout: %d\n", ev->timeout);
     remove_event_timer (instance, ev);
-    tfree (ev, sizeof(struct event_timer));
+    //tfree (ev, sizeof(struct event_timer));
   }
 }
 
@@ -295,9 +295,9 @@ void free_queries (struct telegram *instance)
     struct query *q = tree_get_min_query (instance->queries_tree);
     assert (q);
     logprintf ("freeing query with msg_id %d and len\n", q->msg_id, q->data_len);
-    instance->queries_tree = tree_delete_query (instance->queries_tree, q);
     tfree (q->data, 4 * q->data_len);
-    tfree (q, sizeof (struct query));
+    instance->queries_tree = tree_delete_query (instance->queries_tree, q);
+    //tfree (q, sizeof (struct query));
   }
 }
 
