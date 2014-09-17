@@ -34,21 +34,12 @@
 #include "version.h"
 #include "account.h"
 #include "connection.h"
+#include "mtproto-client.h"
 
 typedef struct {
     struct telegram *tg;
 	PurpleAccount *pa;
 	PurpleConnection *gc;
-
-    /**
-     * Write handler returned by purple_input_add
-     */
-    guint wh;
-
-    /**
-     * Read handler returned by purple_input_add
-     */
-    guint rh;
         
     /**
      * Whether the state of the protocol has changed since the last save
@@ -61,5 +52,29 @@ typedef struct {
     guint timer;
 
 } telegram_conn;
+
+typedef struct {
+   
+    /**
+     * The mtproto_connection associated with this handle
+     */
+    struct mtproto_connection *mtp;
+
+    /**
+     * Write handler returned by purple_input_add
+     */
+    guint wh;
+
+    /**
+     * Read handler returned by purple_input_add
+     */
+    guint rh;
+
+    /**
+     * The file descriptor of the used socket     
+     */
+    int fd;
+
+} mtproto_handle;
 
 #endif

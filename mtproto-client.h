@@ -250,6 +250,7 @@ struct mtproto_connection {
     // the corresponding telegram instance
     //
     struct telegram *instance;
+    void *handle;
 };
 
 void mtproto_connection_init (struct mtproto_connection *c);

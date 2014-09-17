@@ -1843,11 +1843,12 @@ void mtproto_connect(struct mtproto_connection *c)
     c->connection->methods->ready(c->connection);
 
     // Don't ping TODO: Really? Timeout callback functions of libpurple
-    //start_ping_timer (c->connection);
+    start_ping_timer (c->connection);
 }
 
 /**
- * Free all used resources and close the connection
+ * Mark the connection for destruction, stop all timers  and initiate 
+ * cleanup tasks
  */
 void mtproto_close(struct mtproto_connection *mtp) {
     logprintf ("closing mtproto_connection...\n");
@@ -1856,24 +1857,26 @@ void mtproto_close(struct mtproto_connection *mtp) {
     // send all pending acks on this connection so the server won't 
     // resend messages. We might not be able to send the acknowledgements later
     // in case the session is switched and this DC is not reachable anymore
-    send_all_acks (mtp->connection->session);
-    
-    // remove all ping timer that point to this connection
-    //stop_ping_timer (mtp->connection);
+    if (mtp->connection) {
+        if (mtp->connection->session && mtp->connection->session->ack_tree) {
+            send_all_acks (mtp->connection->session);
+            mtp->instance->config->on_output(mtp->handle);
 
-    // 
-    mtp->connection->session->c = 0;
+            // connection no longer usable for session
+            mtp->connection->session->c = 0;
+        }
+        stop_ping_timer (mtp->connection);
+    }
+    // remove all ping timer that point to this connection
 }
 
 /**
- * Close the connection and 
+ * Close the underlying file descriptor
  */
 void mtproto_destroy (struct mtproto_connection *self) {
     logprintf("destroying mtproto_connection: %p\n", self);
-
-    // TODO: Call destruction callback
+    self->instance->config->proxy_close_cb(self->handle);
     fd_close_connection(self->connection);
-    tfree(self->connection, sizeof(struct connection));
     tfree(self, sizeof(struct mtproto_connection));
 }
 
@@ -1889,13 +1892,15 @@ void mtproto_free_closed (struct telegram *tg) {
         logprintf ("checking mtproto_connection %d: c_state:%d destroy:%d, quries_num:%d\n", 
             i, c->c_state, c->destroy, c->queries_num);
         if (c->destroy == 0) continue;
-        if (c->queries_num > 0) {
-            logprintf ("still pending queries left, skipping connection...\n");
+        if (c->connection->out_bytes > 0) {
+            logprintf ("still %d bytes ouput left, skipping connection...\n", c->connection->out_bytes);
             continue;
         }
         mtproto_destroy (c);
+        if (tg->connection == c) {
+            tg->connection = NULL;
+        }
         tg->Cs[i] = NULL;
-        tg->connection = NULL;
     }
 }
 

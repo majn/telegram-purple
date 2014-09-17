@@ -159,12 +159,12 @@ void telegram_change_state (struct telegram *instance, int state, void *data)
             mtproto_close (instance->connection);
             assert (instance->config->proxy_request_cb);
             // tell the proxy to close all connections
-            instance->config->proxy_close_cb (instance, instance->connection->connection->fd);
+            //instance->config->proxy_close_cb (instance, instance->connection->connection->fd);
 
             // remove all left over queries and timers
             free_timers (instance);
             free_queries (instance);
-            
+
             // start a new connection to the demanded data center. The pointer to the
             // new dc should was already updated by the on_error function of the query
             telegram_connect (instance);
@@ -359,26 +359,25 @@ void on_authorized(struct mtproto_connection *c, void *data)
     telegram_change_state(instance, STATE_AUTHORIZED, NULL);
 }
 
-void telegram_read_input (struct telegram *instance)
-{
-    try_read (instance->connection->connection);
-
-    // free all mtproto_connections that may have errored
-    mtproto_free_closed(instance);
-}
-
-void telegram_set_proxy(struct telegram *instance, int fd)
+struct mtproto_connection *telegram_add_proxy(struct telegram *instance, int fd, void *handle)
 {
     struct dc *DC_working = telegram_get_working_dc (instance);
     instance->connection = mtproto_new (DC_working, fd, instance);
+    instance->connection->handle = handle;
     instance->connection->on_ready = on_authorized;
     instance->connection->on_ready_data = instance;
     mtproto_connect (instance->connection);
+    return instance->connection;
 }
 
-int telegram_write_output (struct telegram *instance)
+void mtp_read_input (struct mtproto_connection *mtp)
 {
-    return try_write(instance->connection->connection);
+    try_read (mtp->connection);
+}
+
+int mtp_write_output (struct mtproto_connection *mtp)
+{
+    return try_write(mtp->connection);
 }
 
 int telegram_authenticated (struct telegram *instance)
@@ -386,4 +385,21 @@ int telegram_authenticated (struct telegram *instance)
     return telegram_get_working_dc (instance)->auth_key_id > 0;
 }
 
+void telegram_flush (struct telegram *instance)
+{
+    logprintf ("telegram flush()\n");
+    int i;
+    for (i = 0; i < 100; i++) {
+        struct mtproto_connection *c = instance->Cs[i];
+        if (!c) continue;
+        if (!c->connection) continue;
+        if (c->connection->out_bytes) {
+            logprintf ("connection %d has %d bytes, triggering on_output.", 
+                i, c->connection->out_bytes);
+            instance->config->on_output(c->handle);
+        } else {
+            logprintf ("connection %d has no bytes, skipping\n");
+        }
+    }
+}
 

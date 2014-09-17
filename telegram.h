@@ -110,7 +110,7 @@ struct telegram_config {
     /**
      * Called when there is pending network output
      */
-    void (*on_output)(struct telegram *instance);
+    void (*on_output)(void *handle);
 
     /**
      * A callback function that delivers a connections to the given hostname
@@ -123,7 +123,7 @@ struct telegram_config {
      * A callback function that is called once the proxy connection is no longer
      * needed. This is useful for freeing all used resources.
      */
-     void (*proxy_close_cb) (struct telegram *instance, int fd);
+     void (*proxy_close_cb) (void *handle);
 
     /**
      * A callback function that is called when a phone registration is required. 
@@ -249,6 +249,9 @@ struct telegram {
     int get_difference_active;
     struct message *ML[MSG_STORE_SIZE];
 
+    /*
+     * All active MtProto connections
+     */
     int cs;
     struct mtproto_connection *Cs[100]; 
 
@@ -304,26 +307,17 @@ int telegram_login (struct telegram *instance);
 /**
  * Read and process all available input from the network
  */
-void telegram_read_input (struct telegram *instance);
+void mtp_read_input (struct mtproto_connection *mtp);
 
 /**
  * Write all available output to the network
  */
-int telegram_write_output (struct telegram *instance);
-
-/**
- * Return whether there is pending output.
- */
-int telegram_has_output (struct telegram *instance);
+int mtp_write_output (struct mtproto_connection *mtp);
 
 /**
  * Try to interpret RPC calls and apply the changes to the current telegram state
  */
 void try_rpc_interpret(struct telegram *instance, int op, int len);
-
-/* 
- * TODO: Refactor all old calls to take a telegrma instance
- */
 
 /**
  * Request a registration code
@@ -391,15 +385,18 @@ void set_net_read_cb(ssize_t (*cb)(int fd, void *buff, size_t size));
 void set_net_write_cb(ssize_t (*cb)(int fd, const void *buff, size_t size));
 
 /**
- * Set the proxy-connection to use
+ * Set the connection after a proxy_request_cb 
  *
- * NOTE: you may only call this function from the 
+ * @param fd      The file-descriptor of the acquired connection
+ * @param handle  A handle that will be passed back on output and close callbacks
  */
-void telegram_set_proxy(struct telegram *instance, int fd);
+struct mtproto_connection *telegram_add_proxy(struct telegram *tg, int fd, void *handle);
 
 /**
  * Return wether telegram is authenticated with the currently active data center
  */
 int telegram_authenticated (struct telegram *instance);
+
+void telegram_flush (struct telegram *instance);
 
 #endif

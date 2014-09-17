@@ -79,7 +79,7 @@ void on_new_user_status(struct telegram *instance, void *user);
 void on_user_typing(struct telegram *instance, void *user);
 void on_chat_joined (struct telegram *instance, peer_id_t chatid);
 static PurpleChat *blist_find_chat_by_id(PurpleConnection *gc, const char *id);
-static void tgprpl_has_output(struct telegram *tg);
+static void tgprpl_has_output(void *handle);
 
 static const char *chat_id_get_comp_val (PurpleConnection *gc, int id, char *value)
 {
@@ -107,7 +107,7 @@ static PurpleConversation *chat_show (PurpleConnection *gc, int id)
         logprintf ("joining chat first...\n");
         telegram_conn *conn = purple_connection_get_protocol_data(gc);
         do_get_chat_info (conn->tg, MK_CHAT(id));
-        tgprpl_has_output (conn->tg);
+        telegram_flush (conn->tg);
     }
     return convo;
 }
@@ -175,52 +175,73 @@ static void login_verification_fail(PurpleAccount *acct)
         "Please make sure you entered the correct verification code.", NULL, NULL, NULL);
 }
 
+/*  OUTPUT  */
+
+/**
+ * Libpurple announced that new output should be written to the write-handle
+ */
 static void tgprpl_output_cb(gpointer data, gint source, PurpleInputCondition cond)
 {
-    logprintf("tgprpl_output_cb()\n");
-    struct telegram *tg = data;
-    telegram_conn *conn = tg->extra;
-    if (telegram_write_output(tg) == 0) {
+    mtproto_handle *conn = data;
+    logprintf("tgprpl_output_cb(%p)\n", data);
+    logprintf("mtp=%p, fd=%d, rh=%d, wh=%d\n", conn->mtp, conn->fd, conn->rh, conn->wh);
+    if (!conn->mtp) {
+        logprintf ("connection no loner existing, do nothing. \n");
+        return;
+    }
+    if (mtp_write_output(conn->mtp) == 0) {
         logprintf("no output, removing output...\n");
         purple_input_remove(conn->wh);
         conn->wh = 0;
     }
 }
 
-static void tgprpl_has_output(struct telegram *tg)
+/**
+ * Telegram announced new output in its buffers
+ */
+static void tgprpl_has_output(void *handle)
 {
-    logprintf("tgprpl_has_output()\n");
-    telegram_conn *conn = tg->extra;
+    logprintf("tgprpl_has_output(%p)\n", handle);
+    mtproto_handle *conn = handle;
     if (! conn->wh) {
-        conn->wh = purple_input_add(telegram_get_connection(tg)->fd, PURPLE_INPUT_WRITE, 
-            tgprpl_output_cb, tg);
-        logprintf("Attached write handle: %u ", conn->wh);
+        conn->wh = purple_input_add(conn->fd, PURPLE_INPUT_WRITE, tgprpl_output_cb, handle);
     }
 }
 
+/*
+ * Libpurple announced that new input should be read from the read-handle
+ */
 static void tgprpl_input_cb(gpointer data, gint source, PurpleInputCondition cond)
 {
-    struct telegram *tg = data;
-    //telegram_conn *conn = tg->extra;
+    mtproto_handle *conn = data;
     logprintf("tgprpl_input_cb()\n");
+    if (!conn->fd) {
+        logprintf("conn for handle no longer existing, not reading input\n");
+        return;
+    }
+    mtp_read_input(conn->mtp);
 
-    // TODO: remove input handler when no more input
-    telegram_read_input(tg);
-    if (telegram_has_output(tg)) {
-        tgprpl_has_output(tg);
+    if (conn->mtp) {
+        // processing of the answer may have inserted new queries
+        telegram_flush (conn->mtp->instance);
+
+        // free all mtproto_connections that may have errored
+        mtproto_free_closed(conn->mtp->instance);
     }
 }
 
-static void tgprpl_has_input(struct telegram *tg)
+/** 
+ * Telegram announced that it awaits new input from the read-handle
+ * TODO: this is currently unused, evaluate wether its needed at all
+ */
+static void tgprpl_has_input(void *handle)
 {
     logprintf("tgprpl_has_input()\n");
-    telegram_conn *conn = tg->extra;
+    mtproto_handle *conn = handle;
     if (! conn->rh) {
-        conn->rh = purple_input_add(telegram_get_connection(tg)->fd, PURPLE_INPUT_READ, 
-            tgprpl_input_cb, tg);
+        conn->rh = purple_input_add(conn->fd, PURPLE_INPUT_READ, tgprpl_input_cb, handle);
         logprintf("Attached read handle: %u ", conn->rh);
     }
-
 }
 
 static void init_dc_settings(PurpleAccount *acc, struct dc *DC)
@@ -231,15 +252,12 @@ static void init_dc_settings(PurpleAccount *acc, struct dc *DC)
 }
 
 /**
- * Handle a proxy-request of telegram 
- *
- * Request a new proxy connection from purple, and execute tgprpl_login_on_connected 
- * as callback once the connection is ready
+ * Telegram requests a new connectino to our configured proxy
  */
-void telegram_on_proxy_request(struct telegram *instance, const char *ip, int port)
+void telegram_on_proxy_request(struct telegram *tg, const char *ip, int port)
 {
-    telegram_conn *conn = instance->extra; 
-    purple_proxy_connect (conn->gc, conn->pa, ip, port, tgprpl_login_on_connected, conn->tg);
+    telegram_conn *conn = tg->extra;
+    purple_proxy_connect (conn->gc, conn->pa, ip, port, tgprpl_login_on_connected, tg);
 }
 
 /**
@@ -247,11 +265,20 @@ void telegram_on_proxy_request(struct telegram *instance, const char *ip, int po
  * 
  * Remove all open inputs added to purple
  */
-void telegram_on_proxy_close(struct telegram *instance, int fd UU)
+void telegram_on_proxy_close(void *handle)
 {
-    telegram_conn *conn = instance->extra; 
-    purple_input_remove (conn->rh);
-    purple_input_remove (conn->wh);
+    mtproto_handle *conn = handle; 
+    logprintf ("Closing proxy-handles - fd: %d, write-handle: %d, read-handle: %d\n", 
+        conn->fd, conn->wh, conn->rh);
+    if (conn->rh) {
+        purple_input_remove (conn->rh);
+    }
+    if (conn->wh) {
+        purple_input_remove (conn->wh);
+    }
+    conn->rh = conn->wh = 0;
+    conn->mtp = 0;
+    tfree (conn, sizeof(mtproto_handle));
 }
 
 void telegram_on_phone_registration (struct telegram *instance)
@@ -278,7 +305,7 @@ void client_registration_entered (gpointer data, const gchar *code)
 {
     struct telegram *tg = data;
     do_send_code_result (tg, code);
-    tgprpl_has_output (tg);
+    telegram_flush (tg);
 }
 
 void client_registration_canceled (gpointer data)
@@ -341,8 +368,31 @@ void telegram_on_ready (struct telegram *instance)
      do_update_contact_list(instance);
      do_get_dialog_list(instance);
      do_get_difference(instance);
-     tgprpl_has_output(instance);
-     conn->timer = purple_timeout_add (500, queries_timerfunc, conn);
+     telegram_flush (conn->tg);
+     conn->timer = purple_timeout_add (5000, queries_timerfunc, conn);
+}
+
+/**
+ * A proxy connection was created by purple
+ *
+ * Use the connection to create a new mtproto-connection and create a handle,
+ * with additional info for libpurple associated with the new connection
+ */
+void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_message)
+{
+    purple_debug_info(PLUGIN_ID, "tgprpl_login_on_connected()\n");
+    struct telegram *tg = (struct telegram*)data;
+    if (fd == -1) {
+        logprintf("purple_proxy_connect failed: %s\n", error_message);
+        telegram_destroy(tg);
+        return;
+    }
+
+    mtproto_handle *conn = talloc(sizeof (mtproto_handle));
+    conn->fd = fd;
+    conn->wh = purple_input_add(fd, PURPLE_INPUT_WRITE, tgprpl_output_cb, conn);
+    conn->rh = purple_input_add(fd, PURPLE_INPUT_READ, tgprpl_input_cb, conn);
+    conn->mtp = telegram_add_proxy(tg, fd, conn);
 }
 
 void telegram_on_disconnected (struct telegram *tg)
@@ -351,32 +401,9 @@ void telegram_on_disconnected (struct telegram *tg)
      assert (0);
 }
 
-/**
- * A proxy connection was created by purple
- *
- * Set the proxy to the current telegram-instance, and add callbacks to monitor 
- */
-void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_message)
-{
-    purple_debug_info(PLUGIN_ID, "tgprpl_login_on_connected()\n");
-    struct telegram *tg = (struct telegram*) data;
-    telegram_conn *conn = tg->extra;
-    if (fd == -1) {
-        logprintf("purple_proxy_connect failed: %s\n", error_message);
-        telegram_destroy(tg);
-        return;
-    }
-
-    purple_debug_info(PLUGIN_ID, "Connecting to the telegram network...\n");
-    conn->wh = purple_input_add(fd, PURPLE_INPUT_WRITE, tgprpl_output_cb, tg);
-    conn->rh = purple_input_add(fd, PURPLE_INPUT_READ, tgprpl_input_cb, tg);
-
-    telegram_set_proxy(tg, fd);
-}
-
 struct telegram_config tgconf = {
     NULL,
-    NULL, // on output
+    tgprpl_has_output, // on output
     telegram_on_proxy_request,
     telegram_on_proxy_close,
     telegram_on_phone_registration,
@@ -400,22 +427,21 @@ static void tgprpl_login(PurpleAccount * acct)
     purple_debug_info(PLUGIN_ID, "tgprpl_login()\n");
     PurpleConnection *gc = purple_account_get_connection(acct);
     char const *username = purple_account_get_username(acct);
-
     struct dc DC;
     init_dc_settings(acct, &DC);
-
-    // TODO: fetch current home directory
-    // use this as root
+    
+    // create a new instance of telegram
     struct telegram *tg = telegram_new (&DC, username, &tgconf); 
     telegram_restore_session(tg);
-
+   
+    // create handle to store additional info for libpurple in
+    // the new telegram instance
     telegram_conn *conn = g_new0(telegram_conn, 1);
     conn->tg = tg;
     conn->gc = gc;
     conn->pa = acct;
     purple_connection_set_protocol_data(gc, conn);
     tg->extra = conn;
-
     purple_connection_set_state (conn->gc, PURPLE_CONNECTING);
     telegram_connect (tg);
 }
@@ -658,7 +684,7 @@ static int tgprpl_send_im(PurpleConnection * gc, const char *who, const char *me
     PurpleBuddy *b = purple_find_buddy (pa, who);
     peer_id_t *peer = purple_buddy_get_protocol_data (b);
     do_send_message (conn->tg, *peer, message, strlen(message));
-    tgprpl_has_output (conn->tg);
+    telegram_flush (conn->tg);
     return 1;
 }
 
@@ -913,7 +939,7 @@ static void tgprpl_chat_join(PurpleConnection * gc, GHashTable * data)
         logprintf ("chat now known\n");
         char *subject, *owner, *part;
         do_get_chat_info (conn->tg, MK_CHAT(atoi(id)));
-        tgprpl_has_output (conn->tg);
+        telegram_flush (conn->tg);
     } else {
         logprintf ("chat already known\n");
         serv_got_joined_chat(conn->gc, atoi(id), groupname);

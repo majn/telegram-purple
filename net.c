@@ -730,5 +730,6 @@ void fd_close_connection(struct connection *c) {
   c->out_head = c->out_tail = c->in_head = c->in_tail = 0;
   c->state = conn_stopped;
   c->out_bytes = c->in_bytes = 0;
+  tfree(c, sizeof(struct connection));
 }
 

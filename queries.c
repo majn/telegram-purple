@@ -65,10 +65,6 @@ int offline_mode = 0;
 extern int sync_from_start;
 int sync_from_start = 0;
 
-void telegram_flush_queries (struct telegram *instance) {
-   instance->config->on_output(instance);
-}
-
 #define memcmp8(a,b) memcmp ((a), (b), 8)
 DEFINE_TREE (query, struct query *, memcmp8, 0) ;
 
@@ -3069,16 +3065,5 @@ void do_update_typing (struct telegram *instance, peer_id_t id) {
   out_peer_id (mtp, id);
   out_int (mtp, CODE_bool_true);
   send_query (instance, DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &update_typing_methods, 0);
-}
-
-int telegram_has_output (struct telegram *instance)
-{
-    if (!instance->connection) {
-        return 0;
-    }
-    if (instance->session_state == STATE_READY) {
-        return tree_count_query (instance->queries_tree) > 0;
-    }
-    return instance->connection->queries_num > 0;
 }
 
