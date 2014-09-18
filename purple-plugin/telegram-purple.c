@@ -183,8 +183,6 @@ static void login_verification_fail(PurpleAccount *acct)
 static void tgprpl_output_cb(gpointer data, gint source, PurpleInputCondition cond)
 {
     mtproto_handle *conn = data;
-    logprintf("tgprpl_output_cb(%p)\n", data);
-    logprintf("mtp=%p, fd=%d, rh=%d, wh=%d\n", conn->mtp, conn->fd, conn->rh, conn->wh);
     if (!conn->mtp) {
         logprintf ("connection no loner existing, do nothing. \n");
         return;
@@ -365,9 +363,9 @@ void telegram_on_ready (struct telegram *instance)
          tggroup = purple_group_new ("Telegram");
          purple_blist_add_group (tggroup, NULL);
      }
-     do_update_contact_list(instance);
+     do_get_difference(instance, 0);
      do_get_dialog_list(instance);
-     do_get_difference(instance);
+     do_update_contact_list(instance);
      telegram_flush (conn->tg);
      conn->timer = purple_timeout_add (5000, queries_timerfunc, conn);
 }
@@ -477,8 +475,6 @@ void message_allocated_handler(struct telegram *tg, struct message *M)
     peer_id_t to_id = M->to_id;
     char *from = g_strdup_printf("%d", id);
     char *to = g_strdup_printf("%d", to_id.id);
-    logprintf ("from: %s\n", from);
-    logprintf ("fwd_date: %d\n", M->date);
     switch (to_id.type) {
         case PEER_CHAT:
             logprintf ("PEER_CHAT\n");

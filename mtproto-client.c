@@ -1548,7 +1548,7 @@ void work_new_detailed_info (struct connection *c UU, long long msg_id UU) {
 void work_updates_to_long (struct connection *c UU, long long msg_id UU) {
   assert (fetch_int (c->mtconnection) == (int)CODE_updates_too_long);
   logprintf ("updates to long... Getting difference\n");
-  do_get_difference (c->instance);
+  do_get_difference (c->instance, 0);
 }
 
 void work_bad_msg_notification (struct connection *c UU, long long msg_id UU) {

@@ -59,11 +59,7 @@
 
 char *get_downloads_directory (void);
 int verbosity;
-extern int offline_mode;
 int offline_mode = 0;
-
-extern int sync_from_start;
-int sync_from_start = 0;
 
 #define memcmp8(a,b) memcmp ((a), (b), 8)
 DEFINE_TREE (query, struct query *, memcmp8, 0) ;
@@ -246,12 +242,12 @@ void query_result (struct telegram *instance, long long id UU) {
 
 
 void insert_event_timer (struct telegram *instance, struct event_timer *ev) {
-  logprintf ( "INSERT: %lf %p %p\n", ev->timeout, ev->self, ev->alarm);
+  //  logprintf ( "INSERT: %lf %p %p\n", ev->timeout, ev->self, ev->alarm);
   instance->timer_tree = tree_insert_timer (instance->timer_tree, ev, lrand48 ());
 }
 
 void remove_event_timer (struct telegram *instance, struct event_timer *ev) {
-  logprintf ( "REMOVE: %lf %p %p\n", ev->timeout, ev->self, ev->alarm);
+  //  logprintf ( "REMOVE: %lf %p %p\n", ev->timeout, ev->self, ev->alarm);
   instance->timer_tree = tree_delete_timer (instance->timer_tree, ev);
 }
 
@@ -2580,7 +2576,6 @@ void do_send_create_encr_chat (struct telegram *instance, void *x, unsigned char
   }
   out_int (mtp, get_peer_id (E->id));
   out_cstring (mtp, instance->g_a, 256);
-  // TODO: properly...
   write_secret_chat_file (instance, instance->secret_path);
   
   BN_clear_free (g);
@@ -2745,13 +2740,14 @@ int get_difference_on_answer (struct query *q UU) {
     bl_do_set_date (mtp->bl, mtp, fetch_int (mtp));
     bl_do_set_seq (mtp->bl, mtp, fetch_int (mtp));
     instance->unread_messages = fetch_int (mtp);
+    logprintf ("UNREAD MESSAGES: %d\n", ml_pos);
     //write_state_file ();
     for (i = 0; i < ml_pos; i++) {
       event_update_new_message (instance, instance->ML[i]);
       ////print_message (ML[i]);
     }
     if (x == CODE_updates_difference_slice) {
-      do_get_difference (instance);
+      do_get_difference (instance, 0);
     } else {
       //difference_got = 1;
     }
@@ -2770,7 +2766,8 @@ struct query_methods get_difference_methods = {
   .on_answer = get_difference_on_answer
 };
 
-void do_get_difference (struct telegram *instance) {
+void do_get_difference (struct telegram *instance, int sync_from_start) {
+  logprintf ("do_get_difference()\n");
   struct mtproto_connection *mtp = instance->connection;
   struct dc *DC_working = telegram_get_working_dc(instance);
 
@@ -2778,13 +2775,12 @@ void do_get_difference (struct telegram *instance) {
   //difference_got = 0;
   clear_packet (mtp);
   do_insert_header (mtp);
+  logprintf("do_get_difference(pts:%d, last_date:%d, qts: %d)\n", instance->proto.pts, instance->proto.last_date, instance->proto.qts);
   if (instance->proto.seq > 0 || sync_from_start) {
     if (instance->proto.pts == 0) { instance->proto.pts = 1; }
     if (instance->proto.qts == 0) { instance->proto.qts = 1; }
     if (instance->proto.last_date == 0) { instance->proto.last_date = 1; }
     
-    logprintf("do_get_difference(pts:%d, last_date:%d, qts: %d)\n", 
-        instance->proto.pts, instance->proto.last_date, instance->proto.qts);
     out_int (mtp, CODE_updates_get_difference);
     out_int (mtp, instance->proto.pts);
     out_int (mtp, instance->proto.last_date);

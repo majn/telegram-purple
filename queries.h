@@ -112,7 +112,7 @@ void do_export_auth (struct telegram *instance, int num);
 void do_add_contact (struct telegram *instance, const char *phone, int phone_len, const char *first_name, int first_name_len, const char *last_name, int last_name_len, int force);
 void do_msg_search (struct telegram *instance, peer_id_t id, int from, int to, int limit, const char *s);
 void do_accept_encr_chat_request (struct telegram *instance, struct secret_chat *E);
-void do_get_difference (struct telegram*);
+void do_get_difference (struct telegram*, int sync_from_start);
 void do_mark_read (struct telegram *instance, peer_id_t id);
 void do_visualize_key (struct binlog *bl, peer_id_t id);
 void do_create_keys_end (struct telegram *, struct secret_chat *U);

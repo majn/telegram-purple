@@ -317,7 +317,7 @@ void telegram_store_session(struct telegram *instance)
     assure_file_exists(instance->config_path, "secret");
     write_auth_file(&instance->auth, instance->auth_path);
     write_state_file(&instance->proto, instance->state_path);
-    write_secret_chat_file(instance, instance->state_path);
+    write_secret_chat_file(instance, instance->secret_path);
 }
 
 void on_authorized(struct mtproto_connection *c, void* data);
