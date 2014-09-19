@@ -103,11 +103,20 @@ static PurpleConversation *chat_show (PurpleConnection *gc, int id)
             serv_got_joined_chat(gc, id, chat_id_get_comp_val(gc, id, "subject"));
         }
     } else {
-        // join chat first
-        logprintf ("joining chat first...\n");
         telegram_conn *conn = purple_connection_get_protocol_data(gc);
-        do_get_chat_info (conn->tg, MK_CHAT(id));
-        telegram_flush (conn->tg);
+        gchar *name = g_strdup_printf ("%d", id);
+        if (g_hash_table_contains (conn->joining_chats, name)) {
+            // already joining this chat
+            g_free(name);
+        } else {
+            // mark chat as already joining
+            g_hash_table_insert(conn->joining_chats, name, 0);
+
+            // join chat first
+            logprintf ("joining chat first...\n");
+            do_get_chat_info (conn->tg, MK_CHAT(id));
+            telegram_flush (conn->tg);
+        }
     }
     return convo;
 }
@@ -438,7 +447,11 @@ static void tgprpl_login(PurpleAccount * acct)
     conn->tg = tg;
     conn->gc = gc;
     conn->pa = acct;
+    conn->new_messages = g_queue_new();
+
+    conn->joining_chats = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
     purple_connection_set_protocol_data(gc, conn);
+
     tg->extra = conn;
     purple_connection_set_state (conn->gc, PURPLE_CONNECTING);
     telegram_connect (tg);
@@ -455,14 +468,34 @@ static void tgprpl_close(PurpleConnection * gc)
     telegram_destroy(conn->tg);
 }
 
+static void chat_add_message(struct telegram *tg, struct message *M) 
+{
+      telegram_conn *conn = tg->extra;
+      
+      if (chat_show (conn->gc, M->to_id.id)) {
+          // chat initialies, add message now
+          if (M->from_id.id == tg->our_id) {
+              serv_got_chat_in(conn->gc, get_peer_id(M->to_id), "You", 
+                PURPLE_MESSAGE_RECV, M->message, time((time_t *) &M->date));
+          } else {
+              peer_t *fromPeer = user_chat_get (tg->bl, M->from_id);
+              char *alias = malloc(BUDDYNAME_MAX_LENGTH);
+              user_get_alias(fromPeer, alias, BUDDYNAME_MAX_LENGTH);
+              serv_got_chat_in(conn->gc, get_peer_id(M->to_id), alias, 
+                PURPLE_MESSAGE_RECV, M->message, time((time_t *) &M->date));
+              g_free(alias);
+          }
+      } else {
+          // add message once the chat was initialised
+          g_queue_push_tail (conn->new_messages, M);
+      }
+}
+
 void message_allocated_handler(struct telegram *tg, struct message *M)
 {
     logprintf ("message_allocated_handler\n");
     telegram_conn *conn = tg->extra;
     PurpleConnection *gc = conn->gc;
-
-    // TODO: this should probably be freed again somwhere
-    int id = get_peer_id(M->from_id);
 
     if (M->service) {
        // TODO: handle service messages properly, currently adding them 
@@ -471,23 +504,14 @@ void message_allocated_handler(struct telegram *tg, struct message *M)
        return;
     }
 
-    //
+    int id = get_peer_id(M->from_id);
     peer_id_t to_id = M->to_id;
     char *from = g_strdup_printf("%d", id);
     char *to = g_strdup_printf("%d", to_id.id);
     switch (to_id.type) {
         case PEER_CHAT:
             logprintf ("PEER_CHAT\n");
-            chat_show (gc, to_id.id);
-            if (M->from_id.id == tg->our_id) {
-                serv_got_chat_in(gc, get_peer_id(M->to_id), "You", PURPLE_MESSAGE_RECV, M->message, time((time_t *) &M->date));
-            } else {
-                peer_t *fromPeer = user_chat_get (tg->bl, M->from_id);
-                char *alias = malloc(BUDDYNAME_MAX_LENGTH);
-                user_get_alias(fromPeer, alias, BUDDYNAME_MAX_LENGTH);
-                serv_got_chat_in(gc, get_peer_id(M->to_id), alias, PURPLE_MESSAGE_RECV, M->message, time((time_t *) &M->date));
-                g_free(alias);
-            }
+            chat_add_message(tg, M);
         break;
 
         case PEER_USER:
@@ -973,7 +997,17 @@ void on_chat_joined (struct telegram *instance, peer_id_t chatid)
             0
         );
     }
+    struct message *M = 0;
+    logprintf ("g_queue_pop_head()\n");
+    while (M = g_queue_pop_head (conn->new_messages)) {
+        logprintf ("adding msg-id\n");
+        int id = get_peer_id(M->from_id);
+        chat_add_message(instance, M);
+    }
 
+    gchar *name = g_strdup_printf ("%d", chatid.id);
+    g_hash_table_remove (conn->joining_chats, name);
+    g_free (name);
 }
 
 /**
@@ -984,11 +1018,7 @@ void on_chat_joined (struct telegram *instance, peer_id_t chatid)
  *                is received.
  * @param who     The name of the user to send the invation to.
  */
-static void tgprpl_chat_invite(PurpleConnection * gc, int id, const char *message, const char *name)
-{
-    purple_debug_info(PLUGIN_ID, "tgprpl_chat_invite()\n");
-}
-
+static void tgprpl_chat_invite(PurpleConnection * gc, int id, const char *message, const char *name) { purple_debug_info(PLUGIN_ID, "tgprpl_chat_invite()\n"); } 
 /**
  * Returns a chat name based on the information in components. Use
  * #chat_info_defaults if you instead need to generate a hashtable

@@ -51,6 +51,16 @@ typedef struct {
      */
     guint timer;
 
+    /**
+     * Queue of all new messages that need to be added to a chat
+     */
+    GQueue *new_messages;
+      
+    /**
+     * Queue of all joined chats
+     */
+    GHashTable *joining_chats;
+
 } telegram_conn;
 
 typedef struct {
