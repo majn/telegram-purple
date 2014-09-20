@@ -325,6 +325,7 @@ gboolean queries_timerfunc (gpointer data) {
    logprintf ("queries_timerfunc()\n");
    telegram_conn *conn = data;
    work_timers (conn->tg);
+   telegram_flush (conn->tg);
 
    if (conn->updated) {
        logprintf ("State updated, storing current session...\n");
