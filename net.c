@@ -95,15 +95,14 @@ void set_dc_ensure_session_cb (void (*dc_ens_sess)(struct dc *DC, void (*on_sess
 
 void start_ping_timer (struct connection *c);
 int ping_alarm (struct connection *c) {
-  if (verbosity > 2) {
-    logprintf ("ping alarm\n");
-  }
   assert (c->state == conn_ready || c->state == conn_connecting);
   if (get_double_time () - c->last_receive_time > 20 * PING_TIMEOUT) {
     logprintf ( "fail connection: reason: ping timeout\n");
     c->state = conn_failed;
     fail_connection (c);
+
   } else if (get_double_time () - c->last_receive_time > 5 * PING_TIMEOUT && c->state == conn_ready) {
+    logprintf ("sending PING...\n");
     int x[3];
     x[0] = CODE_ping;
     *(long long *)(x + 1) = lrand48 () * (1ll << 32) + lrand48 ();

@@ -871,6 +871,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
   switch (op) {
   case CODE_update_new_message:
     {
+      logprintf ("CODE_update_new_message\n");
       struct message *M UU = fetch_alloc_message (self, tg);
       assert (M);
       fetch_pts (self);
@@ -882,6 +883,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
     };
   case CODE_update_message_i_d:
     {
+      logprintf ("CODE_update_message\n");
       int id = fetch_int (self); // id
       int new = fetch_long (self); // random_id
       struct message *M = message_get (bl, new);
@@ -892,6 +894,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
     break;
   case CODE_update_read_messages:
     {
+      logprintf ("CODE_update_read_message\n");
       assert (fetch_int (self) == (int)CODE_vector);
       int n = fetch_int (self);
       int i;
@@ -915,6 +918,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
     break;
   case CODE_update_user_typing:
     {
+      logprintf ("CODE_update_user_typing\n");
       peer_id_t id = MK_USER (fetch_int (self));
       peer_t *U UU = user_chat_get (bl, id);
 	  event_update_user_typing (tg, U);
@@ -1372,6 +1376,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
 }
 
 void work_update_short (struct connection *c, long long msg_id) {
+  logprintf ("work_update_short\n");
   struct mtproto_connection *self = c->mtconnection;
 
   assert (fetch_int (self) == CODE_update_short);
@@ -1380,6 +1385,7 @@ void work_update_short (struct connection *c, long long msg_id) {
 }
 
 void work_updates (struct connection *c, long long msg_id) {
+  logprintf ("work_updates(\n)");
   struct mtproto_connection *self = c->mtconnection;
 
   assert (fetch_int (c->mtconnection) == CODE_updates);
@@ -1404,6 +1410,7 @@ void work_updates (struct connection *c, long long msg_id) {
 }
 
 void work_update_short_message (struct connection *c UU, long long msg_id UU) {
+  logprintf ("work_update_short_message(\n)");
   struct mtproto_connection *self = c->mtconnection;
 
   assert (fetch_int (c->mtconnection) == (int)CODE_update_short_message);
@@ -1418,6 +1425,7 @@ void work_update_short_message (struct connection *c UU, long long msg_id UU) {
 }
 
 void work_update_short_chat_message (struct connection *c, long long msg_id UU) {
+  logprintf ("work_update_chat_message(\n)");
   struct mtproto_connection *self = c->mtconnection;
 
   assert (fetch_int (self) == CODE_update_short_chat_message);
@@ -1489,6 +1497,7 @@ void work_rpc_result (struct connection *c UU, long long msg_id UU) {
 
 #define MAX_PACKED_SIZE (1 << 24)
 void work_packed (struct connection *c, long long msg_id) {
+  logprintf ("work_packet()\n");
   assert (fetch_int (c->mtconnection) == CODE_gzip_packed);
   static int in_gzip;
   static int buf[MAX_PACKED_SIZE >> 2];
@@ -1515,6 +1524,7 @@ void work_packed (struct connection *c, long long msg_id) {
 }
 
 void work_bad_server_salt (struct connection *c UU, long long msg_id UU) {
+  logprintf ("work_bad_server_salt()\n");
   assert (fetch_int (c->mtconnection) == (int)CODE_bad_server_salt);
   long long id = fetch_long (c->mtconnection);
   query_restart (c->instance, id);
@@ -1525,12 +1535,14 @@ void work_bad_server_salt (struct connection *c UU, long long msg_id UU) {
 }
 
 void work_pong (struct connection *c UU, long long msg_id UU) {
+  logprintf ("work_pong()\n");
   assert (fetch_int (c->mtconnection) == CODE_pong);
   fetch_long (c->mtconnection); // msg_id
   fetch_long (c->mtconnection); // ping_id
 }
 
 void work_detailed_info (struct connection *c UU, long long msg_id UU) {
+  logprintf ("work_detailed_info()\n");
   assert (fetch_int (c->mtconnection) == CODE_msg_detailed_info);
   fetch_long (c->mtconnection); // msg_id
   fetch_long (c->mtconnection); // answer_msg_id
@@ -1539,6 +1551,7 @@ void work_detailed_info (struct connection *c UU, long long msg_id UU) {
 }
 
 void work_new_detailed_info (struct connection *c UU, long long msg_id UU) {
+  logprintf ("work_new_detailed_info()\n");
   assert (fetch_int (c->mtconnection) == (int)CODE_msg_new_detailed_info);
   fetch_long (c->mtconnection); // answer_msg_id
   fetch_int (c->mtconnection); // bytes
