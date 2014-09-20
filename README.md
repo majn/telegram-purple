@@ -7,23 +7,36 @@ This plugin is based on the great [Telegram-cli](http://github.com/vysheng/tg), 
 
 # Features
 
+Our long-term plan is to implement all major features of the Telegram protocol, but at the moment only a subset of the chat features is working.
+
 ## Already Implemented
 
     - Group chats
-    - Multiple accounts at once
-    - Support for libpurple proxy settings
+    - Multiple accounts
+    - Complies with proxy settings
 
 ## Planned
 
-We are trying to create a full-featured protocol plugin for Telegram, that can make use of all major features of 
-the Messenger. The following features are currently under active development (or planned) and will probably be 
-added in the future:
+The following features are currently planned and will probably be added in the future:
 
-    - encrypted chats
-    - picture, audio and video messages
-    - file transfers
-    - geo-locations
-    - emojis 
+    - Encrypted chats
+    - Picture, audio and video messages
+    - File transfers
+    - Geo-locations
+    - Emojie
+    - Adium Plugin
+
+## Platform Support
+
+Currently we can only provide an installation guide for Linux, even though it should be possible to compile this plugin on all platforms. If someone manages to create a working Windows or OSX build, please let us know.
+
+
+# A Word of Warning
+
+This is a very early (pre-alpha) version for development and testing and NOT for productive use. 
+Even though it already provides basic features, you should still expect bugs and crashes when running it.
+
+When encountering a crash or some other bugs, please report it to us, preferably together with a backtrace [https://developer.pidgin.im/wiki/GetABacktrace]
 
 
 # Installation Instructions
@@ -74,12 +87,4 @@ The username is your current phone number, including your full country prefix in
 ![Provide a phone number](http://lauschgift.org/telegram-purple/res/install-2.png)
  
 Now you should be able to see all your contacts and chats in your buddy list and send/receive messages.
-
-
-# A Word of Warning
-
-This is a very early (pre-alpha) version of the plugin, mainly used for development and testing and NOT for productive use. 
-Even though it already provides basic features, you should stil expect bugs and crashes when running it.
-
-When encountering a crash, please report it to us, preferably together with a backtrace [https://developer.pidgin.im/wiki/GetABacktrace]
 
