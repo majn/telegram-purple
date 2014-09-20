@@ -322,6 +322,7 @@ struct dc *telegram_get_working_dc(struct telegram *instance)
 void telegram_restore_session(struct telegram *instance)
 {
     g_mkdir_with_parents(instance->config_path, 0700);
+    g_mkdir_with_parents(instance->download_path, 0700);
     instance->auth = read_auth_file(instance->auth_path);
     instance->proto = read_state_file(instance->state_path);
     read_secret_chat_file (instance, instance->secret_path);
