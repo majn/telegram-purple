@@ -28,7 +28,6 @@ struct document;
 struct secret_chat;
 struct tree_query;
 struct tree_timer;
-
 #define QUERY_ACK_RECEIVED 1
 
 struct query;
@@ -36,6 +35,28 @@ struct query_methods {
   int (*on_answer)(struct query *q);
   int (*on_error)(struct query *q, int error_code, int len, char *error);
   int (*on_timeout)(struct query *q);
+};
+
+struct download_desc{
+    void *data;
+    int type;
+};
+
+struct download {
+  int offset;
+  int size;
+  long long volume;
+  long long secret;
+  long long access_hash;
+  int local_id;
+  int dc;
+  void *extra;
+  int fd;
+  char *name;
+  long long id;
+  unsigned char *iv;
+  unsigned char *key;
+  int type;
 };
 
 struct event_timer {
@@ -86,10 +107,10 @@ void do_get_dialog_list_ex (struct telegram*);
 void do_send_photo (struct telegram *instance, int type, peer_id_t to_id, char *file_name);
 void do_get_chat_info (struct telegram *instance, peer_id_t id);
 void do_get_user_list_info_silent (struct telegram *instance, int num, int *list);
-void do_get_user_info (struct telegram *instance, peer_id_t id);
+void do_get_user_info (struct telegram *instance, peer_id_t id, int showInfo);
 void do_forward_message (struct telegram *instance, peer_id_t id, int n);
 void do_rename_chat (struct telegram *instance, peer_id_t id, char *name);
-void do_load_encr_video (struct telegram *instance, struct encr_video *V, int next);
+void do_load_encr_video (struct telegram *instance, struct encr_video *V, void *extra);
 void do_create_encr_chat_request (struct telegram *instance, int user_id);
 void do_create_secret_chat (struct telegram *instance, peer_id_t id);
 void do_create_group_chat (struct telegram *instance, peer_id_t id, char *chat_topic);
@@ -97,12 +118,12 @@ void do_get_suggested (struct telegram*);
 
 struct photo;
 struct video;
-void do_load_photo (struct telegram *instance, struct photo *photo, int next);
-void do_load_video_thumb (struct telegram *instance, struct video *video, int next);
-void do_load_audio (struct telegram *instance, struct video *V, int next);
-void do_load_video (struct telegram *instance, struct video *V, int next);
-void do_load_document (struct telegram *instance, struct document *V, int next);
-void do_load_document_thumb (struct telegram *instance, struct document *video, int next);
+void do_load_photo (struct telegram *instance, struct photo *photo, int photoBig, void *extra);
+void do_load_video_thumb (struct telegram *instance, struct video *video, void *extra);
+void do_load_audio (struct telegram *instance, struct video *V, void *extra);
+void do_load_video (struct telegram *instance, struct video *V, void *extra);
+void do_load_document (struct telegram *instance, struct document *V, void *extra);
+void do_load_document_thumb (struct telegram *instance, struct document *video, void *extra);
 void do_help_get_config (struct telegram *instance);
 void do_auth_check_phone (struct telegram *instance, const char *user);
 void do_get_nearest_dc (struct telegram*);

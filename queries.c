@@ -1782,7 +1782,8 @@ int user_info_on_answer (struct query *q UU) {
   struct mtproto_connection *mtp = query_get_mtproto(q);
 
   // TODO: Use user info
-  struct user *U UU = fetch_alloc_user_full (mtp);
+  struct user *U = fetch_alloc_user_full (mtp);
+  event_user_info_received_handler(mtp->instance, U, (int)q->extra);
   //print_user_info (U);
   return 0;
 }
@@ -1791,18 +1792,10 @@ struct query_methods user_info_methods = {
   .on_answer = user_info_on_answer
 };
 
-void do_get_user_info (struct telegram *instance, peer_id_t id) {
+void do_get_user_info (struct telegram *instance, peer_id_t id, int showInfo) {
+  logprintf ("do_get_user_info\n");
   struct dc *DC_working = telegram_get_working_dc(instance);
   struct mtproto_connection *mtp = instance->connection;
-  if (offline_mode) {
-    peer_t *C = user_chat_get (mtp->bl, id);
-    if (!C) {
-      logprintf ("No such user\n");
-    } else {
-      //print_user_info (&C->user);
-    }
-    return;
-  }
   clear_packet (mtp);
   out_int (mtp, CODE_users_get_full_user);
   assert (get_peer_type (id) == PEER_USER);
@@ -1815,7 +1808,8 @@ void do_get_user_info (struct telegram *instance, peer_id_t id) {
     out_int (mtp, CODE_input_user_contact);
     out_int (mtp, get_peer_id (id));
   }
-  send_query (instance, DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &user_info_methods, 0);
+  send_query (instance, DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &user_info_methods, (void*)showInfo);
+  logprintf ("do_get_user_info ready\n");
 }
 /* }}} */
 
@@ -1852,44 +1846,14 @@ void do_get_user_list_info_silent (struct telegram *instance, int num, int *list
 }
 /* }}} */
 
-/* {{{ Load photo/video */
-struct download {
-  int offset;
-  int size;
-  long long volume;
-  long long secret;
-  long long access_hash;
-  int local_id;
-  int dc;
-  int next;
-  int fd;
-  char *name;
-  long long id;
-  unsigned char *iv;
-  unsigned char *key;
-  int type;
-};
-
 
 void end_load (struct telegram *instance, struct download *D) {
   instance->cur_downloading_bytes -= D->size;
   instance->cur_downloaded_bytes -= D->size;
   //update_prompt ();
   close (D->fd);
-  if (D->next == 1) {
-    logprintf ("Done: %s\n", D->name);
-  } else if (D->next == 2) {
-    static char buf[PATH_MAX];
-    if (tsnprintf (buf, sizeof (buf), OPEN_BIN, D->name) >= (int) sizeof (buf)) {
-      logprintf ("Open image command buffer overflow\n");
-    } else {
-      int x = system (buf);
-      if (x < 0) {
-        logprintf ("Can not open image viewer: %m\n");
-        logprintf ("Image is at %s\n", D->name);
-      }
-    }
-  }
+  logprintf ("Done: %s\n", D->name);
+  event_download_finished_handler(instance, D);
   if (D->iv) {
     tfree_secure (D->iv, 32);
   }
@@ -1955,6 +1919,7 @@ void load_next_part (struct telegram *instance, struct download *D) {
   if (!D->offset) {
     static char buf[PATH_MAX];
     int l;
+  
     if (!D->id) {
       l = tsnprintf (buf, sizeof (buf), "%s/download_%lld_%d", instance->download_path, D->volume, D->local_id);
     } else {
@@ -1980,6 +1945,11 @@ void load_next_part (struct telegram *instance, struct download *D) {
     instance->cur_downloading_bytes += D->size;
     instance->cur_downloaded_bytes += D->offset;
     //update_prompt ();
+  }
+  if(instance->auth.dc_working_num != D->dc)
+  {
+    logprintf ("Unsupported DC! Cancel query! \n");
+    return;
   }
   clear_packet (mtp);
   out_int (mtp, CODE_upload_get_file);
@@ -2008,14 +1978,12 @@ void load_next_part (struct telegram *instance, struct download *D) {
   //send_query (instance, DC_working, packet_ptr - packet_buffer, packet_buffer, &download_methods, D);
 }
 
-void do_load_photo_size (struct telegram *instance, struct photo_size *P, int next) {
+void do_load_photo_size (struct telegram *instance, struct photo_size *P, void *extra) {
   if (!P->loc.dc) {
     logprintf ("Bad video thumb\n");
     return;
   }
-  
   assert (P);
-  assert (next);
   struct download *D = talloc0 (sizeof (*D));
   D->id = 0;
   D->offset = 0;
@@ -2024,92 +1992,96 @@ void do_load_photo_size (struct telegram *instance, struct photo_size *P, int ne
   D->dc = P->loc.dc;
   D->local_id = P->loc.local_id;
   D->secret = P->loc.secret;
-  D->next = next;
+  D->extra = extra;
   D->name = 0;
   D->fd = -1;
   load_next_part (instance, D);
 }
 
-void do_load_photo (struct telegram *instance, struct photo *photo, int next) {
+void do_load_photo (struct telegram *instance, struct photo *photo, int photoBig, void *extra) {
   if (!photo->sizes_num) { return; }
-  int max = -1;
-  int maxi = 0;
+  int size = -1;
+  int sizei = 0;
   int i;
   for (i = 0; i < photo->sizes_num; i++) {
-    if (photo->sizes[i].w + photo->sizes[i].h > max) {
-      max = photo->sizes[i].w + photo->sizes[i].h;
-      maxi = i;
+    if(photoBig == 0)
+    {
+        if (photo->sizes[i].w + photo->sizes[i].h < size) {
+          size = photo->sizes[i].w + photo->sizes[i].h;
+          sizei = i;
+        }
+    }else{
+        if (photo->sizes[i].w + photo->sizes[i].h > size) {
+          size = photo->sizes[i].w + photo->sizes[i].h;
+          sizei = i;
+        }
     }
   }
-  do_load_photo_size (instance, &photo->sizes[maxi], next);
+  do_load_photo_size (instance, &photo->sizes[sizei], extra);
 }
 
-void do_load_video_thumb (struct telegram *instance, struct video *video, int next) {
-  do_load_photo_size (instance, &video->thumb, next);
+void do_load_video_thumb (struct telegram *instance, struct video *video, void *extra) {
+  do_load_photo_size (instance, &video->thumb, extra);
 }
 
-void do_load_document_thumb (struct telegram *instance, struct document *video, int next) {
-  do_load_photo_size (instance, &video->thumb, next);
+void do_load_document_thumb (struct telegram *instance, struct document *video, void *extra) {
+  do_load_photo_size (instance, &video->thumb, extra);
 }
 
-void do_load_video (struct telegram *instance, struct video *V, int next) {
+void do_load_video (struct telegram *instance, struct video *V, void *extra) {
   assert (V);
-  assert (next);
   struct download *D = talloc0 (sizeof (*D));
   D->offset = 0;
   D->size = V->size;
   D->id = V->id;
   D->access_hash = V->access_hash;
   D->dc = V->dc_id;
-  D->next = next;
+  D->extra = extra;
   D->name = 0;
   D->fd = -1;
   D->type = CODE_input_video_file_location;
   load_next_part (instance, D);
 }
 
-void do_load_audio (struct telegram *instance, struct video *V, int next) {
+void do_load_audio (struct telegram *instance, struct video *V, void *extra) {
   assert (V);
-  assert (next);
   struct download *D = talloc0 (sizeof (*D));
   D->offset = 0;
   D->size = V->size;
   D->id = V->id;
   D->access_hash = V->access_hash;
   D->dc = V->dc_id;
-  D->next = next;
+  D->extra = extra;
   D->name = 0;
   D->fd = -1;
   D->type = CODE_input_audio_file_location;
   load_next_part (instance, D);
 }
 
-void do_load_document (struct telegram *instance, struct document *V, int next) {
+void do_load_document (struct telegram *instance, struct document *V, void *extra) {
   assert (V);
-  assert (next);
   struct download *D = talloc0 (sizeof (*D));
   D->offset = 0;
   D->size = V->size;
   D->id = V->id;
   D->access_hash = V->access_hash;
   D->dc = V->dc_id;
-  D->next = next;
+  D->extra = extra;
   D->name = 0;
   D->fd = -1;
   D->type = CODE_input_document_file_location;
   load_next_part (instance, D);
 }
 
-void do_load_encr_video (struct telegram *instance, struct encr_video *V, int next) {
+void do_load_encr_video (struct telegram *instance, struct encr_video *V, void *extra) {
   assert (V);
-  assert (next);
   struct download *D = talloc0 (sizeof (*D));
   D->offset = 0;
   D->size = V->size;
   D->id = V->id;
   D->access_hash = V->access_hash;
   D->dc = V->dc_id;
-  D->next = next;
+  D->extra = extra;
   D->name = 0;
   D->fd = -1;
   D->key = V->key;

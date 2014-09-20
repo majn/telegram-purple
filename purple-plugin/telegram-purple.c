@@ -73,6 +73,8 @@ void tg_cli_log_cb(const char* format, va_list ap)
 
 void message_allocated_handler (struct telegram *instance, struct message *M);
 void peer_allocated_handler (struct telegram *instance, void *user);
+void user_info_received_handler (struct telegram *instance, struct user *user, int showInfo);
+void download_finished_handler (struct telegram *instance, struct download *D);
 void telegram_on_phone_registration (struct telegram *instance);
 void telegram_on_client_registration (struct telegram *instance);
 void on_new_user_status(struct telegram *instance, void *user);
@@ -421,6 +423,8 @@ struct telegram_config tgconf = {
 
     message_allocated_handler,
     peer_allocated_handler,
+    user_info_received_handler,
+    download_finished_handler,
     on_new_user_status,
     on_user_typing,
     on_chat_joined
@@ -624,6 +628,7 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
                 purple_debug_info(PLUGIN_ID, "Alias %s\n", actual);
                 buddy = purple_buddy_new(pa, name, actual);
                 purple_blist_add_buddy(buddy, NULL, tggroup, NULL);
+                do_get_user_info(conn->tg, user->id, 0);
             }
             purple_buddy_set_protocol_data(buddy, (gpointer)&user->id);
             
@@ -632,7 +637,7 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
                 purple_prpl_got_user_status(account, name, "available", "message", "", NULL);
             else
                 purple_prpl_got_user_status(account, name, "unavailable", "message", "", NULL);
-        
+            
             g_free(alias);
             g_free(name);
         }
@@ -687,6 +692,64 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
     }
 }
 
+PurpleNotifyUserInfo *create_user_notify_info(struct user *usr)
+{
+    PurpleNotifyUserInfo *info = purple_notify_user_info_new();
+    purple_notify_user_info_add_pair(info, "First name", usr->first_name);
+    purple_notify_user_info_add_pair(info, "Last name", usr->last_name);
+    purple_notify_user_info_add_pair(info, "Phone", usr->phone);
+    purple_notify_user_info_add_pair(info, "Status", usr->status.online == 1 ? "Online" : "Offline");
+    return info;
+}
+
+void user_info_received_handler(struct telegram *tg, struct user *usr, int show_info)
+{
+    logprintf("Get user info. \n %d", show_info);
+    char *who = g_strdup_printf("%d", usr->id.id);
+    if(usr->photo.sizes_num == 0)
+    {
+        telegram_conn *conn = tg->extra;
+        PurpleNotifyUserInfo *info = create_user_notify_info(usr);
+        purple_notify_userinfo(conn->gc, who, info, NULL, NULL);
+    }else{
+        struct download_desc *dld = talloc(sizeof(struct download_desc));
+        dld->data = usr;
+        dld->type = show_info == 1 ? 1 : 2;
+        do_load_photo(tg, &usr->photo, 0, dld);
+    }
+    g_free(who);
+}
+
+
+void download_finished_handler(struct telegram *tg, struct download *D)
+{
+    logprintf("download_finished_handler %s type %d\n", D->name, D->type);
+    //TODO: We need a type for user-photos!
+    if(D->type == 0)
+    {
+        struct download_desc *dl_desc = D->extra;
+        struct user *usr = dl_desc->data;
+        gchar *data = NULL;
+        size_t len;
+        GError *err = NULL;
+        g_file_get_contents(D->name, &data, &len, &err);
+        int imgStoreId = purple_imgstore_add_with_id(g_memdup(data, len), len, NULL);
+        logprintf("Imagestore id: %d\n", imgStoreId);
+        //Create user info
+        char *who = g_strdup_printf("%d", usr->id.id);
+        telegram_conn *conn = tg->extra;
+        if(dl_desc->type == 1)
+        {
+            PurpleNotifyUserInfo *info = create_user_notify_info(usr);
+            char *profile_image = profile_image = g_strdup_printf("<br><img id=\"%u\">", imgStoreId);
+            purple_notify_user_info_add_pair(info, "Profile image", profile_image);
+            purple_notify_userinfo(conn->gc, who, info, NULL, NULL);
+            g_free(profile_image);
+        }
+        purple_buddy_icons_set_for_user(conn->pa, who, g_memdup(data, len), len, NULL);
+        g_free(who);
+    }
+}
 /**
  * This PRPL function should return a positive value on success.
  * If the message is too big to be sent, return -E2BIG.  If
@@ -877,7 +940,14 @@ static void tgprpl_set_status(PurpleAccount * acct, PurpleStatus * status)
  */
 static void tgprpl_get_info(PurpleConnection * gc, const char *username)
 {
+    
     purple_debug_info(PLUGIN_ID, "tgprpl_get_info()\n");
+    telegram_conn *conn = purple_connection_get_protocol_data(gc);
+    peer_id_t u = MK_USER(atoi(username));
+    do_get_user_info(conn->tg, u, 1);
+    purple_debug_info(PLUGIN_ID, "tgprpl_get_info ready()\n");
+                //fetch_alloc_user_full(tg->connection);
+            //fetch_user_full(tg->connection, user);
 
 }
 

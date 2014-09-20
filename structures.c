@@ -426,7 +426,7 @@ void fetch_user_full (struct mtproto_connection *mtp, struct user *U) {
   fetch_alloc_user (mtp);
 
   int *start = mtp->in_ptr;
-  fetch_skip_photo (mtp);
+  fetch_photo (mtp, &U->photo);
   bl_do_set_user_full_photo (mtp->bl, mtp, U, start, 4 * (mtp->in_ptr - start));
 
   fetch_notify_settings (mtp);
@@ -602,6 +602,7 @@ void fetch_photo_size (struct mtproto_connection *mtp, struct photo_size *S) {
   unsigned x = fetch_int (mtp);
   assert (x == CODE_photo_size || x == CODE_photo_cached_size || x == CODE_photo_size_empty);
   S->type = fetch_str_dup (mtp);
+  logprintf("s->type %s\n", S->type);
   if (x != CODE_photo_size_empty) {
     fetch_file_location (mtp, &S->loc);
     S->w = fetch_int (mtp);
@@ -667,6 +668,7 @@ void fetch_photo (struct mtproto_connection *mtp, struct photo *P) {
   fetch_geo (mtp, &P->geo);
   assert (fetch_int (mtp) == CODE_vector);
   P->sizes_num = fetch_int (mtp);
+  logprintf("sizes_num %d \n", P->sizes_num);
   P->sizes = talloc (sizeof (struct photo_size) * P->sizes_num);
   int i;
   for (i = 0; i < P->sizes_num; i++) {

@@ -96,7 +96,7 @@ struct binlog {
 };
 
 struct telegram;
-
+struct download;
 /**
  * Contains all options and pointer to callback functions required by telegram
  */
@@ -163,6 +163,18 @@ struct telegram_config {
      */
     void (*on_peer_allocated_handler) (struct telegram *instance, void *peer);
 
+    /**
+     * A callback function that is called when a peer user info was received. This is useful
+     * for populating the GUI with new user photos.
+     */
+    void (*on_user_info_received_handler) (struct telegram *instance, struct user *peer, int showInfo);
+    
+    /**
+     * A callback function that is called when a download is completed. This is useful
+     * for populating the GUI with new user photos.
+     */
+    void (*on_download_finished_handler) (struct telegram *instance, struct download *D);
+    
     /**
      * A callback function that is called when a user's status has changed
      */ 
@@ -371,6 +383,16 @@ void event_update_user_typing(struct telegram *instance, void *peer);
  * Load known users and chats on connect
  */
 void event_peer_allocated(struct telegram *instance, void *peer);
+
+/*
+ * Load known users and chats on connect
+ */
+void event_user_info_received_handler(struct telegram *instance, struct user *peer, int showInfo);
+
+/*
+ * Load known users and chats on connect
+ */
+void event_download_finished_handler(struct telegram *instance, struct download *D);
 
 /**
  * Set a function to use as a handle to read from a network resource
