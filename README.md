@@ -30,13 +30,13 @@ added in the future:
 
 Unfortunately there are currently no packages, so you need to compile it yourself:
 
-1. Get this repository either from Bitbucket or from the Github mirror.
+## Get this repository either from Bitbucket or from the Github mirror.
 
         git clone https://bitbucket.org/telegrampurple/telegram-purple
 
 
 
-2. Fetch all needed dependencies
+## Fetch all needed dependencies
 
 This plugin depends on a working libpurple client and the following packages:
 
@@ -56,7 +56,7 @@ And on Debian/Ubuntu you can use:
         sudo apt-get install libssl-dev libglib2.0-dev libpurple-dev
 
 
-3. Compile and install
+## Compile and install
 
         ./configure
         make
@@ -67,11 +67,11 @@ And on Debian/Ubuntu you can use:
 
 After succesfully completing all steps mentioned in the installation instructions, you should restart Pidgin to ensure that the plugin is loaded. When everything went well, Telegram should show up in the account manager:
 
-![Create a new Telegram account](lauschgift.org/telegram-purple/res/install-1.png)
+![Create a new Telegram account](http://lauschgift.org/telegram-purple/res/install-1.png)
 
 The username is your current phone number, including your full country prefix instead of a leading '0'. For Germany, this would be '+49' for example. Telegram will verify your phone number by sending you a verification code via sms. You will be prompted for this code, once that happens.
 
-![Provide a phone number](lauschgift.org/telegram-purple/res/install-2.png)
+![Provide a phone number](http://lauschgift.org/telegram-purple/res/install-2.png)
  
 Now you should be able to see all your contacts and chats in your buddy list and send/receive messages.
 
