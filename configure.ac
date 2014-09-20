@@ -14,20 +14,9 @@ AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_SEARCH_LIBS([backtrace], [execinfo])
 AC_CHECK_LIB([z], [inflate])
 AC_CHECK_LIB([crypto], [AES_set_encrypt_key])
+AC_CHECK_LIB([glib], [g_main_loop_new])
+AC_CHECK_LIB([purple], [purple_notify_message])
 EXTRA_LIBS=""
-
-AC_CHECK_LIB([readline], [rl_save_prompt], 
-  [
-    AC_DEFINE([READLINE_GNU], [1], [Use gnu libreadline])
-    [ EXTRA_LIBS="${EXTRA_LIBS} -lreadline" ; ]
-  ],
-  [
-    AC_SEARCH_LIBS([tgetnum], [ncursesw ncurses curses])
-    AC_CHECK_LIB([edit], [rl_set_prompt])
-    AC_DEFINE([READLINE_EDIT], [1], [Use libedit])
-    [ EXTRA_LIBS="${EXTRA_LIBS} -ledit" ; ]
-  ]
-)
 
 #check for custom prog name
 AC_ARG_WITH(progname,[--with-progname=<name>],
