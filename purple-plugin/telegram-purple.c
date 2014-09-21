@@ -98,6 +98,8 @@ static const char *chat_id_get_comp_val (PurpleConnection *gc, int id, char *val
 static PurpleConversation *chat_show (PurpleConnection *gc, int id)
 {
     logprintf ("show chat");
+    telegram_conn *conn = purple_connection_get_protocol_data(gc);
+
     PurpleConversation *convo = purple_find_chat(gc, id);
     if (convo) {
         if (purple_conv_chat_has_left(PURPLE_CONV_CHAT(convo)))
@@ -105,20 +107,18 @@ static PurpleConversation *chat_show (PurpleConnection *gc, int id)
             serv_got_joined_chat(gc, id, chat_id_get_comp_val(gc, id, "subject"));
         }
     } else {
-        telegram_conn *conn = purple_connection_get_protocol_data(gc);
         gchar *name = g_strdup_printf ("%d", id);
         if (g_hash_table_contains (conn->joining_chats, name)) {
             // already joining this chat
-            g_free(name);
         } else {
             // mark chat as already joining
             g_hash_table_insert(conn->joining_chats, name, 0);
 
             // join chat first
-            logprintf ("joining chat first...\n");
             do_get_chat_info (conn->tg, MK_CHAT(id));
             telegram_flush (conn->tg);
         }
+        g_free(name);
     }
     return convo;
 }
@@ -706,12 +706,12 @@ void user_info_received_handler(struct telegram *tg, struct user *usr, int show_
 {
     logprintf("Get user info. \n %d", show_info);
     char *who = g_strdup_printf("%d", usr->id.id);
-    if(usr->photo.sizes_num == 0)
+    if (usr->photo.sizes_num == 0 && show_info)
     {
         telegram_conn *conn = tg->extra;
         PurpleNotifyUserInfo *info = create_user_notify_info(usr);
         purple_notify_userinfo(conn->gc, who, info, NULL, NULL);
-    }else{
+    } else {
         struct download_desc *dld = talloc(sizeof(struct download_desc));
         dld->data = usr;
         dld->type = show_info == 1 ? 1 : 2;
