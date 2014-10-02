@@ -1,21 +1,27 @@
-telegram-purple
+Telegram-Purple
 ===============
 
 Telegram-purple is a Libpurple plugin that adds support for the Telegram messenger. Its still in an early (pre-alpha) development stage, but already provides basic chat functionality and group chats.
 
-This plugin is based on the great [Telegram-cli](http://github.com/vysheng/tg), a full-featured terminal-based client for Telegram created by [Vysheng](http://github.com/vysheng).
+This plugin is based on [Telegram-cli](http://github.com/vysheng/tg), a full-featured terminal-based client for Telegram created by [Vysheng](http://github.com/vysheng).
 
-# Features
 
-Our long-term plan is to implement all major features of the Telegram protocol, but at the moment only a subset of the chat features is working.
+# Version 0.2.0
 
-## Already Implemented
+Warning, this version is mainly for development and testing and NOT for productive use.Even though it already provides basic features, you should still expect bugs and crashes when running it.
 
-    - Group chats
-    - Multiple accounts
-    - Complies with proxy settings
+When encountering a crash or some other bugs, please report it to us, preferably together with a backtrace of the crashed application [https://developer.pidgin.im/wiki/GetABacktrace]
 
-## Planned
+## Already Implemented:
+
+    - Chats/Group-Chats
+        * Send/receive messages
+        * Discover buddies/chats
+        * Discover buddy state and info
+    - Profile Pictures
+        * Download and use profile pictures
+
+## TODO:
 
 The following features are currently planned and will probably be added in the future:
 
@@ -23,55 +29,51 @@ The following features are currently planned and will probably be added in the f
     - Picture, audio and video messages
     - File transfers
     - Geo-locations
-    - Emojie
+    - Multiple accounts on one client
+    - Respect libpurple proxy settings (implemented but untested)
     - Adium Plugin
+
 
 ## Platform Support
 
-Currently we can only provide an installation guide for Linux, even though it should be possible to compile this plugin on all platforms. If someone manages to create a working Windows or OSX build, please let us know.
-
-
-# A Word of Warning
-
-This is a very early (pre-alpha) version for development and testing and NOT for productive use. 
-Even though it already provides basic features, you should still expect bugs and crashes when running it.
-
-When encountering a crash or some other bugs, please report it to us, preferably together with a backtrace [https://developer.pidgin.im/wiki/GetABacktrace]
+Currently we can only provide an installation guide for Linux, even though it should be possible to compile this plugin on other platforms. If someone manages to create a working Windows, BSD or OSX build, please let us know.
 
 
 # Installation Instructions
 
 Unfortunately there are currently no packages, so you need to compile it yourself:
 
-## Get this repository either from Bitbucket or from the Github mirror.
+## 1. Get this repository either from Bitbucket or from the Github mirror.
 
         git clone https://bitbucket.org/telegrampurple/telegram-purple
 
+## 2. Fetch all needed dependencies
 
-
-## Fetch all needed dependencies
-
-This plugin depends on a working libpurple client and the following packages:
+This plugin depends on a working libpurple client (like Pidgin or Finch) and the following packages:
 
         - glib-2.0
-        - libcrypto
+        - libssl
         - libpurple
         - libzlib
 
+### Fedora
 
 On Fedora you can install all dependencies with:
 
         sudo yum install gcc openssl-devel glib2-devel libpurple-devel
 
+### Debian
 
-And on Debian/Ubuntu you can use:
+On Debian-based systems you can use:
 
         sudo apt-get install libssl-dev libglib2.0-dev libpurple-dev
 
 
-## Compile and install
+NOTE: Ubuntu is currently not working, since libpurple doesn't seem to find libssl when loading the plugin. It will compile, but will not be loaded by Pidgin. 
 
-        ./configure
+
+## 3. Compile and install
+
         make
         sudo make install
 
