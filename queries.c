@@ -2144,11 +2144,8 @@ struct query_methods export_auth_methods = {
 };
 
 void do_export_auth (struct telegram *instance, int num, void (*cb)(char *export_auth_str, int len, void *extra), void *extra) {
-  logprintf ("do_export_auth(num=%d)\n", num);
-  struct dc *DC_working = telegram_get_working_dc(instance); 
-  struct mtproto_connection *mtp = instance->connection;
-
   instance->export_auth_str = 0;
+  struct mtproto_connection *mtp = instance->connection;
   clear_packet (mtp);
   out_int (mtp, CODE_auth_export_authorization);
   out_int (mtp, num);
@@ -2156,7 +2153,9 @@ void do_export_auth (struct telegram *instance, int num, void (*cb)(char *export
   struct export_info *info = talloc0(sizeof(struct export_info));
   info->cb = cb;
   info->extra = extra;
-  send_query (instance, DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &export_auth_methods, info);
+
+  send_query (instance, telegram_get_working_dc(instance), 
+    mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &export_auth_methods, info);
 }
 /* }}} */
 
@@ -2188,22 +2187,22 @@ struct query_methods import_auth_methods = {
 
 void do_import_auth (struct telegram *instance, int num, void (*cb)(void *extra), void *extra) {
   logprintf ("do_import_auth(num=%d, our_id=%d, export_auth_str=%s)\n", num, instance->our_id, instance->export_auth_str);
-  struct dc *DC_working = instance->auth.DC_list[num]; 
-  assert (DC_working);
-  assert (DC_working->sessions[0]->c);
-  struct mtproto_connection *mtp = DC_working->sessions[0]->c->mtconnection;
-
   struct import_info *info = talloc0(sizeof (struct import_info));
   info->cb = cb;
   info->extra = extra;
 
-  clear_packet (mtp);
-  out_int (mtp, CODE_auth_import_authorization);
-  out_int (mtp, instance->our_id);
-  out_cstring (mtp, instance->export_auth_str, instance->export_auth_str_len);
+  struct dc *target_dc = instance->auth.DC_list[num];
+  assert (target_dc);
+  struct mtproto_connection *dc_conn = target_dc->sessions[0]->c->mtconnection;
+  assert (dc_conn);
 
-  send_query (instance, DC_working, mtp->packet_ptr - mtp->packet_buffer, 
-     mtp->packet_buffer, &import_auth_methods, info);
+  clear_packet (dc_conn);
+  out_int (dc_conn, CODE_auth_import_authorization);
+  out_int (dc_conn, instance->our_id);
+  out_cstring (dc_conn, instance->export_auth_str, instance->export_auth_str_len);
+
+  send_query (instance, target_dc, dc_conn->packet_ptr - dc_conn->packet_buffer, 
+     dc_conn->packet_buffer, &import_auth_methods, info);
 }
 /* }}} */
 
