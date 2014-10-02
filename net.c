@@ -435,9 +435,8 @@ void try_read (struct connection *c) {
     }
     if (r > 0) {
       c->last_receive_time = get_double_time ();
-      // TODO implement ping?
-      //stop_ping_timer (c);
-      //start_ping_timer (c);
+      stop_ping_timer (c);
+      start_ping_timer (c);
     }
     if (r >= 0) {
       c->in_tail->wptr += r;
