@@ -263,10 +263,12 @@ static void init_dc_settings(PurpleAccount *acc, struct dc *DC)
 /**
  * Telegram requests a new connectino to our configured proxy
  */
-void telegram_on_proxy_request(struct telegram *tg, const char *ip, int port)
+void telegram_on_proxy_request(struct telegram *tg, struct proxy_request *req)
 {
     telegram_conn *conn = tg->extra;
-    purple_proxy_connect (conn->gc, conn->pa, ip, port, tgprpl_login_on_connected, tg);
+    req->extra = tg;
+    purple_proxy_connect (conn->gc, conn->pa, req->DC->ip, req->DC->port, 
+        tgprpl_login_on_connected, req);
 }
 
 /**
@@ -391,7 +393,9 @@ void telegram_on_ready (struct telegram *instance)
 void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_message)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_login_on_connected()\n");
-    struct telegram *tg = (struct telegram*)data;
+    struct proxy_request *req = (struct proxy_request*)data;
+    struct telegram *tg = req->tg;
+
     if (fd == -1) {
         logprintf("purple_proxy_connect failed: %s\n", error_message);
         telegram_destroy(tg);
@@ -402,7 +406,7 @@ void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_messa
     conn->fd = fd;
     conn->wh = purple_input_add(fd, PURPLE_INPUT_WRITE, tgprpl_output_cb, conn);
     conn->rh = purple_input_add(fd, PURPLE_INPUT_READ, tgprpl_input_cb, conn);
-    conn->mtp = telegram_add_proxy(tg, fd, conn);
+    conn->mtp = telegram_add_proxy(tg, req, fd, conn);
 }
 
 void telegram_on_disconnected (struct telegram *tg)

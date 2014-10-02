@@ -148,7 +148,7 @@ void dc_create_session (struct dc *DC);
 void insert_msg_id (struct session *S, long long id);
 struct dc *alloc_dc (struct dc* DC_list[], int id, char *ip, int port);
 
-#define GET_DC(c) (telegram_get_working_dc(c->instance))
+#define GET_DC(c) (c->session->dc)
 
 // export read and write methods to redirect network control
 void try_read (struct connection *c);

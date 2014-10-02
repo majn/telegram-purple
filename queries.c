@@ -1781,9 +1781,8 @@ void print_user_info (struct user *U) {
 int user_info_on_answer (struct query *q UU) {
   struct mtproto_connection *mtp = query_get_mtproto(q);
 
-  // TODO: Use user info
   struct user *U = fetch_alloc_user_full (mtp);
-  event_user_info_received_handler(mtp->instance, U, (int)q->extra);
+  event_user_info_received_handler (mtp->instance, U, (int)q->extra);
   //print_user_info (U);
   return 0;
 }
@@ -1854,11 +1853,17 @@ void end_load (struct telegram *instance, struct download *D) {
   close (D->fd);
   logprintf ("Done: %s\n", D->name);
   event_download_finished_handler(instance, D);
+  instance->dl_curr = 0;
+  if (D->dc != telegram_get_working_dc(instance)->id) {
+    logprintf ("%d Not the working dc %d, closing...\n", D->dc, 
+        telegram_get_working_dc(instance)->id);
+  }
   if (D->iv) {
     tfree_secure (D->iv, 32);
   }
   tfree_str (D->name);
   tfree (D, sizeof (*D));
+  telegram_dl_next (instance);
 }
 
 struct download_extra {
@@ -1946,11 +1951,6 @@ void load_next_part (struct telegram *instance, struct download *D) {
     instance->cur_downloaded_bytes += D->offset;
     //update_prompt ();
   }
-  if(instance->auth.dc_working_num != D->dc)
-  {
-    logprintf ("Unsupported DC! Cancel query! \n");
-    return;
-  }
   clear_packet (mtp);
   out_int (mtp, CODE_upload_get_file);
   if (!D->id) {
@@ -1995,7 +1995,9 @@ void do_load_photo_size (struct telegram *instance, struct photo_size *P, void *
   D->extra = extra;
   D->name = 0;
   D->fd = -1;
-  load_next_part (instance, D);
+
+  telegram_dl_add (instance, D);
+  telegram_dl_next (instance);
 }
 
 void do_load_photo (struct telegram *instance, struct photo *photo, int photoBig, void *extra) {
@@ -2004,13 +2006,13 @@ void do_load_photo (struct telegram *instance, struct photo *photo, int photoBig
   int sizei = 0;
   int i;
   for (i = 0; i < photo->sizes_num; i++) {
-    if(photoBig == 0)
+    if (photoBig == 0)
     {
         if (photo->sizes[i].w + photo->sizes[i].h < size) {
           size = photo->sizes[i].w + photo->sizes[i].h;
           sizei = i;
         }
-    }else{
+    } else {
         if (photo->sizes[i].w + photo->sizes[i].h > size) {
           size = photo->sizes[i].w + photo->sizes[i].h;
           sizei = i;
@@ -2100,6 +2102,11 @@ void do_load_encr_video (struct telegram *instance, struct encr_video *V, void *
 
 /* {{{ Export auth */
 
+struct export_info {
+    void *extra;
+    void (*cb)(char *export_auth_str, int len, void *extra);
+};
+
 int export_auth_on_answer (struct query *q UU) {
   struct mtproto_connection *mtp = query_get_mtproto(q);
   struct telegram *instance = mtp->connection->instance;
@@ -2116,6 +2123,10 @@ int export_auth_on_answer (struct query *q UU) {
   memcpy (s, fetch_str (mtp, l), l);
   instance->export_auth_str_len = l;
   instance->export_auth_str = s;
+
+  struct export_info *info = q->extra;
+  info->cb(instance->export_auth_str, instance->export_auth_str_len, info->extra);
+  tfree(info, sizeof(struct export_info));
   return 0;
 }
 
@@ -2124,27 +2135,39 @@ struct query_methods export_auth_methods = {
   .on_error = fail_on_error
 };
 
-void do_export_auth (struct telegram *instance, int num) {
+void do_export_auth (struct telegram *instance, int num, void (*cb)(char *export_auth_str, int len, void *extra), void *extra) {
   struct dc *DC_working = telegram_get_working_dc(instance);
   struct mtproto_connection *mtp = instance->connection;
   instance->export_auth_str = 0;
   clear_packet (mtp);
   out_int (mtp, CODE_auth_export_authorization);
   out_int (mtp, num);
-  send_query (instance, DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &export_auth_methods, 0);
+
+  struct export_info *info = talloc0(sizeof(struct export_info));
+  info->cb = cb;
+  info->extra = extra;
+  send_query (instance, DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &export_auth_methods, info);
 }
 /* }}} */
+
+struct import_info {
+    void *extra;
+    void (*cb)(void* extra);
+};
 
 /* {{{ Import auth */
 int import_auth_on_answer (struct query *q UU) {
   struct mtproto_connection *mtp = query_get_mtproto(q);
   struct telegram *instance = mtp->connection->instance;
+  struct import_info *info = q->extra;
 
   assert (fetch_int (mtp) == (int)CODE_auth_authorization);
   fetch_int (mtp); // expires
   fetch_alloc_user (mtp);
   tfree_str (instance->export_auth_str);
   instance->export_auth_str = 0;
+  info->cb(info->extra);
+  tfree (info, sizeof(struct import_info));
   return 0;
 }
 
@@ -2153,14 +2176,19 @@ struct query_methods import_auth_methods = {
   .on_error = fail_on_error
 };
 
-void do_import_auth (struct telegram *instance, int num) {
+void do_import_auth (struct telegram *instance, int num, void (*cb)(void *extra), void *extra) {
   struct mtproto_connection *mtp = instance->connection;
+  struct import_info *info = talloc0(sizeof (struct import_info));
+  info->cb = cb;
+  info->extra = extra;
 
   clear_packet (mtp);
   out_int (mtp, CODE_auth_import_authorization);
   out_int (mtp, instance->our_id);
   out_cstring (mtp, instance->export_auth_str, instance->export_auth_str_len);
-  send_query (instance, instance->auth.DC_list[num], mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &import_auth_methods, 0);
+
+  send_query (instance, instance->auth.DC_list[num], mtp->packet_ptr - mtp->packet_buffer, 
+     mtp->packet_buffer, &import_auth_methods, info);
 }
 /* }}} */
 

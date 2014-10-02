@@ -1779,8 +1779,8 @@ int tc_becomes_ready (struct connection *c) {
     send_req_pq_packet (c);
     break;
   case st_authorized:
-    auth_work_start (c);
-    telegram_change_state (c->instance, STATE_AUTHORIZED, NULL);
+    c->mtconnection->on_ready(c->mtconnection, c->mtconnection->on_ready_data);
+    //telegram_change_state (c->instance, STATE_AUTHORIZED, NULL);
     break;
   default:
     logprintf ( "c_state = %d\n", c->mtconnection->c_state);
@@ -1853,10 +1853,8 @@ struct mtproto_connection *mtproto_new(struct dc *DC, int fd, struct telegram *t
 void mtproto_connect(struct mtproto_connection *c)
 {
     on_start(c);
-    c->connection->methods->ready(c->connection);
-
-    // Don't ping TODO: Really? Timeout callback functions of libpurple
     start_ping_timer (c->connection);
+    c->connection->methods->ready(c->connection);
 }
 
 /**
@@ -1872,11 +1870,10 @@ void mtproto_close(struct mtproto_connection *mtp) {
     // in case the session is switched and this DC is not reachable anymore
     if (mtp->connection) {
         if (mtp->connection->session && mtp->connection->session->ack_tree) {
-            send_all_acks (mtp->connection->session);
+            struct session *S = mtp->connection->session;
+            send_all_acks (S);
             mtp->instance->config->on_output(mtp->handle);
-
-            // connection no longer usable for session
-            mtp->connection->session->c = 0;
+            S->c = 0;
         }
         stop_ping_timer (mtp->connection);
     }
@@ -1893,6 +1890,20 @@ void mtproto_destroy (struct mtproto_connection *self) {
     tfree(self, sizeof(struct mtproto_connection));
 }
 
+void mtproto_close_foreign (struct telegram *instance) 
+{
+    int i;
+    for (i = 0; i < 100; i++) {
+        struct mtproto_connection * c = instance->Cs[i];
+        if (c && 
+            !c->destroy && 
+            c->connection->session->dc->id != instance->auth.dc_working_num) {
+            logprintf ("closing connection for working_dc=%d, dc=%d\n", 
+               instance->auth.dc_working_num, c->connection->session->dc->id);
+            mtproto_close (c);
+         }
+    }
+}
 
 /**
  * Free all destroyed connections

@@ -116,8 +116,6 @@ void telegram_change_state (struct telegram *instance, int state, void *data)
                 err = "<no description>";
             }
             logprintf("telegram errored: %s\n", err);
-
-            // mark the connection for closing
             mtproto_close (instance->connection);
         }
         break;
@@ -147,7 +145,6 @@ void telegram_change_state (struct telegram *instance, int state, void *data)
             logprintf("phone authenticion, user needs to enter code, first and last name.\n");
             assert (instance->config->on_phone_registration_required);
             instance->config->on_phone_registration_required (instance);
-            // wait for user input ...
             break;
 
         case STATE_CLIENT_NOT_REGISTERED:
@@ -178,8 +175,6 @@ void telegram_change_state (struct telegram *instance, int state, void *data)
             // close old connection and mark it for destruction
             mtproto_close (instance->connection);
             assert (instance->config->proxy_request_cb);
-            // tell the proxy to close all connections
-            //instance->config->proxy_close_cb (instance, instance->connection->connection->fd);
 
             // remove all left over queries and timers
             free_timers (instance);
@@ -343,8 +338,17 @@ void telegram_store_session(struct telegram *instance)
 
 void on_authorized(struct mtproto_connection *c, void* data);
 
+void telegram_main_connected (struct proxy_request *req)
+{
+    struct telegram *instance = req->data;
+    logprintf("Authorized... storing current session %d.\n", 
+        instance->connection->connection->session[0]);
+    telegram_store_session(instance);
+    telegram_change_state(instance, STATE_AUTHORIZED, NULL);
+}
+
 /**
- * Connect to the currently active data center
+ * Connect to the nearest data center
  */
 void telegram_connect (struct telegram *instance)
 {
@@ -354,8 +358,101 @@ void telegram_connect (struct telegram *instance)
        assert(0);
     }
     struct dc *DC_working = telegram_get_working_dc (instance);
+
+    struct proxy_request *req = talloc0(sizeof(struct proxy_request));
+    req->type = REQ_CONNECTION;
+    req->tg = instance;
+    req->data = instance;
+    req->DC = DC_working;
+    req->done = telegram_main_connected; 
+
     assert (instance->config->proxy_request_cb);
-    instance->config->proxy_request_cb (instance, DC_working->ip, DC_working->port);
+    instance->config->proxy_request_cb (instance, req);
+}
+
+void on_auth_imported (void *extra)
+{
+   logprintf ("on_auth_imported()\n");
+   struct download *dl = extra;
+   struct mtproto_connection *c = dl->c;
+   struct telegram *tg = c->instance;
+   bl_do_dc_signed (tg->bl, c, dl->dc);
+   write_auth_file (&tg->auth, tg->auth_path);
+   load_next_part (tg, dl);
+   telegram_flush (tg);
+}
+
+void on_auth_exported (char *export_auth_str UU, int len UU, void *extra)
+{
+   logprintf ("on_auth_exported()\n");
+   struct download *dl = extra;
+   do_import_auth (dl->c->instance, dl->dc, on_auth_imported, extra);
+   telegram_flush (dl->c->instance);
+}
+
+void telegram_dl_connected (struct proxy_request *req)
+{
+   logprintf ("telegram_dl_connected(dc=%d)\n", req->DC->id);
+   struct telegram *tg = req->tg;
+   // TODO: error handling
+
+   struct download *dl = req->data;
+   dl->c = req->conn;
+   struct dc *DC = tg->auth.DC_list[dl->dc];
+   if (!DC->has_auth) {
+      do_export_auth (tg, dl->dc, on_auth_exported, dl);
+      telegram_flush (tg);
+   } else {
+      on_auth_imported (dl);
+   }
+}
+
+
+/**
+ * Create a connection for the given download
+ */
+void telegram_dl_add (struct telegram *instance, struct download *dl)
+{
+    logprintf ("telegram_connect_dl(dc=%d)\n", instance->auth.DC_list[dl->dc]);
+    if (!instance->dl_queue) {
+        instance->dl_queue = g_queue_new ();
+    }
+    g_queue_push_tail(instance->dl_queue, dl);
+}
+
+void telegram_dl_next (struct telegram *instance)
+{
+    assert (instance->dl_queue);
+    assert (instance->config->proxy_request_cb);
+    if (!instance->dl_curr) {
+        struct download *dl = g_queue_pop_head (instance->dl_queue);
+        if (dl) {
+            struct proxy_request *req = talloc0(sizeof(struct proxy_request));
+            req->type = REQ_DOWNLOAD;
+            req->DC = instance->auth.DC_list[dl->dc];
+            req->tg = instance;
+            req->done = telegram_dl_connected;
+            req->data = dl;
+            instance->dl_curr = dl;
+
+            logprintf ("telegrma_dl_start(): starting new download..\n");
+            if (dl->dc == instance->auth.dc_working_num) {
+                logprintf ("is working DC, start download...\n");
+                assert (telegram_get_working_dc(instance)->sessions[0]->c);
+                req->conn = instance->connection;
+                dl->c = req->conn;
+                telegram_dl_connected (req);
+            }  else {
+                logprintf ("is remote DC, requesting connection...\n");
+                instance->config->proxy_request_cb (instance, req);
+            }
+        } else {
+            logprintf ("telegrma_dl_start(): no more downloads, DONE!\n");
+            mtproto_close_foreign (instance);
+        }
+    } else {
+        logprintf ("telegrma_dl_start(): download busy...\n");
+    }
 }
 
 /**
@@ -372,23 +469,28 @@ int telegram_login(struct telegram *instance)
     return 0;
 }
 
-void on_authorized(struct mtproto_connection *c, void *data)
+void on_authorized(struct mtproto_connection *c UU, void *data)
 {
-    struct telegram *instance = data;
-    logprintf("Authorized... storing current session %d.\n", c->connection->session[0]);
-    telegram_store_session(instance);
-    telegram_change_state(instance, STATE_AUTHORIZED, NULL);
+    logprintf ("on_authorized()...\n");
+    struct proxy_request *req = data;
+    assert (req->done);
+    req->done (req);
+    tfree (req, sizeof(struct proxy_request));
 }
 
-struct mtproto_connection *telegram_add_proxy(struct telegram *instance, int fd, void *handle)
+struct mtproto_connection *telegram_add_proxy(struct telegram *instance, struct proxy_request *req,
+    int fd, void *handle)
 {
-    struct dc *DC_working = telegram_get_working_dc (instance);
-    instance->connection = mtproto_new (DC_working, fd, instance);
-    instance->connection->handle = handle;
-    instance->connection->on_ready = on_authorized;
-    instance->connection->on_ready_data = instance;
-    mtproto_connect (instance->connection);
-    return instance->connection;
+    struct mtproto_connection *c = mtproto_new (req->DC, fd, instance);
+    c->handle = handle;
+    c->on_ready = on_authorized;
+    c->on_ready_data = req;
+    req->conn = c;
+    if (req->type == REQ_CONNECTION) {
+        req->tg->connection = c;
+    }
+    mtproto_connect (c);
+    return c;
 }
 
 void mtp_read_input (struct mtproto_connection *mtp)
@@ -415,11 +517,11 @@ void telegram_flush (struct telegram *instance)
         if (!c) continue;
         if (!c->connection) continue;
         if (c->connection->out_bytes) {
-            logprintf ("connection %d has %d bytes, triggering on_output.", 
+            logprintf ("connection %d has %d bytes, triggering on_output.\n", 
                 i, c->connection->out_bytes);
             instance->config->on_output(c->handle);
         } else {
-            logprintf ("connection %d has no bytes, skipping\n");
+            logprintf ("connection %d has no bytes, skipping\n", i);
         }
     }
 }

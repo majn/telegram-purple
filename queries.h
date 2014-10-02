@@ -57,7 +57,9 @@ struct download {
   unsigned char *iv;
   unsigned char *key;
   int type;
+  struct mtproto_connection *c;
 };
+void load_next_part (struct telegram *instance, struct download *D);
 
 struct event_timer {
   double timeout;
@@ -128,8 +130,8 @@ void do_help_get_config (struct telegram *instance);
 void do_auth_check_phone (struct telegram *instance, const char *user);
 void do_get_nearest_dc (struct telegram*);
 void do_send_code_result_auth (struct telegram *instance, const char *code, const char *first_name, const char *last_name);
-void do_import_auth (struct telegram *instance, int num);
-void do_export_auth (struct telegram *instance, int num);
+void do_import_auth (struct telegram *instance, int num, void (*cb)(void *extra), void *extra);
+void do_export_auth (struct telegram *instance, int num, void (*cb)(char *export_auth_str, int len, void *extra), void *extra);
 void do_add_contact (struct telegram *instance, const char *phone, int phone_len, const char *first_name, int first_name_len, const char *last_name, int last_name_len, int force);
 void do_msg_search (struct telegram *instance, peer_id_t id, int from, int to, int limit, const char *s);
 void do_accept_encr_chat_request (struct telegram *instance, struct secret_chat *E);

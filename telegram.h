@@ -95,6 +95,18 @@ struct binlog {
   peer_t *Peers[MAX_PEER_NUM];
 };
 
+#define REQ_CONNECTION 1
+#define REQ_DOWNLOAD 2
+struct proxy_request {
+    struct telegram *tg;
+    struct dc *DC;
+    struct mtproto_connection *conn;
+    int type;
+    void *data;
+    void (*done) (struct proxy_request *req);
+    void *extra;
+};
+
 struct telegram;
 struct download;
 /**
@@ -117,7 +129,7 @@ struct telegram_config {
      * and port by calling telegram_set_proxy. This is useful for tunelling
      * the connection through a proxy server.
      */
-    void (*proxy_request_cb) (struct telegram *instance, const char *ip, int port);
+    void (*proxy_request_cb) (struct telegram *instance, struct proxy_request *req);
     
     /**
      * A callback function that is called once the proxy connection is no longer
@@ -268,6 +280,12 @@ struct telegram {
     struct mtproto_connection *Cs[100]; 
 
     /*
+     * Downloads
+     */
+    GQueue *dl_queue;
+    struct download *dl_curr;
+
+    /*
      * additional user data
      */
     void *extra;
@@ -412,7 +430,7 @@ void set_net_write_cb(ssize_t (*cb)(int fd, const void *buff, size_t size));
  * @param fd      The file-descriptor of the acquired connection
  * @param handle  A handle that will be passed back on output and close callbacks
  */
-struct mtproto_connection *telegram_add_proxy(struct telegram *tg, int fd, void *handle);
+struct mtproto_connection *telegram_add_proxy(struct telegram *tg, struct proxy_request *req, int fd, void *handle);
 
 /**
  * Return wether telegram is authenticated with the currently active data center
@@ -420,5 +438,8 @@ struct mtproto_connection *telegram_add_proxy(struct telegram *tg, int fd, void 
 int telegram_authenticated (struct telegram *instance);
 
 void telegram_flush (struct telegram *instance);
+
+void telegram_dl_add (struct telegram *instance, struct download *dl);
+void telegram_dl_next (struct telegram *instance);
 
 #endif

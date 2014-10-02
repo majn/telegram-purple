@@ -679,7 +679,8 @@ void dc_create_session (struct dc *DC) {
  * Wrap an existing socket file descriptor and make it usable as a connection,
  */
 struct connection *fd_create_connection (struct dc *DC, int fd, 
-     struct telegram *instance, struct connection_methods *methods, struct mtproto_connection *mtp) {
+     struct telegram *instance, struct connection_methods *methods, 
+     struct mtproto_connection *mtp) {
   
   // create a connection
   struct connection *c = talloc0 (sizeof (*c));
@@ -693,14 +694,15 @@ struct connection *fd_create_connection (struct dc *DC, int fd,
   c->last_receive_time = get_double_time ();
   logprintf ( "connect to %s:%d successful\n", DC->ip, DC->port);
 
-  // TODO: Load existing session from state file
-  // create an empty session and attach it to the dc and the connection
   if (!DC->sessions[0]) {
     struct session *S = talloc0 (sizeof (*S));
     assert (RAND_pseudo_bytes ((unsigned char *) &S->session_id, 8) >= 0);
     S->dc = DC;
     S->c = c;
     DC->sessions[0] = S;
+  }
+  if (!DC->sessions[0]->c) {
+    DC->sessions[0]->c = c;
   }
   // add backreference to session
   c->session = DC->sessions[0];
