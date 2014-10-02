@@ -39,13 +39,6 @@
 
 #define MAX_LOG_EVENT_SIZE (1 << 17)
 
-// TODO: remove this completely
-char *get_binlog_file_name (void);
-char *get_binlog_file_name()
-{
-   return "/home/dev-jessie/.telegram/binlog";
-}
-
 int binlog_enabled = 0;
 
 void *alloc_log_event (struct binlog *bl, int l UU) {
@@ -1062,119 +1055,6 @@ void replay_log_event (struct telegram *instance) {
   }
   bl->in_replay_log = 0;
   bl->binlog_pos += (bl->rptr - start) * 4;
-}
-
-void create_new_binlog (struct binlog *bl, struct mtproto_connection *self) {
-  logprintf("create_new_binlog()");
-
-  static int s[1000];
-  self->packet_ptr = s;
-  //self->packet_ptr = self->packet_buffer; // (int *)&bl->s; 
-  out_int (self, LOG_START);
-  out_int (self, CODE_binlog_dc_option);
-  out_int (self, 1);
-  out_string (self, "");
-  out_string (self, bl->test_dc ? TG_SERVER_TEST : TG_SERVER);
-  out_int (self, 443);
-  out_int (self, LOG_DEFAULT_DC);
-  out_int (self, 1);
-  
-  int fd = open (get_binlog_file_name (), O_WRONLY | O_EXCL | O_CREAT, 0600);
-  if (fd < 0) {
-    perror ("Write new binlog");
-    exit (2);
-  }
-  assert (write (fd, s, (self->packet_ptr - s) * 4) == (self->packet_ptr - s) * 4);
-  close (fd);
-}
-
-/**
- * Loag the logfile and replay all stored log events
- */
-void replay_log (struct telegram *instance) {
-  assert(instance->connection);
-  assert(instance->bl);
-  struct mtproto_connection *self = instance->connection;
-  struct binlog *bl = instance->bl;
-
-  logprintf("replaying binlog...\n");
-  if (access (get_binlog_file_name (), F_OK) < 0) {
-    printf ("No binlog found. Creating new one\n");
-    create_new_binlog (bl, self);
-  }
-  int fd = open (get_binlog_file_name (), O_RDONLY);
-  if (fd < 0) {
-    perror ("binlog open");
-    exit (2);
-  }
-  int end = 0;
-  while (1) {
-    if (!end && bl->wptr - bl->rptr < MAX_LOG_EVENT_SIZE / 4) {
-      if (bl->wptr == bl->rptr) {
-        // nothing to read,
-        // reset read and write pointer to start of buffer
-        bl->wptr = bl->rptr = bl->binlog_buffer;
-      } else {
-        // get difference between read and write pointer
-        int x = bl->wptr - bl->rptr;
-
-        // copy everything between read and write pointer 
-        // to the start of the binlog buffer
-        memcpy (bl->binlog_buffer, bl->rptr, 4 * x);
-
-        // reset binlog buffer position
-        //    +-----------+------+------+
-        //    ^           ^      ^      ^
-        // bl_buffer     rptr   wptr    BUFFER_SIZE
-        //
-        //    +------+------------------+
-        //    ^      ^                  ^ 
-        //  rptr    wptr                BUFFER_SIZE
-        // bl_buffer
-        //
-        bl->wptr -= (bl->rptr - bl->binlog_buffer);
-        bl->rptr = bl->binlog_buffer;
-      }
-      // calculate the remaining space in the binlog buffer
-      int l = (bl->binlog_buffer + BINLOG_BUFFER_SIZE - bl->wptr) * 4;
-
-      // try to read the remining bytes from the file
-      int k = read (fd, bl->wptr, l);
-      if (k < 0) {
-        perror ("read binlog");
-        exit (2);
-      }
-      // amount of read bytes must be divisible by 4, since we
-      // store 4-byte integers
-      assert (!(k & 3));
-      if (k < l) { 
-        // reached end of file
-        end = 1;
-      }
-      // move the write pointer to the first empty byte
-      bl->wptr += (k / 4);
-    }
-    if (bl->wptr == bl->rptr) { 
-      // no further log entries, done...
-      break; 
-    }
-    replay_log_event (instance);
-  }
-  close (fd);
-}
-
-void write_binlog (struct binlog *bl) {
-  bl->binlog_fd = open (get_binlog_file_name (), O_WRONLY);
-  if (bl->binlog_fd < 0) {
-    perror ("binlog open");
-    exit (2);
-  }
-  
-  assert (lseek (bl->binlog_fd, bl->binlog_pos, SEEK_SET) == bl->binlog_pos);
-  if (flock (bl->binlog_fd, LOCK_EX | LOCK_NB) < 0) {
-    perror ("get lock");
-    exit (2);
-  } 
 }
 
 void add_log_event (struct binlog *bl, struct mtproto_connection *self, const int *data, int len) {

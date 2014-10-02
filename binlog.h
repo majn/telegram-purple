@@ -85,7 +85,6 @@
 #define CODE_binlog_delete_msg 0xa1d6ab6d
 
 void *alloc_log_event (struct binlog *bl, int l);
-void replay_log (struct telegram *instance);
 void add_log_event (struct binlog *bl, struct mtproto_connection *self, const int *data, int l);
 void write_binlog (struct binlog *bl);
 void bl_do_set_auth_key_id (struct telegram *instance, int num, unsigned char *buf);

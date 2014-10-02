@@ -141,7 +141,6 @@ static PurpleChat *get_chat_by_id (PurpleConnection *gc, int id)
  */
 static const char *tgprpl_list_icon(PurpleAccount * acct, PurpleBuddy * buddy)
 {
-    //purple_debug_info(PLUGIN_ID, "tgrpl_list_icon()\n");
     return "telegram";
 }
 
