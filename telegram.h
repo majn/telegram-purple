@@ -413,18 +413,6 @@ void event_user_info_received_handler(struct telegram *instance, struct user *pe
 void event_download_finished_handler(struct telegram *instance, struct download *D);
 
 /**
- * Set a function to use as a handle to read from a network resource
- * instead of the regular socket read function
- */
-void set_net_read_cb(ssize_t (*cb)(int fd, void *buff, size_t size));
-
-/**
- * Set a function to use as handle to write to a newtork resource
- * instead of the regular socket write function
- */
-void set_net_write_cb(ssize_t (*cb)(int fd, const void *buff, size_t size));
-
-/**
  * Set the connection after a proxy_request_cb 
  *
  * @param fd      The file-descriptor of the acquired connection

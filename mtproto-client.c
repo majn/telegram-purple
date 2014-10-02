@@ -1840,8 +1840,6 @@ struct mtproto_connection *mtproto_new(struct dc *DC, int fd, struct telegram *t
     mtp->instance = tg;
     mtp->packet_buffer = mtp->__packet_buffer + 16;
     mtp->connection = fd_create_connection(DC, fd, tg, &mtproto_methods, mtp);
-
-    // binlog must exist
     assert (tg->bl);
     mtp->bl = tg->bl;
     return mtp;

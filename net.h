@@ -141,9 +141,6 @@ int read_in (struct connection *c, void *data, int len);
 
 void create_all_outbound_connections (void);
 
-struct connection *create_connection (const char *host, int port, struct session *session, struct connection_methods *methods);
-int connections_make_poll_array (struct pollfd *fds, int max);
-void connections_poll_result (struct pollfd *fds, int max);
 void dc_create_session (struct dc *DC);
 void insert_msg_id (struct session *S, long long id);
 struct dc *alloc_dc (struct dc* DC_list[], int id, char *ip, int port);

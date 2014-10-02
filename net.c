@@ -55,39 +55,6 @@ FILE *log_net_f = 0;
 void fail_connection (struct connection *c);
 
 /*
- * Delegate the read-oprations to external function
- */
-ssize_t (*netread)(int fd, void *buff, size_t size) = read;
-void set_net_read_cb(ssize_t (*cb)(int fd, void *buff, size_t size)) {
-  netread = cb;
-}
-
-/*
- * Delegate the write operations to external function
- */
-ssize_t (*netwrite)(int fd, const void *buff, size_t size) = write;
-void set_net_write_cb(ssize_t (*cb)(int fd, const void *buff, size_t size)) {
-  netwrite = cb;
-}
-
-/*
- * Delegate the session creation to an external callback
- *
- * TODO: use dc_ensure_session instead of dc_create_session to create sessions,
- *		 to make this actually work
- */
-void dc_create_session (struct dc *DC);
-void dc_ensure_session_local (struct dc *DC, void (*on_session_ready)(void)) {
-  dc_create_session(DC);
-  on_session_ready();
-}
-void (*dc_ensure_session)(struct dc *DC, void (*on_session_ready)(void));
-void set_dc_ensure_session_cb (void (*dc_ens_sess)(struct dc *DC, void (*on_session_ready)(void)))
-{
-  dc_ensure_session = dc_ens_sess;
-}
-
-/*
  *
  */
 
@@ -263,74 +230,6 @@ void rotate_port (struct connection *c) {
   }
 }
 
-struct connection *create_connection (const char *host, int port, struct session *session, struct connection_methods *methods) {
-  struct connection *c = talloc0 (sizeof (*c));
-  int fd = socket (AF_INET, SOCK_STREAM, 0);
-  if (fd == -1) {
-    logprintf ("Can not create socket: %m\n");
-    exit (1);
-  }
-  assert (fd >= 0 && fd < MAX_CONNECTIONS);
-  if (fd > max_connection_fd) {
-    max_connection_fd = fd;
-  }
-  int flags = -1;
-  setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof (flags));
-  setsockopt (fd, SOL_SOCKET, SO_KEEPALIVE, &flags, sizeof (flags));
-  setsockopt (fd, IPPROTO_TCP, TCP_NODELAY, &flags, sizeof (flags));
-
-  struct sockaddr_in addr;
-  addr.sin_family = AF_INET; 
-  addr.sin_port = htons (port);
-  addr.sin_addr.s_addr = inet_addr (host);
-
-
-  fcntl (fd, F_SETFL, O_NONBLOCK);
-
-  if (connect (fd, (struct sockaddr *) &addr, sizeof (addr)) == -1) {
-    if (errno != EINPROGRESS) {
-      logprintf ( "Can not connect to %s:%d %m\n", host, port);
-      close (fd);
-      tfree (c, sizeof (*c));
-      return 0;
-    }
-  }
-
-  struct pollfd s;
-  s.fd = fd;
-  s.events = POLLOUT | POLLERR | POLLRDHUP | POLLHUP;
-  errno = 0;
-  
-  while (poll (&s, 1, 10000) <= 0 || !(s.revents & POLLOUT)) {
-    if (errno == EINTR) { continue; }
-    if (errno) {
-      logprintf ("Problems in poll: %m\n");
-      exit (1);
-    }
-    logprintf ("Connect with %s:%d timeout\n", host, port);
-    close (fd);
-    tfree (c, sizeof (*c));
-    return 0;
-  }
-
-  c->session = session;
-  c->fd = fd; 
-  c->ip = tstrdup (host);
-  c->flags = 0;
-  c->state = conn_ready;
-  c->methods = methods;
-  c->port = port;
-  assert (!Connections[fd]);
-  Connections[fd] = c;
-  logprintf ( "connect to %s:%d successful\n", host, port);
-  if (c->methods->ready) {
-    c->methods->ready (c);
-  }
-  c->last_receive_time = get_double_time ();
-  start_ping_timer (c);
-  return c;
-}
-
 void restart_connection (struct connection *c) {
   if (c->last_connect_time == time (0)) {
     start_fail_timer (c);
@@ -411,7 +310,7 @@ int try_write (struct connection *c) {
   logprintf ( "try write: fd = %d\n", c->fd);
   int x = 0;
   while (c->out_head) {
-    int r = netwrite (c->fd, c->out_head->rptr, c->out_head->wptr - c->out_head->rptr);
+    int r = write (c->fd, c->out_head->rptr, c->out_head->wptr - c->out_head->rptr);
 
 	// Log all written packages
     if (r > 0 && log_net_f) {
@@ -524,7 +423,7 @@ void try_read (struct connection *c) {
   }
   int x = 0;
   while (1) {
-    int r = netread (c->fd, c->in_tail->wptr, c->in_tail->end - c->in_tail->wptr);
+    int r = read (c->fd, c->in_tail->wptr, c->in_tail->end - c->in_tail->wptr);
     if (r > 0 && log_net_f) {
       fprintf (log_net_f, "%.02lf %d IN %s:%d", get_utime (CLOCK_REALTIME), r, c->ip, c->port);
       int i;
@@ -563,57 +462,6 @@ void try_read (struct connection *c) {
   c->in_bytes += x;
   if (x) {
     try_rpc_read (c);
-  }
-}
-
-int connections_make_poll_array (struct pollfd *fds, int max) {
-  int _max = max;
-  int i;
-  for (i = 0; i <= max_connection_fd; i++) {
-    if (Connections[i] && Connections[i]->state == conn_failed) {
-      restart_connection (Connections[i]);
-    }
-    if (Connections[i] && Connections[i]->state != conn_failed) {
-      assert (max > 0);
-      struct connection *c = Connections[i];
-      fds[0].fd = c->fd;
-      fds[0].events = POLLERR | POLLHUP | POLLRDHUP | POLLIN;
-      if (c->out_bytes || c->state == conn_connecting) {
-        fds[0].events |= POLLOUT;
-      }
-      fds ++;
-      max --;
-    }
-  }
-  if (verbosity >= 10) {
-    logprintf ( "%d connections in poll\n", _max - max);
-  }
-  return _max - max;
-}
-
-void connections_poll_result (struct pollfd *fds, int max) {
-  if (verbosity >= 10) {
-    logprintf ( "connections_poll_result: max = %d\n", max);
-  }
-  int i;
-  for (i = 0; i < max; i++) {
-    struct connection *c = Connections[fds[i].fd];
-    if (fds[i].revents & POLLIN) {
-      try_read (c);
-    }
-    if (fds[i].revents & (POLLHUP | POLLERR | POLLRDHUP)) {
-      logprintf ("fail_connection: events_mask=0x%08x\n", fds[i].revents);
-      fail_connection (c);
-    } else if (fds[i].revents & POLLOUT) {
-      if (c->state == conn_connecting) {
-        logprintf ("connection ready\n");
-        c->state = conn_ready;
-        c->last_receive_time = get_double_time ();
-      }
-      if (c->out_bytes) {
-        try_write (c);
-      }
-    }
   }
 }
 
@@ -659,20 +507,6 @@ struct dc *alloc_dc (struct dc* DC_list[], int id, char *ip, int port UU) {
   DC->port = port;
   DC_list[id] = DC;
   return DC;
-}
-
-void dc_create_session (struct dc *DC) {
-  logprintf("dc_create_session(...)\n");
-  struct session *S = talloc0 (sizeof (*S));
-  assert (RAND_pseudo_bytes ((unsigned char *) &S->session_id, 8) >= 0);
-  S->dc = DC;
-  S->c = create_connection (DC->ip, DC->port, S, &auth_methods);
-  if (!S->c) {
-    logprintf ("Can not create connection to DC. Is network down?\n");
-    exit (1);
-  }
-  assert (!DC->sessions[0]);
-  DC->sessions[0] = S;
 }
 
 /** 
