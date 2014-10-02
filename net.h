@@ -32,8 +32,6 @@ struct dc;
 #define TG_PORT 443
 #define TG_APP_HASH "99428c722d0ed59b9cd844e4577cb4bb"
 #define TG_APP_ID 16154
-#define TG_BUILD "0"
-#define TG_VERSION "0.2.0"
 
 #define ACK_TIMEOUT 1
 #define MAX_DC_ID 10
