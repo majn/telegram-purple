@@ -174,17 +174,6 @@ static void tgprpl_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo * info
 }
 
 
-/**
- * Handle a failed verification by removing the invalid sms code and notifying the user
- */
-static void login_verification_fail(PurpleAccount *acct)
-{
-    // remove invalid sms code, so we won't try to register again
-    purple_account_set_string(acct, "verification_key", "");
-    purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Verification Failed", 
-        "Please make sure you entered the correct verification code.", NULL, NULL, NULL);
-}
-
 /*  OUTPUT  */
 
 /**
@@ -254,8 +243,8 @@ static void tgprpl_has_input(void *handle)
 
 static void init_dc_settings(PurpleAccount *acc, struct dc *DC)
 {
-    DC->port = purple_account_get_int(acc, "port", TELEGRAM_DEFAULT_PORT);
-    DC->ip = g_strdup(purple_account_get_string(acc, "server", TELEGRAM_TEST_SERVER));
+    DC->port = purple_account_get_int(acc, "port", TG_PORT);
+    DC->ip = g_strdup(purple_account_get_string(acc, "server", TG_SERVER));
     DC->id = 0;
 }
 
@@ -293,9 +282,9 @@ void telegram_on_proxy_close(void *handle)
 
 void telegram_on_phone_registration (struct telegram *instance)
 {
+    // TODO: Query first and last name from user and start phone registration
     telegram_conn *conn = instance->extra;
 
-    // TODO: Request first and last name
     purple_debug_info(PLUGIN_ID, "Phone is not registered, registering...\n");
     const char *first_name = purple_account_get_string(conn->pa, "first_name", NULL);
     const char *last_name  = purple_account_get_string(conn->pa, "last_name", NULL);
@@ -1248,12 +1237,6 @@ static void tgprpl_init(PurplePlugin *plugin)
     option = purple_account_option_list_new("Verification type", "verification_type", verification_values);
     prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-    option = purple_account_option_string_new("Verification key", "verification_key", NULL);
-    prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-    option = purple_account_option_string_new("Verification hash", "verification_hash", NULL);
-    prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
     option = purple_account_option_string_new("First Name", "first_name", NULL);
     prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
@@ -1264,10 +1247,10 @@ static void tgprpl_init(PurplePlugin *plugin)
     // TODO: Path to public key (When you can change the server hostname,
     //        you should also be able to change the public key)
 
-    option = purple_account_option_string_new("Server", "server", TELEGRAM_TEST_SERVER);
+    option = purple_account_option_string_new("Server", "server", TG_SERVER);
     prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-    option = purple_account_option_int_new("Port", "port", TELEGRAM_DEFAULT_PORT);
+    option = purple_account_option_int_new("Port", "port", TG_PORT);
     prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
     _telegram_protocol = plugin;
