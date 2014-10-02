@@ -477,7 +477,7 @@ static void tgprpl_close(PurpleConnection * gc)
     telegram_destroy(conn->tg);
 }
 
-static void chat_add_message(struct telegram *tg, struct message *M) 
+static int chat_add_message(struct telegram *tg, struct message *M) 
 {
       telegram_conn *conn = tg->extra;
       
@@ -494,9 +494,11 @@ static void chat_add_message(struct telegram *tg, struct message *M)
                 PURPLE_MESSAGE_RECV, M->message, time((time_t *) &M->date));
               g_free(alias);
           }
+          return 1;
       } else {
           // add message once the chat was initialised
           g_queue_push_tail (conn->new_messages, M);
+          return 0;
       }
 }
 
@@ -1074,10 +1076,15 @@ void on_chat_joined (struct telegram *instance, peer_id_t chatid)
     }
     struct message *M = 0;
     logprintf ("g_queue_pop_head()\n");
+
     while (M = g_queue_pop_head (conn->new_messages)) {
         logprintf ("adding msg-id\n");
         int id = get_peer_id(M->from_id);
-        chat_add_message(instance, M);
+        if (!chat_add_message(instance, M)) {
+            // chat still not working?
+            logprintf ("WARNING, chat %d still not existing... \n", chatid.id);
+            break;
+        }
     }
 
     gchar *name = g_strdup_printf ("%d", chatid.id);
