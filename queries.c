@@ -2144,8 +2144,10 @@ struct query_methods export_auth_methods = {
 };
 
 void do_export_auth (struct telegram *instance, int num, void (*cb)(char *export_auth_str, int len, void *extra), void *extra) {
-  struct dc *DC_working = telegram_get_working_dc(instance);
+  logprintf ("do_export_auth(num=%d)\n", num);
+  struct dc *DC_working = telegram_get_working_dc(instance); 
   struct mtproto_connection *mtp = instance->connection;
+
   instance->export_auth_str = 0;
   clear_packet (mtp);
   out_int (mtp, CODE_auth_export_authorization);
@@ -2185,7 +2187,12 @@ struct query_methods import_auth_methods = {
 };
 
 void do_import_auth (struct telegram *instance, int num, void (*cb)(void *extra), void *extra) {
-  struct mtproto_connection *mtp = instance->connection;
+  logprintf ("do_import_auth(num=%d, our_id=%d, export_auth_str=%s)\n", num, instance->our_id, instance->export_auth_str);
+  struct dc *DC_working = instance->auth.DC_list[num]; 
+  assert (DC_working);
+  assert (DC_working->sessions[0]->c);
+  struct mtproto_connection *mtp = DC_working->sessions[0]->c->mtconnection;
+
   struct import_info *info = talloc0(sizeof (struct import_info));
   info->cb = cb;
   info->extra = extra;
@@ -2195,7 +2202,7 @@ void do_import_auth (struct telegram *instance, int num, void (*cb)(void *extra)
   out_int (mtp, instance->our_id);
   out_cstring (mtp, instance->export_auth_str, instance->export_auth_str_len);
 
-  send_query (instance, instance->auth.DC_list[num], mtp->packet_ptr - mtp->packet_buffer, 
+  send_query (instance, DC_working, mtp->packet_ptr - mtp->packet_buffer, 
      mtp->packet_buffer, &import_auth_methods, info);
 }
 /* }}} */

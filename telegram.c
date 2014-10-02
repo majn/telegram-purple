@@ -413,7 +413,7 @@ void telegram_dl_connected (struct proxy_request *req)
  */
 void telegram_dl_add (struct telegram *instance, struct download *dl)
 {
-    logprintf ("telegram_connect_dl(dc=%d)\n", instance->auth.DC_list[dl->dc]);
+    logprintf ("telegram_connect_dl(dc_num=%d, dc=%d)\n", dl->dc, instance->auth.DC_list[dl->dc]);
     if (!instance->dl_queue) {
         instance->dl_queue = g_queue_new ();
     }
@@ -435,7 +435,7 @@ void telegram_dl_next (struct telegram *instance)
             req->data = dl;
             instance->dl_curr = dl;
 
-            logprintf ("telegrma_dl_start(): starting new download..\n");
+            logprintf ("telegrma_dl_start(workin_dc=%d, ): starting new download..\n", instance->auth.dc_working_num);
             if (dl->dc == instance->auth.dc_working_num) {
                 logprintf ("is working DC, start download...\n");
                 assert (telegram_get_working_dc(instance)->sessions[0]->c);
