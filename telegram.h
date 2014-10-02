@@ -6,7 +6,7 @@
 #define MAX_PEER_NUM 100000
 
 #ifndef PROG_NAME
-#define PROG_NAME "telegram"
+#define PROG_NAME "telegram-purple"
 #endif
 
 #include <sys/types.h>

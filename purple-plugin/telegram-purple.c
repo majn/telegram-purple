@@ -53,6 +53,7 @@
 #include "structures.h"
 #include "net.h"
 
+#define CONFIG_DIR ".telegram-purple"
 #define BUDDYNAME_MAX_LENGTH 128
 
 static PurplePlugin *_telegram_protocol = NULL;
@@ -1208,7 +1209,7 @@ static PurplePluginProtocolInfo prpl_info = {
 
 static void tgprpl_init(PurplePlugin *plugin)
 {
-    const char *dir = ".telegram";
+    const char *dir = CONFIG_DIR;
     if (!tgconf.base_config_path) {
         struct passwd *pw = getpwuid(getuid());
         int len = strlen (dir) + strlen (pw->pw_dir) + 2;    
