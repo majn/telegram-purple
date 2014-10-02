@@ -1778,11 +1778,17 @@ void print_user_info (struct user *U) {
   //print_end ();
 }
 
+struct show_info_extra {
+    int show_info;
+};
+
 int user_info_on_answer (struct query *q UU) {
   struct mtproto_connection *mtp = query_get_mtproto(q);
+  struct show_info_extra *extra = q->extra;
 
   struct user *U = fetch_alloc_user_full (mtp);
-  event_user_info_received_handler (mtp->instance, U, (int)q->extra);
+  event_user_info_received_handler (mtp->instance, U, extra->show_info);
+  tfree (extra, sizeof(struct show_info_extra));
   //print_user_info (U);
   return 0;
 }
@@ -1793,6 +1799,8 @@ struct query_methods user_info_methods = {
 
 void do_get_user_info (struct telegram *instance, peer_id_t id, int showInfo) {
   logprintf ("do_get_user_info\n");
+  struct show_info_extra *extra = talloc(sizeof(struct show_info_extra));
+  extra->show_info = showInfo;
   struct dc *DC_working = telegram_get_working_dc(instance);
   struct mtproto_connection *mtp = instance->connection;
   clear_packet (mtp);
@@ -1807,7 +1815,7 @@ void do_get_user_info (struct telegram *instance, peer_id_t id, int showInfo) {
     out_int (mtp, CODE_input_user_contact);
     out_int (mtp, get_peer_id (id));
   }
-  send_query (instance, DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &user_info_methods, (void*)showInfo);
+  send_query (instance, DC_working, mtp->packet_ptr - mtp->packet_buffer, mtp->packet_buffer, &user_info_methods, extra);
   logprintf ("do_get_user_info ready\n");
 }
 /* }}} */
