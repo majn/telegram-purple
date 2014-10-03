@@ -27,11 +27,13 @@ struct dc;
 #include "telegram.h"
 #include "queries.h"
 
-#define TG_SERVER "149.154.167.50"
+#define TG_SERVER "149.154.167.50" 
+#define TG_DC_NUM 2
 #define TG_SERVER_TEST "149.154.167.40"
-#define TG_PORT 443
+#define TG_TEST_DC_NUM 2
 #define TG_APP_HASH "99428c722d0ed59b9cd844e4577cb4bb"
 #define TG_APP_ID 16154
+#define TG_PORT 443
 
 #define ACK_TIMEOUT 1
 #define MAX_DC_ID 10

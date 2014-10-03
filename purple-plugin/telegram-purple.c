@@ -184,7 +184,7 @@ static void tgprpl_output_cb(gpointer data, gint source, PurpleInputCondition co
 {
     mtproto_handle *conn = data;
     if (!conn->mtp) {
-        debug ("connection no loner existing, do nothing. \n");
+        debug ("connection no longer existing, do nothing. \n");
         return;
     }
     if (mtp_write_output(conn->mtp) == 0) {
@@ -240,13 +240,6 @@ static void tgprpl_has_input(void *handle)
         conn->rh = purple_input_add(conn->fd, PURPLE_INPUT_READ, tgprpl_input_cb, handle);
         debug("Attached read handle: %u ", conn->rh);
     }
-}
-
-static void init_dc_settings(PurpleAccount *acc, struct dc *DC)
-{
-    DC->port = purple_account_get_int(acc, "port", TG_PORT);
-    DC->ip = g_strdup(purple_account_get_string(acc, "server", TG_SERVER));
-    DC->id = 0;
 }
 
 /**
@@ -453,11 +446,9 @@ static void tgprpl_login(PurpleAccount * acct)
     purple_debug_info(PLUGIN_ID, "tgprpl_login()\n");
     PurpleConnection *gc = purple_account_get_connection(acct);
     char const *username = purple_account_get_username(acct);
-    struct dc DC;
-    init_dc_settings(acct, &DC);
     
     // create a new instance of telegram
-    struct telegram *tg = telegram_new (&DC, username, &tgconf); 
+    struct telegram *tg = telegram_new (username, &tgconf); 
     telegram_restore_session(tg);
    
     // create handle to store additional info for libpurple in

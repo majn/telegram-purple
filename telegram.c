@@ -188,11 +188,10 @@ void telegram_change_state (struct telegram *instance, int state, void *data)
     }
 }
 
-struct telegram *telegram_new(struct dc *DC, const char* login, struct telegram_config *config)
+struct telegram *telegram_new(const char* login, struct telegram_config *config)
 {
     struct telegram *this = talloc0(sizeof(struct telegram));
     this->protocol_data = NULL;
-    this->auth.DC_list[0] = DC;
     this->bl = talloc0 (sizeof(struct binlog));
     this->config = config;
 

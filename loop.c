@@ -120,8 +120,8 @@ void empty_auth_file (const char *filename) {
   memset(state.DC_list, 0, 11 * sizeof(void *));
 
   debug("empty_auth_file()\n");
-  alloc_dc (state.DC_list, 1, tstrdup (TG_SERVER), 443);
-  state.dc_working_num = 1;
+  alloc_dc (state.DC_list, TG_DC_NUM, tstrdup (TG_SERVER), TG_PORT);
+  state.dc_working_num = TG_DC_NUM;
   state.auth_state = 0;
   write_auth_file (&state, filename);
 }
@@ -162,6 +162,7 @@ struct authorization_state read_auth_file (const char *filename) {
   assert (x <= MAX_DC_ID);
   assert (read (auth_file_fd, &state.dc_working_num, 4) == 4);
   assert (read (auth_file_fd, &state.auth_state, 4) == 4);
+  debug ("dc_working_num=%d, auth_state=%d \n", state.dc_working_num, state.auth_state);
   if (m == DC_SERIALIZED_MAGIC) {
     state.auth_state = 700;
   }

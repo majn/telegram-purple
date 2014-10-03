@@ -294,11 +294,10 @@ struct telegram {
 /**
  * Create a new telegram application
  *
- * @param DC            The initial data center to use
  * @param login         The phone number to use as login name
  * @param config        Contains all callbacks used for the telegram instance
  */
-struct telegram *telegram_new(struct dc *DC, const char* login, struct telegram_config *config);
+struct telegram *telegram_new(const char* login, struct telegram_config *config);
 
 void telegram_restore_session(struct telegram *instance);
 void telegram_store_session(struct telegram *instance);
