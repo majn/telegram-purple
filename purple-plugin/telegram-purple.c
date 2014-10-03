@@ -1250,22 +1250,6 @@ static void tgprpl_init(PurplePlugin *plugin)
     option = purple_account_option_list_new("Verification type", "verification_type", verification_values);
     prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-    option = purple_account_option_string_new("First Name", "first_name", NULL);
-    prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-    option = purple_account_option_string_new("Last Name", "last_name", NULL);
-    prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-
-    // TODO: Path to public key (When you can change the server hostname,
-    //        you should also be able to change the public key)
-
-    option = purple_account_option_string_new("Server", "server", TG_SERVER);
-    prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-    option = purple_account_option_int_new("Port", "port", TG_PORT);
-    prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
     _telegram_protocol = plugin;
 }
 
