@@ -96,3 +96,9 @@ The username is your current phone number, including your full country prefix in
  
 Now you should be able to see all your contacts and chats in your buddy list and send/receive messages.
 
+
+# Unicode Emojis for Pidgin
+
+The Telegram phone applications for iOS and Android make use of standardized Unicode smileys (called [Emojis](https://en.wikipedia.org/wiki/Emoji)). Pidgin
+does not display those smileys natively, but you can install a custom smiley theme like [https://github.com/stv0g/unicode-emoji] or [https://github.com/VxJasonxV/emoji-for-pidgin] and activate it under Settings > Themes > Smiley Theme.
+
