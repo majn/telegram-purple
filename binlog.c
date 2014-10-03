@@ -55,7 +55,7 @@ void replay_log_event (struct telegram *instance) {
   int op = *bl->rptr;
 
   if (verbosity >= 2) {
-    logprintf ("log_pos %lld, op 0x%08x\n", bl->binlog_pos, op);
+    debug ("log_pos %lld, op 0x%08x\n", bl->binlog_pos, op);
   }
 
   self->in_ptr = bl->rptr;
@@ -73,7 +73,7 @@ void replay_log_event (struct telegram *instance) {
       int l2 = prefetch_strlen (self);
       char *ip = fetch_str (self, l2);
       int port = fetch_int (self);
-      logprintf ( "id = %d, name = %.*s ip = %.*s port = %d\n", id, l1, name, l2, ip, port);
+      debug ( "id = %d, name = %.*s ip = %.*s port = %d\n", id, l1, name, l2, ip, port);
       alloc_dc (instance->auth.DC_list, id, tstrndup (ip, l2), port);
     }
     bl->rptr = self->in_ptr;
@@ -1046,19 +1046,19 @@ void replay_log_event (struct telegram *instance) {
     bl->rptr = self->in_ptr;
     break;
   default:
-    logprintf ("Unknown logevent [0x%08x] 0x%08x [0x%08x] at %lld\n", *(bl->rptr - 1), op, *(bl->rptr + 1), bl->binlog_pos);
+    debug ("Unknown logevent [0x%08x] 0x%08x [0x%08x] at %lld\n", *(bl->rptr - 1), op, *(bl->rptr + 1), bl->binlog_pos);
 
     assert (0);
   }
   if (verbosity >= 2) {
-    logprintf ("Event end\n");
+    debug ("Event end\n");
   }
   bl->in_replay_log = 0;
   bl->binlog_pos += (bl->rptr - start) * 4;
 }
 
 void add_log_event (struct binlog *bl, struct mtproto_connection *self, const int *data, int len) {
-  logprintf ("Add log event: magic = 0x%08x, len = %d\n", data[0], len);
+  debug ("Add log event: magic = 0x%08x, len = %d\n", data[0], len);
   assert (!(len & 3));
   if (bl->in_replay_log) { return; }
   bl->rptr = (void *)data;
@@ -1067,7 +1067,7 @@ void add_log_event (struct binlog *bl, struct mtproto_connection *self, const in
   int *end = self->in_end;
   replay_log_event (self->connection->instance);
   if (bl->rptr != bl->wptr) {
-    logprintf ("Unread %lld ints. Len = %d\n", (long long)(bl->wptr - bl->rptr), len);
+    debug ("Unread %lld ints. Len = %d\n", (long long)(bl->wptr - bl->rptr), len);
     assert (bl->rptr == bl->wptr);
   }
   if (bl->binlog_enabled) {

@@ -64,12 +64,12 @@ void start_ping_timer (struct connection *c);
 int ping_alarm (struct connection *c) {
   assert (c->state == conn_ready || c->state == conn_connecting);
   if (get_double_time () - c->last_receive_time > 20 * PING_TIMEOUT) {
-    logprintf ( "fail connection: reason: ping timeout\n");
+    warning ( "fail connection: reason: ping timeout\n");
     c->state = conn_failed;
     fail_connection (c);
 
   } else if (get_double_time () - c->last_receive_time > 5 * PING_TIMEOUT && c->state == conn_ready) {
-    logprintf ("sending PING...\n");
+    debug ("sending PING...\n");
     int x[3];
     x[0] = CODE_ping;
     *(long long *)(x + 1) = lrand48 () * (1ll << 32) + lrand48 ();
@@ -239,7 +239,7 @@ void restart_connection (struct connection *c) {
   c->last_connect_time = time (0);
   int fd = socket (AF_INET, SOCK_STREAM, 0);
   if (fd == -1) {
-    logprintf ("Can not create socket: %m\n");
+    debug ("Can not create socket: %m\n");
     exit (1);
   }
   assert (fd >= 0 && fd < MAX_CONNECTIONS);
@@ -261,7 +261,7 @@ void restart_connection (struct connection *c) {
 
   if (connect (fd, (struct sockaddr *) &addr, sizeof (addr)) == -1) {
     if (errno != EINPROGRESS) {
-      logprintf ( "Can not connect to %s:%d %m\n", c->ip, c->port);
+      debug ( "Can not connect to %s:%d %m\n", c->ip, c->port);
       start_fail_timer (c);
       close (fd);
       return;
@@ -301,13 +301,13 @@ void fail_connection (struct connection *c) {
   c->out_bytes = c->in_bytes = 0;
   close (c->fd);
   Connections[c->fd] = 0;
-  logprintf ("Lost connection to server... %s:%d\n", c->ip, c->port);
+  debug ("Lost connection to server... %s:%d\n", c->ip, c->port);
   restart_connection (c);
 }
 
 extern FILE *log_net_f;
 int try_write (struct connection *c) {
-  logprintf ( "try write: fd = %d\n", c->fd);
+  debug ( "try write: fd = %d\n", c->fd);
   int x = 0;
   while (c->out_head) {
     int r = write (c->fd, c->out_head->rptr, c->out_head->wptr - c->out_head->rptr);
@@ -341,7 +341,7 @@ int try_write (struct connection *c) {
       delete_connection_buffer (b);
     } else {
       if (errno != EAGAIN && errno != EWOULDBLOCK) {
-        logprintf ("fail_connection: write_error %m\n");
+        debug ("fail_connection: write_error %m\n");
         fail_connection (c);
         return 0;
       } else {
@@ -349,7 +349,7 @@ int try_write (struct connection *c) {
       }
     }
   }
-  logprintf ( "Sent %d bytes to %d\n", x, c->fd);
+  debug ( "Sent %d bytes to %d\n", x, c->fd);
   c->out_bytes -= x;
   return x;
 }
@@ -417,7 +417,7 @@ void try_rpc_read (struct connection *c) {
 }
 
 void try_read (struct connection *c) {
-  logprintf ( "try read: fd = %d\n", c->fd);
+  debug ( "try read: fd = %d\n", c->fd);
   if (!c->in_tail) {
     c->in_head = c->in_tail = new_connection_buffer (1 << 20);
   }
@@ -449,7 +449,7 @@ void try_read (struct connection *c) {
       c->in_tail = b;
     } else {
       if (errno != EAGAIN && errno != EWOULDBLOCK) {
-        logprintf ("fail_connection: read_error %m\n");
+        debug ("fail_connection: read_error %m\n");
         fail_connection (c);
         return;
       } else {
@@ -457,7 +457,8 @@ void try_read (struct connection *c) {
       }
     }
   }
-  logprintf ( "Received %d bytes from %d\n", x, c->fd);
+  debug ( "Received %d bytes from fd=#%d and DC %d(%s, %d)\n", x, 
+    c->fd, c->session->dc->id, c->session->dc->ip, c->session->dc->port);
   c->in_bytes += x;
   if (x) {
     try_rpc_read (c);
@@ -465,9 +466,9 @@ void try_read (struct connection *c) {
 }
 
 int send_all_acks (struct session *S) {
-  logprintf ("send_all_acks()\n");
+  info ("send_all_acks(dc=%d)\n", S->dc->id);
   if (!S->c) {
-    logprintf ("WARNING: cannot send acks, session has no active connection");
+    warning ("WARNING: cannot send acks, session has no active connection");
     return -1;
   }
   struct mtproto_connection *mt = S->c->mtconnection;
@@ -487,7 +488,7 @@ int send_all_acks (struct session *S) {
 
 void insert_msg_id (struct session *S, long long id) {
   if (!S->ack_tree) {
-    logprintf ("Creating ack_tree pointing to session %p\n");
+    debug ("Creating ack_tree pointing to session %p\n");
     S->ev.alarm = (void *)send_all_acks;
     S->ev.self = (void *)S;
     S->ev.timeout = get_double_time () + ACK_TIMEOUT;
@@ -525,7 +526,7 @@ struct connection *fd_create_connection (struct dc *DC, int fd,
   c->methods = methods;
   c->instance = instance;
   c->last_receive_time = get_double_time ();
-  logprintf ( "connect to %s:%d successful\n", DC->ip, DC->port);
+  debug ( "connect to %s:%d successful\n", DC->ip, DC->port);
 
   if (!DC->sessions[0]) {
     struct session *S = talloc0 (sizeof (*S));

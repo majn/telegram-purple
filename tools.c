@@ -76,14 +76,14 @@ void tfree (void *ptr, int size __attribute__ ((unused))) {
   total_allocated_bytes -= size;
   ptr -= RES_PRE;
   if (size != (int)((*(int *)ptr) ^ 0xbedabeda)) {
-    logprintf ("size = %d, ptr = %d\n", size, (*(int *)ptr) ^ 0xbedabeda);
+    debug ("size = %d, ptr = %d\n", size, (*(int *)ptr) ^ 0xbedabeda);
   }
   assert (*(int *)ptr == (int)((size) ^ 0xbedabeda));
   assert (*(int *)(ptr + RES_PRE + size) == (int)((size) ^ 0x7bed7bed));
   assert (*(int *)(ptr + 4) == size);
   int block_num = *(int *)(ptr + 4 + RES_PRE + size);
   if (block_num >= used_blocks) {
-    logprintf ("block_num = %d, used = %d\n", block_num, used_blocks);
+    debug ("block_num = %d, used = %d\n", block_num, used_blocks);
   }
   assert (block_num < used_blocks);
   if (block_num < used_blocks - 1) {
@@ -182,7 +182,7 @@ char *tstrndup (const char *s, size_t n) {
 
 void ensure (int r) {
   if (!r) {
-    logprintf ("Open SSL error\n");
+    debug ("Open SSL error\n");
     ERR_print_errors_fp (stderr);
     assert (0);
   }
@@ -206,12 +206,12 @@ int tinflate (void *input, int ilen, void *output, int olen) {
   if (err == Z_OK || err == Z_STREAM_END) {
     total_out = (int) strm.total_out;
     if (err == Z_STREAM_END && verbosity >= 2) {
-      logprintf ( "inflated %d bytes\n", (int) strm.total_out);
+      debug ( "inflated %d bytes\n", (int) strm.total_out);
     }
   }
   if (err != Z_STREAM_END) {
-    logprintf ( "inflate error = %d\n", err);
-    logprintf ( "inflated %d bytes\n", (int) strm.total_out);
+    debug ( "inflate error = %d\n", err);
+    debug ( "inflated %d bytes\n", (int) strm.total_out);
   }
   inflateEnd (&strm);
   return total_out;
@@ -234,25 +234,25 @@ void tcheck (void) {
     for (j = 0; j < l; j++) {
       if (*(char *)(ptr + 4 + j)) {
         hexdump (ptr + 8, ptr + 8 + l + ((-l) & 3)); 
-        logprintf ("Used freed memory size = %d. ptr = %p\n", l + 4 - RES_PRE - RES_AFTER, ptr);
+        debug ("Used freed memory size = %d. ptr = %p\n", l + 4 - RES_PRE - RES_AFTER, ptr);
         assert (0);
       }
     }
   }
-  logprintf ("ok. Used_blocks = %d. Free blocks = %d\n", used_blocks, free_blocks_cnt);
+  debug ("ok. Used_blocks = %d. Free blocks = %d\n", used_blocks, free_blocks_cnt);
 }
 
 void texists (void *ptr, int size) {
   ptr -= RES_PRE;
   if (size != (int)((*(int *)ptr) ^ 0xbedabeda)) {
-    logprintf ("size = %d, ptr = %d\n", size, (*(int *)ptr) ^ 0xbedabeda);
+    debug ("size = %d, ptr = %d\n", size, (*(int *)ptr) ^ 0xbedabeda);
   }
   assert (*(int *)ptr == (int)((size) ^ 0xbedabeda));
   assert (*(int *)(ptr + RES_PRE + size) == (int)((size) ^ 0x7bed7bed));
   assert (*(int *)(ptr + 4) == size);
   int block_num = *(int *)(ptr + 4 + RES_PRE + size);
   if (block_num >= used_blocks) {
-    logprintf ("block_num = %d, used = %d\n", block_num, used_blocks);
+    debug ("block_num = %d, used = %d\n", block_num, used_blocks);
   }
   assert (block_num < used_blocks);
 }

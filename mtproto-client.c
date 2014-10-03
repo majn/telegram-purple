@@ -126,17 +126,17 @@ static int rsa_load_public_key (const char *public_key_name) {
   pubKey = NULL;
   FILE *f = fopen (public_key_name, "r");
   if (f == NULL) {
-    logprintf ( "Couldn't open public key file: %s\n", public_key_name);
+    debug ( "Couldn't open public key file: %s\n", public_key_name);
     return -1;
   }
   pubKey = PEM_read_RSAPublicKey (f, NULL, NULL, NULL);
   fclose (f);
   if (pubKey == NULL) {
-    logprintf ( "PEM_read_RSAPublicKey returns NULL.\n");
+    debug ( "PEM_read_RSAPublicKey returns NULL.\n");
     return -1;
   }
 
-  logprintf ( "public key '%s' loaded successfully\n", rsa_public_key_name);
+  debug ( "public key '%s' loaded successfully\n", rsa_public_key_name);
 
   return 0;
 }
@@ -167,7 +167,7 @@ int encrypt_packet_buffer_aes_unauth (struct mtproto_connection *self, const cha
 
 
 int rpc_send_packet (struct connection *c) {
-  logprintf("rpc_send_packet()\n");
+  debug("rpc_send_packet()\n");
   struct mtproto_connection *self = c->mtconnection;
 
   int len = (self->packet_ptr - self->packet_buffer) * 4;
@@ -201,7 +201,7 @@ int rpc_send_packet (struct connection *c) {
 int rpc_send_message (struct connection *c, void *data, int len) {
   struct mtproto_connection *self = c->mtconnection;
 
-  logprintf("rpc_send_message(...)\n");
+  //debug("rpc_send_message(...)\n");
   assert (len > 0 && !(len & 0xfc000003));
   int total_len = len >> 2;
   if (total_len < 0x7f) {
@@ -241,7 +241,7 @@ unsigned long long gcd (unsigned long long a, unsigned long long b) {
 //typedef unsigned int uint128_t __attribute__ ((mode(TI)));
 
 int process_respq_answer (struct connection *c, char *packet, int len) {
-  logprintf ( "process_respq_answer(), len=%d\n", len);
+  debug ( "process_respq_answer(), len=%d\n", len);
 
   struct mtproto_connection *self = c->mtconnection;
   int i;
@@ -264,7 +264,7 @@ int process_respq_answer (struct connection *c, char *packet, int len) {
 
   self->p1 = 0, self->p2 = 0;
 
-  logprintf ( "%lld received\n", self->what);
+  debug ( "%lld received\n", self->what);
 
   int it = 0;
   unsigned long long g = 0;
@@ -309,7 +309,7 @@ int process_respq_answer (struct connection *c, char *packet, int len) {
     unsigned t = self->p1; self->p1 = self->p2; self->p2 = t;
   }
 
-  logprintf ( "Calculated primes: self->p1 = %d, self->p2 = %d, %d iterations\n", self->p1, self->p2, it);
+  debug ( "Calculated primes: self->p1 = %d, self->p2 = %d, %d iterations\n", self->p1, self->p2, it);
 
   /// ++p1; ///
 
@@ -317,15 +317,15 @@ int process_respq_answer (struct connection *c, char *packet, int len) {
   int fingerprints_num = *(int *)(from + 4);
   assert (fingerprints_num >= 1 && fingerprints_num <= 64 && len == fingerprints_num * 8 + 8 + (from - packet));
   long long *fingerprints = (long long *) (from + 8);
-  logprintf("Got %d fingerprints\n", fingerprints_num);
+  debug("Got %d fingerprints\n", fingerprints_num);
   for (i = 0; i < fingerprints_num; i++) {
     if (fingerprints[i] == pk_fingerprint) {
-      logprintf ( "found our public key at position %d\n", i);
+      debug ( "found our public key at position %d\n", i);
       break;
     }
   }
   if (i == fingerprints_num) {
-    logprintf ( "fatal: don't have any matching keys (%016llx expected)\n", pk_fingerprint);
+    debug ( "fatal: don't have any matching keys (%016llx expected)\n", pk_fingerprint);
     exit (2);
   }
   // create inner part (P_Q_inner_data)
@@ -490,7 +490,7 @@ int check_g (unsigned char p[256], BIGNUM *g) {
       ok = 1;
       break;
     } else if (s[i] > p[i]) {
-      logprintf ("i = %d (%d %d)\n", i, (int)s[i], (int)p[i]);
+      debug ("i = %d (%d %d)\n", i, (int)s[i], (int)p[i]);
       return -1;
     }
   }
@@ -507,10 +507,10 @@ int check_g_bn (BIGNUM *p, BIGNUM *g) {
 }
 
 int process_dh_answer (struct connection *c, char *packet, int len) {
-  logprintf ( "process_dh_answer(), len=%d\n", len);
+  debug ( "process_dh_answer(), len=%d\n", len);
   struct mtproto_connection *self = c->mtconnection;
   if (len < 116) {
-    logprintf ( "%u * %u = %llu", self->p1, self->p2, self->what);
+    debug ( "%u * %u = %llu", self->p1, self->p2, self->what);
   }
   assert (len >= 116);
   assert (!*(long long *) packet);
@@ -550,7 +550,7 @@ int process_dh_answer (struct connection *c, char *packet, int len) {
 
   GET_DC(c)->server_time_delta = server_time - time (0);
   GET_DC(c)->server_time_udelta = server_time - get_utime (CLOCK_MONOTONIC);
-  //logprintf ( "server time is %d, delta = %d\n", server_time, server_time_delta);
+  //debug ( "server time is %d, delta = %d\n", server_time, server_time_delta);
 
   // Build set_client_DH_params answer
   clear_packet (self);
@@ -606,7 +606,7 @@ int process_dh_answer (struct connection *c, char *packet, int len) {
 
 
 int process_auth_complete (struct connection *c, char *packet, int len) {
-  logprintf ( "process_auth_complete(), len=%d\n", len);
+  debug ( "process_auth_complete(), len=%d\n", len);
   struct mtproto_connection *self = c->mtconnection;
   assert (len == 72);
   assert (!*(long long *) packet);
@@ -628,7 +628,7 @@ int process_auth_complete (struct connection *c, char *packet, int len) {
   assert (!memcmp (packet + 56, sha1_buffer + 4, 16));
   GET_DC(c)->server_salt = *(long long *)self->server_nonce ^ *(long long *)self->new_nonce;
 
-  logprintf ( "auth_key_id=%016llx\n", GET_DC(c)->auth_key_id);
+  debug ( "auth_key_id=%016llx\n", GET_DC(c)->auth_key_id);
   //kprintf ("OK\n");
 
   //c->status = conn_error;
@@ -636,7 +636,7 @@ int process_auth_complete (struct connection *c, char *packet, int len) {
 
   self->c_state = st_authorized;
   //return 1;
-  logprintf ( "Auth success\n");
+  debug ( "Auth success\n");
   self->auth_success ++;
   GET_DC(c)->flags |= 1;
 
@@ -696,7 +696,7 @@ int aes_encrypt_message (struct mtproto_connection *self, struct dc *DC, struct 
   sha1 ((unsigned char *) &enc->server_salt, enc_len, sha1_buffer);
   //printf ("enc_len is %d\n", enc_len);
   if (verbosity >= 2) {
-    logprintf ( "sending message with sha1 %08x\n", *(int *)sha1_buffer);
+    debug ( "sending message with sha1 %08x\n", *(int *)sha1_buffer);
   }
   memcpy (enc->msg_key, sha1_buffer + 4, 16);
   init_aes_auth (self, DC->auth_key, enc->msg_key, AES_ENCRYPT);
@@ -707,7 +707,7 @@ int aes_encrypt_message (struct mtproto_connection *self, struct dc *DC, struct 
 long long encrypt_send_message (struct mtproto_connection *self, int *msg, int msg_ints, int useful) {
   struct connection *c = self->connection;
 
-  logprintf("encrypt_send_message(...)\n");
+  //debug("encrypt_send_message(...)\n");
   struct dc *DC = GET_DC(c);
   struct session *S = c->session;
   assert (S);
@@ -746,7 +746,7 @@ void fetch_pts (struct mtproto_connection *self) {
   if (p <= self->pts) { return; }
   if (p != self->pts + 1) {
     if (self->pts) {
-      //logprintf ("Hole in pts p = %d, pts = %d\n", p, pts);
+      //debug ("Hole in pts p = %d, pts = %d\n", p, pts);
 
       // get difference should be here
       self->pts = p;
@@ -764,7 +764,7 @@ void fetch_qts (struct mtproto_connection *self) {
   if (p <= self->qts) { return; }
   if (p != self->qts + 1) {
     if (self->qts) {
-      //logprintf ("Hole in qts\n");
+      //debug ("Hole in qts\n");
       // get difference should be here
       self->qts = p;
     } else {
@@ -787,7 +787,7 @@ void fetch_date (struct mtproto_connection *self) {
 void fetch_seq (struct mtproto_connection *self) {
   int x = fetch_int (self);
   if (x > self->seq + 1) {
-    logprintf ("Hole in seq: seq = %d, x = %d\n", self->seq, x);
+    debug ("Hole in seq: seq = %d, x = %d\n", self->seq, x);
     //do_get_difference ();
     //seq = x;
   } else if (x == self->seq + 1) {
@@ -867,11 +867,11 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
   struct binlog *bl = self->bl;
 
   unsigned op = fetch_int (self);
-  logprintf("work_update(): OP:%d\n", op);
+  debug("work_update(): OP:%d\n", op);
   switch (op) {
   case CODE_update_new_message:
     {
-      logprintf ("CODE_update_new_message\n");
+      debug ("CODE_update_new_message\n");
       struct message *M UU = fetch_alloc_message (self, tg);
       assert (M);
       fetch_pts (self);
@@ -883,7 +883,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
     };
   case CODE_update_message_i_d:
     {
-      logprintf ("CODE_update_message\n");
+      debug ("CODE_update_message\n");
       int id = fetch_int (self); // id
       int new = fetch_long (self); // random_id
       struct message *M = message_get (bl, new);
@@ -894,7 +894,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
     break;
   case CODE_update_read_messages:
     {
-      logprintf ("CODE_update_read_message\n");
+      debug ("CODE_update_read_message\n");
       assert (fetch_int (self) == (int)CODE_vector);
       int n = fetch_int (self);
       int i;
@@ -918,7 +918,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
     break;
   case CODE_update_user_typing:
     {
-      logprintf ("CODE_update_user_typing\n");
+      debug ("CODE_update_user_typing\n");
       peer_id_t id = MK_USER (fetch_int (self));
       peer_t *U UU = user_chat_get (bl, id);
 	  event_update_user_typing (tg, U);
@@ -1220,7 +1220,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
     {
       struct secret_chat *E = fetch_alloc_encrypted_chat (self);
       if (verbosity >= 2) {
-        logprintf ("Secret chat state = %d\n", E->state);
+        debug ("Secret chat state = %d\n", E->state);
       }
       //print_start ();
       //push_color (COLOR_YELLOW);
@@ -1370,13 +1370,13 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
     }
     break;
   default:
-    logprintf ("Unknown update type %08x\n", op);
+    debug ("Unknown update type %08x\n", op);
     ;
   }
 }
 
 void work_update_short (struct connection *c, long long msg_id) {
-  logprintf ("work_update_short\n");
+  debug ("work_update_short\n");
   struct mtproto_connection *self = c->mtconnection;
 
   assert (fetch_int (self) == CODE_update_short);
@@ -1385,7 +1385,7 @@ void work_update_short (struct connection *c, long long msg_id) {
 }
 
 void work_updates (struct connection *c, long long msg_id) {
-  logprintf ("work_updates(\n)");
+  debug ("work_updates(\n)");
   struct mtproto_connection *self = c->mtconnection;
 
   assert (fetch_int (c->mtconnection) == CODE_updates);
@@ -1410,7 +1410,7 @@ void work_updates (struct connection *c, long long msg_id) {
 }
 
 void work_update_short_message (struct connection *c UU, long long msg_id UU) {
-  logprintf ("work_update_short_message(\n)");
+  debug ("work_update_short_message(\n)");
   struct mtproto_connection *self = c->mtconnection;
 
   assert (fetch_int (c->mtconnection) == (int)CODE_update_short_message);
@@ -1425,7 +1425,7 @@ void work_update_short_message (struct connection *c UU, long long msg_id UU) {
 }
 
 void work_update_short_chat_message (struct connection *c, long long msg_id UU) {
-  logprintf ("work_update_chat_message(\n)");
+  debug ("work_update_chat_message(\n)");
   struct mtproto_connection *self = c->mtconnection;
 
   assert (fetch_int (self) == CODE_update_short_chat_message);
@@ -1440,7 +1440,7 @@ void work_update_short_chat_message (struct connection *c, long long msg_id UU) 
 }
 
 void work_container (struct connection *c, long long msg_id UU) {
-  logprintf ( "work_container: msg_id = %lld\n", msg_id);
+  debug ( "work_container: msg_id = %lld\n", msg_id);
   assert (fetch_int (c->mtconnection) == CODE_msg_container);
   int n = fetch_int (c->mtconnection);
   int i;
@@ -1461,30 +1461,30 @@ void work_container (struct connection *c, long long msg_id UU) {
 }
 
 void work_new_session_created (struct connection *c, long long msg_id UU) {
-  logprintf ( "work_new_session_created: msg_id = %lld\n", msg_id);
+  debug ( "work_new_session_created: msg_id = %lld\n", msg_id);
   assert (fetch_int (c->mtconnection) == (int)CODE_new_session_created);
   fetch_long (c->mtconnection); // first message id
   //DC->session_id = fetch_long ();
   fetch_long (c->mtconnection); // unique_id
   GET_DC(c)->server_salt = fetch_long (c->mtconnection);
-  logprintf ("new server_salt = %lld\n", GET_DC(c)->server_salt);
+  debug ("new server_salt = %lld\n", GET_DC(c)->server_salt);
 }
 
 void work_msgs_ack (struct connection *c UU, long long msg_id UU) {
-  logprintf ( "work_msgs_ack: msg_id = %lld\n", msg_id);
+  debug ( "work_msgs_ack: msg_id = %lld\n", msg_id);
   assert (fetch_int (c->mtconnection) == CODE_msgs_ack);
   assert (fetch_int (c->mtconnection) == CODE_vector);
   int n = fetch_int (c->mtconnection);
   int i;
   for (i = 0; i < n; i++) {
     long long id = fetch_long (c->mtconnection);
-    logprintf ("ack for %lld\n", id);
+    debug ("ack for %lld\n", id);
     query_ack (c->instance, id);
   }
 }
 
 void work_rpc_result (struct connection *c UU, long long msg_id UU) {
-  logprintf ( "work_rpc_result: msg_id = %lld\n", msg_id);
+  debug ( "work_rpc_result: msg_id = %lld\n", msg_id);
   assert (fetch_int (c->mtconnection) == (int)CODE_rpc_result);
   long long id = fetch_long (c->mtconnection);
   int op = prefetch_int (c->mtconnection);
@@ -1497,7 +1497,7 @@ void work_rpc_result (struct connection *c UU, long long msg_id UU) {
 
 #define MAX_PACKED_SIZE (1 << 24)
 void work_packed (struct connection *c, long long msg_id) {
-  logprintf ("work_packet()\n");
+  debug ("work_packet()\n");
   assert (fetch_int (c->mtconnection) == CODE_gzip_packed);
   static int in_gzip;
   static int buf[MAX_PACKED_SIZE >> 2];
@@ -1514,7 +1514,7 @@ void work_packed (struct connection *c, long long msg_id) {
   c->mtconnection->in_ptr = buf;
   c->mtconnection->in_end = c->mtconnection->in_ptr + total_out / 4;
   if (verbosity >= 4) {
-    logprintf ( "Unzipped data: ");
+    debug ( "Unzipped data: ");
     hexdump_in (c->mtconnection);
   }
   rpc_execute_answer (c, msg_id);
@@ -1524,7 +1524,7 @@ void work_packed (struct connection *c, long long msg_id) {
 }
 
 void work_bad_server_salt (struct connection *c UU, long long msg_id UU) {
-  logprintf ("work_bad_server_salt()\n");
+  debug ("work_bad_server_salt()\n");
   assert (fetch_int (c->mtconnection) == (int)CODE_bad_server_salt);
   long long id = fetch_long (c->mtconnection);
   query_restart (c->instance, id);
@@ -1535,14 +1535,14 @@ void work_bad_server_salt (struct connection *c UU, long long msg_id UU) {
 }
 
 void work_pong (struct connection *c UU, long long msg_id UU) {
-  logprintf ("work_pong()\n");
+  debug ("work_pong()\n");
   assert (fetch_int (c->mtconnection) == CODE_pong);
   fetch_long (c->mtconnection); // msg_id
   fetch_long (c->mtconnection); // ping_id
 }
 
 void work_detailed_info (struct connection *c UU, long long msg_id UU) {
-  logprintf ("work_detailed_info()\n");
+  debug ("work_detailed_info()\n");
   assert (fetch_int (c->mtconnection) == CODE_msg_detailed_info);
   fetch_long (c->mtconnection); // msg_id
   fetch_long (c->mtconnection); // answer_msg_id
@@ -1551,7 +1551,7 @@ void work_detailed_info (struct connection *c UU, long long msg_id UU) {
 }
 
 void work_new_detailed_info (struct connection *c UU, long long msg_id UU) {
-  logprintf ("work_new_detailed_info()\n");
+  debug ("work_new_detailed_info()\n");
   assert (fetch_int (c->mtconnection) == (int)CODE_msg_new_detailed_info);
   fetch_long (c->mtconnection); // answer_msg_id
   fetch_int (c->mtconnection); // bytes
@@ -1560,7 +1560,7 @@ void work_new_detailed_info (struct connection *c UU, long long msg_id UU) {
 
 void work_updates_to_long (struct connection *c UU, long long msg_id UU) {
   assert (fetch_int (c->mtconnection) == (int)CODE_updates_too_long);
-  logprintf ("updates to long... Getting difference\n");
+  debug ("updates to long... Getting difference\n");
   do_get_difference (c->instance, 0);
 }
 
@@ -1569,12 +1569,12 @@ void work_bad_msg_notification (struct connection *c UU, long long msg_id UU) {
   long long m1 = fetch_long (c->mtconnection);
   int s = fetch_int (c->mtconnection);
   int e = fetch_int (c->mtconnection);
-  logprintf ("bad_msg_notification: msg_id = %lld, seq = %d, error = %d\n", m1, s, e);
+  debug ("bad_msg_notification: msg_id = %lld, seq = %d, error = %d\n", m1, s, e);
 }
 
 void rpc_execute_answer (struct connection *c, long long msg_id UU) {
   if (verbosity >= 5) {
-    logprintf ("rpc_execute_answer: fd=%d\n", c->fd);
+    debug ("rpc_execute_answer: fd=%d\n", c->fd);
     hexdump_in (c->mtconnection);
   }
   int op = prefetch_int (c->mtconnection);
@@ -1625,7 +1625,7 @@ void rpc_execute_answer (struct connection *c, long long msg_id UU) {
     work_bad_msg_notification (c, msg_id);
     return;
   }
-  logprintf ( "Unknown message: \n");
+  debug ( "Unknown message: \n");
   hexdump_in (c->mtconnection);
   c->mtconnection->in_ptr = c->mtconnection->in_end; // Will not fail due to assertion in_ptr == in_end
 }
@@ -1633,7 +1633,7 @@ void rpc_execute_answer (struct connection *c, long long msg_id UU) {
 int process_rpc_message (struct connection *c UU, struct encrypted_message *enc, int len) {
   const int MINSZ = offsetof (struct encrypted_message, message);
   const int UNENCSZ = offsetof (struct encrypted_message, server_salt);
-  logprintf ( "process_rpc_message(), len=%d\n", len);
+  debug ( "process_rpc_message(), len=%d\n", len);
   assert (len >= MINSZ && (len & 15) == (UNENCSZ & 15));
   struct dc *DC = GET_DC(c);
   assert (enc->auth_key_id == DC->auth_key_id);
@@ -1659,7 +1659,7 @@ int process_rpc_message (struct connection *c UU, struct encrypted_message *enc,
   }
   double st = get_server_time (DC);
   if (this_server_time < st - 300 || this_server_time > st + 30) {
-    logprintf ("salt = %lld, session_id = %lld, msg_id = %lld, seq_no = %d, st = %lf, now = %lf\n", 
+    debug ("salt = %lld, session_id = %lld, msg_id = %lld, seq_no = %d, st = %lf, now = %lf\n", 
         enc->server_salt, enc->session_id, enc->msg_id, enc->seq_no, st, get_utime (CLOCK_REALTIME));
     c->mtconnection->in_ptr = enc->message;
     c->mtconnection->in_end = c->mtconnection->in_ptr + (enc->msg_len / 4);
@@ -1668,7 +1668,7 @@ int process_rpc_message (struct connection *c UU, struct encrypted_message *enc,
 
   assert (this_server_time >= st - 300 && this_server_time <= st + 30);
   //assert (enc->msg_id > server_last_msg_id && (enc->msg_id & 3) == 1);
-  logprintf ( "received mesage id %016llx\n", enc->msg_id);
+  debug ( "received mesage id %016llx\n", enc->msg_id);
   hexdump_in (c->mtconnection);
   c->mtconnection->server_last_msg_id = enc->msg_id;
 
@@ -1693,7 +1693,7 @@ int process_rpc_message (struct connection *c UU, struct encrypted_message *enc,
 
 
 int rpc_execute (struct connection *c, int op, int len) {
-  logprintf ("outbound rpc connection #%d : received rpc answer %d with %d content bytes\n", c->fd, op, len);
+  debug ("outbound rpc connection #%d : received rpc answer %d with %d content bytes\n", c->fd, op, len);
   struct mtproto_connection *self = c->mtconnection;
   struct telegram *instance = c->instance;
   
@@ -1705,19 +1705,19 @@ int rpc_execute (struct connection *c, int op, int len) {
   */
 
   if (len >= MAX_RESPONSE_SIZE/* - 12*/ || len < 0/*12*/) {
-    logprintf ( "answer too long (%d bytes), skipping\n", len);
+    debug ( "answer too long (%d bytes), skipping\n", len);
     return 0;
   }
 
   int Response_len = len;
 
   if (verbosity >= 2) {
-    logprintf ("Response_len = %d\n", Response_len);
+    debug ("Response_len = %d\n", Response_len);
   }
   assert (read_in (c, Response, Response_len) == Response_len);
   Response[Response_len] = 0;
   if (verbosity >= 2) {
-    logprintf ( "have %d Response bytes\n", Response_len);
+    debug ( "have %d Response bytes\n", Response_len);
   }
 
   int o = c->mtconnection->c_state;
@@ -1732,14 +1732,14 @@ int rpc_execute (struct connection *c, int op, int len) {
   case st_client_dh_sent:
     process_auth_complete (c, Response/* + 8*/, Response_len/* - 12*/);
     self->queries_num --;
-    logprintf ("queries_num=%d\n", c->mtconnection->queries_num);
+    debug ("queries_num=%d\n", c->mtconnection->queries_num);
     if (self->on_ready) {
       self->on_ready(self, self->on_ready_data);
     }
     return 0;
   case st_authorized:
     if (op < 0 && op >= -999) {
-      logprintf ("Server error %d\n", op);
+      debug ("Server error %d\n", op);
       char code[12] = {0};
       snprintf (code, 12, "%d", op);
       c->mtconnection->c_state = st_error;
@@ -1749,7 +1749,7 @@ int rpc_execute (struct connection *c, int op, int len) {
     }
     return 0;
   default:
-    logprintf ( "fatal: cannot receive answer in state %d\n", c->mtconnection->c_state);
+    debug ( "fatal: cannot receive answer in state %d\n", c->mtconnection->c_state);
     exit (2);
   }
 
@@ -1758,12 +1758,12 @@ int rpc_execute (struct connection *c, int op, int len) {
 
 
 int tc_close (struct connection *c, int who) {
-  logprintf ( "outbound http connection #%d : closing by %d\n", c->fd, who);
+  debug ( "outbound http connection #%d : closing by %d\n", c->fd, who);
   return 0;
 }
 
 int tc_becomes_ready (struct connection *c) {
-  logprintf ( "outbound connection #%d becomes ready\n", c->fd);
+  debug ( "outbound connection #%d becomes ready\n", c->fd);
   char byte = 0xef;
   assert (write_out (c, &byte, 1) == 1);
   flush_out (c);
@@ -1775,7 +1775,7 @@ int tc_becomes_ready (struct connection *c) {
   switch (o) {
   case st_init:
     c->mtconnection->queries_num ++;
-    logprintf ("queries_num=%d\n", c->mtconnection->queries_num);
+    debug ("queries_num=%d\n", c->mtconnection->queries_num);
     send_req_pq_packet (c);
     break;
   case st_authorized:
@@ -1783,7 +1783,7 @@ int tc_becomes_ready (struct connection *c) {
     //telegram_change_state (c->instance, STATE_AUTHORIZED, NULL);
     break;
   default:
-    logprintf ( "c_state = %d\n", c->mtconnection->c_state);
+    debug ( "c_state = %d\n", c->mtconnection->c_state);
     assert (0);
   }
   return 0;
@@ -1860,7 +1860,7 @@ void mtproto_connect(struct mtproto_connection *c)
  * cleanup tasks
  */
 void mtproto_close(struct mtproto_connection *mtp) {
-    logprintf ("closing mtproto_connection...\n");
+    debug ("closing mtproto_connection...\n");
     mtp->destroy = 1;
 
     // send all pending acks on this connection so the server won't 
@@ -1882,7 +1882,7 @@ void mtproto_close(struct mtproto_connection *mtp) {
  * Close the underlying file descriptor
  */
 void mtproto_destroy (struct mtproto_connection *self) {
-    logprintf("destroying mtproto_connection: %p\n", self);
+    debug("destroying mtproto_connection: %p\n", self);
     self->instance->config->proxy_close_cb(self->handle);
     fd_close_connection(self->connection);
     tfree(self, sizeof(struct mtproto_connection));
@@ -1896,7 +1896,7 @@ void mtproto_close_foreign (struct telegram *instance)
         if (c && 
             !c->destroy && 
             c->connection->session->dc->id != instance->auth.dc_working_num) {
-            logprintf ("closing connection for working_dc=%d, dc=%d\n", 
+            debug ("closing connection for working_dc=%d, dc=%d\n", 
                instance->auth.dc_working_num, c->connection->session->dc->id);
             mtproto_close (c);
          }
@@ -1911,11 +1911,11 @@ void mtproto_free_closed (struct telegram *tg) {
     for (i = 0; i < 100; i++) {
         if (tg->Cs[i] == NULL) continue; 
         struct mtproto_connection *c = tg->Cs[i];
-        logprintf ("checking mtproto_connection %d: c_state:%d destroy:%d, quries_num:%d\n", 
+        debug ("checking mtproto_connection %d: c_state:%d destroy:%d, quries_num:%d\n", 
             i, c->c_state, c->destroy, c->queries_num);
         if (c->destroy == 0) continue;
         if (c->connection->out_bytes > 0) {
-            logprintf ("still %d bytes ouput left, skipping connection...\n", c->connection->out_bytes);
+            debug ("still %d bytes ouput left, skipping connection...\n", c->connection->out_bytes);
             continue;
         }
         mtproto_destroy (c);

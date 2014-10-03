@@ -49,7 +49,7 @@ int verbosity;
 
 void fetch_skip_photo (struct mtproto_connection *mtp);
 
-#define code_assert(x) if (!(x)) { logprintf ("Can not parse at line %d\n", __LINE__); assert (0); return -1; }
+#define code_assert(x) if (!(x)) { fatal ("Can not parse at line %d\n", __LINE__); assert (0); return -1; }
 #define code_try(x) if ((x) == -1) { return -1; }
 
 /*
@@ -304,7 +304,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
  
   if (x == CODE_encrypted_chat_discarded) {
     if (new) {
-      logprintf ("Unknown chat in deleted state. May be we forgot something...\n");
+      warning ("Unknown chat in deleted state. May be we forgot something...\n");
       return;
     }
     bl_do_encr_chat_delete (mtp->bl, mtp, U);
@@ -322,7 +322,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
     int user_id = fetch_int (mtp) + admin_id - instance->our_id;
 
     if (x == CODE_encrypted_chat_waiting) {
-      logprintf ("Unknown chat in waiting state. May be we forgot something...\n");
+      warning ("Unknown chat in waiting state. May be we forgot something...\n");
       return;
     }
     if (x == CODE_encrypted_chat_requested || x == CODE_encrypted_chat) {
@@ -332,7 +332,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
     
     int l = prefetch_strlen (mtp);
     char *s = fetch_str (mtp, l);
-    if (l != 256) { logprintf ("l = %d\n", l); }
+    if (l != 256) { debug ("l = %d\n", l); }
     if (l < 256) {
       memcpy (g_key + 256 - l, s, l);
     } else {
@@ -341,7 +341,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
     
     /*l = prefetch_strlen (mtp);
     s = fetch_str (mtp, l);
-    if (l != 256) { logprintf ("l = %d\n", l); }
+    if (l != 256) { debug ("l = %d\n", l); }
     if (l < 256) {
       memcpy (nonce + 256 - l, s, l);
     } else {
@@ -353,7 +353,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
     }
 
     if (x == CODE_encrypted_chat) {
-      logprintf ("Unknown chat in ok state. May be we forgot something...\n");
+      warning ("Unknown chat in ok state. May be we forgot something...\n");
       return;
     }
 
@@ -363,11 +363,11 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
     bl_do_set_encr_chat_access_hash (mtp->bl, mtp, U, fetch_long (mtp));
     bl_do_set_encr_chat_date (mtp->bl, mtp, U, fetch_int (mtp));
     if (fetch_int (mtp) != U->admin_id) {
-      logprintf ("Changed admin in secret chat. WTF?\n");
+      failure ("Changed admin in secret chat. WTF?\n");
       return;
     }
     if (U->user_id != U->admin_id + fetch_int (mtp) - instance->our_id) {
-      logprintf ("Changed partner in secret chat. WTF?\n");
+      failure ("Changed partner in secret chat. WTF?\n");
       return;
     }
     if (x == CODE_encrypted_chat_waiting) {
@@ -383,7 +383,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
     
     int l = prefetch_strlen (mtp);
     char *s = fetch_str (mtp, l);
-    if (l != 256) { logprintf ("l = %d\n", l); }
+    if (l != 256) { debug ("l = %d\n", l); }
     if (l < 256) {
       memcpy (g_key + 256 - l, s, l);
     } else {
@@ -392,7 +392,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
     
     /*l = prefetch_strlen (mtp);
     s = fetch_str (mtp, l);
-    if (l != 256) { logprintf ("l = %d\n", l); }
+    if (l != 256) { debug ("l = %d\n", l); }
     if (l < 256) {
       memcpy (nonce + 256 - l, s, l);
     } else {
@@ -602,7 +602,7 @@ void fetch_photo_size (struct mtproto_connection *mtp, struct photo_size *S) {
   unsigned x = fetch_int (mtp);
   assert (x == CODE_photo_size || x == CODE_photo_cached_size || x == CODE_photo_size_empty);
   S->type = fetch_str_dup (mtp);
-  logprintf("s->type %s\n", S->type);
+  debug("s->type %s\n", S->type);
   if (x != CODE_photo_size_empty) {
     fetch_file_location (mtp, &S->loc);
     S->w = fetch_int (mtp);
@@ -668,7 +668,7 @@ void fetch_photo (struct mtproto_connection *mtp, struct photo *P) {
   fetch_geo (mtp, &P->geo);
   assert (fetch_int (mtp) == CODE_vector);
   P->sizes_num = fetch_int (mtp);
-  logprintf("sizes_num %d \n", P->sizes_num);
+  debug("sizes_num %d \n", P->sizes_num);
   P->sizes = talloc (sizeof (struct photo_size) * P->sizes_num);
   int i;
   for (i = 0; i < P->sizes_num; i++) {
@@ -784,7 +784,7 @@ void fetch_message_action (struct mtproto_connection *mtp, struct message_action
       char *s = fetch_str (mtp, l);
       int l2 = prefetch_strlen (mtp); // checkin
       char *s2 = fetch_str (mtp, l2);
-      logprintf ("Message action: Created geochat %.*s in address %.*s\n", l, s, l2, s2);
+      debug ("Message action: Created geochat %.*s in address %.*s\n", l, s, l2, s2);
     }
     break;
   case CODE_message_action_geo_chat_checkin:
@@ -951,7 +951,7 @@ void fetch_message_media (struct mtproto_connection *mtp, struct message_media *
     memcpy (M->data, fetch_str (mtp, M->data_size), M->data_size);
     break;
   default:
-    logprintf ("type = 0x%08x\n", M->type);
+    debug ("type = 0x%08x\n", M->type);
     assert (0);
   }
 }
@@ -995,7 +995,7 @@ void fetch_skip_message_media (struct mtproto_connection *mtp) {
     }
     break;
   default:
-    logprintf ("type = 0x%08x\n", x);
+    debug ("type = 0x%08x\n", x);
     assert (0);
   }
 }
@@ -1069,7 +1069,7 @@ void fetch_skip_message_media_encrypted (struct mtproto_connection *mtp) {
     fetch_skip (mtp, 1);
     break;
   default:
-    logprintf ("type = 0x%08x\n", x);
+    debug ("type = 0x%08x\n", x);
     assert (0);
   }
 }
@@ -1218,7 +1218,7 @@ void fetch_message_media_encrypted (struct mtproto_connection *mtp, struct messa
     M->user_id = fetch_int (mtp);
     break;
   default:
-    logprintf ("type = 0x%08x\n", x);
+    debug ("type = 0x%08x\n", x);
     assert (0);
   }
 }
@@ -1230,7 +1230,7 @@ void fetch_skip_message_action_encrypted (struct mtproto_connection *mtp) {
     fetch_skip (mtp, 1);
     break;
   default:
-    logprintf ("x = 0x%08x\n", x);
+    debug ("x = 0x%08x\n", x);
     assert (0);
   }
 }
@@ -1243,7 +1243,7 @@ void fetch_message_action_encrypted (struct mtproto_connection *mtp, struct mess
     M->ttl = fetch_int (mtp);
     break;
   default:
-    logprintf ("x = 0x%08x\n", x);
+    debug ("x = 0x%08x\n", x);
     assert (0);
   }
 }
@@ -1389,7 +1389,7 @@ int decrypt_encrypted_message (struct secret_chat *E) {
   sha1 ((void *)decr_ptr, 4 + x, sha1a_buffer);
 
   if (memcmp (sha1a_buffer + 4, msg_key, 16)) {
-    logprintf ("Sha1 mismatch\n");
+    failure ("Sha1 mismatch\n");
     return -1;
   }
   return 0;
@@ -1409,7 +1409,7 @@ void fetch_encrypted_message (struct mtproto_connection *mtp, struct message *M)
   
   peer_t *P = user_chat_get (bl, chat);
   if (!P) {
-    logprintf ("Encrypted message to unknown chat. Dropping\n");
+    warning ("Encrypted message to unknown chat. Dropping\n");
     M->flags |= FLAG_MESSAGE_EMPTY;
   }
 
@@ -1421,7 +1421,7 @@ void fetch_encrypted_message (struct mtproto_connection *mtp, struct message *M)
   int ok = 0;
   if (P) {
     if (*(long long *)decr_ptr != P->encr_chat.key_fingerprint) {
-      logprintf ("Encrypted message with bad fingerprint to chat %s\n", P->print_name);
+      warning ("Encrypted message with bad fingerprint to chat %s\n", P->print_name);
       P = 0;
     }
     decr_ptr += 2;
@@ -1525,7 +1525,7 @@ static int id_cmp (struct message *M1, struct message *M2) {
 struct user *fetch_alloc_user (struct mtproto_connection *mtp) {
   struct binlog *bl = mtp->instance->bl;
 
-  logprintf("fetch_alloc_user()\n");
+  debug("fetch_alloc_user()\n");
   int data[2];
   prefetch_data (mtp, data, 8);
   peer_t *U = user_chat_get (bl, MK_USER (data[1]));
@@ -1549,7 +1549,7 @@ struct user *fetch_alloc_user (struct mtproto_connection *mtp) {
 struct secret_chat *fetch_alloc_encrypted_chat (struct mtproto_connection *mtp) {
   struct binlog *bl = mtp->bl;
 
-  logprintf("fetch_alloc_encrypted_chat()\n");
+  debug("fetch_alloc_encrypted_chat()\n");
   int data[2];
   prefetch_data (mtp, data, 8);
   peer_t *U = user_chat_get (bl, MK_ENCR_CHAT (data[1]));
@@ -1679,7 +1679,7 @@ void free_message_media (struct message_media *M) {
   case 0:
     break;
   default:
-    logprintf ("%08x\n", M->type);
+    debug ("%08x\n", M->type);
     assert (0);
   }
 }
@@ -1813,7 +1813,7 @@ void message_del_peer (struct message *M) {
 struct message *fetch_alloc_message (struct mtproto_connection *mtp, struct telegram *instance) {
   struct binlog *bl = mtp->bl;
 
-  logprintf("fetch_alloc_message()\n");
+  debug("fetch_alloc_message()\n");
   int data[2];
   prefetch_data (mtp, data, 8);
   struct message *M = message_get (bl, data[1]);
@@ -1832,7 +1832,7 @@ struct message *fetch_alloc_message (struct mtproto_connection *mtp, struct tele
 }
 
 struct message *fetch_alloc_geo_message (struct mtproto_connection *mtp, struct telegram *instance) {
-  logprintf("fetch_alloc_geo_message()\n");
+  debug("fetch_alloc_geo_message()\n");
   struct message *M = talloc (sizeof (*M));
   M->instance = instance;
   fetch_geo_message (mtp, M);
@@ -1859,7 +1859,7 @@ struct message *fetch_alloc_geo_message (struct mtproto_connection *mtp, struct 
 struct message *fetch_alloc_encrypted_message (struct mtproto_connection *mtp, 
     struct telegram *instance) {
   struct binlog *bl = mtp->bl;
-  logprintf("fetch_alloc_encrypted_message()\n");
+  debug("fetch_alloc_encrypted_message()\n");
   int data[3];
   prefetch_data (mtp, data, 12);
   struct message *M = message_get (bl, *(long long *)(data + 1));
@@ -1871,7 +1871,7 @@ struct message *fetch_alloc_encrypted_message (struct mtproto_connection *mtp,
     message_insert_tree (M);
     mtp->bl->messages_allocated ++;
     assert (message_get (bl, M->id) == M);
-    logprintf ("id = %lld\n", M->id);
+    debug ("id = %lld\n", M->id);
   }
   fetch_encrypted_message (mtp, M);
   return M;
@@ -1914,12 +1914,12 @@ struct message *fetch_alloc_message_short_chat (struct mtproto_connection *mtp, 
 
 struct chat *fetch_alloc_chat (struct mtproto_connection *mtp) {
   struct binlog *bl = mtp->bl;
-  logprintf("fetch_alloc_chat()\n");
+  debug("fetch_alloc_chat()\n");
   int data[2];
   prefetch_data (mtp, data, 8);
   peer_t *U = user_chat_get (bl, MK_CHAT (data[1]));
-  logprintf("id %d\n", U->id.id);
-  logprintf("type %d\n", U->id.type);
+  debug("id %d\n", U->id.id);
+  debug("type %d\n", U->id.type);
   if (!U) {
     bl->chats_allocated ++;
     U = talloc0 (sizeof (*U));
@@ -2020,7 +2020,7 @@ void message_remove_unsent (struct message *M) {
 }
 
 void __send_msg (struct message *M) {
-  logprintf ("Resending message...\n");
+  debug ("Resending message...\n");
   //print_message (M);
   
   assert(M->instance);
@@ -2033,13 +2033,13 @@ void send_all_unsent (struct binlog *bl) {
 
 void peer_insert_name (struct binlog *bl, peer_t *P) {
   //if (!P->print_name || !strlen (P->print_name)) { return; }
-  //logprintf ("+%s\n", P->print_name);
+  //debug ("+%s\n", P->print_name);
   bl->peer_by_name_tree = tree_insert_peer_by_name (bl->peer_by_name_tree, P, lrand48 ());
 }
 
 void peer_delete_name (struct binlog *bl, peer_t *P) {
   //if (!P->print_name || !strlen (P->print_name)) { return; }
-  //logprintf ("-%s\n", P->print_name);
+  //debug ("-%s\n", P->print_name);
   bl->peer_by_name_tree = tree_delete_peer_by_name (bl->peer_by_name_tree, P);
 }
 
@@ -2055,7 +2055,7 @@ void free_messages (struct binlog *bl)
   while (bl->message_tree) {
     struct message *M = tree_get_min_message (bl->message_tree);
     assert (M);
-    logprintf ("freeing message: %lld\n", M->id);
+    debug ("freeing message: %lld\n", M->id);
     bl->message_tree = tree_delete_message (bl->message_tree, M);
     bl->messages_allocated --;
     free_message (M);

@@ -98,7 +98,7 @@ static const char *chat_id_get_comp_val (PurpleConnection *gc, int id, char *val
  */
 static PurpleConversation *chat_show (PurpleConnection *gc, int id)
 {
-    logprintf ("show chat");
+    debug ("show chat");
     telegram_conn *conn = purple_connection_get_protocol_data(gc);
 
     PurpleConversation *convo = purple_find_chat(gc, id);
@@ -159,7 +159,7 @@ static void tgprpl_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo * info
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_tooltip_text()\n");
 
-    logprintf ("purple_buddy_get_protocol_data: %s\n", buddy->name);
+    debug ("purple_buddy_get_protocol_data: %s\n", buddy->name);
 	peer_id_t *peer = purple_buddy_get_protocol_data(buddy);
 	if(peer == NULL)
 	{
@@ -184,11 +184,11 @@ static void tgprpl_output_cb(gpointer data, gint source, PurpleInputCondition co
 {
     mtproto_handle *conn = data;
     if (!conn->mtp) {
-        logprintf ("connection no loner existing, do nothing. \n");
+        debug ("connection no loner existing, do nothing. \n");
         return;
     }
     if (mtp_write_output(conn->mtp) == 0) {
-        logprintf("no output, removing output...\n");
+        debug("no output, removing output...\n");
         purple_input_remove(conn->wh);
         conn->wh = 0;
     }
@@ -199,7 +199,7 @@ static void tgprpl_output_cb(gpointer data, gint source, PurpleInputCondition co
  */
 static void tgprpl_has_output(void *handle)
 {
-    logprintf("tgprpl_has_output(%p)\n", handle);
+    debug("tgprpl_has_output(%p)\n", handle);
     mtproto_handle *conn = handle;
     if (! conn->wh) {
         conn->wh = purple_input_add(conn->fd, PURPLE_INPUT_WRITE, tgprpl_output_cb, handle);
@@ -212,9 +212,9 @@ static void tgprpl_has_output(void *handle)
 static void tgprpl_input_cb(gpointer data, gint source, PurpleInputCondition cond)
 {
     mtproto_handle *conn = data;
-    logprintf("tgprpl_input_cb()\n");
+    debug("tgprpl_input_cb()\n");
     if (!conn->fd) {
-        logprintf("conn for handle no longer existing, not reading input\n");
+        debug("conn for handle no longer existing, not reading input\n");
         return;
     }
     mtp_read_input(conn->mtp);
@@ -234,11 +234,11 @@ static void tgprpl_input_cb(gpointer data, gint source, PurpleInputCondition con
  */
 static void tgprpl_has_input(void *handle)
 {
-    logprintf("tgprpl_has_input()\n");
+    debug("tgprpl_has_input()\n");
     mtproto_handle *conn = handle;
     if (! conn->rh) {
         conn->rh = purple_input_add(conn->fd, PURPLE_INPUT_READ, tgprpl_input_cb, handle);
-        logprintf("Attached read handle: %u ", conn->rh);
+        debug("Attached read handle: %u ", conn->rh);
     }
 }
 
@@ -268,7 +268,7 @@ void telegram_on_proxy_request(struct telegram *tg, struct proxy_request *req)
 void telegram_on_proxy_close(void *handle)
 {
     mtproto_handle *conn = handle; 
-    logprintf ("Closing proxy-handles - fd: %d, write-handle: %d, read-handle: %d\n", 
+    debug ("Closing proxy-handles - fd: %d, write-handle: %d, read-handle: %d\n", 
         conn->fd, conn->wh, conn->rh);
     if (conn->rh) {
         purple_input_remove (conn->rh);
@@ -315,13 +315,13 @@ void client_registration_canceled (gpointer data)
 }
 
 gboolean queries_timerfunc (gpointer data) {
-   logprintf ("queries_timerfunc()\n");
+   debug ("queries_timerfunc()\n");
    telegram_conn *conn = data;
    work_timers (conn->tg);
    telegram_flush (conn->tg);
 
    if (conn->updated) {
-       logprintf ("State updated, storing current session...\n");
+       debug ("State updated, storing current session...\n");
        conn->updated = 0;
        telegram_store_session (conn->tg);
    }
@@ -386,7 +386,7 @@ void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_messa
     struct telegram *tg = req->tg;
 
     if (fd == -1) {
-        logprintf("purple_proxy_connect failed: %s\n", error_message);
+        failure("purple_proxy_connect failed: %s\n", error_message);
         telegram_destroy(tg);
         return;
     }
@@ -400,7 +400,7 @@ void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_messa
 
 void telegram_on_disconnected (struct telegram *tg)
 {
-     logprintf ("telegram_on_disconnected()\n");
+     debug ("telegram_on_disconnected()\n");
      assert (0);
 }
 
@@ -493,14 +493,14 @@ static int chat_add_message(struct telegram *tg, struct message *M)
 
 void message_allocated_handler(struct telegram *tg, struct message *M)
 {
-    logprintf ("message_allocated_handler\n");
+    debug ("message_allocated_handler\n");
     telegram_conn *conn = tg->extra;
     PurpleConnection *gc = conn->gc;
 
     if (M->service) {
        // TODO: handle service messages properly, currently adding them 
        // causes a segfault for an unknown reason
-       logprintf ("service message, skipping...\n");
+       debug ("service message, skipping...\n");
        return;
     }
 
@@ -510,12 +510,12 @@ void message_allocated_handler(struct telegram *tg, struct message *M)
     char *to = g_strdup_printf("%d", to_id.id);
     switch (to_id.type) {
         case PEER_CHAT:
-            logprintf ("PEER_CHAT\n");
+            debug ("PEER_CHAT\n");
             chat_add_message(tg, M);
         break;
 
         case PEER_USER:
-            logprintf ("PEER_USER\n");
+            debug ("PEER_USER\n");
             if (M->from_id.id == tg->our_id) {
                 serv_got_im(gc, to, M->message, PURPLE_MESSAGE_SEND, time((time_t *) &M->date));
             } else {
@@ -605,10 +605,10 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
 
     peer_t *user = usr;
     gchar *name = peer_get_peer_id_as_string(user); //g_strdup_printf("%d", get_peer_id(user->id));
-    logprintf("Allocated peer: %s\n", name);
+    debug("Allocated peer: %s\n", name);
     switch (user->id.type) {
         case PEER_USER: {
-            logprintf("Peer type: user.\n");
+            debug("Peer type: user.\n");
             // TODO: this should probably be freed again somwhere
             char *alias = malloc(BUDDYNAME_MAX_LENGTH);
             if (user_get_alias(user, alias, BUDDYNAME_MAX_LENGTH) < 0) {
@@ -638,7 +638,7 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
         }
         break;
         case PEER_CHAT: {
-            logprintf("Peer type: chat.\n");
+            debug("Peer type: chat.\n");
             PurpleChat *ch = blist_find_chat_by_id(gc, name);
             if (!ch) {
                 gchar *admin = g_strdup_printf("%d", user->chat.admin_id);
@@ -646,7 +646,7 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
                 g_hash_table_insert(htable, g_strdup("subject"), user->chat.title);
                 g_hash_table_insert(htable, g_strdup("id"), name);
                 g_hash_table_insert(htable, g_strdup("owner"), admin);
-                logprintf("Adding chat to blist: %s (%s, %s)\n", user->chat.title, name, admin);
+                debug("Adding chat to blist: %s (%s, %s)\n", user->chat.title, name, admin);
                 ch = purple_chat_new(pa, user->chat.title, htable);
                 purple_blist_add_chat(ch, NULL, NULL);
             }
@@ -668,7 +668,7 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
                     // peer_id_t u = MK_USER (cu->user_id);
                     // peer_t *uchat = user_chat_get(u);
                     const char *cuname = g_strdup_printf("%d", cu->user_id);
-                    logprintf("Adding user %s to chat %s\n", cuname, name);
+                    debug("Adding user %s to chat %s\n", cuname, name);
                     purple_conv_chat_add_user(purple_conversation_get_chat_data(conv), cuname, "", 
                         PURPLE_CBFLAGS_NONE | (!strcmp(owner, cuname) ? PURPLE_CBFLAGS_FOUNDER : 0), FALSE);
                 }
@@ -676,13 +676,13 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
         }
         break;
         case PEER_GEO_CHAT:
-            logprintf("Peer type: geo-chat.\n");
+            debug("Peer type: geo-chat.\n");
         break;
         case PEER_ENCR_CHAT:
-            logprintf("Peer type: encrypted chat.\n");
+            debug("Peer type: encrypted chat.\n");
         break;
         case PEER_UNKNOWN:
-            logprintf("Peer type: unknown.\n");
+            debug("Peer type: unknown.\n");
         break;
     }
 }
@@ -699,7 +699,7 @@ PurpleNotifyUserInfo *create_user_notify_info(struct user *usr)
 
 void user_info_received_handler(struct telegram *tg, struct user *usr, int show_info)
 {
-    logprintf("Get user info. \n %d", show_info);
+    debug("Get user info. \n %d", show_info);
     char *who = g_strdup_printf("%d", usr->id.id);
     if (usr->photo.sizes_num == 0 && show_info)
     {
@@ -718,7 +718,7 @@ void user_info_received_handler(struct telegram *tg, struct user *usr, int show_
 
 void download_finished_handler(struct telegram *tg, struct download *D)
 {
-    logprintf("download_finished_handler %s type %d\n", D->name, D->type);
+    debug("download_finished_handler %s type %d\n", D->name, D->type);
     //TODO: We need a type for user-photos!
     if(D->type == 0)
     {
@@ -729,7 +729,7 @@ void download_finished_handler(struct telegram *tg, struct download *D)
         GError *err = NULL;
         g_file_get_contents(D->name, &data, &len, &err);
         int imgStoreId = purple_imgstore_add_with_id(g_memdup(data, len), len, NULL);
-        logprintf("Imagestore id: %d\n", imgStoreId);
+        debug("Imagestore id: %d\n", imgStoreId);
         //Create user info
         char *who = g_strdup_printf("%d", usr->id.id);
         telegram_conn *conn = tg->extra;
@@ -1018,32 +1018,32 @@ static void tgprpl_chat_join(PurpleConnection * gc, GHashTable * data)
 
     char *id = g_hash_table_lookup(data, "id");
     if (!id) { 
-        logprintf ("Got no chat id, aborting...\n");
+        debug ("Got no chat id, aborting...\n");
         return;
     }
     if (!purple_find_chat(gc, atoi(id))) {
-        logprintf ("chat now known\n");
+        debug ("chat now known\n");
         char *subject, *owner, *part;
         do_get_chat_info (conn->tg, MK_CHAT(atoi(id)));
         telegram_flush (conn->tg);
     } else {
-        logprintf ("chat already known\n");
+        debug ("chat already known\n");
         serv_got_joined_chat(conn->gc, atoi(id), groupname);
     }
 }
 
 void on_chat_joined (struct telegram *instance, peer_id_t chatid)
 {
-    logprintf ("on_chat_joined(%d)\n", chatid.id);
+    debug ("on_chat_joined(%d)\n", chatid.id);
     telegram_conn *conn = instance->extra;
 
     peer_t *peer = user_chat_get (instance->bl, chatid);
     if (!peer) {
-        logprintf ("ERROR: chat with given id %d is not existing.\n", chatid.id);
+        warning ("WARNING: chat with given id %d is not existing.\n", chatid.id);
         return;
     }
     if (!peer->id.type == PEER_CHAT) {
-        logprintf ("ERROR: peer with given id %d and type %d is not a chat.\n", peer->id.id, peer->id.type);
+        warning ("WARNING: peer with given id %d and type %d is not a chat.\n", peer->id.id, peer->id.type);
         return;
     } 
     PurpleConversation *conv = serv_got_joined_chat(conn->gc, chatid.id, peer->chat.title);
@@ -1054,7 +1054,7 @@ void on_chat_joined (struct telegram *instance, peer_id_t chatid)
         peer_id_t part_id = MK_USER((curr + i)->user_id);
         char *name = g_strdup_printf ("%d", part_id.id);
         int flags = PURPLE_CBFLAGS_NONE | peer->chat.admin_id == part_id.id ? PURPLE_CBFLAGS_FOUNDER : 0;
-        logprintf ("purple_conv_chat_add_user (..., name=%s, ..., flags=%d)", name, flags);
+        debug ("purple_conv_chat_add_user (..., name=%s, ..., flags=%d)", name, flags);
         purple_conv_chat_add_user(
             purple_conversation_get_chat_data(conv), 
             name, 
@@ -1064,14 +1064,14 @@ void on_chat_joined (struct telegram *instance, peer_id_t chatid)
         );
     }
     struct message *M = 0;
-    logprintf ("g_queue_pop_head()\n");
+    debug ("g_queue_pop_head()\n");
 
     while (M = g_queue_pop_head (conn->new_messages)) {
-        logprintf ("adding msg-id\n");
+        debug ("adding msg-id\n");
         int id = get_peer_id(M->from_id);
         if (!chat_add_message(instance, M)) {
             // chat still not working?
-            logprintf ("WARNING, chat %d still not existing... \n", chatid.id);
+            warning ("WARNING, chat %d still not existing... \n", chatid.id);
             break;
         }
     }
@@ -1215,7 +1215,7 @@ static void tgprpl_init(PurplePlugin *plugin)
         int len = strlen (dir) + strlen (pw->pw_dir) + 2;    
         tgconf.base_config_path = talloc (len);
         tsnprintf (tgconf.base_config_path, len, "%s/%s", pw->pw_dir, dir);
-        logprintf ("base configuration path: %s", tgconf.base_config_path);
+        debug ("base configuration path: %s", tgconf.base_config_path);
     }
 
     PurpleAccountOption *option;
@@ -1263,7 +1263,7 @@ static GList *tgprpl_actions(PurplePlugin * plugin, gpointer context)
     return (GList *)NULL;
 }
 
-static PurplePluginInfo info = {
+static PurplePluginInfo plugin_info = {
     PURPLE_PLUGIN_MAGIC,
     PURPLE_MAJOR_VERSION,
     PURPLE_MINOR_VERSION,
@@ -1293,5 +1293,5 @@ static PurplePluginInfo info = {
 };
 
 
-PURPLE_INIT_PLUGIN(telegram, tgprpl_init, info)
+PURPLE_INIT_PLUGIN(telegram, tgprpl_init, plugin_info)
 

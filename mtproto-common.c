@@ -15,7 +15,7 @@ int get_random_bytes (unsigned char *buf, int n) {
     r = read (h, buf, n);
     if (r > 0) {
       if (verbosity >= 3) {
-        logprintf ( "added %d bytes of real entropy to secure random numbers seed\n", r);
+        debug ( "added %d bytes of real entropy to secure random numbers seed\n", r);
       }
     } else {
       r = 0;
@@ -96,14 +96,14 @@ void prng_seed (struct mtproto_connection *self, const char *password_filename, 
   if (password_filename && password_length > 0) {
     int fd = open (password_filename, O_RDONLY);
     if (fd < 0) {
-      logprintf ( "Warning: fail to open password file - \"%s\", %m.\n", password_filename);
+      debug ( "Warning: fail to open password file - \"%s\", %m.\n", password_filename);
     } else {
       unsigned char *a = talloc0 (password_length);
       int l = read (fd, a, password_length);
       if (l < 0) {
-        logprintf ( "Warning: fail to read password file - \"%s\", %m.\n", password_filename);
+        debug ( "Warning: fail to read password file - \"%s\", %m.\n", password_filename);
       } else {
-        logprintf ( "read %d bytes from password file.\n", l);
+        debug ( "read %d bytes from password file.\n", l);
         RAND_add (a, l, l);
       }
       close (fd);

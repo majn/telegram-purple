@@ -5,17 +5,11 @@
  * 	to stdout
  */
 void set_log_cb(void (*cb)(const char*, va_list ap));
-
-/**
- * Log a message to the current message log
- */
-void logprintf(const char *format, ...);
-
 void hexdump (int *in_ptr, int *in_end);
 
-/*
-void log_debug(const char* format, ...);
-void log_warning(const char* format, ...);
-void log_error(const char* format, ...);
-*/
+void debug(const char* format, ...);
+void info(const char* format, ...);
+void warning(const char* format, ...);
+void failure(const char* format, ...);
+void fatal(const char* format, ...);
 

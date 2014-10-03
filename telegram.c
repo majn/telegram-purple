@@ -108,20 +108,20 @@ int telegram_is_registered(struct telegram *tg) {
 void telegram_change_state (struct telegram *instance, int state, void *data) 
 {
     instance->session_state = state;
-    logprintf("on_state_change: %d\n", state);
+    debug("on_state_change: %d\n", state);
     switch (state) {
         case STATE_ERROR: {
             const char* err = data;
             if (err == NULL) {
                 err = "<no description>";
             }
-            logprintf("telegram errored: %s\n", err);
+            debug("telegram errored: %s\n", err);
             mtproto_close (instance->connection);
         }
         break;
 
         case STATE_AUTHORIZED:
-            logprintf("requesting configuration\n");
+            debug("requesting configuration\n");
             telegram_change_state(instance, STATE_CONFIG_REQUESTED, NULL);
             if (telegram_is_registered(instance)) {
                 telegram_change_state (instance, STATE_READY, NULL);
@@ -131,36 +131,36 @@ void telegram_change_state (struct telegram *instance, int state, void *data)
         break;
 
         case STATE_CONFIG_RECEIVED:
-            logprintf("received network configuration, checking whether phone is registered.\n");
+            debug("received network configuration, checking whether phone is registered.\n");
             telegram_store_session(instance);
             do_auth_check_phone(instance, instance->login);
         break;
 
         case STATE_PHONE_NOT_REGISTERED:
-            logprintf("phone is not registered, need to register phone number.\n");
+            debug("phone is not registered, need to register phone number.\n");
             do_send_code(instance, instance->login);
         break;
 
         case STATE_PHONE_CODE_NOT_ENTERED:
-            logprintf("phone authenticion, user needs to enter code, first and last name.\n");
+            debug("phone authenticion, user needs to enter code, first and last name.\n");
             assert (instance->config->on_phone_registration_required);
             instance->config->on_phone_registration_required (instance);
             break;
 
         case STATE_CLIENT_NOT_REGISTERED:
-            logprintf("phone is already registered, need to register client.\n");
+            debug("phone is already registered, need to register client.\n");
             do_send_code(instance, instance->login);
         break;
 
         case STATE_CLIENT_CODE_NOT_ENTERED:
-            logprintf("client authentication, user needs to enter code.\n");
+            debug("client authentication, user needs to enter code.\n");
             assert (instance->config->on_client_registration_required);
             instance->config->on_client_registration_required (instance);
             // wait for user input ...
         break;
         
         case STATE_READY:
-            logprintf("telegram is registered and ready.\n");
+            debug("telegram is registered and ready.\n");
             telegram_store_session (instance);
             instance->config->on_ready (instance);
         break;
@@ -170,7 +170,7 @@ void telegram_change_state (struct telegram *instance, int state, void *data)
             // the current mtproto_connection to be disconnected
             
             int target_dc = *(int*) data;
-            logprintf ("Disconnected: Migrate to data center %d\n", target_dc);
+            debug ("Disconnected: Migrate to data center %d\n", target_dc);
 
             // close old connection and mark it for destruction
             mtproto_close (instance->connection);
@@ -203,12 +203,12 @@ struct telegram *telegram_new(struct dc *DC, const char* login, struct telegram_
     this->state_path = telegram_get_config(this, "state");
     this->secret_path = telegram_get_config(this, "secret");
     
-    logprintf("%s\n", this->login);
-    logprintf("%s\n", this->config_path);
-    logprintf("%s\n", this->download_path);
-    logprintf("%s\n", this->auth_path);
-    logprintf("%s\n", this->state_path);
-    logprintf("%s\n", this->secret_path);
+    debug("%s\n", this->login);
+    debug("%s\n", this->config_path);
+    debug("%s\n", this->download_path);
+    debug("%s\n", this->auth_path);
+    debug("%s\n", this->state_path);
+    debug("%s\n", this->secret_path);
 
     telegram_change_state(this, STATE_INITIALISED, NULL);
     return this;
@@ -265,7 +265,7 @@ void free_auth (struct dc* DC_list[], int count)
 
 void assert_file_usable(const char *file)
 {
-    logprintf ("assert_file_usable (%s)\n", file);
+    debug ("assert_file_usable (%s)\n", file);
     assert(access(file, W_OK | R_OK | F_OK) != -1);
 }
 
@@ -341,7 +341,7 @@ void on_authorized(struct mtproto_connection *c, void* data);
 void telegram_main_connected (struct proxy_request *req)
 {
     struct telegram *instance = req->data;
-    logprintf("Authorized... storing current session %d.\n", 
+    debug("Authorized... storing current session %d.\n", 
         instance->connection->connection->session[0]);
     telegram_store_session(instance);
     telegram_change_state(instance, STATE_AUTHORIZED, NULL);
@@ -352,9 +352,9 @@ void telegram_main_connected (struct proxy_request *req)
  */
 void telegram_connect (struct telegram *instance)
 {
-    logprintf ("telegram_network_connect()\n");
+    debug ("telegram_network_connect()\n");
     if (! instance->auth.DC_list) {
-       logprintf("telegram_network_connect(): cannot connect, restore / init a session first.\n");
+       debug("telegram_network_connect(): cannot connect, restore / init a session first.\n");
        assert(0);
     }
     struct dc *DC_working = telegram_get_working_dc (instance);
@@ -372,7 +372,7 @@ void telegram_connect (struct telegram *instance)
 
 void on_auth_imported (void *extra)
 {
-   logprintf ("on_auth_imported()\n");
+   debug ("on_auth_imported()\n");
    struct download *dl = extra;
    struct mtproto_connection *c = dl->c;
    struct telegram *tg = c->instance;
@@ -384,7 +384,7 @@ void on_auth_imported (void *extra)
 
 void on_auth_exported (char *export_auth_str UU, int len UU, void *extra)
 {
-   logprintf ("on_auth_exported()\n");
+   debug ("on_auth_exported()\n");
    struct download *dl = extra;
    do_import_auth (dl->c->instance, dl->dc, on_auth_imported, extra);
    telegram_flush (dl->c->instance);
@@ -392,7 +392,7 @@ void on_auth_exported (char *export_auth_str UU, int len UU, void *extra)
 
 void telegram_dl_connected (struct proxy_request *req)
 {
-   logprintf ("telegram_dl_connected(dc=%d)\n", req->DC->id);
+   debug ("telegram_dl_connected(dc=%d)\n", req->DC->id);
    struct telegram *tg = req->tg;
    // TODO: error handling
 
@@ -413,7 +413,7 @@ void telegram_dl_connected (struct proxy_request *req)
  */
 void telegram_dl_add (struct telegram *instance, struct download *dl)
 {
-    logprintf ("telegram_connect_dl(dc_num=%d, dc=%d)\n", dl->dc, instance->auth.DC_list[dl->dc]);
+    debug ("telegram_connect_dl(dc_num=%d, dc=%d)\n", dl->dc, instance->auth.DC_list[dl->dc]);
     if (!instance->dl_queue) {
         instance->dl_queue = g_queue_new ();
     }
@@ -435,23 +435,23 @@ void telegram_dl_next (struct telegram *instance)
             req->data = dl;
             instance->dl_curr = dl;
 
-            logprintf ("telegrma_dl_start(workin_dc=%d, ): starting new download..\n", instance->auth.dc_working_num);
+            debug ("telegrma_dl_start(workin_dc=%d, ): starting new download..\n", instance->auth.dc_working_num);
             if (dl->dc == instance->auth.dc_working_num) {
-                logprintf ("is working DC, start download...\n");
+                debug ("is working DC, start download...\n");
                 assert (telegram_get_working_dc(instance)->sessions[0]->c);
                 req->conn = instance->connection;
                 dl->c = req->conn;
                 telegram_dl_connected (req);
             }  else {
-                logprintf ("is remote DC, requesting connection...\n");
+                debug ("is remote DC, requesting connection...\n");
                 instance->config->proxy_request_cb (instance, req);
             }
         } else {
-            logprintf ("telegrma_dl_start(): no more downloads, DONE!\n");
+            debug ("telegrma_dl_start(): no more downloads, DONE!\n");
             mtproto_close_foreign (instance);
         }
     } else {
-        logprintf ("telegrma_dl_start(): download busy...\n");
+        debug ("telegrma_dl_start(): download busy...\n");
     }
 }
 
@@ -461,7 +461,7 @@ void telegram_dl_next (struct telegram *instance)
 int telegram_login(struct telegram *instance)
 {
     if (instance->session_state != STATE_AUTHORIZED) {
-        logprintf("Cannot log in, invalid state: %d \n", instance->session_state);
+        debug("Cannot log in, invalid state: %d \n", instance->session_state);
         return -1;
     }
     do_help_get_config(instance);
@@ -471,7 +471,7 @@ int telegram_login(struct telegram *instance)
 
 void on_authorized(struct mtproto_connection *c UU, void *data)
 {
-    logprintf ("on_authorized()...\n");
+    debug ("on_authorized()...\n");
     struct proxy_request *req = data;
     assert (req->done);
     req->done (req);
@@ -510,18 +510,18 @@ int telegram_authenticated (struct telegram *instance)
 
 void telegram_flush (struct telegram *instance)
 {
-    logprintf ("telegram flush()\n");
+    debug ("telegram flush()\n");
     int i;
     for (i = 0; i < 100; i++) {
         struct mtproto_connection *c = instance->Cs[i];
         if (!c) continue;
         if (!c->connection) continue;
         if (c->connection->out_bytes) {
-            logprintf ("connection %d has %d bytes, triggering on_output.\n", 
+            debug ("connection %d has %d bytes, triggering on_output.\n", 
                 i, c->connection->out_bytes);
             instance->config->on_output(c->handle);
         } else {
-            logprintf ("connection %d has no bytes, skipping\n", i);
+            debug ("connection %d has no bytes, skipping\n", i);
         }
     }
 }

@@ -337,7 +337,7 @@ extern int verbosity;
 static inline char *fetch_str (struct mtproto_connection *self, int len) {
   assert (len >= 0);
   if (verbosity > 6) {
-    logprintf ("fetch_string: len = %d\n", len);
+    debug ("fetch_string: len = %d\n", len);
   }
   if (len < 254) {
     char *str = (char *) self->in_ptr + 1;
@@ -431,14 +431,14 @@ int fetch_bignum (struct mtproto_connection *self, BIGNUM *x);
 static inline int fetch_int (struct mtproto_connection *self) {
   assert (self->in_ptr + 1 <= self->in_end);
   if (verbosity > 6) {
-    logprintf ("fetch_int: 0x%08x (%d)\n", *self->in_ptr, *self->in_ptr);
+    debug ("fetch_int: 0x%08x (%d)\n", *self->in_ptr, *self->in_ptr);
   }
   return *(self->in_ptr ++);
 }
 
 static inline int fetch_bool (struct mtproto_connection *self) {
   if (verbosity > 6) {
-    logprintf ("fetch_bool: 0x%08x (%d)\n", *self->in_ptr, *self->in_ptr);
+    debug ("fetch_bool: 0x%08x (%d)\n", *self->in_ptr, *self->in_ptr);
   }
   assert (self->in_ptr + 1 <= self->in_end);
   assert (*(self->in_ptr) == (int)CODE_bool_true || *(self->in_ptr) == (int)CODE_bool_false);

@@ -50,7 +50,7 @@ int zero[512];
 
 
 void write_dc (int auth_file_fd, struct dc *DC) {
-  logprintf("writing to auth_file: auth_file_fd: %d, port: %d, ip: %s\n", auth_file_fd, DC->port, DC->ip);
+  debug("writing to auth_file: auth_file_fd: %d, port: %d, ip: %s\n", auth_file_fd, DC->port, DC->ip);
   assert (write (auth_file_fd, &DC->port, 4) == 4);
   int l = strlen (DC->ip);
   assert (write (auth_file_fd, &l, 4) == 4);
@@ -67,7 +67,7 @@ void write_dc (int auth_file_fd, struct dc *DC) {
 }
 
 void write_auth_file (struct authorization_state *state, const char *filename) {
-  logprintf("Writing to auth_file: %s\n", filename);
+  debug("Writing to auth_file: %s\n", filename);
   int auth_file_fd = open (filename, O_CREAT | O_RDWR, 0600);
   assert (auth_file_fd >= 0);
   int x = DC_SERIALIZED_MAGIC_V2;
@@ -119,7 +119,7 @@ void empty_auth_file (const char *filename) {
   struct authorization_state state;
   memset(state.DC_list, 0, 11 * sizeof(void *));
 
-  logprintf("empty_auth_file()\n");
+  debug("empty_auth_file()\n");
   alloc_dc (state.DC_list, 1, tstrdup (TG_SERVER), 443);
   state.dc_working_num = 1;
   state.auth_state = 0;
@@ -134,15 +134,15 @@ void empty_auth_file (const char *filename) {
  * path
  */
 struct authorization_state read_auth_file (const char *filename) {
-  logprintf("read_auth_file()\n");
+  debug("read_auth_file()\n");
 
   struct authorization_state state;
   memset(state.DC_list, 0, 11 * sizeof(void *));
 
   int auth_file_fd = open (filename, O_RDWR, 0600);
-  logprintf("fd: %d\n", auth_file_fd);
+  debug("fd: %d\n", auth_file_fd);
   if (auth_file_fd < 0) {
-    logprintf("auth_file does not exist, creating empty...\n");
+    debug("auth_file does not exist, creating empty...\n");
     empty_auth_file (filename);
   }
   auth_file_fd = open (filename, O_RDWR, 0600);
@@ -153,7 +153,7 @@ struct authorization_state read_auth_file (const char *filename) {
   // magic number of file
   unsigned m;
   if (read (auth_file_fd, &m, 4) < 4 || (m != DC_SERIALIZED_MAGIC && m != DC_SERIALIZED_MAGIC_V2)) {
-    logprintf("Invalid File content, wrong Magic numebr\n");
+    debug("Invalid File content, wrong Magic numebr\n");
     close (auth_file_fd);
     empty_auth_file (filename);
     return state;
@@ -171,11 +171,11 @@ struct authorization_state read_auth_file (const char *filename) {
     assert (read (auth_file_fd, &y, 4) == 4);
     if (y) {
       read_dc (auth_file_fd, i, m, state.DC_list);
-      logprintf("loaded dc[%d] - port: %d, ip: %s, auth_key_id: %lli, server_salt: %lli, has_auth: %d\n", 
+      debug("loaded dc[%d] - port: %d, ip: %s, auth_key_id: %lli, server_salt: %lli, has_auth: %d\n", 
           i, state.DC_list[i]->port, state.DC_list[i]->ip, state.DC_list[i]->auth_key_id, 
           state.DC_list[i]->server_salt, state.DC_list[i]->has_auth);
     } else {
-      logprintf("loaded dc[%d] - NULL\n", i);
+      debug("loaded dc[%d] - NULL\n", i);
     }
   }
   int l = read (auth_file_fd, &state.our_id, 4);
@@ -187,12 +187,12 @@ struct authorization_state read_auth_file (const char *filename) {
   if (m == DC_SERIALIZED_MAGIC) {
     DC_working->has_auth = 1;
   }
-  logprintf("loaded authorization state - our_id: %d, auth_state: %d, dc_working_num: %d \n", state.our_id, state.auth_state, state.dc_working_num);
+  debug("loaded authorization state - our_id: %d, auth_state: %d, dc_working_num: %d \n", state.our_id, state.auth_state, state.dc_working_num);
   return state;
 }
 
 struct protocol_state read_state_file (const char *filename) {
-  logprintf("read_state_file()\n");
+  debug("read_state_file()\n");
   struct protocol_state state = {0, 0, 0, 0};
 
   int state_file_fd = open (filename, O_CREAT | O_RDWR, 0600);
@@ -214,7 +214,7 @@ struct protocol_state read_state_file (const char *filename) {
   state.seq = x[2];
   state.last_date = x[3];
   close (state_file_fd);
-  logprintf("loaded session state - pts: %d, qts: %d, seq: %d, last_date: %d.\n", state.pts, 
+  debug("loaded session state - pts: %d, qts: %d, seq: %d, last_date: %d.\n", state.pts, 
     state.qts, state.seq, state.last_date);
   return state;
 }
