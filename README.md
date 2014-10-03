@@ -69,13 +69,14 @@ On Debian-based systems you can use:
         sudo apt-get install libssl-dev libglib2.0-dev libpurple-dev
 
 
+NOTE: Ubuntu is currently not working, since libpurple doesn't seem to find libssl when loading the plugin. It will compile, but Pidgin won't be able to load it. 
+
+
 ### OpenSUSE
 
         
         sudo zypper install gcc glib glib-devel libpurple libpurple-devel zlib-devel openssl libopenssl-devel
 
-
-NOTE: Ubuntu is currently not working, since libpurple doesn't seem to find libssl when loading the plugin. It will compile, but will not be loaded by Pidgin. 
 
 
 ## 3. Compile and install
