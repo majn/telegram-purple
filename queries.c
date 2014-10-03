@@ -464,7 +464,6 @@ void do_send_code (struct telegram *instance, const char *user) {
     debug("do_send_code() Invalid State %d, erroring\n", instance->session_state);
     telegram_change_state(instance, STATE_ERROR, NULL);
   }
-  // TODO: Phone Code Hash
 }
 
 
@@ -636,7 +635,11 @@ int sign_in_on_error (struct query *q UU, int error_code, int l, char *error) {
   info ("sign_in_on_error()\n");
   struct mtproto_connection *mtp = query_get_mtproto(q);
   failure ( "error_code = %d, error = %.*s\n", error_code, l, error);
-  telegram_change_state (mtp->connection->instance, STATE_CLIENT_CODE_NOT_ENTERED, NULL);
+  int state = STATE_CLIENT_CODE_NOT_ENTERED;
+  if (mtp->instance->session_state == STATE_PHONE_CODE_NOT_ENTERED) {
+     state = STATE_PHONE_CODE_NOT_ENTERED;
+  }
+  telegram_change_state (mtp->connection->instance, state, NULL);
   return 0;
 }
 

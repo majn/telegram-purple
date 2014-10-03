@@ -281,24 +281,45 @@ void telegram_on_proxy_close(void *handle)
     tfree (conn, sizeof(mtproto_handle));
 }
 
-void telegram_on_phone_registration (struct telegram *instance)
+void phone_registration_entered (PurpleConnection* gc, PurpleRequestFields* fields)
 {
-    // TODO: Query first and last name from user and start phone registration
-    telegram_conn *conn = instance->extra;
-
-    purple_debug_info(PLUGIN_ID, "Phone is not registered, registering...\n");
-    const char *first_name = purple_account_get_string(conn->pa, "first_name", NULL);
-    const char *last_name  = purple_account_get_string(conn->pa, "last_name", NULL);
-    const char *code = purple_account_get_string(conn->pa, "verification_key", NULL);
-
-    if (!first_name || !last_name || !strlen(first_name) > 0 || !strlen(last_name) > 0) {
-        purple_notify_message(_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Registration Needed", 
-            "Enter your first and last name to register this phone number with the telegram network.", 
-            NULL, NULL, NULL);
+    telegram_conn *conn = purple_connection_get_protocol_data(gc);
+    const char* first = purple_request_fields_get_string(fields, "first_name");
+    const char* last = purple_request_fields_get_string(fields, "last_name");
+    const char* code = purple_request_fields_get_string(fields, "code");
+    if (!first || !last || !code) {
+        telegram_on_phone_registration (conn->tg);
         return;
     }
 
-    do_send_code_result_auth (instance, code, first_name, last_name);
+    do_send_code_result_auth (conn->tg, code, first, last);
+    telegram_flush (conn->tg);
+}
+
+
+void telegram_on_phone_registration (struct telegram *instance)
+{
+    telegram_conn *conn = instance->extra;
+
+    purple_debug_info(PLUGIN_ID, "Phone is not registered, registering...\n");
+
+    PurpleRequestFields* fields = purple_request_fields_new();
+    PurpleRequestField* field = 0;
+
+    PurpleRequestFieldGroup* group = purple_request_field_group_new("Registration");
+    field = purple_request_field_string_new("first_name", "First Name", "", 0);
+    purple_request_field_group_add_field(group, field);
+    field = purple_request_field_string_new("last_name", "Last Name", "", 0);
+    purple_request_field_group_add_field(group, field);
+    purple_request_fields_add_group(fields, group);
+
+    group = purple_request_field_group_new("Authorization");
+    field = purple_request_field_string_new("code", "Telegram Code", "", 0);
+    purple_request_field_group_add_field(group, field);
+    purple_request_fields_add_group(fields, group);
+
+    purple_request_fields(conn->gc, "Register", "Please register your phone number.", NULL, fields, "Ok",
+         G_CALLBACK( phone_registration_entered ), "Cancel", NULL, conn->pa, NULL, NULL, conn->gc);
 }
 
 void client_registration_entered (gpointer data, const gchar *code)
