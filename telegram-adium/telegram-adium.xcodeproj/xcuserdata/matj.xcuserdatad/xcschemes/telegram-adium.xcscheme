@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "C410948519BB2D7D0083BF3F"
-               BuildableName = "telegram-adium.AdiumPlugin"
+               BuildableName = "telegram-adium.AdiumLibpurplePlugin"
                BlueprintName = "telegram-adium"
                ReferencedContainer = "container:telegram-adium.xcodeproj">
             </BuildableReference>
@@ -39,6 +39,18 @@
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       allowLocationSimulation = "YES">
+      <PathRunnable
+         FilePath = "/Applications/Adium.app">
+      </PathRunnable>
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "C410948519BB2D7D0083BF3F"
+            BuildableName = "telegram-adium.AdiumLibpurplePlugin"
+            BlueprintName = "telegram-adium"
+            ReferencedContainer = "container:telegram-adium.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
       <AdditionalOptions>
       </AdditionalOptions>
    </LaunchAction>

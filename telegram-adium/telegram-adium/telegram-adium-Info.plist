@@ -44,5 +44,7 @@
 	<string></string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2014 Matthias Jentsch. All rights reserved.</string>
+	<key>NSPrincipalClass</key>
+	<string>TelegramPlugin</string>
 </dict>
 </plist>
