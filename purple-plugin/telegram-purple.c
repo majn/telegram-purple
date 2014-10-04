@@ -74,7 +74,7 @@ void tg_cli_log_cb(const char* format, va_list ap)
 
 void message_allocated_handler (struct telegram *instance, struct message *M);
 void peer_allocated_handler (struct telegram *instance, void *user);
-void user_info_received_handler (struct telegram *instance, struct user *user, int showInfo);
+void user_info_received_handler (struct telegram *instance, struct tgl_user *user, int showInfo);
 void download_finished_handler (struct telegram *instance, struct download *D);
 void telegram_on_phone_registration (struct telegram *instance);
 void telegram_on_client_registration (struct telegram *instance);
@@ -699,7 +699,7 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
     }
 }
 
-PurpleNotifyUserInfo *create_user_notify_info(struct user *usr)
+PurpleNotifyUserInfo *create_user_notify_info(struct tgl_user *usr)
 {
     PurpleNotifyUserInfo *info = purple_notify_user_info_new();
     purple_notify_user_info_add_pair(info, "First name", usr->first_name);
@@ -709,7 +709,7 @@ PurpleNotifyUserInfo *create_user_notify_info(struct user *usr)
     return info;
 }
 
-void user_info_received_handler(struct telegram *tg, struct user *usr, int show_info)
+void user_info_received_handler(struct telegram *tg, struct tgl_user *usr, int show_info)
 {
     debug("Get user info. \n %d", show_info);
     char *who = g_strdup_printf("%d", usr->id.id);
@@ -735,7 +735,7 @@ void download_finished_handler(struct telegram *tg, struct download *D)
     if(D->type == 0)
     {
         struct download_desc *dl_desc = D->extra;
-        struct user *usr = dl_desc->data;
+        struct tgl_user *usr = dl_desc->data;
         gchar *data = NULL;
         size_t len;
         GError *err = NULL;
