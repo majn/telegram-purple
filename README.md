@@ -36,16 +36,18 @@ The following features are currently planned and will probably be added in the f
 
 ## Platform Support
 
-Currently we can only provide an installation guide for Linux, even though it should be possible to compile this plugin on other platforms. If someone manages to create a working Windows, BSD or OSX build, please let us know.
+We only provide an installation guide for Linux right now, even though it should be possible to compile this plugin on other platforms. If someone manages to create a working Windows, BSD or OSX build, please let us know.
 
 
 # Installation Instructions
 
-Unfortunately there are currently no packages, so you need to compile it yourself:
+Unfortunately there are no packages right now, so you need to compile it yourself:
 
-## 1. Get this repository either from Bitbucket or from the Github mirror.
+## 1. Get this repository
 
-        git clone https://bitbucket.org/telegrampurple/telegram-purple
+
+        git clone https://github.com/majn/telegram-purple
+
 
 ## 2. Fetch all needed dependencies
 
@@ -101,5 +103,5 @@ Now you should be able to see all your contacts and chats in your buddy list and
 # Unicode Emojis for Pidgin
 
 The Telegram phone applications for iOS and Android make use of standardized Unicode smileys (called [Emojis](https://en.wikipedia.org/wiki/Emoji)). Pidgin
-does not display those smileys natively, but you can install a custom smiley theme like [https://github.com/stv0g/unicode-emoji] or [https://github.com/VxJasonxV/emoji-for-pidgin] and activate it under Settings > Themes > Smiley Theme.
+does not display those smileys natively, but you can install a custom smiley theme like (https://github.com/stv0g/unicode-emoji) or (https://github.com/VxJasonxV/emoji-for-pidgin) and activate it under Settings > Themes > Smiley Theme.
 
