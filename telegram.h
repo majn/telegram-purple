@@ -179,7 +179,7 @@ struct telegram_config {
      * A callback function that is called when a peer user info was received. This is useful
      * for populating the GUI with new user photos.
      */
-    void (*on_user_info_received_handler) (struct telegram *instance, struct user *peer, int showInfo);
+    void (*on_user_info_received_handler) (struct telegram *instance, struct tgl_user *peer, int showInfo);
     
     /**
      * A callback function that is called when a download is completed. This is useful
@@ -404,7 +404,7 @@ void event_peer_allocated(struct telegram *instance, void *peer);
 /*
  * Load known users and chats on connect
  */
-void event_user_info_received_handler(struct telegram *instance, struct user *peer, int showInfo);
+void event_user_info_received_handler(struct telegram *instance, struct tgl_user *peer, int showInfo);
 
 /*
  * Load known users and chats on connect

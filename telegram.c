@@ -39,7 +39,7 @@ void event_peer_allocated(struct telegram *instance, void *peer)
 /*
  * Peer user fetched full
  */
-void event_user_info_received_handler(struct telegram *instance, struct user *peer, int show_info) 
+void event_user_info_received_handler(struct telegram *instance, struct tgl_user *peer, int show_info)
 {
     if (instance->config->on_user_info_received_handler) {
         instance->config->on_user_info_received_handler (instance, peer, show_info);

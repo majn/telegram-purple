@@ -48,6 +48,7 @@
 #include "binlog.h"
 #include "telegram.h"
 #include "msglog.h"
+#include "purple-plugin/telegram-purple.h"
 
 #define sha1 SHA1
 
