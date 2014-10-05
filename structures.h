@@ -142,7 +142,7 @@ struct user_status {
   int when;
 };
 
-struct user {
+struct tgl_user {
   peer_id_t id;
   int flags;
   struct message *last;
@@ -229,7 +229,7 @@ typedef union peer {
     struct file_location photo_small;
     struct photo photo;
   };
-  struct user user;
+  struct tgl_user user;
   struct chat chat;
   struct secret_chat encr_chat;
 } peer_t;
@@ -337,9 +337,9 @@ struct message {
 
 int fetch_file_location (struct mtproto_connection *mtp, struct file_location *loc);
 int fetch_user_status (struct mtproto_connection *mtp, struct user_status *S);
-int fetch_user (struct mtproto_connection *mtp, struct user *U);
-struct user *fetch_alloc_user (struct mtproto_connection *mtp);
-struct user *fetch_alloc_user_full (struct mtproto_connection *mtp);
+int fetch_user (struct mtproto_connection *mtp, struct tgl_user *U);
+struct tgl_user *fetch_alloc_user (struct mtproto_connection *mtp);
+struct tgl_user *fetch_alloc_user_full (struct mtproto_connection *mtp);
 struct chat *fetch_alloc_chat (struct mtproto_connection *mtp);
 struct chat *fetch_alloc_chat_full (struct mtproto_connection *mtp);
 struct secret_chat *fetch_alloc_encrypted_chat (struct mtproto_connection *mtp);
@@ -358,7 +358,7 @@ void fetch_message_media_encrypted (struct mtproto_connection *mtp, struct messa
 void fetch_message_action (struct mtproto_connection *mtp, struct message_action *M);
 void message_insert_tree (struct message *M);
 
-void free_user (struct user *U);
+void free_user (struct tgl_user *U);
 void free_chat (struct chat *U);
 
 char *create_print_name (struct binlog *bl, peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4);

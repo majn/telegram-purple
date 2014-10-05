@@ -314,11 +314,10 @@ int try_write (struct connection *c) {
 
 	// Log all written packages
     if (r > 0 && log_net_f) {
-      fprintf (log_net_f, "%.02lf %d OUT %s:%d", get_utime (CLOCK_REALTIME), r, c->ip, c->port);
+      // fprintf (log_net_f, "%.02lf %d OUT %s:%d", get_utime (CLOCK_REALTIME), r, c->ip, c->port);
       int i;
       for (i = 0; i < r; i++) {
-	    
-        fprintf (log_net_f, " %02x", *(unsigned char *)(c->out_head->rptr + i));
+        // fprintf (log_net_f, " %02x", *(unsigned char *)(c->out_head->rptr + i));
       }
       fprintf (log_net_f, "\n");
       fflush (log_net_f);

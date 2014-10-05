@@ -164,7 +164,7 @@ char *create_print_name (struct binlog *bl, peer_id_t id, const char *a1, const 
  *
  */
 
-long long fetch_user_photo (struct mtproto_connection *mtp, struct user *U) {
+long long fetch_user_photo (struct mtproto_connection *mtp, struct tgl_user *U) {
   unsigned x = fetch_int (mtp);
   code_assert (x == CODE_user_profile_photo || x == CODE_user_profile_photo_old || x == CODE_user_profile_photo_empty);
   if (x == CODE_user_profile_photo_empty) {
@@ -199,7 +199,7 @@ int user_get_alias(peer_t *user, char *buffer, int maxlen)
   }
 }
 
-int fetch_user (struct mtproto_connection *mtp, struct user *U) {
+int fetch_user (struct mtproto_connection *mtp, struct tgl_user *U) {
   struct telegram *instance = mtp->instance;
 
   unsigned x = fetch_int (mtp);
@@ -408,7 +408,7 @@ void fetch_encrypted_chat (struct mtproto_connection *mtp, struct secret_chat *U
 }
 
 void fetch_notify_settings (struct mtproto_connection *mtp);
-void fetch_user_full (struct mtproto_connection *mtp, struct user *U) {
+void fetch_user_full (struct mtproto_connection *mtp, struct tgl_user *U) {
   assert (fetch_int (mtp) == CODE_user_full);
   fetch_alloc_user (mtp);
   unsigned x;
@@ -1522,7 +1522,7 @@ static int id_cmp (struct message *M1, struct message *M2) {
   else { return 0; }
 }
 
-struct user *fetch_alloc_user (struct mtproto_connection *mtp) {
+struct tgl_user *fetch_alloc_user (struct mtproto_connection *mtp) {
   struct binlog *bl = mtp->instance->bl;
 
   debug("fetch_alloc_user()\n");
@@ -1587,7 +1587,7 @@ void insert_chat (struct binlog *bl, peer_t *P) {
   bl->Peers[bl->peer_num ++] = P;
 }
 
-struct user *fetch_alloc_user_full (struct mtproto_connection *mtp) {
+struct tgl_user *fetch_alloc_user_full (struct mtproto_connection *mtp) {
   struct binlog *bl = mtp->bl;
   int data[3];
   prefetch_data (mtp, data, 12);
@@ -1607,7 +1607,7 @@ struct user *fetch_alloc_user_full (struct mtproto_connection *mtp) {
   }
 }
 
-void free_user (struct user *U) {
+void free_user (struct tgl_user *U) {
   if (U->first_name) { tfree_str (U->first_name); }
   if (U->last_name) { tfree_str (U->last_name); }
   if (U->print_name) { tfree_str (U->print_name); }

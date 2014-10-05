@@ -74,7 +74,7 @@ void tg_cli_log_cb(const char* format, va_list ap)
 
 void message_allocated_handler (struct telegram *instance, struct message *M);
 void peer_allocated_handler (struct telegram *instance, void *user);
-void user_info_received_handler (struct telegram *instance, struct user *user, int showInfo);
+void user_info_received_handler (struct telegram *instance, struct tgl_user *user, int showInfo);
 void download_finished_handler (struct telegram *instance, struct download *D);
 void telegram_on_phone_registration (struct telegram *instance);
 void telegram_on_client_registration (struct telegram *instance);
@@ -353,8 +353,8 @@ void telegram_on_client_registration (struct telegram *instance)
         "Enter Telegram Code", // primary 
         "Telegram wants to verify your identity, please enter the code, that you have received via SMS.", // secondary 
         NULL,     // default_value 
-        FALSE,    // multiline     
-        FALSE,    // masked         
+        0,    // multiline     
+        0,    // masked         
         "code",   // hint 
         "OK",     // ok_text      
         G_CALLBACK(client_registration_entered), // ok_cb 
@@ -549,16 +549,12 @@ void on_new_user_status(struct telegram *tg, void *peer)
 {
     telegram_conn *conn = tg->extra;
     peer_t *p = peer;
-
-    //  purple_debug_info(PLUGIN_ID, "New User Status: %s\n", peer->user.status.online);
-    // TODO: this should probably be freed again somwhere
     char *who = g_strdup_printf("%d", get_peer_id(p->user.id));
-   
     PurpleAccount *account = purple_connection_get_account(conn->gc);
     if (p->user.status.online == 1) 
         purple_prpl_got_user_status(account, who, "available", "message", "", NULL);
     else
-        purple_prpl_got_user_status(account, who, "unavailable", "message", "", NULL);
+        purple_prpl_got_user_status(account, who, "mobile", "message", "", NULL);
     g_free(who);
 }
 
@@ -591,7 +587,7 @@ static PurpleChat *blist_find_chat_by_hasht_cond(PurpleConnection *gc, int (*fn)
                     return ch;
             }
         }
-        node = purple_blist_node_next(node, FALSE);
+        node = purple_blist_node_next(node, 0);
     }
     return NULL;
 }
@@ -643,7 +639,7 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
             if (user->user.status.online == 1)
                 purple_prpl_got_user_status(account, name, "available", "message", "", NULL);
             else
-                purple_prpl_got_user_status(account, name, "unavailable", "message", "", NULL);
+                purple_prpl_got_user_status(account, name, "mobile", "message", "", NULL);
             
             g_free(alias);
             g_free(name);
@@ -682,7 +678,7 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
                     const char *cuname = g_strdup_printf("%d", cu->user_id);
                     debug("Adding user %s to chat %s\n", cuname, name);
                     purple_conv_chat_add_user(purple_conversation_get_chat_data(conv), cuname, "", 
-                        PURPLE_CBFLAGS_NONE | (!strcmp(owner, cuname) ? PURPLE_CBFLAGS_FOUNDER : 0), FALSE);
+                        PURPLE_CBFLAGS_NONE | (!strcmp(owner, cuname) ? PURPLE_CBFLAGS_FOUNDER : 0), 0);
                 }
             }
         }
@@ -699,7 +695,7 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
     }
 }
 
-PurpleNotifyUserInfo *create_user_notify_info(struct user *usr)
+PurpleNotifyUserInfo *create_user_notify_info(struct tgl_user *usr)
 {
     PurpleNotifyUserInfo *info = purple_notify_user_info_new();
     purple_notify_user_info_add_pair(info, "First name", usr->first_name);
@@ -709,7 +705,7 @@ PurpleNotifyUserInfo *create_user_notify_info(struct user *usr)
     return info;
 }
 
-void user_info_received_handler(struct telegram *tg, struct user *usr, int show_info)
+void user_info_received_handler(struct telegram *tg, struct tgl_user *usr, int show_info)
 {
     debug("Get user info. \n %d", show_info);
     char *who = g_strdup_printf("%d", usr->id.id);
@@ -735,7 +731,7 @@ void download_finished_handler(struct telegram *tg, struct download *D)
     if(D->type == 0)
     {
         struct download_desc *dl_desc = D->extra;
-        struct user *usr = dl_desc->data;
+        struct tgl_user *usr = dl_desc->data;
         gchar *data = NULL;
         size_t len;
         GError *err = NULL;
@@ -896,19 +892,19 @@ static void tgprpl_set_buddy_icon(PurpleConnection * gc, PurpleStoredImage * img
 static gboolean tgprpl_can_receive_file(PurpleConnection * gc, const char *who)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_can_receive_file()\n");
-    return FALSE;
+    return 0;
 }
 
 /**
  *  Checks whether offline messages to @a buddy are supported.
 
- *  @return @c TRUE if @a buddy can be sent messages while they are
- *          offline, or @c FALSE if not.
+ *  @return @c 1 if @a buddy can be sent messages while they are
+ *          offline, or @c 0 if not.
  */
 static gboolean tgprpl_offline_message(const PurpleBuddy * buddy)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_offline_message()\n");
-    return FALSE;
+    return 0;
 }
 
 /**
@@ -921,15 +917,15 @@ static GList *tgprpl_status_types(PurpleAccount * acct)
     purple_debug_info(PLUGIN_ID, "tgprpl_status_types()\n");
     GList *types = NULL;
     PurpleStatusType *type;
-    type = purple_status_type_new_with_attrs(PURPLE_STATUS_AVAILABLE, "available", NULL, 
-        TRUE, TRUE, FALSE, "message", "Message", purple_value_new(PURPLE_TYPE_STRING), NULL);
+    type = purple_status_type_new_with_attrs(PURPLE_STATUS_AVAILABLE, NULL, NULL,
+        1, 1, 0, "message", "Message", purple_value_new(PURPLE_TYPE_STRING), NULL);
+    types = g_list_prepend(types, type);
+    
+    type = purple_status_type_new_with_attrs(PURPLE_STATUS_MOBILE, NULL, NULL, 1,
+        1, 0, "message", "Message", purple_value_new(PURPLE_TYPE_STRING), NULL);
     types = g_list_prepend(types, type);
 
-    type = purple_status_type_new_with_attrs(PURPLE_STATUS_AWAY, "unavailable", NULL, TRUE, 
-        TRUE, FALSE, "message", "Message", purple_value_new(PURPLE_TYPE_STRING), NULL);
-    types = g_list_prepend(types, type);
-
-    type = purple_status_type_new(PURPLE_STATUS_OFFLINE, NULL, NULL, TRUE);
+    type = purple_status_type_new(PURPLE_STATUS_OFFLINE, NULL, NULL, 1);
     types = g_list_append(types, type);
 
     return g_list_reverse(types);
@@ -1270,11 +1266,11 @@ static PurplePluginInfo plugin_info = {
     PURPLE_PRIORITY_DEFAULT,
     PLUGIN_ID,
     "Telegram",
-    "0.1",
-    "Telegram protocol",
-    "Adds support for the telegram protocol to libpurple.",
-    "Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>, Matthias Jentsch <mtthsjntsch@gmail.com>",
-    "https://bitbucket.org/telegrampurple/telegram-purple",
+    TG_VERSION,
+    "Telegram",
+    TG_DESCRIPTION,
+    TG_AUTHOR,
+    "https://github.com/majn/telegram-purple",
     NULL,           // on load
     NULL,           // on unload
     NULL,           // on destroy
@@ -1290,4 +1286,3 @@ static PurplePluginInfo plugin_info = {
 
 
 PURPLE_INIT_PLUGIN(telegram, tgprpl_init, plugin_info)
-

@@ -1,14 +1,12 @@
 #
 # Telegram Flags
 #
-VERSION=0.2.0
-BUILD=1
 
 srcdir=.
 CFLAGS=-g
 LDFLAGS=-L/usr/local/lib
 CPPFLAGS=-I/usr/local/include
-DEFS=-DTG_VERSION=\"${VERSION}\" -DTG_BUILD=\"${BUILD}\"
+DEFS=
 COMPILE_FLAGS=${CFLAGS} ${CPPFLAGS} ${DEFS} -Wall -Wextra -Wno-deprecated-declarations -fno-strict-aliasing -fno-omit-frame-pointer -ggdb
 EXTRA_LIBS=-lcrypto -lz -lm
 LOCAL_LDFLAGS=-rdynamic -ggdb ${EXTRA_LIBS}
@@ -89,7 +87,7 @@ strip: $(PRPL_LIBNAME)
 # TODO: Find a better place for server.pub
 install: $(PRPL_LIBNAME)
 	install -D $(PRPL_LIBNAME) $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_LIBNAME)
-	install -D tg-server.pub /etc/telegram/server.pub
+	install -D tg-server.pub /etc/telegram-purple/server.pub
 	install -D purple-plugin/telegram16.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
 	install -D purple-plugin/telegram22.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
 	install -D purple-plugin/telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png

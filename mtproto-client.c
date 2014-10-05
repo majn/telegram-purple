@@ -117,8 +117,8 @@ int Response_len;
  *
  */
 
-#define TG_SERVER_PUBKEY_FILENAME     "/etc/telegram/server.pub"
-char *rsa_public_key_name; // = TG_SERVER_PUBKEY_FILENAME;
+#define TG_SERVER_PUBKEY_FILENAME "/etc/telegram-purple/server.pub"
+char *rsa_public_key_name = 0; 
 RSA *pubKey;
 long long pk_fingerprint;
 
@@ -806,7 +806,7 @@ void work_update_binlog (struct mtproto_connection *self) {
       peer_id_t user_id = MK_USER (fetch_int (self));
       peer_t *UC = user_chat_get (bl, user_id);
       if (UC) {
-        struct user *U = &UC->user;
+        struct tgl_user *U = &UC->user;
         if (U->first_name) { tfree_str (U->first_name); }
         if (U->last_name) { tfree_str (U->last_name); }
         if (U->print_name) {
@@ -829,7 +829,7 @@ void work_update_binlog (struct mtproto_connection *self) {
       peer_t *UC = user_chat_get (bl, user_id);
       fetch_date (self);
       if (UC) {
-        struct user *U = &UC->user;
+        struct tgl_user *U = &UC->user;
 
         unsigned y = fetch_int (self);
         if (y == CODE_user_profile_photo_empty) {
@@ -988,7 +988,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
         char *f = fetch_str (self, l1);
         int l2 = prefetch_strlen (self);
         char *l = fetch_str (self, l2);
-        struct user *U = &UC->user;
+        struct tgl_user *U = &UC->user;
         bl_do_set_user_real_name (self->bl, self, U, f, l1, l, l2);
         //print_start ();
         //push_color (COLOR_YELLOW);
@@ -1012,7 +1012,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       peer_t *UC = user_chat_get (bl, user_id);
       fetch_date (self);
       if (UC && (UC->flags & FLAG_CREATED)) {
-        struct user *U = &UC->user;
+        struct tgl_user *U = &UC->user;
         unsigned y = fetch_int (self);
         long long photo_id;
         struct file_location big;
