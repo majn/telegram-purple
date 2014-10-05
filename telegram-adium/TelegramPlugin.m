@@ -6,21 +6,45 @@
 //  Copyright (c) 2014 Matthias Jentsch. All rights reserved.
 //
 
-#import "telegram-purple.h"
 #import "TelegramPlugin.h"
 #import "TelegramService.h"
+#import "telegram-purple.h"
+
+extern void purple_init_telegram_plugin();
 
 @implementation TelegramPlugin
 
 - (void) installPlugin
 {
-    purple_init_telegram();
-    service = [[TelegramService alloc] init];
+    purple_init_telegram_plugin();
+    [TelegramService registerService];
+}
+
+- (void) installLibpurplePlugin
+{
+}
+
+- (void) loadLibpurplePlugin
+{
 }
 
 - (void) uninstallPlugin
 {
-    service = nil;
+}
+
+- (NSString *)pluginAuthor
+{
+    return @TG_AUTHOR;
+}
+
+-(NSString *)pluginVersion
+{
+    return @TG_VERSION;
+}
+
+-(NSString *)pluginDescription
+{
+    return @"Telegram";
 }
 
 @end

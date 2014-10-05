@@ -6,11 +6,10 @@
 //  Copyright (c) 2014 Matthias Jentsch. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
 #import <Adium/AIPlugin.h>
+#import <AdiumLibpurple/AILibpurplePlugin.h>
 
-@interface TelegramPlugin : NSObject <AIPlugin> {
-	id service;
+@interface TelegramPlugin : AIPlugin <AILibpurplePlugin> {
+    
 }
-
 @end

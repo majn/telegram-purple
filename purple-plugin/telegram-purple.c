@@ -1270,11 +1270,11 @@ static PurplePluginInfo plugin_info = {
     PURPLE_PRIORITY_DEFAULT,
     PLUGIN_ID,
     "Telegram",
-    "0.1",
-    "Telegram protocol",
-    "Support for the protocol of the Telegram messenger.",
-    "Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>, Matthias Jentsch <mtthsjntsch@gmail.com>",
-    "https://bitbucket.org/telegrampurple/telegram-purple",
+    TG_VERSION,
+    "Telegram",
+    TG_DESCRIPTION,
+    TG_AUTHOR,
+    "https://github.com/majn/telegram-purple",
     NULL,           // on load
     NULL,           // on unload
     NULL,           // on destroy
