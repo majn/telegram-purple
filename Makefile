@@ -104,6 +104,10 @@ uninstall: $(PRPL_LIBNAME)
 run: install
 	pidgin -d | grep 'telegram\|plugin\|proxy'
 
+.PHONY: purge
+purge: uninstall
+	rm -rf $(HOME)/.telegram-purple
+
 .PHONY: debug
 debug: install
 	ddd pidgin
