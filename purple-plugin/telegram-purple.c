@@ -554,7 +554,7 @@ void on_new_user_status(struct telegram *tg, void *peer)
     if (p->user.status.online == 1) 
         purple_prpl_got_user_status(account, who, "available", "message", "", NULL);
     else
-        purple_prpl_got_user_status(account, who, "unavailable", "message", "", NULL);
+        purple_prpl_got_user_status(account, who, "mobile", "message", "", NULL);
     g_free(who);
 }
 
@@ -639,7 +639,7 @@ void peer_allocated_handler(struct telegram *tg, void *usr)
             if (user->user.status.online == 1)
                 purple_prpl_got_user_status(account, name, "available", "message", "", NULL);
             else
-                purple_prpl_got_user_status(account, name, "unavailable", "message", "", NULL);
+                purple_prpl_got_user_status(account, name, "mobile", "message", "", NULL);
             
             g_free(alias);
             g_free(name);
@@ -917,11 +917,11 @@ static GList *tgprpl_status_types(PurpleAccount * acct)
     purple_debug_info(PLUGIN_ID, "tgprpl_status_types()\n");
     GList *types = NULL;
     PurpleStatusType *type;
-    type = purple_status_type_new_with_attrs(PURPLE_STATUS_AVAILABLE, "available", NULL, 
+    type = purple_status_type_new_with_attrs(PURPLE_STATUS_AVAILABLE, NULL, NULL,
         1, 1, 0, "message", "Message", purple_value_new(PURPLE_TYPE_STRING), NULL);
     types = g_list_prepend(types, type);
-
-    type = purple_status_type_new_with_attrs(PURPLE_STATUS_AWAY, "unavailable", NULL, 1, 
+    
+    type = purple_status_type_new_with_attrs(PURPLE_STATUS_MOBILE, NULL, NULL, 1,
         1, 0, "message", "Message", purple_value_new(PURPLE_TYPE_STRING), NULL);
     types = g_list_prepend(types, type);
 
@@ -1286,4 +1286,3 @@ static PurplePluginInfo plugin_info = {
 
 
 PURPLE_INIT_PLUGIN(telegram, tgprpl_init, plugin_info)
-
