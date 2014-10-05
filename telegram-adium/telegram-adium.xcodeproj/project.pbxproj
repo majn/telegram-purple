@@ -30,6 +30,7 @@
 		C4B81AF119E087AF00E9177C /* AIUtilities.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C4B81AF019E087AF00E9177C /* AIUtilities.framework */; };
 		C4B81AF319E087BA00E9177C /* AdiumLibpurple.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C4B81AF219E087BA00E9177C /* AdiumLibpurple.framework */; };
 		C4B81AF519E087C500E9177C /* Adium.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C4B81AF419E087C500E9177C /* Adium.framework */; };
+		C4B81AF919E15E0D00E9177C /* tg-server.pub in Resources */ = {isa = PBXBuildFile; fileRef = C4B81AF619E0B67600E9177C /* tg-server.pub */; };
 		C4BF991C19BB8B4D0038D507 /* binlog.c in Sources */ = {isa = PBXBuildFile; fileRef = C4BF990419BB8B4D0038D507 /* binlog.c */; };
 		C4BF991D19BB8B4D0038D507 /* loop.c in Sources */ = {isa = PBXBuildFile; fileRef = C4BF990519BB8B4D0038D507 /* loop.c */; };
 		C4BF991E19BB8B4D0038D507 /* msglog.c in Sources */ = {isa = PBXBuildFile; fileRef = C4BF990619BB8B4D0038D507 /* msglog.c */; };
@@ -73,6 +74,7 @@
 		C4B81AF019E087AF00E9177C /* AIUtilities.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AIUtilities.framework; path = "../../../Library/Developer/Xcode/DerivedData/Adium-gdszlkyrczkyzvfhyhsigfyepffb/Build/Products/Debug/AIUtilities.framework"; sourceTree = "<group>"; };
 		C4B81AF219E087BA00E9177C /* AdiumLibpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdiumLibpurple.framework; path = "../../../Library/Developer/Xcode/DerivedData/Adium-gdszlkyrczkyzvfhyhsigfyepffb/Build/Products/Debug/AdiumLibpurple.framework"; sourceTree = "<group>"; };
 		C4B81AF419E087C500E9177C /* Adium.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Adium.framework; path = "../../../Library/Developer/Xcode/DerivedData/Adium-gdszlkyrczkyzvfhyhsigfyepffb/Build/Products/Debug/Adium.framework"; sourceTree = "<group>"; };
+		C4B81AF619E0B67600E9177C /* tg-server.pub */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "tg-server.pub"; path = "../tg-server.pub"; sourceTree = "<group>"; };
 		C4BF990419BB8B4D0038D507 /* binlog.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = binlog.c; path = ../binlog.c; sourceTree = "<group>"; };
 		C4BF990519BB8B4D0038D507 /* loop.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = loop.c; path = ../loop.c; sourceTree = "<group>"; };
 		C4BF990619BB8B4D0038D507 /* msglog.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = msglog.c; path = ../msglog.c; sourceTree = "<group>"; };
@@ -132,8 +134,8 @@
 				C4877C1719BB37EA006FA91F /* TelegramService.m */,
 				C4877C1C19BB676B006FA91F /* AdiumTelegramAccount.h */,
 				C4877C1D19BB676B006FA91F /* AdiumTelegramAccount.m */,
-				C4BF992619BB8B530038D507 /* telegram */,
 				C4BF990319BB8B200038D507 /* telegram-purple */,
+				C4BF992619BB8B530038D507 /* telegram */,
 				C410948B19BB2D7D0083BF3F /* telegram-adium */,
 				C410948819BB2D7D0083BF3F /* Frameworks */,
 				C410948719BB2D7D0083BF3F /* Products */,
@@ -211,6 +213,7 @@
 		C4BF992619BB8B530038D507 /* telegram */ = {
 			isa = PBXGroup;
 			children = (
+				C4B81AF619E0B67600E9177C /* tg-server.pub */,
 				C4BF990419BB8B4D0038D507 /* binlog.c */,
 				C4BF990519BB8B4D0038D507 /* loop.c */,
 				C4BF990619BB8B4D0038D507 /* msglog.c */,
@@ -290,6 +293,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C4B81AF919E15E0D00E9177C /* tg-server.pub in Resources */,
 				C410949019BB2D7D0083BF3F /* InfoPlist.strings in Resources */,
 				C4877C2619BB6D11006FA91F /* telegram16.png in Resources */,
 				C4877C2519BB6D11006FA91F /* telegram.png in Resources */,

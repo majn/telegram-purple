@@ -117,8 +117,8 @@ int Response_len;
  *
  */
 
-#define TG_SERVER_PUBKEY_FILENAME     "/etc/telegram/server.pub"
-char *rsa_public_key_name; // = TG_SERVER_PUBKEY_FILENAME;
+#define TG_SERVER_PUBKEY_FILENAME "/etc/telegram-purple/server.pub"
+char *rsa_public_key_name = 0; 
 RSA *pubKey;
 long long pk_fingerprint;
 
