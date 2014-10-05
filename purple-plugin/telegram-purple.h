@@ -22,8 +22,8 @@
 #define TELEGRAM_AUTH_MODE_SMS "sms"
 #define TG_AUTHOR "Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>, Matthias Jentsch <mtthsjntsch@gmail.com>"
 #define TG_DESCRIPTION "A protocol plugin that adds support for the Telegram messenger."
-#define TG_VERSION "0.2.0"
-#define TG_BUILD "2"
+#define TG_VERSION "0.3.0"
+#define TG_BUILD "3"
 
 #include <glib.h>
 #include "notify.h"

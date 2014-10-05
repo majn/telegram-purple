@@ -2,6 +2,7 @@ telegram
 *.o
 *.so
 *.a
+telegram-adium/libcrypto.a
 config.h
 config.log
 config.status

@@ -6,7 +6,7 @@ Telegram-purple is a Libpurple plugin that adds support for the Telegram messeng
 This plugin is based on [Telegram-cli](http://github.com/vysheng/tg), a full-featured terminal-based client for Telegram created by [Vysheng](http://github.com/vysheng).
 
 
-# Version 0.2.0
+# Version 0.3.0
 
 Warning, this version is mainly for development and testing and NOT for productive use.Even though it already provides basic features, you should still expect bugs and crashes when running it.
 
@@ -20,6 +20,7 @@ When encountering a crash or some other bugs, please report it to us, preferably
         * Discover buddy state and info
     - Profile Pictures
         * Download and use profile pictures
+    - Adium Plugin
 
 ## TODO:
 
@@ -31,12 +32,11 @@ The following features are currently planned and will probably be added in the f
     - Geo-locations
     - Multiple accounts on one client
     - Respect libpurple proxy settings (implemented but untested)
-    - Adium Plugin
 
 
 ## Platform Support
 
-We only provide an installation guide for Linux right now, even though it should be possible to compile this plugin on other platforms. If someone manages to create a working Windows, BSD or OSX build, please let us know.
+We only provide an installation guide for Linux right now, even though it should be possible to compile this plugin on other platforms. If someone manages to create a working Windows or BSD-build please let us know.
 
 
 # Installation Instructions
@@ -80,7 +80,6 @@ NOTE: Ubuntu is currently not working, since libpurple doesn't seem to find libs
         sudo zypper install gcc glib glib-devel libpurple libpurple-devel zlib-devel openssl libopenssl-devel
 
 
-
 ## 3. Compile and install
 
         make
@@ -104,4 +103,26 @@ Now you should be able to see all your contacts and chats in your buddy list and
 
 The Telegram phone applications for iOS and Android make use of standardized Unicode smileys (called [Emojis](https://en.wikipedia.org/wiki/Emoji)). Pidgin
 does not display those smileys natively, but you can install a custom smiley theme like (https://github.com/stv0g/unicode-emoji) or (https://github.com/VxJasonxV/emoji-for-pidgin) and activate it under Settings > Themes > Smiley Theme.
+
+
+# Adium Plugin
+
+We will provide a readily build bundle soon, until then you can try to build the XCode-Project yourself if you want.
+
+1. Compile your Adium-Version and point the Telegrm-Adium build settings to its build-output.
+2. Get zlib and libcrypto.a and provide it somewhere in your build path.
+3. Build the XCode-Project, click on 
+
+
+# Authors
+
+Telegram-Purple and Telegram-Adium was written by:
+
+
+    - Matthias Jentsch <mtthsjntsch@gmail.com>
+    - Christopher Althaus <althaus.christopher@gmail.com>
+    - Markus Endres <endresma45241@th-nuernberg.de>
+
+
+The plugin is based on Telegram-CLI, which was written by Vitaly Valtman <mail@vysheng.ru> and others, see (http://github.com/vysheng/tg)
 
