@@ -114,6 +114,7 @@ Copyright Nikolay Durov, Andrey Lopatin 2012-2013
 #define MAX_PROTO_MESSAGE_INTS	1048576
 #define	_FILE_OFFSET_BITS	64
 
+char *rsa_public_key_name; 
 
 #pragma pack(push,4)
 struct encrypted_message {
