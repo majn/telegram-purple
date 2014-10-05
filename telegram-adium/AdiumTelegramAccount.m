@@ -15,14 +15,9 @@
 	return "prpl-telegram";
 }
 
-- (BOOL)connectivityBasedOnNetworkReachability
-{
-	return YES;
-}
-
 - (NSString *)host
 {
-	return @"173.240.5.1";
+	return @"149.154.167.50";
 }
 
 - (int)port
@@ -30,32 +25,9 @@
 	return 443;
 }
 
-/*
-- (NSString *)encodedAttributedString:(NSAttributedString *)inAttributedString forListObject:(AIListObject *)inListObject
-{
-	NSString *temp = [AIHTMLDecoder encodeHTML:inAttributedString
-									   headers:YES
-									  fontTags:NO
-							includingColorTags:NO
-								 closeFontTags:NO
-									 styleTags:NO
-					closeStyleTagsOnFontChange:NO
-								encodeNonASCII:NO
-								  encodeSpaces:NO
-									imagesPath:nil
-							 attachmentsAsText:YES
-					 onlyIncludeOutgoingImages:NO
-								simpleTagsOnly:YES
-								bodyBackground:NO
-						   allowJavascriptURLs:NO];
-	return temp;
-}
-*/
- 
 - (BOOL)canSendOfflineMessageToContact:(AIListContact *)inContact
 {
 	return YES;
 }
-
 
 @end

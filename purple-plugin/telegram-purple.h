@@ -16,10 +16,14 @@
 
 #ifndef __TG_PURPLE_H__
 #define __TG_PURPLE_H__
-#define PLUGIN_ID "prpl-telegram"
 
+#define PLUGIN_ID "prpl-telegram"
 #define TELEGRAM_AUTH_MODE_PHONE "phone"
 #define TELEGRAM_AUTH_MODE_SMS "sms"
+#define TG_AUTHOR "Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>, Matthias Jentsch <mtthsjntsch@gmail.com>"
+#define TG_DESCRIPTION "A protocol plugin that adds support for the Telegram messenger."
+#define TG_VERSION "0.2.0"
+#define TG_BUILD "2"
 
 #include <glib.h>
 #include "notify.h"

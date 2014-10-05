@@ -9,6 +9,8 @@
 #import <Foundation/Foundation.h>
 #import <AdiumLibpurple/PurpleService.h>
 
-@interface TelegramService : PurpleService
+@interface TelegramService : PurpleService {
+    
+}
 
 @end
