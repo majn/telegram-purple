@@ -988,7 +988,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
         char *f = fetch_str (self, l1);
         int l2 = prefetch_strlen (self);
         char *l = fetch_str (self, l2);
-        struct user *U = &UC->user;
+        struct tgl_user *U = &UC->user;
         bl_do_set_user_real_name (self->bl, self, U, f, l1, l, l2);
         //print_start ();
         //push_color (COLOR_YELLOW);
@@ -1012,7 +1012,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       peer_t *UC = user_chat_get (bl, user_id);
       fetch_date (self);
       if (UC && (UC->flags & FLAG_CREATED)) {
-        struct user *U = &UC->user;
+        struct tgl_user *U = &UC->user;
         unsigned y = fetch_int (self);
         long long photo_id;
         struct file_location big;

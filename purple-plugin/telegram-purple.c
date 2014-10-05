@@ -549,11 +549,7 @@ void on_new_user_status(struct telegram *tg, void *peer)
 {
     telegram_conn *conn = tg->extra;
     peer_t *p = peer;
-
-    //  purple_debug_info(PLUGIN_ID, "New User Status: %s\n", peer->user.status.online);
-    // TODO: this should probably be freed again somwhere
     char *who = g_strdup_printf("%d", get_peer_id(p->user.id));
-   
     PurpleAccount *account = purple_connection_get_account(conn->gc);
     if (p->user.status.online == 1) 
         purple_prpl_got_user_status(account, who, "available", "message", "", NULL);

@@ -1,14 +1,12 @@
 #
 # Telegram Flags
 #
-VERSION=0.2.0
-BUILD=1
 
 srcdir=.
 CFLAGS=-g
 LDFLAGS=-L/usr/local/lib
 CPPFLAGS=-I/usr/local/include
-DEFS=-DTG_VERSION=\"${VERSION}\" -DTG_BUILD=\"${BUILD}\"
+DEFS=
 COMPILE_FLAGS=${CFLAGS} ${CPPFLAGS} ${DEFS} -Wall -Wextra -Wno-deprecated-declarations -fno-strict-aliasing -fno-omit-frame-pointer -ggdb
 EXTRA_LIBS=-lcrypto -lz -lm
 LOCAL_LDFLAGS=-rdynamic -ggdb ${EXTRA_LIBS}
