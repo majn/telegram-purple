@@ -401,10 +401,53 @@ void tgprpl_login_on_connected(gpointer *data, gint fd, const gchar *error_messa
     conn->mtp = telegram_add_proxy(tg, req, fd, conn);
 }
 
-void telegram_on_disconnected (struct telegram *tg)
+void telegram_on_error (struct telegram *tg, const char *err)
 {
-     debug ("telegram_on_disconnected()\n");
-     assert (0);
+     debug ("telegram_on_error()\n");
+     telegram_conn *conn = tg->extra;
+    
+    purple_connection_error_reason(conn->gc, PURPLE_CONNECTION_ERROR_OTHER_ERROR,
+           err);
+}
+
+void on_update_user_name (struct telegram *tg, peer_t *user)
+{
+
+}
+
+void on_update_user_photo (struct telegram *tg, peer_t *user)
+{
+    
+}
+
+void on_update_user_registered (struct telegram *tg, peer_t *user)
+{
+    
+}
+
+void on_update_chat_participants (struct telegram *tg, peer_t *chat)
+{
+    
+}
+
+void on_update_chat_add_participant (struct telegram *tg, peer_t *chat, peer_id_t user, peer_id_t inviter)
+{
+    
+}
+
+void on_update_chat_del_participant (struct telegram *tg, peer_t *chat, peer_id_t user, void *_ UU)
+{
+    
+}
+
+void on_update_chat_user_typing (struct telegram *tg, peer_t *chat, peer_t *user, void *_ UU)
+{
+    
+}
+
+void on_update_auth_new (struct telegram *tg, char *location)
+{
+    
 }
 
 struct telegram_config tgconf = {
@@ -415,15 +458,29 @@ struct telegram_config tgconf = {
     telegram_on_phone_registration,
     telegram_on_client_registration,
     telegram_on_ready,
-    telegram_on_disconnected,
+    telegram_on_error,
 
-    message_allocated_handler,
+    // user
     peer_allocated_handler,
-    user_info_received_handler,
-    download_finished_handler,
     on_new_user_status,
     on_user_typing,
+    on_update_user_name,
+    on_update_user_photo,
+    on_update_user_registered,
+    
+    // chat
+    on_update_chat_participants,
+    on_update_chat_add_participant,
+    on_update_chat_del_participant,
+    on_update_chat_user_typing,
+
+    // misc
+    on_update_auth_new,
+    message_allocated_handler,
+    download_finished_handler,
+    user_info_received_handler,
     on_chat_joined
+
 };
 
 

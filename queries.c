@@ -1865,7 +1865,7 @@ void end_load (struct telegram *instance, struct download *D) {
   //update_prompt ();
   close (D->fd);
   debug ("Done: %s\n", D->name);
-  event_download_finished_handler(instance, D);
+  event_download_finished (instance, D);
   instance->dl_curr = 0;
   if (D->dc != telegram_get_working_dc(instance)->id) {
     debug ("%d Not the working dc %d, closing...\n", D->dc, 

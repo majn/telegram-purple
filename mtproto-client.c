@@ -938,9 +938,9 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
     {
       peer_id_t chat_id = MK_CHAT (fetch_int (self));
       peer_id_t id = MK_USER (fetch_int (self));
-      peer_t *C UU = user_chat_get (bl, chat_id);
-      peer_t *U UU = user_chat_get (bl, id);
-	  event_update_user_typing(tg, U);
+      peer_t *C = user_chat_get (bl, chat_id);
+      peer_t *U = user_chat_get (bl, id);
+	  event_update_chat_user_typing(tg, C, U, 0);
       if (log_level >= 2) {
         //print_start ();
         //push_color (COLOR_YELLOW);
@@ -1004,6 +1004,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
         fetch_skip_str (self);
         fetch_skip_str (self);
       }
+      event_update_user_name (tg, UC);
     }
     break;
   case CODE_update_user_photo:
@@ -1050,6 +1051,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
           fetch_file_location (self, &t);
         }
       }
+      event_update_user_photo(tg, UC);
       fetch_bool (self);
     }
     break;
@@ -1125,12 +1127,15 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       }
       //pop_color ();
       //print_end ();
+      if (C) {
+        event_update_chat_participants(tg, C);
+      }
     }
     break;
   case CODE_update_contact_registered:
     {
       peer_id_t user_id = MK_USER (fetch_int (self));
-      peer_t *U UU = user_chat_get (bl, user_id);
+      peer_t *U = user_chat_get (bl, user_id);
       fetch_int (self); // date
       //print_start ();
       //push_color (COLOR_YELLOW);
@@ -1140,6 +1145,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       printf (" registered\n");
       //pop_color ();
       //print_end ();
+      event_update_user_registered(tg, U);
     }
     break;
   case CODE_update_contact_link:
@@ -1193,6 +1199,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
         s, location);
       //pop_color ();
       //print_end ();
+      event_update_auth_new(tg, location);
       tfree_str (s);
       tfree_str (location);
     }
@@ -1333,6 +1340,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       printf ("\n");
       //pop_color ();
       //print_end ();
+      event_update_chat_add_participant(tg, C, user_id, inviter_id);
     }
     break;
   case CODE_update_chat_participant_delete:
@@ -1356,6 +1364,7 @@ void work_update (struct mtproto_connection *self, long long msg_id UU) {
       printf (" deleted\n");
       //pop_color ();
       //print_end ();
+      event_update_chat_del_participant(tg, C, user_id, 0);
     }
     break;
   case CODE_update_dc_options:

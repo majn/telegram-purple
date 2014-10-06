@@ -15,29 +15,8 @@
 #include "loop.h"
 
 
-
 /*
- * New message received
- */
-void event_update_new_message(struct telegram *instance, struct message *M) 
-{
-    if (instance->config->on_msg_handler) {
-        instance->config->on_msg_handler (instance, M);
-    }
-}
-
-/*
- * Peer allocated
- */
-void event_peer_allocated(struct telegram *instance, void *peer) 
-{
-    if (instance->config->on_peer_allocated_handler) {
-        instance->config->on_peer_allocated_handler (instance, peer);
-    }
-}
-
-/*
- * Peer user fetched full
+ * Events
  */
 void event_user_info_received_handler(struct telegram *instance, struct tgl_user *peer, int show_info)
 {
@@ -46,42 +25,28 @@ void event_user_info_received_handler(struct telegram *instance, struct tgl_user
     }
 }
 
-/*
- * Download finished
- */
-void event_download_finished_handler(struct telegram *instance, struct download *D) 
-{
-    if (instance->config->on_download_finished_handler) {
-        instance->config->on_download_finished_handler (instance, D);
-    }
-}
+DEFINE_EVENT_HANDLER (peer_allocated, void);
+DEFINE_EVENT_HANDLER (update_user_status, void);
+DEFINE_EVENT_HANDLER (update_user_typing, void);
 
-/*
- * User status changed
- */
-void event_update_user_status (struct telegram *instance, void *peer) 
-{
-    if (instance->config->on_update_user_status_handler) {
-        instance->config->on_update_user_status_handler (instance, peer);
-    }
-}
+DEFINE_EVENT_HANDLER (update_user_name, peer_t);
+DEFINE_EVENT_HANDLER (update_user_photo, peer_t);
+DEFINE_EVENT_HANDLER (update_user_registered, peer_t);
 
-/*
- * User typing changed
- */
-void event_update_user_typing (struct telegram *instance, void *peer) 
-{
-    if (instance->config->on_update_uesr_typing_handler) {
-        instance->config->on_update_uesr_typing_handler (instance, peer);
-    }
-}
+DEFINE_EVENT_HANDLER  (update_chat_participants, peer_t);
+DEFINE_EVENT_HANDLER_3(update_chat_add_participant, peer_t *, peer_id_t, peer_id_t);
+DEFINE_EVENT_HANDLER_3(update_chat_del_participant, peer_t *, peer_id_t, void *);
+DEFINE_EVENT_HANDLER_3(update_chat_user_typing, peer_t *, peer_t *, void *);
+DEFINE_EVENT_HANDLER  (update_auth_new, char);
 
+DEFINE_EVENT_HANDLER (update_new_message, struct message);
+DEFINE_EVENT_HANDLER (download_finished, struct download);
 
 
 /**
  * Calculate the configuration path for the given config file and the given instance
  *
- * @returns The full path to the configuration. 
+ * @returns The full path to the configuration.
  *
  * NOTE: the returned string must be freed manually using gfree
  */
@@ -93,7 +58,8 @@ char *telegram_get_config(struct telegram *instance, char *config)
 /**
  * Return whether the current client is registered.
  */
-int telegram_is_registered(struct telegram *tg) {
+int telegram_is_registered(struct telegram *tg)
+{
     return telegram_get_working_dc(tg)->has_auth;
 }
 

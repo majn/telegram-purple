@@ -109,6 +109,46 @@ struct proxy_request {
 
 struct telegram;
 struct download;
+
+/*
+ * Events 1 arg
+ */
+
+#define DEFINE_EVENT_LISTENER(E_NAME, D_TYPE) void (*on_ ## E_NAME) (struct telegram *tg, D_TYPE *data);
+
+#define DECLARE_EVENT_HANDLER(E_NAME, D_TYPE) \
+void event_ ## E_NAME (struct telegram *tg, D_TYPE *data)
+
+#define DEFINE_EVENT_HANDLER(E_NAME, D_TYPE) \
+void event_ ## E_NAME (struct telegram *tg, D_TYPE *data) \
+{ \
+    if (tg->config->on_ ## E_NAME) { \
+        tg->config->on_ ## E_NAME (tg, data); \
+    } else { \
+        warning ("Trying to execute non-existing event listener %s\n", "E_NAME"); \
+    } \
+}
+
+/*
+ * Events 3 args
+ */
+
+#define DEFINE_EVENT_LISTENER_3(E_NAME, D_TYPE, D_TYPE2, D_TYPE3) void (*on_ ## E_NAME) (struct telegram *tg, D_TYPE data, D_TYPE2 data2, D_TYPE3 data3);
+
+#define DECLARE_EVENT_HANDLER_3(E_NAME, D_TYPE, D_TYPE2, D_TYPE3) \
+void event_ ## E_NAME (struct telegram *tg, D_TYPE data, D_TYPE2 data2, D_TYPE3 data3)
+
+#define DEFINE_EVENT_HANDLER_3(E_NAME, D_TYPE, D_TYPE2, D_TYPE3) \
+void event_ ## E_NAME (struct telegram *tg, D_TYPE data, D_TYPE2 data2, D_TYPE3 data3) \
+{ \
+    if (tg->config->on_ ## E_NAME) { \
+        tg->config->on_ ## E_NAME (tg, data, data2, data3); \
+    } else { \
+    warning ("Trying to execute non-existing event listener %s\n", "E_NAME"); \
+    } \
+}
+
+
 /**
  * Contains all options and pointer to callback functions required by telegram
  */
@@ -161,20 +201,76 @@ struct telegram_config {
     /** 
      * A callback function that is called when telegram is disconnected
      */
-    void (*on_disconnected) (struct telegram *instance);
-
-    /**
-     * A callback function that is called when a new message was allocated. This is useful
-     * for adding new messages to the GUI.
-     */
-    void (*on_msg_handler) (struct telegram *instance, struct message *M);
+    void (*on_error) (struct telegram *instance, const char *err);
 
     /**
      * A callback function that is called when a new peer was allocated. This is useful
      * for populating the GUI with new peers.
      */
-    void (*on_peer_allocated_handler) (struct telegram *instance, void *peer);
+    DEFINE_EVENT_LISTENER(peer_allocated, void);
+    
+    /**
+     * A callback function that is called when a user's status has changed
+     */ 
+    DEFINE_EVENT_LISTENER(update_user_status, void);
 
+    /**
+     * A callback function that is called when a user starts or stops typing
+     */
+    DEFINE_EVENT_LISTENER(update_user_typing, void);
+    DEFINE_EVENT_LISTENER(update_user_name, peer_t);
+    DEFINE_EVENT_LISTENER(update_user_photo, peer_t);
+    DEFINE_EVENT_LISTENER(update_user_registered, peer_t);
+    
+    DEFINE_EVENT_LISTENER(update_chat_participants, peer_t);
+    
+    /**
+     * A new user is added to a chat
+     *
+     * @param data1 The chat
+     * @param data2 The added user
+     * @param data3 The inviter
+     */
+    DEFINE_EVENT_LISTENER_3(update_chat_add_participant, peer_t *, peer_id_t, peer_id_t);
+    
+    /**
+     * A user is deleted from a chat
+     *
+     * @param data1 The chat
+     * @param data2 The added user
+     * @param data3 NULL
+     */
+    DEFINE_EVENT_LISTENER_3(update_chat_del_participant, peer_t *, peer_id_t, void *);
+    
+    /**
+     * A user in a chat is typing
+     *
+     * @param data1 The chat
+     * @param data2 The user
+     * @param data3 NULL
+     */
+    DEFINE_EVENT_LISTENER_3(update_chat_user_typing, peer_t *, peer_t *, void *);
+    
+    /**
+     * A new device was registered for @location
+     * 
+     * @param tg
+     * @param location
+     */
+    DEFINE_EVENT_LISTENER(update_auth_new, char);
+    
+    /**
+     * A callback function that is called when a new message was allocated. This is useful
+     * for adding new messages to the GUI.
+     */
+    DEFINE_EVENT_LISTENER(update_new_message, struct message);
+    
+    /**
+     * A callback function that is called when a download is completed. This is useful
+     * for populating the GUI with new user photos.
+     */
+    DEFINE_EVENT_LISTENER(download_finished, struct download);
+    
     /**
      * A callback function that is called when a peer user info was received. This is useful
      * for populating the GUI with new user photos.
@@ -182,26 +278,27 @@ struct telegram_config {
     void (*on_user_info_received_handler) (struct telegram *instance, struct tgl_user *peer, int showInfo);
     
     /**
-     * A callback function that is called when a download is completed. This is useful
-     * for populating the GUI with new user photos.
-     */
-    void (*on_download_finished_handler) (struct telegram *instance, struct download *D);
-    
-    /**
-     * A callback function that is called when a user's status has changed
-     */ 
-    void (*on_update_user_status_handler) (struct telegram *instance, void *peer);
-
-    /**
-     * A callback function that is called when a user starts or stops typing
-     */
-    void (*on_update_uesr_typing_handler) (struct telegram *instance, void *peer);
-
-    /**
      * A callback function that is called when chat info is received
      */
     void (*on_chat_info_received) (struct telegram *instance, peer_id_t chatid); 
 };
+
+DECLARE_EVENT_HANDLER (peer_allocated, void);
+DECLARE_EVENT_HANDLER (update_user_status, void);
+DECLARE_EVENT_HANDLER (update_user_typing, void);
+
+DECLARE_EVENT_HANDLER (update_user_name, peer_t);
+DECLARE_EVENT_HANDLER (update_user_photo, peer_t);
+DECLARE_EVENT_HANDLER (update_user_registered, peer_t);
+
+DECLARE_EVENT_HANDLER (update_chat_participants, peer_t);
+DECLARE_EVENT_HANDLER_3 (update_chat_add_participant, peer_t *, peer_id_t, peer_id_t);
+DECLARE_EVENT_HANDLER_3 (update_chat_del_participant, peer_t *, peer_id_t, void *);
+DECLARE_EVENT_HANDLER_3 (update_chat_user_typing, peer_t *, peer_t *, void *);
+DECLARE_EVENT_HANDLER (update_auth_new, char);
+
+DECLARE_EVENT_HANDLER (update_new_message, struct message);
+DECLARE_EVENT_HANDLER (download_finished, struct download);
 
 #define MSG_STORE_SIZE 10000
 
@@ -362,52 +459,10 @@ int network_verify_registration(const char *code, const char *sms_hash);
 int network_verify_phone_registration(const char *code, const char *sms_hash, 
 	const char *first, const char *last);
 
-/**
- * Retur if the current phone is registered in the given network.
- */
-int network_phone_is_registered();
-
-/**
- * Return if the current client is registered.
- */
-int network_client_is_registered();
-
-/**
- * Export the current registration to all available data centers
- */
-void network_export_registration();
-
-/**
- * Fetch all unknown messages of the current session
- */
-void session_get_difference();
-
-/**
- * Fetch all known contacts
- */
-void session_update_contact_list();
-
-/* 
- * Events
- */
-void event_update_new_message(struct telegram *instance, struct message *M);
-void event_update_user_status(struct telegram *instance, void *peer);
-void event_update_user_typing(struct telegram *instance, void *peer);
-
-/*
- * Load known users and chats on connect
- */
-void event_peer_allocated(struct telegram *instance, void *peer);
-
 /*
  * Load known users and chats on connect
  */
 void event_user_info_received_handler(struct telegram *instance, struct tgl_user *peer, int showInfo);
-
-/*
- * Load known users and chats on connect
- */
-void event_download_finished_handler(struct telegram *instance, struct download *D);
 
 /**
  * Set the connection after a proxy_request_cb 
