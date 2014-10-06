@@ -5,12 +5,24 @@ Telegram-purple is a Libpurple plugin that adds support for the Telegram messeng
 
 This plugin is based on [Telegram-cli](http://github.com/vysheng/tg), a full-featured terminal-based client for Telegram created by [Vysheng](http://github.com/vysheng).
 
+# Changelog
 
-# Version 0.3.0
-
-Warning, this version is mainly for development and testing and NOT for productive use.Even though it already provides basic features, you should still expect bugs and crashes when running it.
+Warning, this version is mainly for development and testing and NOT for productive use. Even though it already provides basic features, you should still expect bugs and crashes when running it.
 
 When encountering a crash or some other bugs, please report it to us, preferably together with a backtrace of the crashed application [https://developer.pidgin.im/wiki/GetABacktrace]
+
+## Version 0.3.1
+
+    - Improve error handling
+    - Fix some installation problems
+
+
+## Version 0.3.0
+
+    - Provide Adium Plugin
+
+
+# Features
 
 ## Already Implemented:
 
@@ -82,6 +94,7 @@ NOTE: Ubuntu is currently not working, since libpurple doesn't seem to find libs
 
 ## 3. Compile and install
 
+
         make
         sudo make install
 
@@ -99,10 +112,17 @@ The username is your current phone number, including your full country prefix in
 Now you should be able to see all your contacts and chats in your buddy list and send/receive messages.
 
 
-# Unicode Emojis for Pidgin
+# Troubleshooting
 
-The Telegram phone applications for iOS and Android make use of standardized Unicode smileys (called [Emojis](https://en.wikipedia.org/wiki/Emoji)). Pidgin
-does not display those smileys natively, but you can install a custom smiley theme like (https://github.com/stv0g/unicode-emoji) or (https://github.com/VxJasonxV/emoji-for-pidgin) and activate it under Settings > Themes > Smiley Theme.
+If you encounter problems running this plugin and you have updated from an older version,
+deleting your old user-data might be helpful. WARNING: This will require you to enter a new authentication
+code and delete all your secret chat keys.
+
+To clean all your user files run:
+
+
+        sudo make purge
+
 
 
 # Adium Plugin
@@ -114,10 +134,15 @@ We will provide a readily build bundle soon, until then you can try to build the
 3. Build the XCode-Project, click on 
 
 
+# Unicode Emojis for Pidgin
+
+The Telegram phone applications for iOS and Android make use of standardized Unicode smileys (called [Emojis](https://en.wikipedia.org/wiki/Emoji)). Pidgin
+does not display those smileys natively, but you can install a custom smiley theme like (https://github.com/stv0g/unicode-emoji) or (https://github.com/VxJasonxV/emoji-for-pidgin) and activate it under Settings > Themes > Smiley Theme.
+
+
 # Authors
 
-Telegram-Purple and Telegram-Adium was written by:
-
+Telegram-Purple and Telegram-Adium were written by:
 
     - Matthias Jentsch <mtthsjntsch@gmail.com>
     - Christopher Althaus <althaus.christopher@gmail.com>
