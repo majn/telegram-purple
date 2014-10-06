@@ -426,7 +426,6 @@
 					"/Users/matj/Library/Developer/Xcode/DerivedData/Adium-gdwrwbgfopymlzesvaaamabjdyym",
 					"/Users/matj/Development/adium-1.5.10/Frameworks",
 					"/Users/matj/Development/adium-1.5.10/build/Debug",
-					/Volumes/Workspace/adium/Frameworks,
 					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/Adium-gdszlkyrczkyzvfhyhsigfyepffb/Build/Products/Debug",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -463,7 +462,6 @@
 					"/Users/matj/Library/Developer/Xcode/DerivedData/Adium-gdwrwbgfopymlzesvaaamabjdyym",
 					"/Users/matj/Development/adium-1.5.10/Frameworks",
 					"/Users/matj/Development/adium-1.5.10/build/Debug",
-					/Volumes/Workspace/adium/Frameworks,
 					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/Adium-gdszlkyrczkyzvfhyhsigfyepffb/Build/Products/Debug",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
