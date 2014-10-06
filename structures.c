@@ -39,7 +39,6 @@ DEFINE_TREE(peer,peer_t *,peer_cmp,0)
 DEFINE_TREE(peer_by_name,peer_t *,peer_cmp_name,0)
 DEFINE_TREE(message,struct message *,id_cmp,0)
 
-
 struct message message_list = {
   .next_use = &message_list,
   .prev_use = &message_list

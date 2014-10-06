@@ -61,17 +61,6 @@ PurpleGroup *tggroup;
 
 void tgprpl_login_on_connected();
 
-/**
- * Formats the given format string with the given arguments and writes 
- * it to the libpurple log
- */
-void tg_cli_log_cb(const char* format, va_list ap)
-{
-    char buffer[256];
-    vsnprintf(buffer, sizeof(buffer), format, ap);
-    purple_debug_info(PLUGIN_ID, "%s", buffer);
-}
-
 void message_allocated_handler (struct telegram *instance, struct message *M);
 void peer_allocated_handler (struct telegram *instance, void *user);
 void user_info_received_handler (struct telegram *instance, struct tgl_user *user, int showInfo);
@@ -934,7 +923,6 @@ static GList *tgprpl_status_types(PurpleAccount * acct)
 static void tgprpl_set_status(PurpleAccount * acct, PurpleStatus * status)
 {
     purple_debug_info(PLUGIN_ID, "tgprpl_set_status()\n");
-
 }
 
 /**
@@ -1229,10 +1217,7 @@ static void tgprpl_init(PurplePlugin *plugin)
     PurpleAccountOption *option;
     PurpleAccountUserSplit *split;
     GList *verification_values = NULL;
-
-    // Redirect the msglog of the telegram-cli application to the libpurple logger
-    set_log_cb(&tg_cli_log_cb);
-
+    
     // Extra Options
  #define ADD_VALUE(list, desc, v) { \
      PurpleKeyValuePair *kvp = g_new0(PurpleKeyValuePair, 1); \

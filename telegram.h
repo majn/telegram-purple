@@ -331,8 +331,6 @@ void telegram_change_state(struct telegram *instance, int state, void *data);
  */
 void telegram_connect(struct telegram *instance);
 
-int telegram_login (struct telegram *instance);
-
 /**
  * Read and process all available input from the network
  */
@@ -425,7 +423,6 @@ struct mtproto_connection *telegram_add_proxy(struct telegram *tg, struct proxy_
 int telegram_authenticated (struct telegram *instance);
 
 void telegram_flush (struct telegram *instance);
-
 void telegram_dl_add (struct telegram *instance, struct download *dl);
 void telegram_dl_next (struct telegram *instance);
 

@@ -454,20 +454,6 @@ void telegram_dl_next (struct telegram *instance)
     }
 }
 
-/**
- * Login, and perform a registration when needed
- */
-int telegram_login(struct telegram *instance)
-{
-    if (instance->session_state != STATE_AUTHORIZED) {
-        debug("Cannot log in, invalid state: %d \n", instance->session_state);
-        return -1;
-    }
-    do_help_get_config(instance);
-    telegram_change_state(instance, STATE_CONFIG_REQUESTED, NULL);
-    return 0;
-}
-
 void on_authorized(struct mtproto_connection *c UU, void *data)
 {
     debug ("on_authorized()...\n");

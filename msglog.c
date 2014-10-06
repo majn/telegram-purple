@@ -10,29 +10,6 @@
 #define COLOR_GREEN "\033[32;1m"
 #define COLOR_NORMAL "\033[0m"
 
-/** 
- * Log a message to the telegram-cli message log, by 
- * just writing it to STDOUT and appending '***'
- */
-void log_printf(const char *format, va_list ap)  
-{
-    vprintf (format, ap);
-}
-
-/**
- * The callback that will log the given msg to the used target
- */
-void (*log_cb)(const char* format, va_list ap) = log_printf;
-
-/**
- * Set a custom logging callback to use instead of the regular
- * 	printf to stdout
- */
-void set_log_cb(void (*cb)(const char*, va_list ap))
-{ 
-    log_cb = cb;
-}
-
 void hexdump (int *in_ptr, int *in_end) {
     int *ptr = in_ptr;
     while (ptr < in_end) { printf (" %08x", *(ptr ++)); }
