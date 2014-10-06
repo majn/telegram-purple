@@ -314,7 +314,10 @@ void client_registration_entered (gpointer data, const gchar *code)
 void client_registration_canceled (gpointer data)
 {
     struct telegram *tg = data;
-    // TODO: disconnect and exit
+    telegram_conn *conn = tg->extra;
+    
+    purple_connection_error_reason(conn->gc,
+        PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, "registration canceled");
 }
 
 gboolean queries_timerfunc (gpointer data) {

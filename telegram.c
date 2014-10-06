@@ -79,10 +79,11 @@ void telegram_change_state (struct telegram *instance, int state, void *data)
         case STATE_ERROR: {
             const char* err = data;
             if (err == NULL) {
-                err = "<no description>";
+                err = "<no error description>";
             }
             debug("telegram errored: %s\n", err);
             mtproto_close (instance->connection);
+            instance->config->on_error (instance, err);
         }
         break;
 

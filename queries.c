@@ -423,14 +423,14 @@ int send_code_on_error (struct query *q UU, int error_code, int l, char *error) 
   if (l >= s && !memcmp (error, "PHONE_MIGRATE_", s)) {
     int want_dc_num = error[s] - '0';
     tg->auth.dc_working_num = want_dc_num;
-    telegram_change_state(tg, STATE_ERROR, error);
+    telegram_change_state(tg, STATE_DISCONNECTED_SWITCH_DC, error);
   } else if (l >= s2 && !memcmp (error, "NETWORK_MIGRATE_", s2)) {
     int want_dc_num = error[s2] - '0';
     tg->auth.dc_working_num = want_dc_num;
-    telegram_change_state(tg, STATE_ERROR, error);
+    telegram_change_state(tg, STATE_DISCONNECTED_SWITCH_DC, error);
   } else {
     fatal ( "error_code = %d, error = %.*s\n", error_code, l, error);
-    assert (0);
+    telegram_change_state(tg, STATE_ERROR, error);
   }
   return 0;
 }
@@ -462,7 +462,7 @@ void do_send_code (struct telegram *instance, const char *user) {
   } else if (instance->session_state == STATE_CLIENT_NOT_REGISTERED) {
     telegram_change_state(instance, STATE_CLIENT_CODE_REQUESTED, NULL);
   } else {
-    debug("do_send_code() Invalid State %d, erroring\n", instance->session_state);
+    fatal ("do_send_code() Invalid State %d, erroring\n", instance->session_state);
     telegram_change_state(instance, STATE_ERROR, NULL);
   }
 }
@@ -476,8 +476,8 @@ int phone_call_on_answer (struct query *q UU) {
 }
 
 int phone_call_on_error (struct query *q UU, int error_code, int l, char *error) {
-  debug ( "error_code = %d, error = %.*s\n", error_code, l, error);
-  assert (0);
+  fatal ( "error_code = %d, error = %.*s\n", error_code, l, error);
+  telegram_change_state(q->data, STATE_ERROR, error);
   return 0;
 }
 
@@ -545,6 +545,7 @@ int check_phone_on_error (struct query *q UU, int error_code, int l, char *error
   } else {
     failure ( "error_code = %d, error = %.*s\n", error_code, l, error);
     telegram_change_state(instance, STATE_ERROR, error);
+    return -1;
   }
   telegram_change_state(instance,
     STATE_DISCONNECTED_SWITCH_DC, &instance->auth.dc_working_num);
@@ -587,7 +588,7 @@ int nearest_dc_on_answer (struct query *q UU) {
 
 int fail_on_error (struct query *q UU, int error_code UU, int l UU, char *error UU) {
   fatal ("error #%d: %.*s\n", error_code, l, error);
-  assert (0);
+  telegram_change_state(q->data, STATE_ERROR, error);
   return 0;
 }
 
