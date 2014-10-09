@@ -1109,7 +1109,7 @@ void on_chat_joined (struct telegram *instance, peer_id_t chatid)
     for (i = 0; i < cnt; i++) {
         peer_id_t part_id = MK_USER((curr + i)->user_id);
         char *name = g_strdup_printf ("%d", part_id.id);
-        int flags = PURPLE_CBFLAGS_NONE | peer->chat.admin_id == part_id.id ? PURPLE_CBFLAGS_FOUNDER : 0;
+        int flags = PURPLE_CBFLAGS_NONE | ((peer->chat.admin_id == part_id.id) ? PURPLE_CBFLAGS_FOUNDER : 0);
         debug ("purple_conv_chat_add_user (..., name=%s, ..., flags=%d)", name, flags);
         purple_conv_chat_add_user(
             purple_conversation_get_chat_data(conv), 
@@ -1119,10 +1119,10 @@ void on_chat_joined (struct telegram *instance, peer_id_t chatid)
             0
         );
     }
-    struct message *M = 0;
+    
     debug ("g_queue_pop_head()\n");
-
-    while (M = g_queue_pop_head (conn->new_messages)) {
+    struct message *M = 0;
+    while ((M = g_queue_pop_head (conn->new_messages))) {
         debug ("adding msg-id\n");
         int id = get_peer_id(M->from_id);
         if (!chat_add_message(instance, M)) {
