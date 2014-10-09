@@ -15,6 +15,7 @@
  */
 
 #import "AdiumTelegramAccount.h"
+#import <libpurple/conversation.h>
 
 @implementation AdiumTelegramAccount
 

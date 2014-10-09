@@ -11,6 +11,11 @@ Warning, this version is mainly for development and testing and NOT for producti
 
 When encountering a crash or some other bugs, please report it to us, preferably together with a backtrace of the crashed application [https://developer.pidgin.im/wiki/GetABacktrace]
 
+## Version 0.3.2
+
+    - Add compatibility for OSX 10.8
+
+
 ## Version 0.3.1
 
     - Improve error handling
@@ -127,11 +132,18 @@ To clean all your user files run:
 
 # Adium Plugin
 
-We will provide a readily build bundle soon, until then you can try to build the XCode-Project yourself if you want.
+## Prebuilt Bundle
 
-1. Compile your Adium-Version and point the Telegrm-Adium build settings to its build-output.
+This bundle was tested to work under OSX 10.9 and 10.8. If it doesn't work on your installation
+please send your Adium crash log (which you can find in ~/Library/Logs/Adium 2/).
+
+[Version 0.3.2](http://lauschgift.org/telegram-purple/telegram-adium-0.3.2.zip)
+
+## Build with XCode
+
+1. Compile the source of your current Adium version and add the created frameworks to the Adium-Telegram build path.
 2. Get zlib and libcrypto.a and provide it somewhere in your build path.
-3. Build the XCode-Project, click on 
+3. Build the XCode-Project and execute the created bundle
 
 
 # Unicode Emojis for Pidgin
