@@ -3,12 +3,21 @@
 #include "debug.h"
 #include "purple-plugin/telegram-purple.h"
 
+#ifdef DEBUG
 #define COLOR_GREY "\033[37;1m"
 #define COLOR_YELLOW "\033[33;1m"
 #define COLOR_RED "\033[0;31m"
 #define COLOR_REDB "\033[1;31m"
 #define COLOR_GREEN "\033[32;1m"
 #define COLOR_NORMAL "\033[0m"
+#else
+#define COLOR_GREY ""
+#define COLOR_YELLOW ""
+#define COLOR_RED ""
+#define COLOR_REDB ""
+#define COLOR_GREEN ""
+#define COLOR_NORMAL ""
+#endif
 
 void hexdump (int *in_ptr, int *in_end) {
     int *ptr = in_ptr;
