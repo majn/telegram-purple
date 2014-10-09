@@ -415,42 +415,50 @@ void telegram_on_error (struct telegram *tg, const char *err)
 
 void on_update_user_name (struct telegram *tg, peer_t *user)
 {
-
+    debug("on_update_user_name(id=%d, type=%d)\n", user->id.id, user->id.type);
+    // Update user name
 }
 
 void on_update_user_photo (struct telegram *tg, peer_t *user)
 {
-    
+     debug("on_update_user_photo(id=%d, type=%d)\n", user->id.id, user->id.type);
+     // Update user photo
 }
 
 void on_update_user_registered (struct telegram *tg, peer_t *user)
 {
-    
+     debug("on_update_user_name(id=%d, type=%d)\n", user->id.id, user->id.type);
+     // Notify about a new user
 }
 
 void on_update_chat_participants (struct telegram *tg, peer_t *chat)
 {
-    
+     debug("on_update_chat_participants(chat.id=%d)\n", chat->id.id);
+     // Refresh chat participants
 }
 
 void on_update_chat_add_participant (struct telegram *tg, peer_t *chat, peer_id_t user, peer_id_t inviter)
 {
-    
+    debug("on_update_chat_add_participant(chat.id=%d)\n", chat->id.id);
+    // Add chat participant
 }
 
 void on_update_chat_del_participant (struct telegram *tg, peer_t *chat, peer_id_t user, void *_ UU)
 {
-    
+    debug("on_update_chat_del_participant(chat.id=%d)\n", chat->id.id);
+    // Remove chat participant
 }
 
 void on_update_chat_user_typing (struct telegram *tg, peer_t *chat, peer_t *user, void *_ UU)
 {
-    
+    debug("on_update_chat_user_typing(chat.id=%d, user.id=%d)\n", chat->id.id, user->id.id);
+    // Set or unset user in chat typing
 }
 
 void on_update_auth_new (struct telegram *tg, char *location)
 {
-    
+    debug("un_update_auth_new(location=%s)\n", location);
+    // Info: new device authenticated for this phone number
 }
 
 struct telegram_config tgconf = {
@@ -483,7 +491,6 @@ struct telegram_config tgconf = {
     download_finished_handler,
     user_info_received_handler,
     on_chat_joined
-
 };
 
 
