@@ -49,7 +49,7 @@
 
 - (NSString *)userNameLabel
 {
-    return @"Phone Number";
+    return @"Phone number\n(with country prefix)";
 }
 
 - (BOOL)supportsProxySettings{
@@ -78,7 +78,7 @@
 
 - (BOOL)isSocialNetworkingService
 {
-	return YES;
+	return NO;
 }
 
 - (AIServiceImportance)serviceImportance{
@@ -88,7 +88,6 @@
 - (NSCharacterSet *)allowedCharacters{
 	return [[NSCharacterSet illegalCharacterSet] invertedSet];
 }
-
 - (NSCharacterSet *)allowedCharactersForAccountName
 {
     return ([NSCharacterSet characterSetWithCharactersInString: @"+1234567890"]);
@@ -97,10 +96,6 @@
 - (NSUInteger)allowedLengthForAccountName
 {
     return 16;
-}
-
-- (NSCharacterSet *)ignoredCharacters{
-	return [NSCharacterSet characterSetWithCharactersInString:@"/-"];
 }
 
 - (BOOL)caseSensitive{
