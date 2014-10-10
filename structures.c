@@ -183,10 +183,21 @@ long long fetch_user_photo (struct mtproto_connection *mtp, struct tgl_user *U) 
   return 0;
 }
 
+void sanitize_alias(char *buffer)
+{
+    size_t len = strlen(buffer);
+    gchar *curr;
+    while ((curr = g_utf8_strchr(buffer, len, '\n'))) {
+        *curr = 0x20;
+    }
+}
+
 int user_get_alias(peer_t *user, char *buffer, int maxlen) 
 {
   char* last_name  = (user->user.last_name  && strlen(user->user.last_name))  ? user->user.last_name  : "";
   char* first_name = (user->user.first_name && strlen(user->user.first_name)) ? user->user.first_name : "";
+  sanitize_alias (last_name);
+  sanitize_alias(first_name);
   if (strlen(first_name) && strlen(last_name)) {
     return snprintf(buffer, maxlen, "%s %s", first_name, last_name);
   } else if (strlen(first_name)) {
