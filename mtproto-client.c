@@ -1915,7 +1915,7 @@ void mtproto_close_foreign (struct telegram *instance)
 /**
  * Free all destroyed connections
  */
-void mtproto_free_closed (struct telegram *tg) {
+void mtproto_free_closed (struct telegram *tg, int force) {
     int i;
     for (i = 0; i < 100; i++) {
         if (tg->Cs[i] == NULL) continue; 
@@ -1923,7 +1923,7 @@ void mtproto_free_closed (struct telegram *tg) {
         debug ("checking mtproto_connection %d: c_state:%d destroy:%d, quries_num:%d\n", 
             i, c->c_state, c->destroy, c->queries_num);
         if (c->destroy == 0) continue;
-        if (c->connection->out_bytes > 0) {
+        if (!force && c->connection->out_bytes > 0) {
             debug ("still %d bytes ouput left, skipping connection...\n", c->connection->out_bytes);
             continue;
         }

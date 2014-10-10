@@ -193,7 +193,7 @@ void telegram_destroy(struct telegram *this)
     }
     free_queries (this);
     free_timers (this);
-    mtproto_free_closed (this);
+    mtproto_free_closed (this, 1);
 
     free_bl (this->bl);
     free_auth (this->auth.DC_list, 11);

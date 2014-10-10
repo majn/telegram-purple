@@ -213,21 +213,7 @@ static void tgprpl_input_cb(gpointer data, gint source, PurpleInputCondition con
         telegram_flush (conn->mtp->instance);
 
         // free all mtproto_connections that may have errored
-        mtproto_free_closed(conn->mtp->instance);
-    }
-}
-
-/** 
- * Telegram announced that it awaits new input from the read-handle
- * TODO: this is currently unused, evaluate wether its needed at all
- */
-static void tgprpl_has_input(void *handle)
-{
-    debug("tgprpl_has_input()\n");
-    mtproto_handle *conn = handle;
-    if (! conn->rh) {
-        conn->rh = purple_input_add(conn->fd, PURPLE_INPUT_READ, tgprpl_input_cb, handle);
-        debug("Attached read handle: %u ", conn->rh);
+        mtproto_free_closed(conn->mtp->instance, 0);
     }
 }
 

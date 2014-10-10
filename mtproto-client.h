@@ -508,7 +508,7 @@ static inline void hexdump_out (struct mtproto_connection *self) {
 void my_clock_gettime (int clock_id, struct timespec *T);
 
 void mtproto_close_foreign (struct telegram *instance);
-void mtproto_free_closed (struct telegram *tg);
+void mtproto_free_closed (struct telegram *tg, int force);
 
 #endif
 
