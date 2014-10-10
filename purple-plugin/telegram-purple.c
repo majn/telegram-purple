@@ -542,13 +542,13 @@ static int chat_add_message(struct telegram *tg, struct message *M)
           // chat initialies, add message now
           if (M->from_id.id == tg->our_id) {
               serv_got_chat_in(conn->gc, get_peer_id(M->to_id), "You", 
-                PURPLE_MESSAGE_RECV, M->message, time((time_t *) &M->date));
+                PURPLE_MESSAGE_RECV, M->message, M->date);
           } else {
               peer_t *fromPeer = user_chat_get (tg->bl, M->from_id);
               char *alias = malloc(BUDDYNAME_MAX_LENGTH);
               user_get_alias(fromPeer, alias, BUDDYNAME_MAX_LENGTH);
               serv_got_chat_in(conn->gc, get_peer_id(M->to_id), alias, 
-                PURPLE_MESSAGE_RECV, M->message, time((time_t *) &M->date));
+                PURPLE_MESSAGE_RECV, M->message, M->date);
               g_free(alias);
           }
           return 1;
@@ -565,8 +565,8 @@ void message_allocated_handler(struct telegram *tg, struct message *M)
     telegram_conn *conn = tg->extra;
     PurpleConnection *gc = conn->gc;
 
-    if (M->service) {
-       // TODO: handle service messages properly, currently adding them 
+    if (M->service || (M->flags & (FLAG_MESSAGE_EMPTY | FLAG_DELETED))) {
+       // TODO: handle those messages properly, currently adding them
        // causes a segfault for an unknown reason
        debug ("service message, skipping...\n");
        return;
@@ -585,9 +585,9 @@ void message_allocated_handler(struct telegram *tg, struct message *M)
         case PEER_USER:
             debug ("PEER_USER\n");
             if (M->from_id.id == tg->our_id) {
-                serv_got_im(gc, to, M->message, PURPLE_MESSAGE_SEND, time((time_t *) &M->date));
+                serv_got_im(gc, to, M->message, PURPLE_MESSAGE_SEND, M->date);
             } else {
-                serv_got_im(gc, from, M->message, PURPLE_MESSAGE_RECV, time((time_t *) &M->date));
+                serv_got_im(gc, from, M->message, PURPLE_MESSAGE_RECV, M->date);
             }
         break;
 
@@ -1282,7 +1282,6 @@ static void tgprpl_init(PurplePlugin *plugin)
     }
 
     PurpleAccountOption *option;
-    PurpleAccountUserSplit *split;
     GList *verification_values = NULL;
     
     // Extra Options
