@@ -283,29 +283,8 @@ void restart_connection (struct connection *c) {
 }
 
 void fail_connection (struct connection *c) {
-  if (c->state == conn_ready || c->state == conn_connecting) {
-    stop_ping_timer (c);
-  }
-  rotate_port (c);
-  struct connection_buffer *b = c->out_head;
-  while (b) {
-    struct connection_buffer *d = b;
-    b = b->next;
-    delete_connection_buffer (d);
-  }
-  b = c->in_head;
-  while (b) {
-    struct connection_buffer *d = b;
-    b = b->next;
-    delete_connection_buffer (d);
-  }
-  c->out_head = c->out_tail = c->in_head = c->in_tail = 0;
-  c->state = conn_failed;
-  c->out_bytes = c->in_bytes = 0;
-  close (c->fd);
-  Connections[c->fd] = 0;
-  debug ("Lost connection to server... %s:%d\n", c->ip, c->port);
-  restart_connection (c);
+  warning ("Lost connection to server... %s:%d\n", c->ip, c->port);
+  telegram_change_state(c->mtconnection->instance, STATE_ERROR, "Lost connection to server\n");
 }
 
 extern FILE *log_net_f;
