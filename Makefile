@@ -95,7 +95,7 @@ install: $(PRPL_LIBNAME)
 .PHONY: uninstall
 uninstall:
 	rm -f $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_LIBNAME)
-	rm -f /etc/telegram/server.pub
+	rm -f /etc/telegram-purple/server.pub
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
