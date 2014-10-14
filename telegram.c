@@ -206,9 +206,9 @@ void telegram_destroy(struct telegram *this)
     g_free(this->secret_path);
    
     // TODO: BN_CTX *ctx
-    free (this->phone_code_hash);
-    free (this->suser);
-    free (this->export_auth_str);
+    if (this->phone_code_hash) free (this->phone_code_hash);
+    if (this->suser) free (this->suser);
+    if (this->export_auth_str) free (this->export_auth_str);
     //tfree (this->ML, sizeof(struct message) * MSG_STORE_SIZE);
     tfree(this, sizeof(struct telegram));
 }

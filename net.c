@@ -81,7 +81,11 @@ int ping_alarm (struct connection *c) {
 }
 
 void stop_ping_timer (struct connection *c) {
-  remove_event_timer (c->instance, &c->ev);
+  if (c->ev.self) {
+    remove_event_timer (c->instance, &c->ev);
+  } else {
+    warning ("trying to stop non-existing ping timer fd: #%d\n", c->fd);
+  }
 }
 
 void start_ping_timer (struct connection *c) {
