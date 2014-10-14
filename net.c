@@ -354,16 +354,17 @@ int try_write (struct connection *c) {
 }
 
 void hexdump_buf (struct connection_buffer *b) {
+  // TODO: figure out how to log hexdumps to purple log
   int pos = 0;
   int rem = 8;
   while (b) { 
     unsigned char *c = b->rptr;
     while (c != b->wptr) {
       if (rem == 8) {
-        if (pos) { printf ("\n"); }
-        printf ("%04d", pos);
+        //if (pos) { printf ("\n"); }
+        //printf ("%04d", pos);
       }
-      printf (" %02x", (int)*c);
+      //printf (" %02x", (int)*c);
       rem --;
       pos ++;
       if (!rem) {
@@ -373,7 +374,7 @@ void hexdump_buf (struct connection_buffer *b) {
     }
     b = b->next;
   }
-  printf ("\n");
+  //printf ("\n");
     
 }
 

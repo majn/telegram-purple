@@ -20,9 +20,13 @@
 #endif
 
 void hexdump (int *in_ptr, int *in_end) {
+    // TODO: figure out how to log hexdumps to purple log
     int *ptr = in_ptr;
-    while (ptr < in_end) { printf (" %08x", *(ptr ++)); }
-    printf ("\n");
+    while (ptr < in_end) {
+        ++ ptr;
+        //printf (" %08x", *(ptr ++));
+    }
+    //printf ("\n");
 }
 
 void log_level_printf (const char* format, va_list ap, int level, char *color)
