@@ -11,6 +11,11 @@ Warning, this version is mainly for development and testing and NOT for producti
 
 When encountering a crash or some other bugs, please report it to us, preferably together with a backtrace of the crashed application [https://developer.pidgin.im/wiki/GetABacktrace]
 
+## Version 0.3.3
+
+    - multiple bugfixes
+
+
 ## Version 0.3.2
 
     - Add compatibility for OSX 10.8
@@ -138,6 +143,7 @@ This bundle was tested to work under OSX 10.9 and 10.8. If it doesn't work on yo
 please send your Adium crash log (which you can find in ~/Library/Logs/Adium 2/).
 
 [Version 0.3.2](http://lauschgift.org/telegram-purple/telegram-adium-0.3.2.zip)
+[Version 0.3.2](http://lauschgift.org/telegram-purple/telegram-adium-0.3.3.zip)
 
 ## Build with XCode
 

@@ -20,10 +20,10 @@
 #define PLUGIN_ID "prpl-telegram"
 #define TELEGRAM_AUTH_MODE_PHONE "phone"
 #define TELEGRAM_AUTH_MODE_SMS "sms"
-#define TG_AUTHOR "Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>, Matthias Jentsch <mtthsjntsch@gmail.com>"
-#define TG_DESCRIPTION "A protocol plugin that adds support for the Telegram messenger."
-#define TG_VERSION "0.3.1"
-#define TG_BUILD "4"
+#define TG_AUTHOR "Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>, Matthias Jentsch <mtthsjntsch@gmail.com>. Based on telegram-cli by Vitaly Valtman."
+#define TG_DESCRIPTION "Adds support for Telegram."
+#define TG_VERSION "0.3.3"
+#define TG_BUILD "8"
 
 #include <glib.h>
 #include "notify.h"
