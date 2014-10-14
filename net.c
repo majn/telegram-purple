@@ -67,7 +67,6 @@ int ping_alarm (struct connection *c) {
     warning ( "fail connection: reason: ping timeout\n");
     c->state = conn_failed;
     fail_connection (c);
-
   } else if (get_double_time () - c->last_receive_time > 5 * PING_TIMEOUT && c->state == conn_ready) {
     debug ("sending PING...\n");
     int x[3];
@@ -327,11 +326,8 @@ int try_write (struct connection *c) {
       x += r;
       c->out_head->rptr += r;
       if (c->out_head->rptr != c->out_head->wptr) {
-	    // Inhalt des Buffers nicht komplett abgeschickt,
-		// es geht nichts mehr in den Socket
         break;
       }
-	  // buffer ausgelesen, alten buffer löschen
       struct connection_buffer *b = c->out_head;
       c->out_head = b->next;
       if (!c->out_head) {
