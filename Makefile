@@ -3,16 +3,12 @@
 #
 
 srcdir=.
-CFLAGS=-g
-LDFLAGS=-L/usr/local/lib
-CPPFLAGS=-I/usr/local/include
-DEFS=
-COMPILE_FLAGS=${CFLAGS} ${CPPFLAGS} ${DEFS} -Wall -Wextra -Wno-deprecated-declarations -fno-strict-aliasing -fno-omit-frame-pointer -ggdb
+CFLAGS=-g -I/usr/local/include
+LDFLAGS=-L/usr/local/lib 
+COMPILE_FLAGS=${CFLAGS} -Wall -Wextra -Wno-deprecated-declarations -fno-strict-aliasing -fno-omit-frame-pointer -ggdb
 EXTRA_LIBS=-lcrypto -lz -lm
-LOCAL_LDFLAGS=-rdynamic -ggdb ${EXTRA_LIBS}
-LINK_FLAGS=${LDFLAGS} ${LOCAL_LDFLAGS}
 
-HEADERS= ${srcdir}/constants.h  ${srcdir}/include.h ${srcdir}/LICENSE.h  ${srcdir}/loop.h  ${srcdir}/mtproto-client.h ${srcdir}/net.h ${srcdir}/queries.h  ${srcdir}/structures.h ${srcdir}/no-preview.h ${srcdir}/telegram.h  ${srcdir}/tree.h ${srcdir}/binlog.h ${srcdir}/tools.h ${srcdir}/msglog.h 
+HEADERS= ${srcdir}/constants.h  ${srcdir}/include.h ${srcdir}/LICENSE.h  ${srcdir}/loop.h  ${srcdir}/mtproto-client.h ${srcdir}/net.h ${srcdir}/queries.h ${srcdir}/structures.h ${srcdir}/no-preview.h ${srcdir}/telegram.h  ${srcdir}/tree.h ${srcdir}/binlog.h ${srcdir}/tools.h ${srcdir}/msglog.h 
 
 INCLUDE=-I. -I${srcdir}
 CC=cc
@@ -50,8 +46,8 @@ STRIP = strip
 PRPL_CFLAGS = \
 	$(ARCHFLAGS) \
 	-fPIC \
-	-DPURPLE_PLUGINS \
 	-DPIC \
+	-DPURPLE_PLUGINS \
     -DDEBUG \
 	-g \
 	$(CFLAGS_PURPLE)
@@ -65,9 +61,6 @@ PRPL_CFLAGS = \
 
 ${OBJECTS}: ${HEADERS}
 
-telegram: ${OBJECTS}
-	${CC} ${OBJECTS} ${LINK_FLAGS} -o $@
-
 #
 # Plugin Objects
 #
@@ -76,15 +69,14 @@ $(PRPL_C_OBJS): $(PRPL_C_SRCS)
 	$(CC) -c $(PRPL_INCLUDE) $(PRPL_CFLAGS) $(CFLAGS) $(CPPFLAGS) -o $@ $<
 
 $(PRPL_LIBNAME): $(OBJECTS) $(PRPL_C_OBJS)
-	$(LD) $(PRPL_LDFLAGS) $(LDFLAGS) $(PRPL_INCLUDE) $(LIBS_PURPLE) $(EXTRA_LIBS) -o $@ $(PRPL_C_OBJS) $(OBJECTS)
+	$(LD) $(PRPL_LDFLAGS) $(LDFLAGS) $(PRPL_INCLUDE) -o $@ $(PRPL_C_OBJS) $(OBJECTS) $(LIBS_PURPLE) $(EXTRA_LIBS)
 
-plugin: $(PRPL_LIBNAME)
+all: $(PRPL_LIBNAME)
 
 .PHONY: strip
 strip: $(PRPL_LIBNAME)
 	$(STRIP) --strip-unneeded $(PRPL_LIBNAME)
 
-# TODO: Find a better place for server.pub
 install: $(PRPL_LIBNAME)
 	install -D $(PRPL_LIBNAME) $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_LIBNAME)
 	install -D tg-server.pub /etc/telegram-purple/server.pub
