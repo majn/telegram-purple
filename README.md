@@ -11,6 +11,10 @@ Warning, this version is mainly for development and testing and NOT for producti
 
 When encountering a crash or some other bugs, please report it to us, preferably together with a backtrace of the crashed application [https://developer.pidgin.im/wiki/GetABacktrace]
 
+## Version 0.4
+    
+    - Use latest version of libtgl
+
 ## Version 0.3.3
 
     - multiple bugfixes
@@ -70,8 +74,14 @@ Unfortunately there are no packages right now, so you need to compile it yoursel
 
         git clone https://github.com/majn/telegram-purple
 
+## 2. Get libtgl to tg subfolder
+        
+        cd telegram-purple
+        git clone https://github.com/vysheng/tg
 
-## 2. Fetch all needed dependencies
+
+
+## 3. Fetch all needed dependencies
 
 This plugin depends on a working libpurple client (like Pidgin or Finch) and the following packages:
 
@@ -143,8 +153,7 @@ This bundle was tested to work under OSX 10.9 and 10.8. If it doesn't work on yo
 please send your Adium crash log (which you can find in ~/Library/Logs/Adium 2/).
 
 [Version 0.3.2](http://lauschgift.org/telegram-purple/telegram-adium-0.3.2.zip)
-
-[Version 0.3.3](http://lauschgift.org/telegram-purple/telegram-adium-0.3.3.zip)
+[Version 0.3.2](http://lauschgift.org/telegram-purple/telegram-adium-0.3.3.zip)
 
 ## Build with XCode
 

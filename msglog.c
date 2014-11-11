@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdarg.h>
-#include "debug.h"
-#include "purple-plugin/telegram-purple.h"
+#include <debug.h>
+#include "telegram-purple.h"
 
 #ifdef DEBUG
 #define COLOR_GREY "\033[37;1m"

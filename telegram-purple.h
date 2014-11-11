@@ -26,62 +26,45 @@
 #define TG_BUILD "8"
 
 #include <glib.h>
-#include "notify.h"
-#include "plugin.h"
-#include "version.h"
-#include "account.h"
-#include "connection.h"
-#include "mtproto-client.h"
+#include <notify.h>
+#include <plugin.h>
+#include <version.h>
+#include <account.h>
+#include <connection.h>
 
 typedef struct {
-    struct telegram *tg;
-	PurpleAccount *pa;
+  struct tgl_state *TLS;
+
+  /*
+   * Used during login
+   */
+  char *hash;
+
+  PurpleAccount *pa;
 	PurpleConnection *gc;
         
-    /**
-     * Whether the state of the protocol has changed since the last save
-     */
-    int updated;
+  /**
+   * Whether the state of the protocol has changed since the last save
+   */
+  int updated;
 
-    /**
-     * The used purple timeout handler
-     */
-    guint timer;
-
-    /**
-     * Queue of all new messages that need to be added to a chat
-     */
-    GQueue *new_messages;
+  /**
+   * Queue of all new messages that need to be added to a chat
+   */
+  GQueue *new_messages;
       
-    /**
-     * Queue of all joined chats
-     */
-    GHashTable *joining_chats;
+  /**
+   * Queue of all joined chats
+   */
+  GHashTable *joining_chats;
 
+  guint timer;
 } telegram_conn;
 
-typedef struct {
-   
-    /**
-     * The mtproto_connection associated with this handle
-     */
-    struct mtproto_connection *mtp;
+struct download_desc {
+  int type;
+  void *data;
+};
 
-    /**
-     * Write handler returned by purple_input_add
-     */
-    guint wh;
-
-    /**
-     * Read handler returned by purple_input_add
-     */
-    guint rh;
-
-    /**
-     * The file descriptor of the used socket     
-     */
-    int fd;
-
-} mtproto_handle;
-
+void telegram_on_ready (struct tgl_state *TLS);
 #endif

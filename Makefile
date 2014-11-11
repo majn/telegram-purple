@@ -3,16 +3,19 @@
 #
 
 srcdir=.
-CFLAGS=-g -I/usr/local/include
-LDFLAGS=-L/usr/local/lib 
-COMPILE_FLAGS=${CFLAGS} -Wall -Wextra -Wno-deprecated-declarations -fno-strict-aliasing -fno-omit-frame-pointer -ggdb
+CFLAGS=-g -Wall -Wextra -Werror -Wno-unused-parameter
+LDFLAGS=-L/usr/local/lib
+CPPFLAGS=-I/usr/local/include -Itg
+DEFS=
+COMPILE_FLAGS=${CFLAGS} ${CPPFLAGS} ${DEFS} -Wall -Wextra -Wno-deprecated-declarations -fno-strict-aliasing -fno-omit-frame-pointer -ggdb
 EXTRA_LIBS=-lcrypto -lz -lm
-
-HEADERS= ${srcdir}/constants.h  ${srcdir}/include.h ${srcdir}/LICENSE.h  ${srcdir}/loop.h  ${srcdir}/mtproto-client.h ${srcdir}/net.h ${srcdir}/queries.h ${srcdir}/structures.h ${srcdir}/no-preview.h ${srcdir}/telegram.h  ${srcdir}/tree.h ${srcdir}/binlog.h ${srcdir}/tools.h ${srcdir}/msglog.h 
+LOCAL_LDFLAGS=-rdynamic -ggdb ${EXTRA_LIBS}
+LINK_FLAGS=${LDFLAGS} ${LOCAL_LDFLAGS}
 
 INCLUDE=-I. -I${srcdir}
 CC=cc
-OBJECTS=loop.o net.o mtproto-common.o mtproto-client.o queries.o structures.o binlog.o tools.o msglog.o telegram.o
+OBJECTS=tgp-net.o tgp-timers.o msglog.o telegram-base.o
+
 .SUFFIXES:
 
 .SUFFIXES: .c .h .o
@@ -37,7 +40,7 @@ else
 endif
 
 LD = $(CC)
-PRPL_C_SRCS = purple-plugin/telegram-purple.c
+PRPL_C_SRCS = telegram-purple.c
 PRPL_C_OBJS = $(PRPL_C_SRCS:.c=.o)
 PRPL_LIBNAME = telegram-purple.so
 PRPL_INCLUDE = -I. -I./purple-plugin
@@ -46,8 +49,8 @@ STRIP = strip
 PRPL_CFLAGS = \
 	$(ARCHFLAGS) \
 	-fPIC \
-	-DPIC \
 	-DPURPLE_PLUGINS \
+	-DPIC \
     -DDEBUG \
 	-g \
 	$(CFLAGS_PURPLE)
@@ -59,30 +62,38 @@ PRPL_CFLAGS = \
 .c.o :
 	${CC} -fPIC -DPIC ${CFLAGS_PURPLE} ${COMPILE_FLAGS} ${INCLUDE} -c $< -o $@
 
-${OBJECTS}: ${HEADERS}
+# ${OBJECTS}: ${HEADERS}
+
+#telegram: ${OBJECTS}
+#	${CC} ${OBJECTS} ${LINK_FLAGS} -o $@
 
 #
 # Plugin Objects
 #
 
 $(PRPL_C_OBJS): $(PRPL_C_SRCS)
-	$(CC) -c $(PRPL_INCLUDE) $(PRPL_CFLAGS) $(CFLAGS) $(CPPFLAGS) -o $@ $<
+	$(CC) -c $(PRPL_INCLUDE) $(PRPL_CFLAGS) $(CFLAGS) $(CPPFLAGS) -ggdb -o $@ $<
 
-$(PRPL_LIBNAME): $(OBJECTS) $(PRPL_C_OBJS)
-	$(LD) $(PRPL_LDFLAGS) $(LDFLAGS) $(PRPL_INCLUDE) -o $@ $(PRPL_C_OBJS) $(OBJECTS) $(LIBS_PURPLE) $(EXTRA_LIBS)
+$(PRPL_LIBNAME): $(OBJECTS) $(PRPL_C_OBJS) tg/libs/libtgl.a
+	$(LD) $(PRPL_LDFLAGS) $(LDFLAGS) $(PRPL_INCLUDE) $(LIBS_PURPLE) $(EXTRA_LIBS) -o $@ $^
 
-all: $(PRPL_LIBNAME)
+.PHONY: all
+all: ${PRPL_LIBNAME}
+
+plugin: $(PRPL_LIBNAME)
+
 
 .PHONY: strip
 strip: $(PRPL_LIBNAME)
 	$(STRIP) --strip-unneeded $(PRPL_LIBNAME)
 
+# TODO: Find a better place for server.pub
 install: $(PRPL_LIBNAME)
 	install -D $(PRPL_LIBNAME) $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_LIBNAME)
 	install -D tg-server.pub /etc/telegram-purple/server.pub
-	install -D purple-plugin/telegram16.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
-	install -D purple-plugin/telegram22.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
-	install -D purple-plugin/telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
+	install -D imgs/telegram16.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
+	install -D imgs/telegram22.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
+	install -D imgs/telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
 
 .PHONY: uninstall
 uninstall:
