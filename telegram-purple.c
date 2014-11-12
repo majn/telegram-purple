@@ -62,6 +62,7 @@
 
 static PurplePlugin *_telegram_protocol = NULL;
 PurpleGroup *tggroup;
+const char *pk_path = "/etc/telegram-purple/server.pub";
 
 void tgprpl_login_on_connected();
 
@@ -240,8 +241,7 @@ static void tgprpl_login(PurpleAccount * acct)
     free (ddir);
 
     tgl_set_verbosity (TLS, 4);
-    tgl_set_rsa_key (TLS, "/etc/telegram-purple/server.pub");
-
+    tgl_set_rsa_key (TLS, pk_path);
 
    
     // create handle to store additional info for libpurple in

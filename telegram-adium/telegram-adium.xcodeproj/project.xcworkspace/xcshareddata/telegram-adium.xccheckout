@@ -11,17 +11,17 @@
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
 		<key>2BAF9F6AF710B4D765F611851696219A50533669</key>
-		<string>ssh://bitbucket.org/telegrampurple/telegram-purple.git</string>
+		<string>https://github.com/majn/telegram-purple.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
-	<string>telegram-adium/telegram-adium.xcodeproj/project.xcworkspace</string>
+	<string>telegram-adium/telegram-adium.xcodeproj</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
 		<key>2BAF9F6AF710B4D765F611851696219A50533669</key>
 		<string>../../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
-	<string>ssh://bitbucket.org/telegrampurple/telegram-purple.git</string>
+	<string>https://github.com/majn/telegram-purple.git</string>
 	<key>IDESourceControlProjectVersion</key>
 	<integer>111</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>

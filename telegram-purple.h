@@ -67,4 +67,6 @@ struct download_desc {
 };
 
 void telegram_on_ready (struct tgl_state *TLS);
+extern const char *pk_path;
+
 #endif

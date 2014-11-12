@@ -17,7 +17,7 @@
 #import "TelegramPlugin.h"
 #import "TelegramService.h"
 #import "telegram-purple.h"
-#import "mtproto-client.h"
+#import <tgl.h>
 
 extern void purple_init_telegram_plugin();
 
@@ -25,7 +25,7 @@ extern void purple_init_telegram_plugin();
 
 - (void) installPlugin
 {
-    rsa_public_key_name = [self getPkName];
+    pk_path = [self getPkName];
     purple_init_telegram_plugin();
     [TelegramService registerService];
 }
@@ -61,7 +61,7 @@ extern void purple_init_telegram_plugin();
 {
     const char* utf8String = (char *)[[[NSBundle bundleForClass: [self class]] pathForResource: @"tg-server" ofType: @"pub"] UTF8String];
     size_t len = strlen(utf8String) + 1;
-    char *buf = talloc0(len);
+    char *buf = malloc(len);
     memcpy(buf, utf8String, len);
     return buf;
 }
