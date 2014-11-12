@@ -72,16 +72,9 @@ Unfortunately there are no packages right now, so you need to compile it yoursel
 ## 1. Get this repository
 
 
-        git clone https://github.com/majn/telegram-purple
+        git clone --recursive https://github.com/majn/telegram-purple
 
-## 2. Get libtgl to tg subfolder
-        
-        cd telegram-purple
-        git clone https://github.com/vysheng/tg
-
-
-
-## 3. Fetch all needed dependencies
+## 2. Fetch all needed dependencies
 
 This plugin depends on a working libpurple client (like Pidgin or Finch) and the following packages:
 
