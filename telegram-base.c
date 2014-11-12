@@ -8,7 +8,7 @@
 #include <assert.h>
 
 #include <tgl.h>
-#include <binlog.h>
+#include <tgl-binlog.h>
 
 #include <glib.h>
 #include <request.h>

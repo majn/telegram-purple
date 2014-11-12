@@ -1,12 +1,12 @@
-srcdir=.
+srcdir=@srcdir@
 
-CFLAGS=-g -O2 -I/usr/include/libpurple -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include  -Wall -Wextra -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing -fPIC -m64
-LDFLAGS= -L/usr/lib -L/usr/lib  -lpurple -lglib-2.0  -lz -lm  -lcrypto -rdynamic -ggdb
-CPPFLAGS= -I/usr/include -I/usr/include -DFLAGS -DPIC
+CFLAGS=@CFLAGS@ @PURPLE_CFLAGS@ -Wall -Wextra -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing -fPIC -m64
+LDFLAGS=@LDFLAGS@ @OPENSSL_LDFLAGS@ @PURPLE_LIBS@ @LIBS@ -lcrypto -rdynamic -ggdb
+CPPFLAGS=@CPPFLAGS@ -DFLAGS
 COMPILE_FLAGS=${CFLAGS} ${CPPFLAGS}
 LINK_FLAGS=${LDFLAGS}
 
-CC=gcc
+CC=@CC@
 
 DEP=dep
 AUTO=auto
@@ -16,7 +16,7 @@ LIB=libs
 DIR_LIST=${DEP} ${AUTO} ${EXE} ${OBJ} ${LIB} ${DEP}/auto ${OBJ}/auto
 
 
-PLUGIN_OBJECTS=${OBJ}/telegram-purple.o ${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/telegram-base.o 
+PLUGIN_OBJECTS=${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/telegram-base.o ${OBJ}/telegram-purple.o
 
 .SUFFIXES:
 
@@ -43,7 +43,7 @@ ${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c | create_dirs_and_headers
 	echo $@ && ${CC} ${CFLAGS} ${CPPFLAGS} -I ${srcdir}/tgl -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
 
 ${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} ${LIB}/libtgl.a | create_dirs
-	${CC} ${LDFLAGS} -shared $^ -o $@
+	${CC} ${LDFLAGS} -shared -o $@ $^
 
 
 

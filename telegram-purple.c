@@ -26,6 +26,7 @@
 #include <pwd.h>
 
 // Libpurple Plugin Includes
+#include "purple.h"
 #include "notify.h"
 #include "plugin.h"
 #include "version.h"
@@ -156,7 +157,7 @@ static void tgprpl_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo * info
 
 	purple_notify_user_info_add_pair_plaintext(info, "Status", P->user.status.online == 1 ? "Online" : "Offline");
 	struct tm *tm = localtime ((void *)&P->user.status.when);
-	char buffer [21];
+	static char buffer [22];
 	sprintf  (buffer, "[%04d/%02d/%02d %02d:%02d:%02d]", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
 	purple_notify_user_info_add_pair_plaintext(info, "Last seen: ", buffer);
 }
