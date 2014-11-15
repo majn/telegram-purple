@@ -388,7 +388,7 @@
 					"/Users/matj/Development/adium-1.5.10/Frameworks/libpurple.framework/Headers",
 					"/Users/matj/Development/adium-1.5.10/Frameworks/libglib.framework/Headers/glib",
 					"/Users/matj/Development/adium-1.5.10/Frameworks/libglib.framework/Headers",
-					"$(PROJECT_DIR)/../tg",
+					"$(PROJECT_DIR)/../tgl",
 				);
 				INFOPLIST_FILE = "telegram-adium/telegram-adium-Info.plist";
 				INSTALL_PATH = "$(HOME)/Library/Application Support/Adium 2.0/PlugIns/";
@@ -427,7 +427,7 @@
 					"/Users/matj/Development/adium-1.5.10/Frameworks/libpurple.framework/Headers",
 					"/Users/matj/Development/adium-1.5.10/Frameworks/libglib.framework/Headers/glib",
 					"/Users/matj/Development/adium-1.5.10/Frameworks/libglib.framework/Headers",
-					"$(PROJECT_DIR)/../tg",
+					"$(PROJECT_DIR)/../tgl",
 				);
 				INFOPLIST_FILE = "telegram-adium/telegram-adium-Info.plist";
 				INSTALL_PATH = "$(HOME)/Library/Application Support/Adium 2.0/PlugIns/";
