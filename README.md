@@ -144,7 +144,8 @@ This bundle was tested to work under OSX 10.9 and 10.8. If it doesn't work on yo
 please send your Adium crash log (which you can find in ~/Library/Logs/Adium 2/).
 
 [Version 0.3.2](http://h2079792.stratoserver.net/telegram-purple/telegram-adium-0.3.2.zip)
-[Version 0.3.2](http://h2079792.stratoserver.net/telegram-purple/telegram-adium-0.3.3.zip)
+
+[Version 0.3.3](http://h2079792.stratoserver.net/telegram-purple/telegram-adium-0.3.3.zip)
 
 ## Build with XCode
 
