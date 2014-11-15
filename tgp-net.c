@@ -335,7 +335,7 @@ static void fail_connection (struct connection *c) {
     c->write_ev = -1;
   }
   if (c->read_ev >= 0) {
-    purple_input_remove (c->write_ev);
+    purple_input_remove (c->read_ev);
     c->read_ev = -1;
   }
   
