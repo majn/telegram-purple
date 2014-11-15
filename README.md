@@ -114,11 +114,11 @@ On Debian-based systems you can use:
 
 After succesfully completing all steps mentioned in the installation instructions, you should restart Pidgin to ensure that the plugin is loaded. When everything went well, Telegram should show up in the account manager:
 
-![Create a new Telegram account](http://lauschgift.org/telegram-purple/res/install-1.png)
+![Create a new Telegram account](http://h2079792.stratoserver.net/telegram-purple/res/install-1.png)
 
 The username is your current phone number, including your full country prefix instead of a leading '0'. For Germany, this would be '+49' for example. Telegram will verify your phone number by sending you a verification code via sms. You will be prompted for this code, once that happens.
 
-![Provide a phone number](http://lauschgift.org/telegram-purple/res/install-2.png)
+![Provide a phone number](http://h2079792.stratoserver.net/telegram-purple/res/install-2.png)
  
 Now you should be able to see all your contacts and chats in your buddy list and send/receive messages.
 
