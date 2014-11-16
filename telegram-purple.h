@@ -34,30 +34,12 @@
 
 typedef struct {
   struct tgl_state *TLS;
-
-  /*
-   * Used during login
-   */
   char *hash;
-
   PurpleAccount *pa;
 	PurpleConnection *gc;
-        
-  /**
-   * Whether the state of the protocol has changed since the last save
-   */
   int updated;
-
-  /**
-   * Queue of all new messages that need to be added to a chat
-   */
   GQueue *new_messages;
-      
-  /**
-   * Queue of all joined chats
-   */
   GHashTable *joining_chats;
-
   guint timer;
 } telegram_conn;
 
@@ -66,7 +48,8 @@ struct download_desc {
   void *data;
 };
 
-void telegram_on_ready (struct tgl_state *TLS);
+void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *C);
+void on_ready (struct tgl_state *TLS);
 extern const char *pk_path;
 extern const char *config_dir;
 

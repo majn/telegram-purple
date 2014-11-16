@@ -13,8 +13,9 @@
 #include <glib.h>
 #include <request.h>
 
-#include "telegram-purple.h"
-#include "msglog.h"
+#include <telegram-purple.h>
+#include <msglog.h>
+#include <tgp-2prpl.h>
 
 #define DC_SERIALIZED_MAGIC 0x868aa81d
 #define STATE_FILE_MAGIC 0x28949a93
@@ -216,7 +217,7 @@ void telegram_export_authorization (struct tgl_state *TLS) {
     return;
   }
   write_auth_file (TLS);
-  telegram_on_ready (TLS);
+  on_ready (TLS);
 }
 
 static void request_code (struct tgl_state *TLS);
@@ -295,9 +296,9 @@ static void request_code (struct tgl_state *TLS) {
 }
 
 static void request_name_and_code (struct tgl_state *TLS) {
-  telegram_conn *conn = TLS->ev_base;
-
   debug ("Phone is not registered, registering...\n");
+
+  telegram_conn *conn = TLS->ev_base;
 
   PurpleRequestFields* fields = purple_request_fields_new();
   PurpleRequestField* field = 0;
@@ -370,3 +371,46 @@ void telegram_login (struct tgl_state *TLS) {
   purple_timeout_add (100, check_all_authorized, TLS);
 }
 
+PurpleConversation *chat_show (PurpleConnection *gc, int id) {
+  debug ("show chat");
+  telegram_conn *conn = purple_connection_get_protocol_data(gc);
+  
+  PurpleConversation *convo = purple_find_chat(gc, id);
+  if (! convo) {
+    gchar *name = g_strdup_printf ("%d", id);
+    if (! g_hash_table_contains (conn->joining_chats, name)) {
+      g_hash_table_insert(conn->joining_chats, name, 0);
+      tgl_do_get_chat_info (conn->TLS, TGL_MK_CHAT(id), 0, on_chat_get_info, NULL);
+    }
+    g_free(name);
+  }
+  return convo;
+}
+
+int chat_add_message (struct tgl_state *TLS, struct tgl_message *M) {
+  telegram_conn *conn = TLS->ev_base;
+  
+  if (chat_show (conn->gc, M->to_id.id)) {
+    p2tgl_got_chat_in(TLS, M->to_id, M->from_id, M->message, PURPLE_MESSAGE_RECV, M->date);
+    return 1;
+  } else {
+    // add message once the chat was initialised
+    g_queue_push_tail (conn->new_messages, M);
+    return 0;
+  }
+}
+
+void chat_add_all_users (PurpleConversation *pc, struct tgl_chat *chat) {
+  struct tgl_chat_user *curr =  chat->user_list;
+  if (!curr) {
+    warning ("add_all_users_to_chat: chat contains no user list, cannot add users\n.");
+    return;
+  }
+  
+  int i;
+  for (i = 0; i < chat->user_list_size; i++) {
+    struct tgl_chat_user *uid = (curr + i);
+    int flags = (chat->admin_id == uid->user_id ? PURPLE_CBFLAGS_FOUNDER : PURPLE_CBFLAGS_NONE);
+    p2tgl_conv_add_user(pc, *uid, NULL, flags, 0);
+  }
+}
