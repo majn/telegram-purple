@@ -20,9 +20,9 @@
 #define PLUGIN_ID "prpl-telegram"
 #define TELEGRAM_AUTH_MODE_PHONE "phone"
 #define TELEGRAM_AUTH_MODE_SMS "sms"
-#define TG_AUTHOR "Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>, Matthias Jentsch <mtthsjntsch@gmail.com>. Based on telegram-cli by Vitaly Valtman."
-#define TG_DESCRIPTION "Adds support for Telegram."
-#define TG_VERSION "0.3.3"
+#define TG_AUTHOR "Matthias Jentsch <mtthsjntsch@gmail.com>, Vitaly Valtman, Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>. Based on libtgl by Vitaly Valtman."
+#define TG_DESCRIPTION "Telegram protocol."
+#define TG_VERSION "0.4"
 #define TG_BUILD "8"
 
 #include <glib.h>
@@ -68,5 +68,6 @@ struct download_desc {
 
 void telegram_on_ready (struct tgl_state *TLS);
 extern const char *pk_path;
+extern const char *config_dir;
 
 #endif
