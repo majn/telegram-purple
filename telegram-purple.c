@@ -58,7 +58,7 @@
 #include <telegram-purple.h>
 #include <msglog.h>
 
-static PurplePlugin *_telegram_protocol = NULL;
+PurplePlugin *_telegram_protocol = NULL;
 PurpleGroup *tggroup;
 const char *config_dir = ".telegram-purple";
 const char *pk_path = "/etc/telegram-purple/server.pub";
@@ -296,8 +296,9 @@ void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct t
 }
 
 void on_ready (struct tgl_state *TLS) {
-  debug ("telegram_on_ready().\n");
+  debug ("on_ready().\n");
   telegram_conn *conn = TLS->ev_base;
+  
   purple_connection_set_state(conn->gc, PURPLE_CONNECTED);
   purple_connection_set_display_name(conn->gc, purple_account_get_username(conn->pa));
   purple_blist_add_account(conn->pa);
@@ -341,11 +342,11 @@ static GList *tgprpl_status_types (PurpleAccount * acct) {
   GList *types = NULL;
   PurpleStatusType *type;
   type = purple_status_type_new_with_attrs (PURPLE_STATUS_AVAILABLE, NULL, NULL,
-                                            1, 1, 0, "message", "Message", purple_value_new (PURPLE_TYPE_STRING), NULL);
+          1, 1, 0, "message", "Message", purple_value_new (PURPLE_TYPE_STRING), NULL);
   types = g_list_prepend (types, type);
   
   type = purple_status_type_new_with_attrs (PURPLE_STATUS_MOBILE, NULL, NULL, 1,
-                                            1, 0, "message", "Message", purple_value_new (PURPLE_TYPE_STRING), NULL);
+          1, 0, "message", "Message", purple_value_new (PURPLE_TYPE_STRING), NULL);
   types = g_list_prepend (types, type);
   
   type = purple_status_type_new (PURPLE_STATUS_OFFLINE, NULL, NULL, 1);
@@ -653,19 +654,15 @@ static void tgprpl_init (PurplePlugin *plugin) {
   PurpleAccountOption *option;
   GList *verification_values = NULL;
   
-  // Extra Options
- #define ADD_VALUE(list, desc, v) { \
-   PurpleKeyValuePair *kvp = g_new0(PurpleKeyValuePair, 1); \
-   kvp->key = g_strdup((desc)); \
-   kvp->value = g_strdup((v)); \
-   list = g_list_prepend(list, kvp); \
- }
-  ADD_VALUE(verification_values, "Phone", TELEGRAM_AUTH_MODE_PHONE);
-  ADD_VALUE(verification_values, "SMS", TELEGRAM_AUTH_MODE_SMS);
-
-  option = purple_account_option_list_new("Verification type", "verification_type", verification_values);
-  prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
+  PurpleAccountOption *opt;
+  
+  opt = purple_account_option_bool_new("Compatibility Mode (read SMS code from settings)",
+          "compat-verification", 0);
+  prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
+  
+  opt = purple_account_option_string_new("SMS Code", "code", "");
+  prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
+  
   _telegram_protocol = plugin;
 }
 

@@ -293,25 +293,23 @@ static void request_name_code_entered (PurpleConnection* gc, PurpleRequestFields
 static void request_code (struct tgl_state *TLS) {
   debug ("Client is not registered, registering...\n");
   telegram_conn *conn = TLS->ev_base;
-
-  purple_request_input (
-    conn->gc,              // handle   (the PurpleAccount)
-    "Telegram Code",       // title
-    "Enter Telegram Code", // primary 
-    "Telegram wants to verify your identity, please enter the code, that you have received via SMS.", // secondary 
-    NULL,                  // default_value
-    0,                     // multiline
-    0,                     // masked
-    "code",                // hint
-    "OK",                  // ok_text
-    G_CALLBACK(request_code_entered),
-    "Cancel",              // cancel_text
-    G_CALLBACK(request_code_canceled),
-    conn->pa,              // account
-    NULL,                  // who
-    NULL,                  // conv
-    TLS                    // user_data
-  );
+  int compat = purple_account_get_bool (tg_get_acc(TLS), "compat-verification", 0);
+  
+  if (compat || ! purple_request_input (conn->gc, "Telegram Code", "Enter Telegram Code",
+        "Telegram wants to verify your identity, please enter the code, that you have received via SMS.",
+        NULL, 0, 0, "code", "OK", G_CALLBACK(request_code_entered), "Cancel",
+        G_CALLBACK(request_code_canceled), conn->pa, NULL, NULL, TLS)) {
+      const char *sms  = purple_account_get_string(tg_get_acc(TLS), "code", "");
+      if (*sms == '\0') {
+        const char *error = "Could not prompt for sms code, please set SMS code in account settings and reconnect.";
+        purple_connection_error_reason(conn->gc, PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, error);
+        purple_notify_error(_telegram_protocol, "Enter SMS code", "Enter SMS code", error);
+        return;
+      }
+      
+      request_code_entered (TLS, sms);
+      purple_account_set_string(tg_get_acc(TLS), "code", "");
+  }
 }
 
 static void request_name_and_code (struct tgl_state *TLS) {
@@ -334,8 +332,13 @@ static void request_name_and_code (struct tgl_state *TLS) {
   purple_request_field_group_add_field(group, field);
   purple_request_fields_add_group(fields, group);
 
-  purple_request_fields(conn->gc, "Register", "Please register your phone number.", NULL, fields, "Ok",
-    G_CALLBACK( request_name_code_entered ), "Cancel", NULL, conn->pa, NULL, NULL, conn->gc);
+  if (!purple_request_fields (conn->gc, "Register", "Please register your phone number.", NULL, fields, "Ok",
+    G_CALLBACK( request_name_code_entered ), "Cancel", NULL, conn->pa, NULL, NULL, conn->gc)) {
+    // purple_request API not available
+    const char *error = "Phone number is not registered, please register your phone on a different client.";
+    purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, error);
+    purple_notify_error(_telegram_protocol, "Not Registered", "Not Registered", error);
+  }
 }
 
 static void sign_in_callback (struct tgl_state *TLS, void *extra, int success, int registered, const char *mhash) {

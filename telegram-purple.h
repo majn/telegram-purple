@@ -55,5 +55,6 @@ void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct t
 void on_ready (struct tgl_state *TLS);
 extern const char *pk_path;
 extern const char *config_dir;
+extern PurplePlugin *_telegram_protocol;
 
 #endif
