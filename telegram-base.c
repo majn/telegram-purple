@@ -275,47 +275,47 @@ static void request_code (struct tgl_state *TLS) {
   telegram_conn *conn = TLS->ev_base;
 
   purple_request_input (
-    conn->gc, // handle   (the PurpleAccount) 
-    "Telegram Code",     // title 
+    conn->gc,              // handle   (the PurpleAccount)
+    "Telegram Code",       // title
     "Enter Telegram Code", // primary 
     "Telegram wants to verify your identity, please enter the code, that you have received via SMS.", // secondary 
-    NULL,     // default_value 
-    0,    // multiline     
-    0,    // masked         
-    "code",   // hint 
-    "OK",     // ok_text      
-    G_CALLBACK(request_code_entered), // ok_cb 
-    "Cancel", // cancel_text 
-    G_CALLBACK(request_code_canceled), // cancel_cb 
-    conn->pa, // account    
-    NULL,     // who 
-    NULL,     // conv  
-    TLS  // user_data      
+    NULL,                  // default_value
+    0,                     // multiline
+    0,                     // masked
+    "code",                // hint
+    "OK",                  // ok_text
+    G_CALLBACK(request_code_entered),
+    "Cancel",              // cancel_text
+    G_CALLBACK(request_code_canceled),
+    conn->pa,              // account
+    NULL,                  // who
+    NULL,                  // conv
+    TLS                    // user_data
   );
 }
 
 static void request_name_and_code (struct tgl_state *TLS) {
-    telegram_conn *conn = TLS->ev_base;
+  telegram_conn *conn = TLS->ev_base;
 
-    debug ("Phone is not registered, registering...\n");
+  debug ("Phone is not registered, registering...\n");
 
-    PurpleRequestFields* fields = purple_request_fields_new();
-    PurpleRequestField* field = 0;
+  PurpleRequestFields* fields = purple_request_fields_new();
+  PurpleRequestField* field = 0;
 
-    PurpleRequestFieldGroup* group = purple_request_field_group_new("Registration");
-    field = purple_request_field_string_new("first_name", "First Name", "", 0);
-    purple_request_field_group_add_field(group, field);
-    field = purple_request_field_string_new("last_name", "Last Name", "", 0);
-    purple_request_field_group_add_field(group, field);
-    purple_request_fields_add_group(fields, group);
+  PurpleRequestFieldGroup* group = purple_request_field_group_new("Registration");
+  field = purple_request_field_string_new("first_name", "First Name", "", 0);
+  purple_request_field_group_add_field(group, field);
+  field = purple_request_field_string_new("last_name", "Last Name", "", 0);
+  purple_request_field_group_add_field(group, field);
+  purple_request_fields_add_group(fields, group);
 
-    group = purple_request_field_group_new("Authorization");
-    field = purple_request_field_string_new("code", "Telegram Code", "", 0);
-    purple_request_field_group_add_field(group, field);
-    purple_request_fields_add_group(fields, group);
+  group = purple_request_field_group_new("Authorization");
+  field = purple_request_field_string_new("code", "Telegram Code", "", 0);
+  purple_request_field_group_add_field(group, field);
+  purple_request_fields_add_group(fields, group);
 
-    purple_request_fields(conn->gc, "Register", "Please register your phone number.", NULL, fields, "Ok",
-         G_CALLBACK( request_name_code_entered ), "Cancel", NULL, conn->pa, NULL, NULL, conn->gc);
+  purple_request_fields(conn->gc, "Register", "Please register your phone number.", NULL, fields, "Ok",
+    G_CALLBACK( request_name_code_entered ), "Cancel", NULL, conn->pa, NULL, NULL, conn->gc);
 }
 
 static void sign_in_callback (struct tgl_state *TLS, void *extra, int success, int registered, const char *mhash) {
