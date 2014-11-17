@@ -20,6 +20,8 @@
 #ifndef __TG_PURPLE_H__
 #define __TG_PURPLE_H__
 
+#include <tgl.h>
+
 #define PLUGIN_ID "prpl-telegram"
 #define TELEGRAM_AUTH_MODE_PHONE "phone"
 #define TELEGRAM_AUTH_MODE_SMS "sms"

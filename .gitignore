@@ -10,3 +10,4 @@ libs/
 bin/
 config.log
 config.status
+Makefile

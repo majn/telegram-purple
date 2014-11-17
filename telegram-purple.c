@@ -51,12 +51,12 @@
 #include "request.h"
 
 #include <tgl.h>
-#include <tgp-2prpl.h>
-#include <tgp-net.h>
-#include <tgp-timers.h>
-#include <telegram-base.h>
-#include <telegram-purple.h>
-#include <msglog.h>
+#include "tgp-2prpl.h"
+#include "tgp-net.h"
+#include "tgp-timers.h"
+#include "telegram-base.h"
+#include "telegram-purple.h"
+#include "msglog.h"
 
 PurplePlugin *_telegram_protocol = NULL;
 PurpleGroup *tggroup;
@@ -85,13 +85,15 @@ static char *format_img_full (int imgstore) {
   return g_strdup_printf ("<br><img id=\"%u\">", imgstore);
 }
 
+static char *format_img_thumb (int imgstore, char *filename) __attribute__ ((unused));
 static char *format_img_thumb (int imgstore, char *filename) {
   return g_strdup_printf("<a href=\"%s\"><img id=\"%u\"></a><br/><a href=\"%s\">%s</a>",
            filename, imgstore, filename, filename);
 }
 
 static int our_msg (struct tgl_state *TLS, struct tgl_message *M) {
-  return tgl_get_peer_id(M->from_id) == TLS->our_id;
+  //return tgl_get_peer_id(M->from_id) == TLS->our_id;
+  return M->out;
 }
 
 static gboolean queries_timerfunc (gpointer data) {
@@ -105,10 +107,12 @@ static gboolean queries_timerfunc (gpointer data) {
   return 1;
 }
 
+static void on_update_user_name (struct tgl_state *TLS, tgl_peer_t *user) __attribute__ ((unused));
 static void on_update_user_name (struct tgl_state *TLS, tgl_peer_t *user) {
   p2tgl_got_alias(TLS, user->id, p2tgl_strdup_alias(user));
 }
 
+static void on_update_chat_participants (struct tgl_state *TLS, struct tgl_chat *chat) __attribute__ ((unused));
 static void on_update_chat_participants (struct tgl_state *TLS, struct tgl_chat *chat) {
   PurpleConversation *pc = purple_find_chat(tg_get_conn(TLS), tgl_get_peer_id(chat->id));
   if (pc) {
@@ -117,6 +121,7 @@ static void on_update_chat_participants (struct tgl_state *TLS, struct tgl_chat 
   }
 }
 
+static void on_update_new_user_status (struct tgl_state *TLS, void *peer) __attribute__ ((unused));
 static void on_update_new_user_status (struct tgl_state *TLS, void *peer) {
   tgl_peer_t *p = peer;
   p2tgl_prpl_got_user_status(TLS, p->id, &p->user.status);
@@ -146,10 +151,10 @@ static void update_message_received(struct tgl_state *TLS, struct tgl_message *M
   if (M->flags & (FLAG_MESSAGE_EMPTY | FLAG_DELETED)) {
     return;
   }
-  if (! (M->flags & FLAG_CREATED)) {
+  if (!(M->flags & FLAG_CREATED)) {
     return;
   }
-  if (! tgl_get_peer_type (M->to_id)) {
+  if (!tgl_get_peer_type (M->to_id)) {
     warning ("Bad msg\n");
     return;
   }
@@ -186,26 +191,32 @@ static void update_message_received(struct tgl_state *TLS, struct tgl_message *M
 }
 
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, unsigned flags) {
-  if (!(flags & FLAG_CREATED)) { return; }
-  
+//  if (!(flags & TGL_UPDATE_CREATED)) { return; }
   if (TLS->our_id == tgl_get_peer_id (user->id)) {
-    p2tgl_connection_set_display_name (TLS, (tgl_peer_t *)user);
+    if (flags & TGL_UPDATE_NAME) {
+      p2tgl_connection_set_display_name (TLS, (tgl_peer_t *)user);
+    }
   } else {
-    PurpleBuddy *buddy = p2tgl_buddy_find(TLS, user->id);
+    PurpleBuddy *buddy = p2tgl_buddy_find (TLS, user->id);
     if (!buddy) {
       buddy = p2tgl_buddy_new (TLS, (tgl_peer_t *)user);
       purple_blist_add_buddy (buddy, NULL, tggroup, NULL);
+    }
+    if (flags & TGL_UPDATE_CREATED) {
       tgl_do_get_user_info (TLS, user->id, 0, on_user_get_info, 0);
     }
     purple_buddy_set_protocol_data (buddy, (gpointer)user);
+
     p2tgl_prpl_got_user_status (TLS, user->id, &user->status);
+
+    p2tgl_buddy_update (TLS, (tgl_peer_t *)user, flags);
   }
 }
 
 static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, unsigned flags) {
-  if (!(flags & FLAG_CREATED)) { return; }
+  if (!(flags & TGL_UPDATE_CREATED)) { return; }
   
-  tgl_do_get_chat_info (TLS, chat->id, 0, on_chat_get_info, 0);
+  //tgl_do_get_chat_info (TLS, chat->id, 0, on_chat_get_info, 0);
   
   PurpleChat *ch = p2tgl_chat_find (TLS, chat->id);
   if (!ch) {
@@ -230,6 +241,11 @@ PurpleNotifyUserInfo *create_user_notify_info(struct tgl_user *usr) {
 }
 
 static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, char *filename) {
+  if (!success) {
+    struct download_desc *dld = extra;
+    struct tgl_user *U = dld->data;
+    warning ("Can not load userpic for user %s %s\n", U->first_name, U->last_name);
+  }
   telegram_conn *conn = TLS->ev_base;
 
   gchar *data = NULL;
@@ -257,9 +273,11 @@ void on_user_get_info (struct tgl_state *TLS, void *show_info, int success, stru
 {
   assert (success);
   
-  if (U->photo.sizes_num == 0 && show_info) {
-    PurpleNotifyUserInfo *info = create_user_notify_info(U);
-    p2tgl_notify_userinfo(TLS, U->id, info, NULL, NULL);
+  if (U->photo.sizes_num == 0) {
+    if (show_info) {
+      PurpleNotifyUserInfo *info = create_user_notify_info(U);
+      p2tgl_notify_userinfo(TLS, U->id, info, NULL, NULL);
+    }
   } else {
     struct download_desc *dld = malloc (sizeof(struct download_desc));
     dld->data = U;
@@ -342,11 +360,11 @@ static GList *tgprpl_status_types (PurpleAccount * acct) {
   GList *types = NULL;
   PurpleStatusType *type;
   type = purple_status_type_new_with_attrs (PURPLE_STATUS_AVAILABLE, NULL, NULL,
-          1, 1, 0, "message", "Message", purple_value_new (PURPLE_TYPE_STRING), NULL);
+          1, 1, 0, "last online", "last online", purple_value_new (PURPLE_TYPE_STRING), NULL);
   types = g_list_prepend (types, type);
   
   type = purple_status_type_new_with_attrs (PURPLE_STATUS_MOBILE, NULL, NULL, 1,
-          1, 0, "message", "Message", purple_value_new (PURPLE_TYPE_STRING), NULL);
+          1, 0, "last online", "last online", purple_value_new (PURPLE_TYPE_STRING), NULL);
   types = g_list_prepend (types, type);
   
   type = purple_status_type_new (PURPLE_STATUS_OFFLINE, NULL, NULL, 1);
@@ -390,7 +408,6 @@ static void tgprpl_login (PurpleAccount * acct) {
   
   tgl_set_verbosity (TLS, 4);
   tgl_set_rsa_key (TLS, pk_path);
-  
   
   // create handle to store additional info for libpurple in
   // the new telegram instance
@@ -651,8 +668,8 @@ static PurplePluginProtocolInfo prpl_info = {
 
 
 static void tgprpl_init (PurplePlugin *plugin) {
-  PurpleAccountOption *option;
-  GList *verification_values = NULL;
+  //PurpleAccountOption *option;
+  //GList *verification_values = NULL;
   
   PurpleAccountOption *opt;
   

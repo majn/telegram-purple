@@ -1,4 +1,5 @@
 TL_PARSER_OBJECTS=${OBJ}/tl-parser.o ${OBJ}/tlc.o ${OBJ}/crc32.o
+ALL_OBJS+=${TL_PARSER_OBJS}
 
 ${TL_PARSER_OBJECTS}: ${OBJ}/%.o: ${srcdir}/tgl/tl-parser/%.c | create_dirs
 	${CC} ${INCLUDE} ${COMPILE_FLAGS} -iquote ${srcdir}/tgl/tl-parser -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
