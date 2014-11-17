@@ -36,6 +36,9 @@
 #include <version.h>
 #include <account.h>
 #include <connection.h>
+  
+#define TGP_APP_HASH "99428c722d0ed59b9cd844e4577cb4bb"
+#define TGP_APP_ID 16154
 
 typedef struct {
   struct tgl_state *TLS;

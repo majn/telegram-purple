@@ -423,6 +423,7 @@ static void tgprpl_login (PurpleAccount * acct) {
   tgl_set_net_methods (TLS, &tgp_conn_methods);
   tgl_set_timer_methods (TLS, &tgp_timers);
   tgl_set_callback (TLS, &tgp_callback);
+  tgl_register_app_id (TLS, TGP_APP_ID, TGP_APP_HASH); 
   
   tgl_init (TLS);
   purple_connection_set_state (conn->gc, PURPLE_CONNECTING);
