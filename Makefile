@@ -52,6 +52,8 @@ PRPL_CFLAGS = \
 	-g \
 	$(CFLAGS_PURPLE)
 
+all: $(PRPL_LIBNAME)
+
 #
 # Telegram Objects
 #
@@ -71,7 +73,6 @@ $(PRPL_C_OBJS): $(PRPL_C_SRCS)
 $(PRPL_LIBNAME): $(OBJECTS) $(PRPL_C_OBJS)
 	$(LD) $(PRPL_LDFLAGS) $(LDFLAGS) $(PRPL_INCLUDE) -o $@ $(PRPL_C_OBJS) $(OBJECTS) $(LIBS_PURPLE) $(EXTRA_LIBS)
 
-all: $(PRPL_LIBNAME)
 
 .PHONY: strip
 strip: $(PRPL_LIBNAME)
