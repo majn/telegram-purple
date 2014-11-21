@@ -403,8 +403,9 @@ PurpleConversation *chat_show (PurpleConnection *gc, int id) {
     if (! g_hash_table_contains (conn->joining_chats, name)) {
       g_hash_table_insert(conn->joining_chats, name, 0);
       tgl_do_get_chat_info (conn->TLS, TGL_MK_CHAT(id), 0, on_chat_get_info, NULL);
+    } else {
+      g_free(name);
     }
-    g_free(name);
   }
   return convo;
 }
@@ -412,7 +413,7 @@ PurpleConversation *chat_show (PurpleConnection *gc, int id) {
 int chat_add_message (struct tgl_state *TLS, struct tgl_message *M, char *text) {
   telegram_conn *conn = TLS->ev_base;
   
-  if (chat_show (conn->gc, M->to_id.id)) {
+  if (chat_show (conn->gc, tgl_get_peer_id (M->to_id))) {
     p2tgl_got_chat_in(TLS, M->to_id, M->from_id, text ? text : M->message, PURPLE_MESSAGE_RECV, M->date);
     return 1;
   } else {

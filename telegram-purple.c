@@ -182,7 +182,7 @@ void on_message_load_photo (struct tgl_state *TLS, void *extra, int success, cha
 }
 
 static void update_message_received(struct tgl_state *TLS, struct tgl_message *M) {
-  
+  debug ("received message\n");  
   if (M->service) {
     // TODO: handle service messages properly, currently adding them
     // causes a segfault for an unknown reason
@@ -205,6 +205,11 @@ static void update_message_received(struct tgl_state *TLS, struct tgl_message *M
     return;
   }
 
+  if (!M->message) {
+    return;
+  }
+
+  char *text = purple_markup_escape_text (M->message, strlen (M->message));
   switch (tgl_get_peer_type (M->to_id)) {
     case TGL_PEER_CHAT:
       debug ("PEER_CHAT\n");
@@ -213,15 +218,15 @@ static void update_message_received(struct tgl_state *TLS, struct tgl_message *M
       // else they will show up twice
       // if (our_msg(TLS, M)) { return; }
 #endif
-      chat_add_message (TLS, M, NULL);
+      chat_add_message (TLS, M, text);
       break;
       
     case TGL_PEER_USER:
       debug ("PEER_USER\n");
       if (our_msg(TLS, M)) {
-        p2tgl_got_im (TLS, M->to_id, M->message, PURPLE_MESSAGE_SEND, M->date);
+        p2tgl_got_im (TLS, M->to_id, text, PURPLE_MESSAGE_SEND, M->date);
       } else {
-        p2tgl_got_im (TLS, M->from_id, M->message, PURPLE_MESSAGE_RECV, M->date);
+        p2tgl_got_im (TLS, M->from_id, text, PURPLE_MESSAGE_RECV, M->date);
       }
       break;
       
@@ -232,6 +237,7 @@ static void update_message_received(struct tgl_state *TLS, struct tgl_message *M
       break;
   }
   
+  g_free (text);
   telegram_conn *conn = TLS->ev_base;
   conn->updated = 1;
 }

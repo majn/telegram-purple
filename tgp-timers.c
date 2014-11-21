@@ -70,6 +70,6 @@ static void tgl_timer_free (struct tgl_timer *t) {
 struct tgl_timer_methods tgp_timers = {
   .alloc = tgl_timer_alloc, 
   .insert = tgl_timer_insert,
-  .delete = tgl_timer_delete,
+  .remove = tgl_timer_delete,
   .free = tgl_timer_free
 };
