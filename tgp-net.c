@@ -67,7 +67,7 @@ static int ping_alarm (gpointer arg) {
   struct connection *c = arg;
   struct tgl_state *TLS = c->TLS;
   vlogprintf (E_DEBUG + 2,"ping alarm\n");
-  assert (c->state == conn_ready || c->state == conn_connecting);
+  assert (c->state == conn_failed || c->state == conn_ready || c->state == conn_connecting);
   if (tglt_get_double_time () - c->last_receive_time > 6 * PING_TIMEOUT) {
     vlogprintf (E_WARNING, "fail connection: reason: ping timeout\n");
     c->state = conn_failed;
