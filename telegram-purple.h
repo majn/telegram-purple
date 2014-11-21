@@ -56,6 +56,11 @@ struct download_desc {
   void *data;
 };
 
+struct message_text {
+  struct tgl_message *M;
+  char *text;
+};
+
 void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *C);
 void on_ready (struct tgl_state *TLS);
 extern const char *pk_path;

@@ -140,6 +140,47 @@ struct tgl_update_callback tgp_callback = {
   .type_notification = update_user_typing
 };
 
+void on_message_load_photo (struct tgl_state *TLS, void *extra, int success, char *filename) {
+  gchar *data = NULL;
+  size_t len;
+  GError *err = NULL;
+  g_file_get_contents (filename, &data, &len, &err);
+  int imgStoreId = purple_imgstore_add_with_id (g_memdup(data, (guint)len), len, NULL);
+    
+  char *image = format_img_full(imgStoreId);
+  struct tgl_message *M = extra;
+  switch (tgl_get_peer_type (M->to_id)) {
+    case TGL_PEER_CHAT:
+      debug ("PEER_CHAT\n");
+#ifdef ADIUM_PLUGIN
+      // don't add our own chat messages in Adium, or
+      // else they will show up twice
+      // if (our_msg(TLS, M)) { return; }
+#endif
+      chat_add_message (TLS, M, image);
+      break;
+      
+    case TGL_PEER_USER:
+      debug ("PEER_USER\n");
+      if (our_msg(TLS, M)) {
+        p2tgl_got_im (TLS, M->to_id, image, PURPLE_MESSAGE_SEND, M->date);
+      } else {
+        p2tgl_got_im (TLS, M->from_id, image, PURPLE_MESSAGE_RECV, M->date);
+      }
+      break;
+      
+    case TGL_PEER_ENCR_CHAT:
+      break;
+      
+    case TGL_PEER_GEO_CHAT:
+      break;
+  }
+ 
+  g_free (image);
+  telegram_conn *conn = TLS->ev_base;
+  conn->updated = 1;
+}
+
 static void update_message_received(struct tgl_state *TLS, struct tgl_message *M) {
   
   if (M->service) {
@@ -159,6 +200,11 @@ static void update_message_received(struct tgl_state *TLS, struct tgl_message *M
     return;
   }
 
+  if (M->media.type == tgl_message_media_photo) {
+    tgl_do_load_photo (TLS, &M->media.photo, on_message_load_photo, M);
+    return;
+  }
+
   switch (tgl_get_peer_type (M->to_id)) {
     case TGL_PEER_CHAT:
       debug ("PEER_CHAT\n");
@@ -167,7 +213,7 @@ static void update_message_received(struct tgl_state *TLS, struct tgl_message *M
       // else they will show up twice
       // if (our_msg(TLS, M)) { return; }
 #endif
-      chat_add_message (TLS, M);
+      chat_add_message (TLS, M, NULL);
       break;
       
     case TGL_PEER_USER:
@@ -300,12 +346,16 @@ void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct t
   purple_conv_chat_clear_users(purple_conversation_get_chat_data(conv));
   chat_add_all_users(conv, C);
   
-  struct tgl_message *M = 0;
-  while ((M = g_queue_pop_head (conn->new_messages))) {
-    if (!chat_add_message(TLS, M)) {
+  struct message_text *mt = 0;
+  while ((mt = g_queue_pop_head (conn->new_messages))) {
+    if (!chat_add_message(TLS, mt->M, mt->text)) {
       warning ("WARNING, chat %d still not existing... \n", tgl_get_peer_id (C->id));
       break;
     }
+    if (mt->text) {
+      g_free (mt->text);
+    }
+    free (mt);
   }
   
   gchar *name = g_strdup_printf ("%d", tgl_get_peer_id(C->id));
@@ -415,7 +465,7 @@ static void tgprpl_login (PurpleAccount * acct) {
   conn->TLS = TLS;
   conn->gc = gc;
   conn->pa = acct;
-  conn->new_messages = g_queue_new();
+  conn->new_messages = g_queue_new ();
   conn->joining_chats = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
   purple_connection_set_protocol_data (gc, conn);
   
@@ -461,14 +511,6 @@ static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *m
 
 static unsigned int tgprpl_send_typing (PurpleConnection * gc, const char *who, PurpleTypingState typing) {
   debug ("tgprpl_send_typing()\n");
-  /*telegram_conn *conn = purple_connection_get_protocol_data(gc);
-   PurpleBuddy *b = purple_find_buddy(conn->pa, who);
-   if (b) {
-   tgl_peer_id_t *peer = purple_buddy_get_protocol_data(b);
-   if (peer) {
-   tgl_do_update_typing (conn->tg, *peer);
-   }
-   }*/
   return 0;
 }
 
