@@ -505,7 +505,9 @@ static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *m
     warning ("Protocol data tgl_peer_t for %s not found, cannot send IM\n", who);
     return -1;
   }
-  tgl_do_send_message (conn->TLS, peer->id, message, (int)strlen (message), 0, 0);
+  gchar *raw = purple_unescape_html(message);
+  tgl_do_send_message (conn->TLS, peer->id, raw, (int)strlen (raw), 0, 0);
+  g_free(raw);
   return 1;
 }
 
@@ -591,7 +593,10 @@ static void tgprpl_chat_invite (PurpleConnection * gc, int id, const char *messa
 static int tgprpl_send_chat (PurpleConnection * gc, int id, const char *message, PurpleMessageFlags flags) {
   debug ("tgprpl_send_chat()\n");
   telegram_conn *conn = purple_connection_get_protocol_data (gc);
-  tgl_do_send_message (conn->TLS, TGL_MK_CHAT(id), message, (int)strlen (message), 0, 0);
+  
+  gchar *raw = purple_unescape_html(message);
+  tgl_do_send_message (conn->TLS, TGL_MK_CHAT(id), raw, (int)strlen (raw), 0, 0);
+  g_free (raw);
   
   p2tgl_got_chat_in(conn->TLS, TGL_MK_CHAT(id), TGL_MK_USER(conn->TLS->our_id), message,
                     PURPLE_MESSAGE_RECV, time(NULL));
