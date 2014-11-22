@@ -56,7 +56,7 @@ void read_state_file (struct tgl_state *TLS) {
   int version, magic;
   if (read (state_file_fd, &magic, 4) < 4) { close (state_file_fd); return; }
   if (magic != (int)STATE_FILE_MAGIC) { close (state_file_fd); return; }
-  if (read (state_file_fd, &version, 4 || version < 0) < 4) { close (state_file_fd); return; }
+  if (read (state_file_fd, &version, 4) < 4 || version < 0) { close (state_file_fd); return; }
   int x[4];
   if (read (state_file_fd, x, 16) < 16) {
     close (state_file_fd); 
