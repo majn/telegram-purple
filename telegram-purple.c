@@ -308,6 +308,10 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
   
   struct download_desc *dld = extra;
   struct tgl_user *U = dld->data;
+  
+  if (imgStoreId <= 0) {
+    warning ("Can not load userpic for user %s %s\n", U->first_name, U->last_name);
+  }
 
   char *who = g_strdup_printf ("%d", tgl_get_peer_id (U->id));
   if (dld->type == 1) {
@@ -383,6 +387,7 @@ void on_ready (struct tgl_state *TLS) {
     purple_blist_add_group (tggroup, NULL);
   }
   
+  debug ("seq = %d, pts = %d\n", TLS->seq, TLS->pts);
   tgl_do_get_difference (TLS, 0, 0, 0);
   tgl_do_get_dialog_list (TLS, 0, 0);
   tgl_do_update_contact_list (TLS, 0, 0);
@@ -519,6 +524,16 @@ static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *m
 
 static unsigned int tgprpl_send_typing (PurpleConnection * gc, const char *who, PurpleTypingState typing) {
   debug ("tgprpl_send_typing()\n");
+  int id = atoi (who);
+  telegram_conn *conn = purple_connection_get_protocol_data(gc);
+  tgl_peer_t *U = tgl_peer_get (conn->TLS, TGL_MK_USER (id));
+  if (U) {
+    if (typing == PURPLE_TYPING) {
+      tgl_do_send_typing (conn->TLS, U->id, tgl_typing_typing, 0, 0);
+    } else {
+      tgl_do_send_typing (conn->TLS, U->id, tgl_typing_cancel, 0, 0);
+    }
+  }
   return 0;
 }
 
