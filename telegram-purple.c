@@ -152,12 +152,9 @@ void on_message_load_photo (struct tgl_state *TLS, void *extra, int success, cha
   switch (tgl_get_peer_type (M->to_id)) {
     case TGL_PEER_CHAT:
       debug ("PEER_CHAT\n");
-#ifdef ADIUM_PLUGIN
-      // don't add our own chat messages in Adium, or
-      // else they will show up twice
-      // if (our_msg(TLS, M)) { return; }
-#endif
-      chat_add_message (TLS, M, image);
+      if (! our_msg(TLS, M)) {
+        chat_add_message (TLS, M, image);
+      }
       break;
       
     case TGL_PEER_USER:
@@ -213,12 +210,9 @@ static void update_message_received(struct tgl_state *TLS, struct tgl_message *M
   switch (tgl_get_peer_type (M->to_id)) {
     case TGL_PEER_CHAT:
       debug ("PEER_CHAT\n");
-#ifdef ADIUM_PLUGIN
-      // don't add our own chat messages in Adium, or
-      // else they will show up twice
-      // if (our_msg(TLS, M)) { return; }
-#endif
-      chat_add_message (TLS, M, text);
+      if (! our_msg(TLS, M)) {
+        chat_add_message (TLS, M, text);
+      }
       break;
       
     case TGL_PEER_USER:
