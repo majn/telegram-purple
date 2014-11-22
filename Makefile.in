@@ -48,7 +48,7 @@ ${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c | create_dirs_and_headers
 	echo $@ && ${CC} ${CFLAGS} ${CPPFLAGS} -I ${srcdir}/tgl -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
 
 ${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} ${LIB}/libtgl.a | create_dirs
-	${CC} ${LDFLAGS} -shared -o $@ $^
+	${CC} -shared -o $@ $^ ${LDFLAGS}
 
 
 
