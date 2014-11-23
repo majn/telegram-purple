@@ -11,9 +11,19 @@ Warning, this version is mainly for development and testing and NOT for producti
 
 When encountering a crash or some other bugs, please report it to us, preferably together with a backtrace of the crashed application [https://developer.pidgin.im/wiki/GetABacktrace]
 
+## Version 0.5
+
+    - Display incoming photos
+    - Respect received user and chat property updates
+    - Support changing own profile picture
+    - Support adding new contacts
+    - Display service messages
+
+
 ## Version 0.4
     
     - Use latest version of libtgl
+
 
 ## Version 0.3.3
 
