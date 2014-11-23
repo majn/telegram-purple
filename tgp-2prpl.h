@@ -65,4 +65,6 @@ PurpleChat *p2tgl_chat_find (struct tgl_state *TLS, tgl_peer_id_t chat);
 
 
 void *p2tgl_notify_userinfo(struct tgl_state *TLS, tgl_peer_id_t user, PurpleNotifyUserInfo *user_info, PurpleNotifyCloseCallback cb, gpointer user_data);
+
+void p2tgl_blist_alias_buddy (PurpleBuddy *buddy, struct tgl_user *user);
 #endif

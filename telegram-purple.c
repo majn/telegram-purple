@@ -112,7 +112,6 @@ static void on_update_user_name (struct tgl_state *TLS, tgl_peer_t *user) {
   p2tgl_got_alias(TLS, user->id, p2tgl_strdup_alias(user));
 }
 
-static void on_update_chat_participants (struct tgl_state *TLS, struct tgl_chat *chat) __attribute__ ((unused));
 static void on_update_chat_participants (struct tgl_state *TLS, struct tgl_chat *chat) {
   PurpleConversation *pc = purple_find_chat(tg_get_conn(TLS), tgl_get_peer_id(chat->id));
   if (pc) {
@@ -249,25 +248,45 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
       purple_blist_add_buddy (buddy, NULL, tggroup, NULL);
     }
     if (flags & TGL_UPDATE_CREATED) {
+      purple_buddy_set_protocol_data (buddy, (gpointer)user);
+      p2tgl_prpl_got_user_status (TLS, user->id, &user->status);
+      p2tgl_buddy_update (TLS, (tgl_peer_t *)user, flags);
+    }
+    if (flags & (TGL_UPDATE_NAME | TGL_UPDATE_REAL_NAME | TGL_UPDATE_USERNAME) && buddy) {
+      p2tgl_blist_alias_buddy (buddy, user);
+    }
+    if (flags & TGL_UPDATE_PHOTO) {
       tgl_do_get_user_info (TLS, user->id, 0, on_user_get_info, 0);
     }
-    purple_buddy_set_protocol_data (buddy, (gpointer)user);
-
-    p2tgl_prpl_got_user_status (TLS, user->id, &user->status);
-
-    p2tgl_buddy_update (TLS, (tgl_peer_t *)user, flags);
+    if (flags & TGL_UPDATE_DELETED && buddy) {
+      purple_blist_remove_buddy (buddy);
+    }
   }
 }
 
 static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, unsigned flags) {
-  if (!(flags & TGL_UPDATE_CREATED)) { return; }
-  
   //tgl_do_get_chat_info (TLS, chat->id, 0, on_chat_get_info, 0);
-  
   PurpleChat *ch = p2tgl_chat_find (TLS, chat->id);
-  if (!ch) {
-    ch = p2tgl_chat_new (TLS, chat);
-    purple_blist_add_chat(ch, NULL, NULL);
+  
+  if (flags & TGL_UPDATE_CREATED) {
+    if (!ch) {
+      ch = p2tgl_chat_new (TLS, chat);
+      purple_blist_add_chat(ch, NULL, NULL);
+    }
+  }
+  if (flags & TGL_UPDATE_TITLE && ch) {
+    purple_blist_alias_chat (ch, chat->print_title);
+  }
+  if (flags & (TGL_UPDATE_MEMBERS | TGL_UPDATE_ADMIN)) {
+    on_update_chat_participants (TLS, chat);
+  }
+  if (flags & TGL_UPDATE_DELETED) {
+    PurpleChat *ch = p2tgl_chat_find (TLS, chat->id);
+    if (ch) {
+      purple_blist_remove_chat (ch);
+    } else {
+      warning ("Cannot delete chat %d, not in buddy list.", chat->id);
+    }
   }
 }
 
@@ -552,6 +571,13 @@ static void tgprpl_add_buddies (PurpleConnection * gc, GList * buddies, GList * 
 
 static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, PurpleGroup * group) {
   debug ("tgprpl_remove_buddy()\n");
+  if (!buddy) { return; }
+  
+  telegram_conn *conn = purple_connection_get_protocol_data (gc);
+  struct tgl_user *user = purple_buddy_get_protocol_data (buddy);
+  if (!user) { warning ("cannot remove buddy '%s', no protocol data found\n", buddy->name); return; }
+  
+  tgl_do_del_contact (conn->TLS, user->id, NULL, NULL);
 }
 
 static void tgprpl_remove_buddies (PurpleConnection * gc, GList * buddies, GList * groups){
@@ -569,8 +595,8 @@ static void tgprpl_rem_deny (PurpleConnection * gc, const char *name){
 static void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
   debug ("tgprpl_chat_join()\n");
   
-  telegram_conn *conn = purple_connection_get_protocol_data(gc);
-  const char *groupname = g_hash_table_lookup(data, "subject");
+  telegram_conn *conn = purple_connection_get_protocol_data (gc);
+  const char *groupname = g_hash_table_lookup (data, "subject");
   
   char *id = g_hash_table_lookup(data, "id");
   if (!id) {
@@ -603,7 +629,20 @@ static GHashTable *tgprpl_chat_info_deflt (PurpleConnection * gc, const char *ch
   return NULL;
 }
 
-static void tgprpl_chat_invite (PurpleConnection * gc, int id, const char *message, const char *name) { debug ("tgprpl_chat_invite()\n"); }
+static void tgprpl_chat_invite (PurpleConnection * gc, int id, const char *message, const char *name) {
+  debug ("tgprpl_chat_invite()\n");
+
+  telegram_conn *conn = purple_connection_get_protocol_data (gc);
+  tgl_peer_t *chat = tgl_peer_get(conn->TLS, TGL_MK_CHAT (id));
+  tgl_peer_t *user = tgl_peer_get(conn->TLS, TGL_MK_USER (atoi(name)));
+  
+  if (! chat || ! user) {
+    purple_notify_error (_telegram_protocol, "Not found", "Cannot invite buddy to chat.", "Specified user is not existing.");
+    return;
+  }
+  
+  tgl_do_add_user_to_chat (conn->TLS, chat->id, user->id, 0, NULL, NULL);
+}
 
 static int tgprpl_send_chat (PurpleConnection * gc, int id, const char *message, PurpleMessageFlags flags) {
   debug ("tgprpl_send_chat()\n");
@@ -632,6 +671,16 @@ static void tgprpl_convo_closed (PurpleConnection * gc, const char *who){
 
 static void tgprpl_set_buddy_icon (PurpleConnection * gc, PurpleStoredImage * img) {
   debug ("tgprpl_set_buddy_icon()\n");
+  
+  telegram_conn *conn = purple_connection_get_protocol_data (gc);
+  if (purple_imgstore_get_filename (img)) {
+    char* filename = g_strdup_printf ("%s/icons/%s", purple_user_dir(), purple_imgstore_get_filename (img));
+    debug (filename);
+    
+    tgl_do_set_profile_photo (conn->TLS, filename, NULL, NULL);
+    
+    g_free (filename);
+  }
 }
 
 static gboolean tgprpl_can_receive_file (PurpleConnection * gc, const char *who) {

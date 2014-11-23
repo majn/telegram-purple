@@ -233,10 +233,9 @@ PurpleChat *p2tgl_blist_find_chat(struct tgl_state *TLS, tgl_peer_id_t chat) {
   return c;
 }
 
-
 PurpleChat *p2tgl_chat_new (struct tgl_state *TLS, struct tgl_chat *chat) {
   gchar *admin = g_strdup_printf("%d", chat->admin_id);
-  gchar *title = g_strdup(chat->title);
+  gchar *title = g_strdup(chat->print_title);
   gchar *name  = peer_strdup_id (chat->id);
   
   GHashTable *ht = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
@@ -278,4 +277,12 @@ void *p2tgl_notify_userinfo(struct tgl_state *TLS, tgl_peer_id_t user, PurpleNot
   
   g_free(name);
   return handle;
+}
+
+void p2tgl_blist_alias_buddy (PurpleBuddy *buddy, struct tgl_user *user) {
+  char *name = p2tgl_strdup_alias ((tgl_peer_t *) user);
+  
+  purple_blist_alias_buddy (buddy, name);
+  
+  g_free(name);
 }
