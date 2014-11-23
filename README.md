@@ -177,6 +177,7 @@ Telegram-Purple and Telegram-Adium were written by:
     - Matthias Jentsch <mtthsjntsch@gmail.com>
     - Christopher Althaus <althaus.christopher@gmail.com>
     - Markus Endres <endresma45241@th-nuernberg.de>
+    - Vitaly Valtman
 
 
 The plugin is based on Telegram-CLI, which was written by Vitaly Valtman <mail@vysheng.ru> and others, see (http://github.com/vysheng/tg)
