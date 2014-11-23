@@ -116,6 +116,7 @@ On Debian-based systems you can use:
 ## 3. Compile and install
 
 
+        ./configure
         make
         sudo make install
 
@@ -156,6 +157,9 @@ please send your Adium crash log (which you can find in ~/Library/Logs/Adium 2/)
 [Version 0.3.2](http://h2079792.stratoserver.net/telegram-purple/telegram-adium-0.3.2.zip)
 
 [Version 0.3.3](http://h2079792.stratoserver.net/telegram-purple/telegram-adium-0.3.3.zip)
+
+[Version 0.5](http://h2079792.stratoserver.net/telegram-purple/telegram-adium-0.5.zip)
+
 
 ## Build with XCode
 
