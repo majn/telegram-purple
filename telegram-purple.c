@@ -91,6 +91,93 @@ static char *format_img_thumb (int imgstore, char *filename) {
            filename, imgstore, filename, filename);
 }
 
+static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M)
+{
+  assert (M && M->service);
+
+  char *txt_user = NULL;
+  char *txt_action = NULL;
+  char *txt = NULL;
+  
+  tgl_peer_t *peer = tgl_peer_get (TLS, M->from_id);
+  if (! peer) {
+    return NULL;
+  }
+  txt_user = p2tgl_strdup_alias (peer);
+  
+  switch (M->action.type) {
+    case tgl_message_action_chat_create:
+      txt_action = g_strdup_printf ("created chat %s", M->action.title);
+      break;
+    case tgl_message_action_chat_edit_title:
+      txt_action = g_strdup_printf ("changed title to %s", M->action.new_title);
+      break;
+    case tgl_message_action_chat_edit_photo:
+      txt_action = g_strdup ("changed photo");
+      break;
+    case tgl_message_action_chat_delete_photo:
+      txt_action = g_strdup ("deleted photo");
+      break;
+    case tgl_message_action_chat_add_user:
+      {
+        tgl_peer_t *peer = tgl_peer_get (TLS, TGL_MK_USER (M->action.user));
+        if (peer) {
+          char *alias = p2tgl_strdup_alias (peer);
+          txt_action = g_strdup_printf ("added user %s", alias);
+          g_free (alias);
+        }
+        break;
+      }
+    case tgl_message_action_chat_delete_user:
+      {
+        tgl_peer_t *peer = tgl_peer_get (TLS, TGL_MK_USER (M->action.user));
+        if (peer) {
+          char *alias = p2tgl_strdup_alias (peer);
+          txt_action = g_strdup_printf ("deleted user %s", alias);
+          g_free (alias);
+        }
+        break;
+      }
+    case tgl_message_action_set_message_ttl:
+      txt_action = g_strdup_printf ("set ttl to %d seconds", M->action.ttl);
+      break;
+    case tgl_message_action_read_messages:
+      txt_action = g_strdup_printf ("%d messages marked read", M->action.read_cnt);
+      break;
+    case tgl_message_action_delete_messages:
+      txt_action = g_strdup_printf ("%d messages deleted", M->action.delete_cnt);
+      break;
+    case tgl_message_action_screenshot_messages:
+      txt_action = g_strdup_printf ("%d messages screenshoted", M->action.screenshot_cnt);
+      break;
+    case tgl_message_action_notify_layer:
+      txt_action = g_strdup_printf ("updated layer to %d", M->action.layer);
+      break;
+      /*
+    case tgl_message_action_request_key:
+      txt_action = g_strdup_printf ("Request rekey #%016llx\n", M->action.exchange_id);
+      break;
+    case tgl_message_action_accept_key:
+      txt_action = g_strdup_printf ("Accept rekey #%016llx\n", M->action.exchange_id);
+      break;
+    case tgl_message_action_commit_key:
+      txt_action = g_strdup_printf ("Commit rekey #%016llx\n", M->action.exchange_id);
+      break;
+    case tgl_message_action_abort_key:
+      txt_action = g_strdup_printf ("Abort rekey #%016llx\n", M->action.exchange_id);
+      break;
+      */
+    default:
+      txt_action = NULL;
+      break;
+  }
+  debug ("SERVICE MESSAGE: %s", txt_action);
+  txt = g_strdup_printf ("%s %s.", txt_user, txt_action);
+  g_free (txt_user);
+  g_free (txt_action);
+  return txt;
+}
+
 static int our_msg (struct tgl_state *TLS, struct tgl_message *M) {
   //return tgl_get_peer_id(M->from_id) == TLS->our_id;
   return M->out;
@@ -177,18 +264,31 @@ void on_message_load_photo (struct tgl_state *TLS, void *extra, int success, cha
   conn->updated = 1;
 }
 
-static void update_message_received(struct tgl_state *TLS, struct tgl_message *M) {
-  debug ("received message\n");  
+static void update_message_received (struct tgl_state *TLS, struct tgl_message *M) {
+  debug ("received message\n");
+  telegram_conn *conn = TLS->ev_base;
+  conn->updated = 1;
+
   if (M->service) {
-    // TODO: handle service messages properly, currently adding them
-    // causes a segfault for an unknown reason
     debug ("service message, skipping...\n");
+    char *text = format_service_msg (TLS, M);
+    if (text) {
+      switch (tgl_get_peer_type (M->to_id)) {
+        case TGL_PEER_CHAT:
+          chat_add_message (TLS, M, text);
+          break;
+          
+        case TGL_PEER_USER:
+          p2tgl_got_im (TLS, M->from_id, text, PURPLE_MESSAGE_SYSTEM, M->date);
+          break;
+      }
+      g_free (text);
+    }
+    conn->updated = 1;
     return;
   }
-  if (M->flags & (FLAG_MESSAGE_EMPTY | FLAG_DELETED)) {
-    return;
-  }
-  if (!(M->flags & FLAG_CREATED)) {
+  
+  if ((M->flags & (FLAG_MESSAGE_EMPTY | FLAG_DELETED)) || !(M->flags & FLAG_CREATED)) {
     return;
   }
   if (!tgl_get_peer_type (M->to_id)) {

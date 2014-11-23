@@ -414,7 +414,8 @@ int chat_add_message (struct tgl_state *TLS, struct tgl_message *M, char *text) 
   telegram_conn *conn = TLS->ev_base;
   
   if (chat_show (conn->gc, tgl_get_peer_id (M->to_id))) {
-    p2tgl_got_chat_in(TLS, M->to_id, M->from_id, text ? text : M->message, PURPLE_MESSAGE_RECV, M->date);
+    p2tgl_got_chat_in(TLS, M->to_id, M->from_id, text ? text : M->message,
+                      M->service ? PURPLE_MESSAGE_SYSTEM : PURPLE_MESSAGE_RECV, M->date);
     return 1;
   } else {
     // add message once the chat was initialised
