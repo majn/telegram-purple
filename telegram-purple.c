@@ -305,6 +305,15 @@ PurpleNotifyUserInfo *create_user_notify_info(struct tgl_user *usr) {
   return info;
 }
 
+static void on_contact_added (struct tgl_state *TLS,void *callback_extra, int success, int size, struct tgl_user *users[]) {
+  PurpleBuddy *buddy = callback_extra;
+  
+  purple_blist_remove_buddy (buddy);
+  if (!success || !size) {
+    purple_notify_error (_telegram_protocol, "Adding Buddy Failed", "Buddy Not Found", "No contact with this phone number was found.");
+  }
+}
+
 static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, char *filename) {
   if (!success) {
     struct download_desc *dld = extra;
@@ -562,7 +571,10 @@ static void tgprpl_set_status (PurpleAccount * acct, PurpleStatus * status) {
 }
 
 static void tgprpl_add_buddy (PurpleConnection * gc, PurpleBuddy * buddy, PurpleGroup * group) {
-  debug ("tgprpl_add_buddy()\n");
+  telegram_conn *conn = purple_connection_get_protocol_data(gc);
+  const char* first = buddy->alias ? buddy->alias : "";
+  
+  tgl_do_add_contact (conn->TLS, buddy->name, (int)strlen (buddy->name), first, (int)strlen (first), "", 0, 0, on_contact_added, buddy);
 }
 
 static void tgprpl_add_buddies (PurpleConnection * gc, GList * buddies, GList * groups) {
