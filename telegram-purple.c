@@ -218,6 +218,7 @@ static void on_update_new_user_status (struct tgl_state *TLS, void *peer) {
 static void update_message_received (struct tgl_state *TLS, struct tgl_message *M);
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *U, unsigned flags);
 static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *C, unsigned flags);
+static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_chat *C, unsigned flags);
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status);
 struct tgl_update_callback tgp_callback = {
   .logprintf = debug,
@@ -225,6 +226,7 @@ struct tgl_update_callback tgp_callback = {
   .msg_receive = update_message_received,
   .user_update = update_user_handler,
   .chat_update = update_chat_handler,
+  .secret_chat_update = update_secret_chat_handler,
   .type_notification = update_user_typing
 };
 
@@ -362,6 +364,26 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
     if (flags & TGL_UPDATE_DELETED && buddy) {
       purple_blist_remove_buddy (buddy);
     }
+  }
+}
+
+static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, unsigned flags) {
+  //tgl_do_get_chat_info (TLS, chat->id, 0, on_chat_get_info, 0);
+  PurpleBuddy *buddy = p2tgl_buddy_find (TLS, chat->id);
+  struct tgl_secret_chat *secr = chat;
+  
+  if (flags & TGL_UPDATE_CREATED) {
+    if (!buddy) {
+      buddy = p2tgl_buddy_new (TLS, (tgl_peer_t *)secr);
+      purple_blist_add_buddy (buddy, NULL, tggroup, NULL);
+    }
+  }
+  if (flags & (TGL_UPDATE_NAME | TGL_UPDATE_REAL_NAME | TGL_UPDATE_USERNAME) && buddy) {
+  }
+  if (flags & (TGL_UPDATE_PHOTO)) {
+  }
+  if (flags & TGL_UPDATE_DELETED && buddy) {
+    purple_blist_remove_buddy (buddy);
   }
 }
 
