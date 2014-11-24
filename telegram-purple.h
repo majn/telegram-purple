@@ -23,12 +23,10 @@
 #include <tgl.h>
 
 #define PLUGIN_ID "prpl-telegram"
-#define TELEGRAM_AUTH_MODE_PHONE "phone"
-#define TELEGRAM_AUTH_MODE_SMS "sms"
 #define TG_AUTHOR "Matthias Jentsch <mtthsjntsch@gmail.com>, Vitaly Valtman, Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>. Based on libtgl by Vitaly Valtman."
 #define TG_DESCRIPTION "Telegram protocol."
-#define TG_VERSION "0.4"
-#define TG_BUILD "8"
+#define TG_VERSION "0.5"
+#define TG_BUILD "10"
 
 #include <glib.h>
 #include <notify.h>
