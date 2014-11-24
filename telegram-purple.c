@@ -331,8 +331,6 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
   }
   
   g_free (text);
-  telegram_conn *conn = TLS->ev_base;
-  conn->updated = 1;
 }
 
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, unsigned flags) {
