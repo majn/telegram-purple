@@ -171,10 +171,12 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M)
       txt_action = NULL;
       break;
   }
-  debug ("SERVICE MESSAGE: %s", txt_action);
-  txt = g_strdup_printf ("%s %s.", txt_user, txt_action);
+  if (txt_action) {
+    debug ("SERVICE MESSAGE: %s", txt_action);
+    txt = g_strdup_printf ("%s %s.", txt_user, txt_action);
+    g_free (txt_action);
+  }
   g_free (txt_user);
-  g_free (txt_action);
   return txt;
 }
 
