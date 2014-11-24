@@ -318,9 +318,10 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
       
     case TGL_PEER_USER:
       debug ("PEER_USER\n");
-      if (our_msg(TLS, M)) {
-        p2tgl_got_im (TLS, M->to_id, text, PURPLE_MESSAGE_SEND, M->date);
-      } else {
+      
+      // p2tgl_got_im (TLS, M->to_id, text, PURPLE_MESSAGE_SEND, M->date);
+      // :TODO: figure out how to add messages from different devices to history
+      if (! our_msg(TLS, M)) {
         p2tgl_got_im (TLS, M->from_id, text, PURPLE_MESSAGE_RECV, M->date);
       }
       break;
