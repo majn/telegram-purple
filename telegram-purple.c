@@ -218,7 +218,7 @@ static void on_update_new_user_status (struct tgl_state *TLS, void *peer) {
 static void update_message_received (struct tgl_state *TLS, struct tgl_message *M);
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *U, unsigned flags);
 static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *C, unsigned flags);
-static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_chat *C, unsigned flags);
+static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *C, unsigned flags);
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status);
 struct tgl_update_callback tgp_callback = {
   .logprintf = debug,
@@ -367,14 +367,13 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
   }
 }
 
-static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, unsigned flags) {
+static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *C, unsigned flags) {
   //tgl_do_get_chat_info (TLS, chat->id, 0, on_chat_get_info, 0);
-  PurpleBuddy *buddy = p2tgl_buddy_find (TLS, chat->id);
-  struct tgl_secret_chat *secr = chat;
+  PurpleBuddy *buddy = p2tgl_buddy_find (TLS, C->id);
   
   if (flags & TGL_UPDATE_CREATED) {
     if (!buddy) {
-      buddy = p2tgl_buddy_new (TLS, (tgl_peer_t *)secr);
+      buddy = p2tgl_buddy_new (TLS, (tgl_peer_t *)C);
       purple_blist_add_buddy (buddy, NULL, tggroup, NULL);
     }
   }
