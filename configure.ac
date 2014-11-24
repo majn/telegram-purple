@@ -14,6 +14,7 @@ AC_PROG_CC
 AC_PROG_INSTALL
 
 AC_CHECK_LIB([m], [sqrt])
+AC_CHECK_LIB([rt], [clock_gettime])
 AX_CHECK_OPENSSL(,[AC_MSG_ERROR([No openssl found])])
 AX_CHECK_ZLIB(, [AC_MSG_ERROR([No zlib found])])
 
