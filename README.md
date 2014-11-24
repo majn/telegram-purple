@@ -3,7 +3,7 @@ Telegram-Purple
 
 Telegram-purple is a Libpurple plugin that adds support for the Telegram messenger. Its still in an early (pre-alpha) development stage, but already provides basic chat functionality and group chats.
 
-This plugin is based on [Telegram-cli](http://github.com/vysheng/tg), a full-featured terminal-based client for Telegram created by [Vysheng](http://github.com/vysheng).
+The plugin is based on the library [Libtgl](https://github.com/vysheng/tgl), which was written by Vitaly Valtman <mail@vysheng.ru> and others, see (http://github.com/vysheng/tgl)
 
 # Changelog
 
@@ -23,28 +23,6 @@ When encountering a crash or some other bugs, please report it to us, preferably
 ## Version 0.4
     
     - Use latest version of libtgl
-
-
-## Version 0.3.3
-
-    - multiple bugfixes
-
-
-## Version 0.3.2
-
-    - Add compatibility for OSX 10.8
-
-
-## Version 0.3.1
-
-    - Improve error handling
-    - Fix some installation problems
-
-
-## Version 0.3.0
-
-    - Provide Adium Plugin
-
 
 # Features
 
@@ -83,6 +61,7 @@ Unfortunately there are no packages right now, so you need to compile it yoursel
 
 
         git clone --recursive https://github.com/majn/telegram-purple
+
 
 ## 2. Fetch all needed dependencies
 
@@ -129,7 +108,7 @@ After succesfully completing all steps mentioned in the installation instruction
 
 The username is your current phone number, including your full country prefix instead of a leading '0'. For Germany, this would be '+49' for example. Telegram will verify your phone number by sending you a verification code via sms. You will be prompted for this code, once that happens.
 
-![Provide a phone number](http://lauschgift.org/telegram-purple/res/install-2.png)
+![Provide a phone number](http://h2079792.stratoserver.net/telegram-purple/res/install-2.png)
  
 Now you should be able to see all your contacts and chats in your buddy list and send/receive messages.
 
@@ -151,14 +130,17 @@ To clean all your user files run:
 
 ## Prebuilt Bundle
 
-This bundle was tested to work under OSX 10.9 and 10.8. If it doesn't work on your installation
+This bundle was tested to work under OSX 10.8 to 10.10. If it doesn't work on your installation
 please send your Adium crash log (which you can find in ~/Library/Logs/Adium 2/).
+
+[Version 0.5](http://h2079792.stratoserver.net/telegram-purple/telegram-adium-0.5.zip)
+
+
+### Older Versions
 
 [Version 0.3.2](http://h2079792.stratoserver.net/telegram-purple/telegram-adium-0.3.2.zip)
 
 [Version 0.3.3](http://h2079792.stratoserver.net/telegram-purple/telegram-adium-0.3.3.zip)
-
-[Version 0.5](http://h2079792.stratoserver.net/telegram-purple/telegram-adium-0.5.zip)
 
 
 ## Build with XCode
@@ -184,5 +166,4 @@ Telegram-Purple and Telegram-Adium were written by:
     - Vitaly Valtman
 
 
-The plugin is based on Telegram-CLI, which was written by Vitaly Valtman <mail@vysheng.ru> and others, see (http://github.com/vysheng/tg)
 
