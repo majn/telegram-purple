@@ -259,7 +259,7 @@ static void code_auth_receive_result (struct tgl_state *TLS, void *extra, int su
   }
 }
 
-static void request_code_entered (gpointer data, const gchar *code) {
+void request_code_entered (gpointer data, const gchar *code) {
   struct tgl_state *TLS = data;
   telegram_conn *conn = TLS->ev_base;
   char const *username = purple_account_get_username(conn->pa);
@@ -299,16 +299,15 @@ static void request_code (struct tgl_state *TLS) {
         "Telegram wants to verify your identity, please enter the code, that you have received via SMS.",
         NULL, 0, 0, "code", "OK", G_CALLBACK(request_code_entered), "Cancel",
         G_CALLBACK(request_code_canceled), conn->pa, NULL, NULL, TLS)) {
-      const char *sms  = purple_account_get_string(tg_get_acc(TLS), "code", "");
-      if (*sms == '\0') {
-        const char *error = "Could not prompt for sms code, please set SMS code in account settings and reconnect.";
-        purple_connection_error_reason(conn->gc, PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, error);
-        purple_notify_error(_telegram_protocol, "Enter SMS code", "Enter SMS code", error);
-        return;
-      }
-      
-      request_code_entered (TLS, sms);
-      purple_account_set_string(tg_get_acc(TLS), "code", "");
+
+    // purple request API is not available, so we create a new conversation (the Telegram system
+    // account "7770000") to prompt the user for the code
+          
+    conn->in_fallback_chat = 1;
+    purple_connection_set_state (conn->gc, PURPLE_CONNECTED);
+    PurpleConversation *conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, conn->pa, "777000");
+    purple_conversation_write (conv, "777000", "What is your SMS verification code?",
+          PURPLE_MESSAGE_RECV | PURPLE_MESSAGE_SYSTEM, 0);
   }
 }
 

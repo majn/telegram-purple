@@ -47,6 +47,7 @@ typedef struct {
   GQueue *new_messages;
   GHashTable *joining_chats;
   guint timer;
+  int in_fallback_chat;
 } telegram_conn;
 
 struct download_desc {
