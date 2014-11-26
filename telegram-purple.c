@@ -648,6 +648,14 @@ static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *m
   
   telegram_conn *conn = purple_connection_get_protocol_data(gc);
   PurpleAccount *pa = conn->pa;
+ 
+  // this is part of a workaround to support clients without
+  // the request API (request.h), see telegram-base.c:request_code()
+  if (conn->in_fallback_chat) {
+    request_code_entered (conn->TLS, message);
+    conn->in_fallback_chat = 0;
+    return 1;
+  }
   
   PurpleBuddy *b = purple_find_buddy (pa, who);
   if (!b) {
@@ -914,16 +922,10 @@ static PurplePluginProtocolInfo prpl_info = {
 
 
 static void tgprpl_init (PurplePlugin *plugin) {
-  //PurpleAccountOption *option;
-  //GList *verification_values = NULL;
-  
   PurpleAccountOption *opt;
   
   opt = purple_account_option_bool_new("Compatibility Mode (read SMS code from settings)",
           "compat-verification", 0);
-  prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
-  
-  opt = purple_account_option_string_new("SMS Code", "code", "");
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
   
   _telegram_protocol = plugin;
