@@ -1,6 +1,6 @@
 srcdir=@srcdir@
 
-CFLAGS=@CFLAGS@ @PURPLE_CFLAGS@ -Wall -Wextra -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing -fPIC -m64
+CFLAGS=@CFLAGS@ @PURPLE_CFLAGS@ -Wall -Wextra -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing -fPIC
 LDFLAGS=@LDFLAGS@ @OPENSSL_LDFLAGS@ @PURPLE_LIBS@ @LIBS@ -lcrypto -rdynamic -ggdb
 CPPFLAGS=@CPPFLAGS@ -DFLAGS
 COMPILE_FLAGS=${CFLAGS} ${CPPFLAGS}
