@@ -18,7 +18,7 @@ When encountering a crash or some other bugs, please report it to us, preferably
     - Support changing own profile picture
     - Support adding new contacts
     - Display service messages
-
+    - Works with libpurple proxy settings
 
 ## Version 0.4
     
@@ -45,7 +45,6 @@ The following features are currently planned and will probably be added in the f
     - File transfers
     - Geo-locations
     - Multiple accounts on one client
-    - Respect libpurple proxy settings (implemented but untested)
 
 
 ## Platform Support
