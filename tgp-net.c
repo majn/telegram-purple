@@ -83,6 +83,7 @@ static int ping_alarm (gpointer arg) {
 
 static void stop_ping_timer (struct connection *c) {
   purple_timeout_remove (c->ping_ev);
+  c->ping_ev = -1;
 }
 
 static void start_ping_timer (struct connection *c) {
@@ -457,7 +458,9 @@ static void try_rpc_read (struct connection *c) {
     len *= 4;
     int op;
     assert (tgln_read_in_lookup (c, &op, 4) == 4);
-    c->methods->execute (TLS, c, op, len);
+    if (c->methods->execute (TLS, c, op, len) < 0) { 
+      return;
+    }
   }
 }
 
@@ -593,6 +596,7 @@ static void tgln_free (struct connection *c) {
     purple_input_remove (c->write_ev);
   }
 
+  if (c->fd >= 0) { close (c->fd); }
   c->fd = -1;
 }
 
