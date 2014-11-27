@@ -182,6 +182,11 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M)
 
 static int our_msg (struct tgl_state *TLS, struct tgl_message *M) {
   //return tgl_get_peer_id(M->from_id) == TLS->our_id;
+  //return M->out;
+  return (M->flags & FLAG_SESSION_OUTBOUND) != 0;
+}
+
+static int out_msg (struct tgl_state *TLS, struct tgl_message *M) {
   return M->out;
 }
 
@@ -240,14 +245,14 @@ void on_message_load_photo (struct tgl_state *TLS, void *extra, int success, cha
   switch (tgl_get_peer_type (M->to_id)) {
     case TGL_PEER_CHAT:
       debug ("PEER_CHAT\n");
-      if (! our_msg(TLS, M)) {
+      if (!our_msg(TLS, M)) {
         chat_add_message (TLS, M, image);
       }
       break;
       
     case TGL_PEER_USER:
       debug ("PEER_USER\n");
-      if (our_msg(TLS, M)) {
+      if (out_msg(TLS, M)) {
         p2tgl_got_im (TLS, M->to_id, image, PURPLE_MESSAGE_SEND | PURPLE_MESSAGE_IMAGES, M->date);
       } else {
         p2tgl_got_im (TLS, M->from_id, image, PURPLE_MESSAGE_RECV | PURPLE_MESSAGE_IMAGES, M->date);
@@ -311,7 +316,7 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
   switch (tgl_get_peer_type (M->to_id)) {
     case TGL_PEER_CHAT:
       debug ("PEER_CHAT\n");
-      if (! our_msg(TLS, M)) {
+      if (!our_msg(TLS, M)) {
         chat_add_message (TLS, M, text);
       }
       break;
@@ -321,8 +326,12 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
       
       // p2tgl_got_im (TLS, M->to_id, text, PURPLE_MESSAGE_SEND, M->date);
       // :TODO: figure out how to add messages from different devices to history
-      if (! our_msg(TLS, M)) {
-        p2tgl_got_im (TLS, M->from_id, text, PURPLE_MESSAGE_RECV, M->date);
+      if (!our_msg(TLS, M)) {
+        if (out_msg(TLS, M)) {
+          p2tgl_got_im (TLS, M->to_id, text, PURPLE_MESSAGE_SEND, M->date);
+        } else {
+          p2tgl_got_im (TLS, M->from_id, text, PURPLE_MESSAGE_RECV, M->date);
+        }
       }
       break;
       
