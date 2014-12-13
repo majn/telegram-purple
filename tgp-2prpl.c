@@ -105,7 +105,11 @@ static PurpleChat *blist_find_chat_by_hasht_cond(PurpleConnection *gc,
 }
 
 static int hasht_cmp_id(GHashTable *hasht, void *data) {
-  return !strcmp(g_hash_table_lookup(hasht, "id"), *((char **)data));
+  gpointer id = g_hash_table_lookup(hasht, "id");
+  if (!id || !data) {
+    return 0;
+  }
+  return !strcmp(id, ((char *)data));
 }
 
 
@@ -248,7 +252,7 @@ PurpleChat *p2tgl_chat_new (struct tgl_state *TLS, struct tgl_chat *chat) {
 
 PurpleChat *p2tgl_chat_find (struct tgl_state *TLS, tgl_peer_id_t id) {
   char *name = peer_strdup_id(id);
-  PurpleChat *c = blist_find_chat_by_hasht_cond(tg_get_conn(TLS), hasht_cmp_id, &name);
+  PurpleChat *c = blist_find_chat_by_hasht_cond(tg_get_conn(TLS), hasht_cmp_id, name);
   g_free(name);
   return c;
 }
