@@ -258,6 +258,10 @@ void on_message_load_photo (struct tgl_state *TLS, void *extra, int success, cha
       break;
       
     case TGL_PEER_ENCR_CHAT:
+      debug ("PEER_ENCR_CHAT\n");
+      if (our_msg(TLS, M)) {
+        //encr_chat_add_message(...)
+      }
       break;
       
     case TGL_PEER_GEO_CHAT:
@@ -330,6 +334,10 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
       break;
       
     case TGL_PEER_ENCR_CHAT:
+      debug ("PEER_ENCR_CHAT\n");
+      if (! our_msg(TLS, M)) {
+        //encr_chat_add_message(...)
+      }
       break;
       
     case TGL_PEER_GEO_CHAT:
@@ -898,6 +906,25 @@ static gboolean tgprpl_offline_message (const PurpleBuddy * buddy) {
   return 0;
 }
 
+void start_encrypted_chat ( PurpleBlistNode *node, gpointer data )
+{
+    debug("start_encrypted_chat()\n");
+}
+
+//Add encrypted chat option to the rightclick menue of all buddies
+static GList* tgprpl_blist_node_menu(PurpleBlistNode *node)
+{
+    purple_debug_info (PLUGIN_ID, "tgprpl_blist_node_menu()\n");
+    GList* menu = NULL;
+    if (PURPLE_BLIST_NODE_IS_BUDDY(node))
+    {
+        PurpleBuddy* buddy = (PurpleBuddy*)node;
+        PurpleMenuAction* menu_action = purple_menu_action_new("Start encrypted chat...", PURPLE_CALLBACK(start_encrypted_chat), buddy, NULL);
+        menu = g_list_append(menu, (gpointer)menu_action);
+    }    
+    return menu;
+}
+
 static PurplePluginProtocolInfo prpl_info = {
   OPT_PROTO_NO_PASSWORD,
   NULL,                    // user_splits, initialized in tgprpl_init()
@@ -916,7 +943,7 @@ static PurplePluginProtocolInfo prpl_info = {
   NULL,
   tgprpl_tooltip_text,
   tgprpl_status_types,
-  NULL,                    // blist_node_menu
+  tgprpl_blist_node_menu,  // blist_node_menu
   tgprpl_chat_join_info,
   tgprpl_chat_info_deflt,
   tgprpl_login,
