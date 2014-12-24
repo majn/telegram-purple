@@ -85,6 +85,12 @@ char *p2tgl_strdup_alias(tgl_peer_t *user) {
   return g_alias;
 }
 
+int p2tgl_status_is_present (PurpleStatus *status)
+{
+  const char *name = purple_status_get_id (status);
+  return !(strcmp (name, "unavailable") == 0 || strcmp (name, "away") == 0);
+}
+
 static PurpleChat *blist_find_chat_by_hasht_cond(PurpleConnection *gc,
     int (*fn)(GHashTable *hasht, void *data), void *data) {
   PurpleAccount *account = purple_connection_get_account(gc);

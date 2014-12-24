@@ -450,3 +450,46 @@ void chat_add_all_users (PurpleConversation *pc, struct tgl_chat *chat) {
     p2tgl_conv_add_user(pc, *uid, NULL, flags, 0);
   }
 }
+
+
+static void pending_reads_cb (struct tgl_state *TLS, void *extra, int success)
+{
+  debug ("ack state: %d", success);
+}
+
+static gint pending_reads_compare (gconstpointer a, gconstpointer b)
+{
+  return !memcmp ((tgl_peer_id_t *)a, (tgl_peer_id_t *)b, sizeof(tgl_peer_id_t));
+}
+
+void pending_reads_send_all (GQueue *queue, struct tgl_state *TLS)
+{
+  debug ("send all pending ack");
+
+  tgl_peer_id_t *pending;
+  
+  while ((pending = (tgl_peer_id_t*) g_queue_pop_head(queue))) {
+    tgl_do_mark_read (TLS, *pending, pending_reads_cb, queue);
+    debug ("tgl_do_mark_read (%d)", pending->id);
+    free (pending);
+  }
+}
+
+void pending_reads_add (GQueue *queue, tgl_peer_id_t id)
+{
+  tgl_peer_id_t *copy = malloc (sizeof(tgl_peer_id_t));
+  *copy = id;
+  if (! g_queue_find_custom (queue, copy, pending_reads_compare)) {
+    g_queue_push_tail (queue, copy);
+  }
+}
+
+void pending_reads_clear (GQueue *queue)
+{
+  tgl_peer_id_t *pending;
+  
+  while ((pending = (tgl_peer_id_t*) g_queue_pop_head(queue))) {
+    free (pending);
+  }
+}
+

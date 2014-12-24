@@ -331,6 +331,12 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
           p2tgl_got_im (TLS, M->to_id, text, PURPLE_MESSAGE_SEND, M->date);
         } else {
           p2tgl_got_im (TLS, M->from_id, text, PURPLE_MESSAGE_RECV, M->date);
+          
+          pending_reads_add (conn->pending_reads, M->from_id);
+          PurpleStatus *status = purple_account_get_active_status(conn->pa);
+          if (p2tgl_status_is_present(status)) {
+            pending_reads_send_all (conn->pending_reads, conn->TLS);
+          }
         }
       }
       break;
@@ -552,16 +558,25 @@ static GList *tgprpl_status_types (PurpleAccount * acct) {
   debug ("tgprpl_status_types()\n");
   GList *types = NULL;
   PurpleStatusType *type;
-  type = purple_status_type_new_with_attrs (PURPLE_STATUS_AVAILABLE, NULL, NULL,
-          1, 1, 0, "last online", "last online", purple_value_new (PURPLE_TYPE_STRING), NULL);
+  
+  type = purple_status_type_new_full(PURPLE_STATUS_AVAILABLE, NULL, NULL, FALSE, TRUE, FALSE);
   types = g_list_prepend (types, type);
   
-  type = purple_status_type_new_with_attrs (PURPLE_STATUS_MOBILE, NULL, NULL, 1,
-          1, 0, "last online", "last online", purple_value_new (PURPLE_TYPE_STRING), NULL);
+  type = purple_status_type_new_full(PURPLE_STATUS_MOBILE, NULL, NULL, FALSE, TRUE, FALSE);
+  types = g_list_prepend (types, type);
+
+  type = purple_status_type_new_full(PURPLE_STATUS_OFFLINE, NULL, NULL, FALSE, TRUE, FALSE);
   types = g_list_prepend (types, type);
   
-  type = purple_status_type_new (PURPLE_STATUS_OFFLINE, NULL, NULL, 1);
-  types = g_list_append (types, type);
+  /*
+    The states below are only registered internally so that we get notified about 
+    state changes to away and unavailable. This is useful for deciding when to send 
+    No other peer should ever have those states.
+   */
+  type = purple_status_type_new_full(PURPLE_STATUS_AWAY, NULL, NULL, FALSE, TRUE, FALSE);
+  types = g_list_prepend (types, type);
+  type = purple_status_type_new_full(PURPLE_STATUS_UNAVAILABLE, NULL, NULL, FALSE, TRUE, FALSE);
+  types = g_list_prepend (types, type);
   
   return g_list_reverse (types);
 }
@@ -609,7 +624,8 @@ static void tgprpl_login (PurpleAccount * acct) {
   conn->gc = gc;
   conn->pa = acct;
   conn->new_messages = g_queue_new ();
-  conn->joining_chats = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+  conn->pending_reads = g_queue_new ();
+  conn->joining_chats = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
   purple_connection_set_protocol_data (gc, conn);
   
   tgl_set_ev_base (TLS, conn);
@@ -628,7 +644,14 @@ static void tgprpl_close (PurpleConnection * gc) {
   debug ("tgprpl_close()\n");
   telegram_conn *conn = purple_connection_get_protocol_data(gc);
   purple_timeout_remove(conn->timer);
+
+  pending_reads_clear (conn->pending_reads);
+  
   tgl_free_all (conn->TLS);
+  g_queue_free (conn->new_messages);
+  g_queue_free (conn->pending_reads);
+  g_hash_table_destroy (conn->joining_chats);
+  
 }
 
 static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *message, PurpleMessageFlags flags) {
@@ -685,7 +708,16 @@ static void tgprpl_get_info (PurpleConnection * gc, const char *username) {
 }
 
 static void tgprpl_set_status (PurpleAccount * acct, PurpleStatus * status) {
-  debug ("tgprpl_set_status()\n");
+  debug ("tgprpl_set_status(%s)\n", purple_status_get_name (status));
+  debug ("tgprpl_set_status(currstatus=%s)\n", purple_status_get_name(purple_account_get_active_status(acct)));
+
+  PurpleConnection *gc = purple_account_get_connection(acct);
+  if (!gc) { return; }
+  telegram_conn *conn = purple_connection_get_protocol_data (gc);
+
+  if (p2tgl_status_is_present(status)) {
+    pending_reads_send_all (conn->pending_reads, conn->TLS);
+  }
 }
 
 static void tgprpl_add_buddy (PurpleConnection * gc, PurpleBuddy * buddy, PurpleGroup * group) {

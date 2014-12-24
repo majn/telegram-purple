@@ -45,6 +45,7 @@ typedef struct {
 	PurpleConnection *gc;
   int updated;
   GQueue *new_messages;
+  GQueue *pending_reads;
   GHashTable *joining_chats;
   guint timer;
   int in_fallback_chat;
