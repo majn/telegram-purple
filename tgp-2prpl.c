@@ -26,6 +26,10 @@
 #include <msglog.h>
 #include <assert.h>
 
+/*
+   tgp-2prpl.c: Libpurple functions that can be called with tgl data types
+ */
+
 static void sanitize_alias(char *buffer) {
   size_t len = strlen(buffer);
   gchar *curr;

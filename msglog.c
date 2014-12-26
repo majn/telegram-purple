@@ -38,15 +38,9 @@
 #define COLOR_NORMAL ""
 #endif
 
-void hexdump (int *in_ptr, int *in_end) {
-  // TODO: figure out how to log hexdumps to purple log
-  int *ptr = in_ptr;
-  while (ptr < in_end) {
-    ++ ptr;
-    //printf (" %08x", *(ptr ++));
-  }
-  //printf ("\n");
-}
+/*
+  msglog.c: Convenience methods for logging to libpurple log
+ */
 
 void log_level_printf (const char* format, va_list ap, int level, char *color) {
   char buffer[256];
