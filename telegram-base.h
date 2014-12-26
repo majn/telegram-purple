@@ -33,8 +33,4 @@ int chat_add_message (struct tgl_state *TLS, struct tgl_message *M, char *text);
 void chat_add_all_users (PurpleConversation *pc, struct tgl_chat *chat);
 void request_code_entered (gpointer data, const gchar *code);
 
-void pending_reads_send_all (GQueue *queue, struct tgl_state *TLS);
-void pending_reads_add (GQueue *queue, tgl_peer_id_t id);
-void pending_reads_clear (GQueue *queue);
-
 #endif

@@ -42,6 +42,7 @@
 #include <time.h>
 
 #include "tgp-net.h"
+#include "tgp-structs.h"
 #include <tgl.h>
 #include <tgl-inner.h>
 
@@ -334,7 +335,7 @@ struct connection *tgln_create_connection (struct tgl_state *TLS, const char *ho
   
   c->conn_timeout = MIN_EXP_TIMEOUT;
 
-  telegram_conn *conn = TLS->ev_base;
+  connection_data *conn = TLS->ev_base;
   c->prpl_data = purple_proxy_connect (conn->gc, conn->pa, host, port, net_on_connected, c);
 
   return c;
@@ -347,8 +348,8 @@ static void restart_connection (struct connection *c) {
     return;
   }
   
-  telegram_conn *conn = TLS->ev_base;
-  c->prpl_data = purple_proxy_connect (conn->gc, conn->pa, c->ip, c->port, net_on_connected, c);
+  connection_data *conn = TLS->ev_base;
+  // c->prpl_data = purple_proxy_connect (conn->gc, conn->pa, c->ip, c->port, net_on_connected, c);
 }
 
 static void fail_connection (struct connection *c) {
@@ -384,7 +385,7 @@ static void fail_connection (struct connection *c) {
   c->out_bytes = c->in_bytes = 0;
 
   if (c->state == conn_ready) {
-    telegram_conn *conn = TLS->ev_base; 
+    connection_data *conn = TLS->ev_base; 
     purple_connection_error_reason(conn->gc, PURPLE_CONNECTION_ERROR_OTHER_ERROR, "connection fail");
   }
   c->prpl_data = NULL; // Did not find any destroy code. What should be done here?

@@ -19,6 +19,7 @@
 */
 #include "telegram-purple.h"
 #include "tgp-2prpl.h"
+#include "tgp-structs.h"
 
 #include <server.h>
 #include <tgl.h>
@@ -56,11 +57,11 @@ static int user_get_alias (tgl_peer_t *user, char *buffer, int maxlen) {
 }
 
 PurpleAccount *tg_get_acc (struct tgl_state *TLS) {
-  return (PurpleAccount *) ((telegram_conn *)TLS->ev_base)->pa;
+  return (PurpleAccount *) ((connection_data *)TLS->ev_base)->pa;
 }
 
 PurpleConnection *tg_get_conn (struct tgl_state *TLS) {
-  return (PurpleConnection *) ((telegram_conn *)TLS->ev_base)->gc;
+  return (PurpleConnection *) ((connection_data *)TLS->ev_base)->gc;
 }
 
 static char *peer_strdup_id(tgl_peer_id_t user) {
@@ -120,7 +121,7 @@ static int hasht_cmp_id(GHashTable *hasht, void *data) {
 
 
 PurpleConversation *p2tgl_got_joined_chat (struct tgl_state *TLS, struct tgl_chat *chat) {
-  telegram_conn *conn = TLS->ev_base;
+  connection_data *conn = TLS->ev_base;
   gchar *alias = p2tgl_strdup_alias((tgl_peer_t *)chat);
   
   PurpleConversation *conv = serv_got_joined_chat(conn->gc, tgl_get_peer_id(chat->id), alias);

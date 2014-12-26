@@ -51,6 +51,7 @@
 #include "request.h"
 
 #include <tgl.h>
+#include "tgp-structs.h"
 #include "tgp-2prpl.h"
 #include "tgp-net.h"
 #include "tgp-timers.h"
@@ -66,8 +67,8 @@ const char *pk_path = "/etc/telegram-purple/server.pub";
 void tgprpl_login_on_connected();
 void on_user_get_info (struct tgl_state *TLS, void *show_info, int success, struct tgl_user *U);
 
-static telegram_conn *get_conn_from_buddy (PurpleBuddy *buddy) {
-  telegram_conn *c = purple_connection_get_protocol_data (
+static connection_data *get_conn_from_buddy (PurpleBuddy *buddy) {
+  connection_data *c = purple_connection_get_protocol_data (
       purple_account_get_connection (purple_buddy_get_account (buddy)));
   return c;
 }
@@ -192,7 +193,7 @@ static int out_msg (struct tgl_state *TLS, struct tgl_message *M) {
 
 static gboolean queries_timerfunc (gpointer data) {
   debug ("queries_timerfunc()\n");
-  telegram_conn *conn = data;
+  connection_data *conn = data;
   
   if (conn->updated) {
     conn->updated = 0;
@@ -267,13 +268,13 @@ void on_message_load_photo (struct tgl_state *TLS, void *extra, int success, cha
   }
  
   g_free (image);
-  telegram_conn *conn = TLS->ev_base;
+  connection_data *conn = TLS->ev_base;
   conn->updated = 1;
 }
 
 static void update_message_received (struct tgl_state *TLS, struct tgl_message *M) {
   debug ("received message\n");
-  telegram_conn *conn = TLS->ev_base;
+  connection_data *conn = TLS->ev_base;
   conn->updated = 1;
 
   if (M->service) {
@@ -436,7 +437,7 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
     struct tgl_user *U = dld->data;
     warning ("Can not load userpic for user %s %s\n", U->first_name, U->last_name);
   }
-  telegram_conn *conn = TLS->ev_base;
+  connection_data *conn = TLS->ev_base;
 
   gchar *data = NULL;
   size_t len;
@@ -484,7 +485,7 @@ void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct t
   assert (success);
   
   debug ("on_chat_joined(%d)\n", tgl_get_peer_id (C->id));
-  telegram_conn *conn = TLS->ev_base;
+  connection_data *conn = TLS->ev_base;
 
   PurpleConversation *conv;
   if (!(conv = purple_find_chat(conn->gc, tgl_get_peer_id(C->id)))) {
@@ -513,7 +514,7 @@ void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct t
 
 void on_ready (struct tgl_state *TLS) {
   debug ("on_ready().\n");
-  telegram_conn *conn = TLS->ev_base;
+  connection_data *conn = TLS->ev_base;
   
   purple_connection_set_state(conn->gc, PURPLE_CONNECTED);
   purple_connection_set_display_name(conn->gc, purple_account_get_username(conn->pa));
@@ -619,13 +620,7 @@ static void tgprpl_login (PurpleAccount * acct) {
   
   // create handle to store additional info for libpurple in
   // the new telegram instance
-  telegram_conn *conn = g_new0(telegram_conn, 1);
-  conn->TLS = TLS;
-  conn->gc = gc;
-  conn->pa = acct;
-  conn->new_messages = g_queue_new ();
-  conn->pending_reads = g_queue_new ();
-  conn->joining_chats = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+  connection_data *conn = connection_data_init (TLS, gc, acct);
   purple_connection_set_protocol_data (gc, conn);
   
   tgl_set_ev_base (TLS, conn);
@@ -642,22 +637,16 @@ static void tgprpl_login (PurpleAccount * acct) {
 
 static void tgprpl_close (PurpleConnection * gc) {
   debug ("tgprpl_close()\n");
-  telegram_conn *conn = purple_connection_get_protocol_data(gc);
-  purple_timeout_remove(conn->timer);
-
-  pending_reads_clear (conn->pending_reads);
+  connection_data *conn = purple_connection_get_protocol_data (gc);
+  purple_timeout_remove (conn->timer);
   
-  tgl_free_all (conn->TLS);
-  g_queue_free (conn->new_messages);
-  g_queue_free (conn->pending_reads);
-  g_hash_table_destroy (conn->joining_chats);
-  
+  connection_data_free (conn);
 }
 
 static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *message, PurpleMessageFlags flags) {
   debug ("tgprpl_send_im()\n");
   
-  telegram_conn *conn = purple_connection_get_protocol_data(gc);
+  connection_data *conn = purple_connection_get_protocol_data(gc);
   PurpleAccount *pa = conn->pa;
  
   // this is part of a workaround to support clients without
@@ -688,7 +677,7 @@ static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *m
 static unsigned int tgprpl_send_typing (PurpleConnection * gc, const char *who, PurpleTypingState typing) {
   debug ("tgprpl_send_typing()\n");
   int id = atoi (who);
-  telegram_conn *conn = purple_connection_get_protocol_data(gc);
+  connection_data *conn = purple_connection_get_protocol_data(gc);
   tgl_peer_t *U = tgl_peer_get (conn->TLS, TGL_MK_USER (id));
   if (U) {
     if (typing == PURPLE_TYPING) {
@@ -702,7 +691,7 @@ static unsigned int tgprpl_send_typing (PurpleConnection * gc, const char *who, 
 
 static void tgprpl_get_info (PurpleConnection * gc, const char *username) {
   debug ("tgprpl_get_info()\n");
-  telegram_conn *conn = purple_connection_get_protocol_data(gc);
+  connection_data *conn = purple_connection_get_protocol_data(gc);
   tgl_peer_id_t u = TGL_MK_USER(atoi(username));
   tgl_do_get_user_info (conn->TLS, u, 0, on_user_get_info, (void *)1l);
 }
@@ -713,7 +702,7 @@ static void tgprpl_set_status (PurpleAccount * acct, PurpleStatus * status) {
 
   PurpleConnection *gc = purple_account_get_connection(acct);
   if (!gc) { return; }
-  telegram_conn *conn = purple_connection_get_protocol_data (gc);
+  connection_data *conn = purple_connection_get_protocol_data (gc);
 
   if (p2tgl_status_is_present(status)) {
     pending_reads_send_all (conn->pending_reads, conn->TLS);
@@ -721,7 +710,7 @@ static void tgprpl_set_status (PurpleAccount * acct, PurpleStatus * status) {
 }
 
 static void tgprpl_add_buddy (PurpleConnection * gc, PurpleBuddy * buddy, PurpleGroup * group) {
-  telegram_conn *conn = purple_connection_get_protocol_data(gc);
+  connection_data *conn = purple_connection_get_protocol_data(gc);
   const char* first = buddy->alias ? buddy->alias : "";
   
   tgl_do_add_contact (conn->TLS, buddy->name, (int)strlen (buddy->name), first, (int)strlen (first), "", 0, 0, on_contact_added, buddy);
@@ -735,7 +724,7 @@ static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Pur
   debug ("tgprpl_remove_buddy()\n");
   if (!buddy) { return; }
   
-  telegram_conn *conn = purple_connection_get_protocol_data (gc);
+  connection_data *conn = purple_connection_get_protocol_data (gc);
   struct tgl_user *user = purple_buddy_get_protocol_data (buddy);
   if (!user) { warning ("cannot remove buddy '%s', no protocol data found\n", buddy->name); return; }
   
@@ -757,7 +746,7 @@ static void tgprpl_rem_deny (PurpleConnection * gc, const char *name){
 static void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
   debug ("tgprpl_chat_join()\n");
   
-  telegram_conn *conn = purple_connection_get_protocol_data (gc);
+  connection_data *conn = purple_connection_get_protocol_data (gc);
   const char *groupname = g_hash_table_lookup (data, "subject");
   
   char *id = g_hash_table_lookup(data, "id");
@@ -794,7 +783,7 @@ static GHashTable *tgprpl_chat_info_deflt (PurpleConnection * gc, const char *ch
 static void tgprpl_chat_invite (PurpleConnection * gc, int id, const char *message, const char *name) {
   debug ("tgprpl_chat_invite()\n");
 
-  telegram_conn *conn = purple_connection_get_protocol_data (gc);
+  connection_data *conn = purple_connection_get_protocol_data (gc);
   tgl_peer_t *chat = tgl_peer_get(conn->TLS, TGL_MK_CHAT (id));
   tgl_peer_t *user = tgl_peer_get(conn->TLS, TGL_MK_USER (atoi(name)));
   
@@ -808,7 +797,7 @@ static void tgprpl_chat_invite (PurpleConnection * gc, int id, const char *messa
 
 static int tgprpl_send_chat (PurpleConnection * gc, int id, const char *message, PurpleMessageFlags flags) {
   debug ("tgprpl_send_chat()\n");
-  telegram_conn *conn = purple_connection_get_protocol_data (gc);
+  connection_data *conn = purple_connection_get_protocol_data (gc);
   
   gchar *raw = purple_unescape_html(message);
   tgl_do_send_message (conn->TLS, TGL_MK_CHAT(id), raw, (int)strlen (raw), 0, 0);
@@ -834,7 +823,7 @@ static void tgprpl_convo_closed (PurpleConnection * gc, const char *who){
 static void tgprpl_set_buddy_icon (PurpleConnection * gc, PurpleStoredImage * img) {
   debug ("tgprpl_set_buddy_icon()\n");
   
-  telegram_conn *conn = purple_connection_get_protocol_data (gc);
+  connection_data *conn = purple_connection_get_protocol_data (gc);
   if (purple_imgstore_get_filename (img)) {
     char* filename = g_strdup_printf ("%s/icons/%s", purple_user_dir(), purple_imgstore_get_filename (img));
     debug (filename);
