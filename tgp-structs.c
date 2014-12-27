@@ -83,6 +83,18 @@ void message_text_free (gpointer data)
   free (mt);
 }
 
+static void used_image_free (gpointer data)
+{
+  int id = GPOINTER_TO_INT(data);
+  purple_imgstore_unref_by_id (id);
+  debug ("used_image: unref %d", id);
+}
+
+void used_images_add (connection_data *data, gint imgid)
+{
+  data->used_images = g_list_append (data->used_images, GINT_TO_POINTER(imgid));
+  debug ("used_image: add %d", imgid);
+}
 
 connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *gc, PurpleAccount *pa)
 {
@@ -102,6 +114,7 @@ void *connection_data_free (connection_data *conn)
   g_queue_free_full (conn->pending_reads, pending_reads_free_cb);
   g_queue_free_full (conn->new_messages, message_text_free);
   g_hash_table_destroy (conn->joining_chats);
+  g_list_free_full (conn->used_images, used_image_free);
   tgl_free_all (conn->TLS);
   free (conn);
   return NULL;

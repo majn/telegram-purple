@@ -34,6 +34,7 @@ typedef struct {
   int updated;
   GQueue *new_messages;
   GQueue *pending_reads;
+  GList *used_images;
   GHashTable *joining_chats;
   guint timer;
   int in_fallback_chat;
@@ -54,6 +55,8 @@ void pending_reads_add (GQueue *queue, tgl_peer_id_t id);
 
 struct message_text *message_text_init (struct tgl_message *M, gchar *text);
 void message_text_free (gpointer data);
+
+void used_images_add (connection_data *data, gint imgid);
 
 void *connection_data_free (connection_data *conn);
 connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *gc, PurpleAccount *pa);

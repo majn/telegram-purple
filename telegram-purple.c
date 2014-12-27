@@ -235,13 +235,16 @@ struct tgl_update_callback tgp_callback = {
 };
 
 void on_message_load_photo (struct tgl_state *TLS, void *extra, int success, char *filename) {
+  connection_data *conn = TLS->ev_base;
+  
   gchar *data = NULL;
   size_t len;
   GError *err = NULL;
   g_file_get_contents (filename, &data, &len, &err);
   int imgStoreId = purple_imgstore_add_with_id (g_memdup(data, (guint)len), len, NULL);
-    
-  char *image = format_img_full(imgStoreId);
+  used_images_add (conn, imgStoreId);
+  
+  char *image = format_img_full (imgStoreId);
   struct tgl_message *M = extra;
   switch (tgl_get_peer_type (M->to_id)) {
     case TGL_PEER_CHAT:
@@ -268,7 +271,7 @@ void on_message_load_photo (struct tgl_state *TLS, void *extra, int success, cha
   }
  
   g_free (image);
-  connection_data *conn = TLS->ev_base;
+  conn = TLS->ev_base;
   conn->updated = 1;
 }
 
@@ -443,7 +446,9 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
   size_t len;
   GError *err = NULL;
   g_file_get_contents (filename, &data, &len, &err);
+  
   int imgStoreId = purple_imgstore_add_with_id (g_memdup(data, (guint)len), len, NULL);
+  used_images_add (conn, imgStoreId);
   
   struct download_desc *dld = extra;
   struct tgl_user *U = dld->data;
@@ -460,7 +465,7 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
     purple_notify_userinfo (conn->gc, who, info, NULL, NULL);
     g_free (profile_image);
   }
-  purple_buddy_icons_set_for_user(conn->pa, who, g_memdup(data, (guint)len), len, NULL);
+  purple_buddy_icons_set_for_user(conn->pa, who, data, len, NULL);
   g_free(who);
 }
 
