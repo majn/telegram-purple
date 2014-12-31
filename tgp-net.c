@@ -349,6 +349,7 @@ static void restart_connection (struct connection *c) {
   }
   
   connection_data *conn = TLS->ev_base;
+  purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_NETWORK_ERROR, "Lost connection with server");
   // c->prpl_data = purple_proxy_connect (conn->gc, conn->pa, c->ip, c->port, net_on_connected, c);
 }
 
