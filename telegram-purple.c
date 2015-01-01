@@ -372,9 +372,6 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
       p2tgl_prpl_got_user_status (TLS, user->id, &user->status);
       p2tgl_buddy_update (TLS, (tgl_peer_t *)user, flags);
     }
-    if (flags & (TGL_UPDATE_NAME | TGL_UPDATE_REAL_NAME | TGL_UPDATE_USERNAME) && buddy) {
-      p2tgl_blist_alias_buddy (buddy, user);
-    }
     if (flags & TGL_UPDATE_PHOTO) {
       tgl_do_get_user_info (TLS, user->id, 0, on_user_get_info, 0);
     }
