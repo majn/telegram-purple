@@ -805,8 +805,14 @@ static int tgprpl_send_chat (PurpleConnection * gc, int id, const char *message,
   tgl_do_send_message (conn->TLS, TGL_MK_CHAT(id), raw, (int)strlen (raw), 0, 0);
   g_free (raw);
   
+  /* Pidgin won't display the written message if we don't call this, Adium will display it twice 
+     if we call it, so we don't do it for the adium Plugin.
+     TODO: there has to be a better way to do this, figure out how.
+   */
+#ifndef __ADIUM_
   p2tgl_got_chat_in(conn->TLS, TGL_MK_CHAT(id), TGL_MK_USER(conn->TLS->our_id), message,
-                    PURPLE_MESSAGE_RECV, time(NULL));
+    PURPLE_MESSAGE_RECV, time(NULL));
+#endif
   return 1;
 }
 
