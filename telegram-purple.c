@@ -717,10 +717,6 @@ static void tgprpl_add_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Purple
   tgl_do_add_contact (conn->TLS, buddy->name, (int)strlen (buddy->name), first, (int)strlen (first), "", 0, 0, on_contact_added, buddy);
 }
 
-static void tgprpl_add_buddies (PurpleConnection * gc, GList * buddies, GList * groups) {
-  debug ("tgprpl_add_buddies()\n");
-}
-
 static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, PurpleGroup * group) {
   debug ("tgprpl_remove_buddy()\n");
   if (!buddy) { return; }
@@ -730,10 +726,6 @@ static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Pur
   if (!user) { warning ("cannot remove buddy '%s', no protocol data found\n", buddy->name); return; }
   
   tgl_do_del_contact (conn->TLS, user->id, NULL, NULL);
-}
-
-static void tgprpl_remove_buddies (PurpleConnection * gc, GList * buddies, GList * groups){
-  debug ("tgprpl_remove_buddies()\n");
 }
 
 static void tgprpl_add_deny (PurpleConnection * gc, const char *name){
@@ -882,9 +874,9 @@ static PurplePluginProtocolInfo prpl_info = {
   NULL,                    // set_idle
   NULL,                    // change_passwd
   tgprpl_add_buddy,
-  tgprpl_add_buddies,
+  NULL,                    // add_buddies
   tgprpl_remove_buddy,
-  tgprpl_remove_buddies,
+  NULL,                    // remove_buddies
   NULL,                    // add_permit
   tgprpl_add_deny,
   NULL,                    // rem_permit
