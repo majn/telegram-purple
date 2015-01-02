@@ -488,12 +488,12 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
     purple_notify_user_info_add_pair (info, "Profile image", profile_image);
     //TODO: get the sha1key from the secret chat
     unsigned char sha1_key[20] = {129, 236, 235, 161, 62, 139, 244, 162, 120, 99, 99, 26, 171, 224, 25, 125};
-    int sha1key_store_id = generate_ident_icon(sha1_key);
+    int sha1key_store_id = generate_ident_icon(TLS, sha1_key);
     if(sha1key_store_id != -1)
     {
         char *ident_icon = g_strdup_printf("<br><img id=\"%u\">", sha1key_store_id);
         purple_notify_user_info_add_pair(info, "Identification icon", ident_icon);
-         g_free(ident_icon);
+        g_free(ident_icon);
     }
     
     purple_notify_userinfo (conn->gc, who, info, NULL, NULL);

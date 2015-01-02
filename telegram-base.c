@@ -457,9 +457,9 @@ void chat_add_all_users (PurpleConversation *pc, struct tgl_chat *chat) {
 }
 
 /**
- * This function generates a png image to visulize the sha1 key from an encrypted chat.
+ * This function generates a png image to visualize the sha1 key from an encrypted chat.
  */
-int generate_ident_icon (unsigned char* sha1_key)
+int generate_ident_icon (struct tgl_state *TLS, unsigned char* sha1_key)
 {
   int colors[4] = {
     0xffffff,
@@ -469,6 +469,7 @@ int generate_ident_icon (unsigned char* sha1_key)
   };
   unsigned img_size = 160;
   unsigned char* image = (unsigned char*)malloc (img_size * img_size * 4);
+  assert (image);
   unsigned x, y, i, j, idx = 0;
   int bitpointer = 0;
   for (y = 0; y < 8; y++)
@@ -502,9 +503,9 @@ int generate_ident_icon (unsigned char* sha1_key)
   int imgStoreId = -1;
   if(!error)
   {
-    imgStoreId = purple_imgstore_add_with_id(g_memdup(png, pngsize), pngsize, NULL);
+    imgStoreId = purple_imgstore_add_with_id (png, pngsize, NULL);
+    used_images_add ((connection_data*)TLS->ev_base, imgStoreId);
   }
   g_free(image);
-  g_free(png);
   return imgStoreId;
 }
