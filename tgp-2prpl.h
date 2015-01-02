@@ -36,6 +36,7 @@ tgl_peer_t *p2tgl_get_peer (tgl_peer_id_t peer);
 tgl_peer_t *p2tgl_get_peer_by_id (int id);
 char *p2tgl_strdup_alias(tgl_peer_t *user);
 
+int p2tgl_status_is_present (PurpleStatus *status);
 
 PurpleConversation *p2tgl_got_joined_chat (struct tgl_state *TLS, struct tgl_chat *chat);
 void p2tgl_got_chat_invite (PurpleConnection *gc, tgl_peer_t *chat, tgl_peer_id_t inviter, const char *message);

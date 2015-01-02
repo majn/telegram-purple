@@ -28,7 +28,6 @@
 #define TG_VERSION "0.5"
 #define TG_BUILD "10"
 
-#include <glib.h>
 #include <notify.h>
 #include <plugin.h>
 #include <version.h>
@@ -37,28 +36,6 @@
   
 #define TGP_APP_HASH "99428c722d0ed59b9cd844e4577cb4bb"
 #define TGP_APP_ID 16154
-
-typedef struct {
-  struct tgl_state *TLS;
-  char *hash;
-  PurpleAccount *pa;
-	PurpleConnection *gc;
-  int updated;
-  GQueue *new_messages;
-  GHashTable *joining_chats;
-  guint timer;
-  int in_fallback_chat;
-} telegram_conn;
-
-struct download_desc {
-  int type;
-  void *data;
-};
-
-struct message_text {
-  struct tgl_message *M;
-  char *text;
-};
 
 void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *C);
 void on_ready (struct tgl_state *TLS);

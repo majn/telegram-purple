@@ -35,6 +35,7 @@
 #include <telegram-purple.h>
 #include <msglog.h>
 #include <tgp-2prpl.h>
+#include "tgp-structs.h"
 #include "lodepng.h"
 
 #define DC_SERIALIZED_MAGIC 0x868aa81d
@@ -164,6 +165,15 @@ void read_dc (struct tgl_state *TLS, int auth_file_fd, int id, unsigned ver) {
   bl_do_dc_signed (TLS, id);
 }
 
+int error_if_val_false (struct tgl_state *TLS, int val, const char *msg) {
+  if (!val) {
+    connection_data *conn = TLS->ev_base;
+    purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, msg);
+    return 1;
+  }
+  return 0;
+}
+
 void empty_auth_file (struct tgl_state *TLS) {
   if (TLS->test_mode) {
     bl_do_dc_option (TLS, 1, 0, "", strlen (TG_SERVER_TEST_1), TG_SERVER_TEST_1, 443);
@@ -226,8 +236,9 @@ void read_auth_file (struct tgl_state *TLS) {
 
 void telegram_export_authorization (struct tgl_state *TLS);
 void export_auth_callback (struct tgl_state *TLS, void *extra, int success) {
-  assert (success);
-  telegram_export_authorization (TLS);
+  if (!error_if_val_false(TLS, success, "Authentication Export failed.")) {
+    telegram_export_authorization (TLS);
+  }
 }
 
 void telegram_export_authorization (struct tgl_state *TLS) {
@@ -262,21 +273,21 @@ static void code_auth_receive_result (struct tgl_state *TLS, void *extra, int su
 
 void request_code_entered (gpointer data, const gchar *code) {
   struct tgl_state *TLS = data;
-  telegram_conn *conn = TLS->ev_base;
+  connection_data *conn = TLS->ev_base;
   char const *username = purple_account_get_username(conn->pa);
   tgl_do_send_code_result (TLS, username, conn->hash, code, code_receive_result, 0) ;
 }
 
 static void request_code_canceled (gpointer data) {
   struct tgl_state *TLS = data;
-  telegram_conn *conn = TLS->ev_base;
+  connection_data *conn = TLS->ev_base;
 
   purple_connection_error_reason(conn->gc,
       PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, "registration canceled");
 }
 
 static void request_name_code_entered (PurpleConnection* gc, PurpleRequestFields* fields) {
-  telegram_conn *conn = purple_connection_get_protocol_data(gc);
+  connection_data *conn = purple_connection_get_protocol_data(gc);
   struct tgl_state *TLS = conn->TLS;
   char const *username = purple_account_get_username(conn->pa);
   
@@ -293,7 +304,7 @@ static void request_name_code_entered (PurpleConnection* gc, PurpleRequestFields
 
 static void request_code (struct tgl_state *TLS) {
   debug ("Client is not registered, registering...\n");
-  telegram_conn *conn = TLS->ev_base;
+  connection_data *conn = TLS->ev_base;
   int compat = purple_account_get_bool (tg_get_acc(TLS), "compat-verification", 0);
   
   if (compat || ! purple_request_input (conn->gc, "Telegram Code", "Enter Telegram Code",
@@ -315,7 +326,7 @@ static void request_code (struct tgl_state *TLS) {
 static void request_name_and_code (struct tgl_state *TLS) {
   debug ("Phone is not registered, registering...\n");
 
-  telegram_conn *conn = TLS->ev_base;
+  connection_data *conn = TLS->ev_base;
 
   PurpleRequestFields* fields = purple_request_fields_new();
   PurpleRequestField* field = 0;
@@ -342,14 +353,14 @@ static void request_name_and_code (struct tgl_state *TLS) {
 }
 
 static void sign_in_callback (struct tgl_state *TLS, void *extra, int success, int registered, const char *mhash) {
-  assert (success); // TODO proper error handle
-  telegram_conn *conn = TLS->ev_base;
-  conn->hash = strdup (mhash);
-
-  if (registered) {
-    request_code (TLS);
-  } else {
-    request_name_and_code (TLS);
+  connection_data *conn = TLS->ev_base;
+  if (!error_if_val_false (TLS, success, "Invalid or non-existing phone number.")) {
+    conn->hash = strdup (mhash);
+    if (registered) {
+      request_code (TLS);
+    } else {
+      request_name_and_code (TLS);
+    }
   }
 }
 
@@ -358,7 +369,7 @@ static void telegram_send_sms (struct tgl_state *TLS) {
     telegram_export_authorization (TLS);
     return;
   }
-  telegram_conn *conn = TLS->ev_base;
+  connection_data *conn = TLS->ev_base;
   char const *username = purple_account_get_username(conn->pa);
   tgl_do_send_code (TLS, username, sign_in_callback, 0);
 }
@@ -395,7 +406,7 @@ void telegram_login (struct tgl_state *TLS) {
 
 PurpleConversation *chat_show (PurpleConnection *gc, int id) {
   debug ("show chat");
-  telegram_conn *conn = purple_connection_get_protocol_data(gc);
+  connection_data *conn = purple_connection_get_protocol_data(gc);
   
   PurpleConversation *convo = purple_find_chat(gc, id);
   if (! convo) {
@@ -411,17 +422,20 @@ PurpleConversation *chat_show (PurpleConnection *gc, int id) {
 }
 
 int chat_add_message (struct tgl_state *TLS, struct tgl_message *M, char *text) {
-  telegram_conn *conn = TLS->ev_base;
+  connection_data *conn = TLS->ev_base;
   
   if (chat_show (conn->gc, tgl_get_peer_id (M->to_id))) {
     p2tgl_got_chat_in(TLS, M->to_id, M->from_id, text ? text : M->message,
                       M->service ? PURPLE_MESSAGE_SYSTEM : PURPLE_MESSAGE_RECV, M->date);
+    
+    pending_reads_add (conn->pending_reads, M->to_id);
+    if (p2tgl_status_is_present(purple_account_get_active_status(conn->pa))) {
+      pending_reads_send_all (conn->pending_reads, conn->TLS);
+    }
     return 1;
   } else {
     // add message once the chat was initialised
-    struct message_text *mt = malloc (sizeof (*mt));
-    mt->M = M;
-    mt->text = text ? g_strdup (text) : text;
+    struct message_text *mt = message_text_init (M, text);
     g_queue_push_tail (conn->new_messages, mt);
     return 0;
   }
@@ -442,6 +456,9 @@ void chat_add_all_users (PurpleConversation *pc, struct tgl_chat *chat) {
   }
 }
 
+/**
+ * This function generates a png image to visulize the sha1 key from an encrypted chat.
+ */
 int generate_ident_icon (unsigned char* sha1_key)
 {
   int colors[4] = {

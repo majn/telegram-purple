@@ -19,11 +19,16 @@
 */
 #include "telegram-purple.h"
 #include "tgp-2prpl.h"
+#include "tgp-structs.h"
 
 #include <server.h>
 #include <tgl.h>
 #include <msglog.h>
 #include <assert.h>
+
+/*
+   tgp-2prpl.c: Libpurple functions that can be called with tgl data types
+ */
 
 static void sanitize_alias(char *buffer) {
   size_t len = strlen(buffer);
@@ -56,11 +61,11 @@ static int user_get_alias (tgl_peer_t *user, char *buffer, int maxlen) {
 }
 
 PurpleAccount *tg_get_acc (struct tgl_state *TLS) {
-  return (PurpleAccount *) ((telegram_conn *)TLS->ev_base)->pa;
+  return (PurpleAccount *) ((connection_data *)TLS->ev_base)->pa;
 }
 
 PurpleConnection *tg_get_conn (struct tgl_state *TLS) {
-  return (PurpleConnection *) ((telegram_conn *)TLS->ev_base)->gc;
+  return (PurpleConnection *) ((connection_data *)TLS->ev_base)->gc;
 }
 
 static char *peer_strdup_id(tgl_peer_id_t user) {
@@ -85,6 +90,12 @@ char *p2tgl_strdup_alias(tgl_peer_t *user) {
   return g_alias;
 }
 
+int p2tgl_status_is_present (PurpleStatus *status)
+{
+  const char *name = purple_status_get_id (status);
+  return !(strcmp (name, "unavailable") == 0 || strcmp (name, "away") == 0);
+}
+
 static PurpleChat *blist_find_chat_by_hasht_cond(PurpleConnection *gc,
     int (*fn)(GHashTable *hasht, void *data), void *data) {
   PurpleAccount *account = purple_connection_get_account(gc);
@@ -105,12 +116,16 @@ static PurpleChat *blist_find_chat_by_hasht_cond(PurpleConnection *gc,
 }
 
 static int hasht_cmp_id(GHashTable *hasht, void *data) {
-  return !strcmp(g_hash_table_lookup(hasht, "id"), *((char **)data));
+  gpointer id = g_hash_table_lookup(hasht, "id");
+  if (!id || !data) {
+    return 0;
+  }
+  return !strcmp(id, ((char *)data));
 }
 
 
 PurpleConversation *p2tgl_got_joined_chat (struct tgl_state *TLS, struct tgl_chat *chat) {
-  telegram_conn *conn = TLS->ev_base;
+  connection_data *conn = TLS->ev_base;
   gchar *alias = p2tgl_strdup_alias((tgl_peer_t *)chat);
   
   PurpleConversation *conv = serv_got_joined_chat(conn->gc, tgl_get_peer_id(chat->id), alias);
@@ -181,7 +196,7 @@ PurpleBuddy *p2tgl_buddy_update (struct tgl_state *TLS, tgl_peer_t *user, unsign
   if (!b) {
     b = p2tgl_buddy_new (TLS, user);
   }
-  if (flags & TGL_UPDATE_NAME) {
+  if (flags & (TGL_UPDATE_NAME | TGL_UPDATE_REAL_NAME | TGL_UPDATE_USERNAME)) {
     debug ("Update username for id%d (name %s %s)\n", tgl_get_peer_id (user->id), user->user.first_name, user->user.last_name);
     char *alias = p2tgl_strdup_alias (user);
     purple_blist_alias_buddy(b, alias);
@@ -248,7 +263,7 @@ PurpleChat *p2tgl_chat_new (struct tgl_state *TLS, struct tgl_chat *chat) {
 
 PurpleChat *p2tgl_chat_find (struct tgl_state *TLS, tgl_peer_id_t id) {
   char *name = peer_strdup_id(id);
-  PurpleChat *c = blist_find_chat_by_hasht_cond(tg_get_conn(TLS), hasht_cmp_id, &name);
+  PurpleChat *c = blist_find_chat_by_hasht_cond(tg_get_conn(TLS), hasht_cmp_id, name);
   g_free(name);
   return c;
 }

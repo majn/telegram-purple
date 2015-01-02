@@ -19,6 +19,9 @@
 */
 #ifndef __TELEGRAM_BASE_H__
 #define __TELEGRAM_BASE_H__
+
+#include "telegram-purple.h"
+
 void read_state_file (struct tgl_state *TLS);
 void read_auth_file (struct tgl_state *TLS);
 void write_auth_file (struct tgl_state *TLS);
@@ -30,4 +33,5 @@ int chat_add_message (struct tgl_state *TLS, struct tgl_message *M, char *text);
 void chat_add_all_users (PurpleConversation *pc, struct tgl_chat *chat);
 void request_code_entered (gpointer data, const gchar *code);
 int generate_ident_icon(unsigned char* sha1_key);
+
 #endif
