@@ -337,8 +337,7 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
           p2tgl_got_im (TLS, M->from_id, text, PURPLE_MESSAGE_RECV, M->date);
           
           pending_reads_add (conn->pending_reads, M->from_id);
-          PurpleStatus *status = purple_account_get_active_status(conn->pa);
-          if (p2tgl_status_is_present(status)) {
+          if (p2tgl_status_is_present(purple_account_get_active_status(conn->pa))) {
             pending_reads_send_all (conn->pending_reads, conn->TLS);
           }
         }
