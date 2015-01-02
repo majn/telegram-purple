@@ -36,7 +36,7 @@
 #include <msglog.h>
 #include <tgp-2prpl.h>
 #include "tgp-structs.h"
-#include "lodepng.h"
+#include "lodepng/lodepng.h"
 
 #define DC_SERIALIZED_MAGIC 0x868aa81d
 #define STATE_FILE_MAGIC 0x28949a93
