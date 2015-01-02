@@ -35,6 +35,7 @@
 #include <telegram-purple.h>
 #include <msglog.h>
 #include <tgp-2prpl.h>
+#include "lodepng.h"
 
 #define DC_SERIALIZED_MAGIC 0x868aa81d
 #define STATE_FILE_MAGIC 0x28949a93
@@ -439,4 +440,54 @@ void chat_add_all_users (PurpleConversation *pc, struct tgl_chat *chat) {
     int flags = (chat->admin_id == uid->user_id ? PURPLE_CBFLAGS_FOUNDER : PURPLE_CBFLAGS_NONE);
     p2tgl_conv_add_user(pc, *uid, NULL, flags, 0);
   }
+}
+
+int generate_ident_icon (unsigned char* sha1_key)
+{
+  int colors[4] = {
+    0xffffff,
+    0xd5e6f3,
+    0x2d5775,
+    0x2f99c9
+  };
+  unsigned img_size = 160;
+  unsigned char* image = (unsigned char*)malloc (img_size * img_size * 4);
+  unsigned x, y, i, j, idx = 0;
+  int bitpointer = 0;
+  for (y = 0; y < 8; y++)
+  {
+    unsigned offset_y = y * img_size * 4 * (img_size / 8);
+    for (x = 0; x < 8; x++)
+    {
+      int offset = bitpointer / 8;
+      int shiftOffset = bitpointer % 8;
+      int val = sha1_key[offset + 3] << 24 | sha1_key[offset + 2] << 16 | sha1_key[offset + 1] << 8 | sha1_key[offset];
+      idx = abs((val >> shiftOffset) & 3) % 4;
+      bitpointer += 2;
+      unsigned offset_x = x * 4 * (img_size / 8);
+      for (i = 0; i < img_size / 8; i++)
+      {
+        unsigned off_y = offset_y + i * img_size * 4;
+        for (j = 0; j < img_size / 8; j++)
+        {
+          unsigned off_x = offset_x + j * 4;
+          image[off_y + off_x + 0] = (colors[idx] >> 16) & 0xFF;
+          image[off_y + off_x + 1] = (colors[idx] >> 8) & 0xFF;
+          image[off_y + off_x + 2] = colors[idx] & 0xFF;
+          image[off_y + off_x + 3] = 0xFF;
+        }
+      }
+    }
+  }
+  unsigned char* png;
+  size_t pngsize;
+  unsigned error = lodepng_encode32(&png, &pngsize, image, img_size, img_size);
+  int imgStoreId = -1;
+  if(!error)
+  {
+    imgStoreId = purple_imgstore_add_with_id(g_memdup(png, pngsize), pngsize, NULL);
+  }
+  g_free(image);
+  g_free(png);
+  return imgStoreId;
 }

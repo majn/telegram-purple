@@ -57,13 +57,11 @@
 #include "telegram-base.h"
 #include "telegram-purple.h"
 #include "msglog.h"
-#include "lodepng.h"
 
 PurplePlugin *_telegram_protocol = NULL;
 PurpleGroup *tggroup;
 const char *config_dir = ".telegram-purple";
 const char *pk_path = "/etc/telegram-purple/server.pub";
-int generate_ident_icon(unsigned char* sha1_key);
 void tgprpl_login_on_connected();
 void on_user_get_info (struct tgl_state *TLS, void *show_info, int success, struct tgl_user *U);
 
@@ -538,55 +536,7 @@ void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct t
 
 // This function generates a png image to visulize the sha1 key from an encrypted chat.
 
-int generate_ident_icon(unsigned char* sha1_key)
-{
-    int colors[4] = {
-		0xffffff,
-		0xd5e6f3,
-		0x2d5775,
-		0x2f99c9
-	};
-	unsigned img_size = 160;
-	unsigned char* image = (unsigned char*)malloc(img_size * img_size * 4);
-    unsigned x, y, i, j, idx = 0;
-    int bitpointer = 0;
-	for (y = 0; y < 8; y++)
-	{
-		unsigned offset_y = y * img_size * 4 * (img_size / 8);
-		for (x = 0; x < 8; x++)
-		{
-            int offset = bitpointer / 8;
-            int shiftOffset = bitpointer % 8;
-            int val = sha1_key[offset + 3] << 24 | sha1_key[offset + 2] << 16 | sha1_key[offset + 1] << 8 | sha1_key[offset];
-            idx = abs((val >> shiftOffset) & 3) % 4;
-            bitpointer += 2;
-			unsigned offset_x = x * 4 * (img_size / 8);
-			for (i = 0; i < img_size / 8; i++)
-			{
-				unsigned off_y = offset_y + i * img_size * 4;
-				for (j = 0; j < img_size / 8; j++)
-				{
-					unsigned off_x = offset_x + j * 4;
-					image[off_y + off_x + 0] = (colors[idx] >> 16) & 0xFF;
-					image[off_y + off_x + 1] = (colors[idx] >> 8) & 0xFF;
-					image[off_y + off_x + 2] = colors[idx] & 0xFF;
-					image[off_y + off_x + 3] = 0xFF;
-				}
-			}
-		}
-	}
-    unsigned char* png;
-    size_t pngsize;
-    unsigned error = lodepng_encode32(&png, &pngsize, image, img_size, img_size);
-    int imgStoreId = -1;
-    if(!error)
-    {
-        imgStoreId = purple_imgstore_add_with_id(g_memdup(png, pngsize), pngsize, NULL);
-    }
-    g_free(image);
-    g_free(png);
-    return imgStoreId;
-}
+
 
 void on_ready (struct tgl_state *TLS) {
   debug ("on_ready().\n");
