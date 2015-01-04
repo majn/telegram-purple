@@ -31,12 +31,14 @@
 
 #include <glib.h>
 #include <request.h>
+#include <openssl/sha.h>
 
-#include <telegram-purple.h>
-#include <msglog.h>
-#include <tgp-2prpl.h>
+#include "telegram-purple.h"
+#include "msglog.h"
+#include "tgp-2prpl.h"
 #include "tgp-structs.h"
 #include "lodepng/lodepng.h"
+
 
 #define DC_SERIALIZED_MAGIC 0x868aa81d
 #define STATE_FILE_MAGIC 0x28949a93
@@ -234,6 +236,136 @@ void read_auth_file (struct tgl_state *TLS) {
   close (auth_file_fd);
 }
 
+
+void write_secret_chat (tgl_peer_t *_P, void *extra) {
+  struct tgl_secret_chat *P = (void *)_P;
+  if (tgl_get_peer_type (P->id) != TGL_PEER_ENCR_CHAT) { return; }
+  if (P->state != sc_ok) { return; }
+  int *a = extra;
+  int fd = a[0];
+  a[1] ++;
+  
+  int id = tgl_get_peer_id (P->id);
+  assert (write (fd, &id, 4) == 4);
+  //assert (write (fd, &P->flags, 4) == 4);
+  int l = strlen (P->print_name);
+  assert (write (fd, &l, 4) == 4);
+  assert (write (fd, P->print_name, l) == l);
+  assert (write (fd, &P->user_id, 4) == 4);
+  assert (write (fd, &P->admin_id, 4) == 4);
+  assert (write (fd, &P->date, 4) == 4);
+  assert (write (fd, &P->ttl, 4) == 4);
+  assert (write (fd, &P->layer, 4) == 4);
+  assert (write (fd, &P->access_hash, 8) == 8);
+  assert (write (fd, &P->state, 4) == 4);
+  assert (write (fd, &P->key_fingerprint, 8) == 8);
+  assert (write (fd, &P->key, 256) == 256);
+  assert (write (fd, &P->first_key_sha, 20) == 20);
+  assert (write (fd, &P->in_seq_no, 4) == 4);
+  assert (write (fd, &P->last_in_seq_no, 4) == 4);
+  assert (write (fd, &P->out_seq_no, 4) == 4);
+}
+
+void write_secret_chat_file (struct tgl_state *TLS) {
+  char *name = 0;
+  if (asprintf (&name, "%s/%s", TLS->base_path, "secret") < 0) {
+    return;
+  }
+  int secret_chat_fd = open (name, O_CREAT | O_RDWR, 0600);
+  free (name);
+  assert (secret_chat_fd >= 0);
+  int x = SECRET_CHAT_FILE_MAGIC;
+  assert (write (secret_chat_fd, &x, 4) == 4);
+  x = 2;
+  assert (write (secret_chat_fd, &x, 4) == 4); // version
+  assert (write (secret_chat_fd, &x, 4) == 4); // num
+  
+  int y[2];
+  y[0] = secret_chat_fd;
+  y[1] = 0;
+  
+  tgl_peer_iterator_ex (TLS, write_secret_chat, y);
+  
+  lseek (secret_chat_fd, 8, SEEK_SET);
+  assert (write (secret_chat_fd, &y[1], 4) == 4);
+  close (secret_chat_fd);
+}
+
+void read_secret_chat (struct tgl_state *TLS, int fd, int v) {
+  int id, l, user_id, admin_id, date, ttl, layer, state;
+  long long access_hash, key_fingerprint;
+  static char s[1000];
+  static unsigned char key[256];
+  static unsigned char sha[20];
+  assert (read (fd, &id, 4) == 4);
+  //assert (read (fd, &flags, 4) == 4);
+  assert (read (fd, &l, 4) == 4);
+  assert (l > 0 && l < 1000);
+  assert (read (fd, s, l) == l);
+  assert (read (fd, &user_id, 4) == 4);
+  assert (read (fd, &admin_id, 4) == 4);
+  assert (read (fd, &date, 4) == 4);
+  assert (read (fd, &ttl, 4) == 4);
+  assert (read (fd, &layer, 4) == 4);
+  assert (read (fd, &access_hash, 8) == 8);
+  assert (read (fd, &state, 4) == 4);
+  assert (read (fd, &key_fingerprint, 8) == 8);
+  assert (read (fd, &key, 256) == 256);
+  if (v >= 2) {
+    assert (read (fd, sha, 20) == 20);
+  }
+  int in_seq_no = 0, out_seq_no = 0, last_in_seq_no = 0;
+  if (v >= 1) {
+    assert (read (fd, &in_seq_no, 4) == 4);
+    assert (read (fd, &last_in_seq_no, 4) == 4);
+    assert (read (fd, &out_seq_no, 4) == 4);
+  }
+  
+  bl_do_encr_chat_create (TLS, id, user_id, admin_id, s, l);
+  struct tgl_secret_chat  *P = (void *)tgl_peer_get (TLS, TGL_MK_ENCR_CHAT (id));
+  assert (P && (P->flags & FLAG_CREATED));
+  bl_do_encr_chat_set_date (TLS, P, date);
+  bl_do_encr_chat_set_ttl (TLS, P, ttl);
+  bl_do_encr_chat_set_layer (TLS ,P, layer);
+  bl_do_encr_chat_set_state (TLS, P, state);
+  bl_do_encr_chat_set_key (TLS, P, key, key_fingerprint);
+  if (v >= 2) {
+    bl_do_encr_chat_set_sha (TLS, P, sha);
+  } else {
+    SHA1 ((void *)key, 256, sha);
+    bl_do_encr_chat_set_sha (TLS, P, sha);
+  }
+  if (v >= 1) {
+    bl_do_encr_chat_set_seq (TLS, P, in_seq_no, last_in_seq_no, out_seq_no);
+  }
+  bl_do_encr_chat_set_access_hash (TLS, P, access_hash);
+}
+
+void read_secret_chat_file (struct tgl_state *TLS) {
+  char *name = 0;
+  if (asprintf (&name, "%s/%s", TLS->base_path, "secret") < 0) {
+    return;
+  }
+  
+  int secret_chat_fd = open (name, O_RDWR, 0600);
+  free (name);
+  
+  if (secret_chat_fd < 0) { return; }
+  
+  int x;
+  if (read (secret_chat_fd, &x, 4) < 4) { close (secret_chat_fd); return; }
+  if (x != SECRET_CHAT_FILE_MAGIC) { close (secret_chat_fd); return; }
+  int v = 0;
+  assert (read (secret_chat_fd, &v, 4) == 4);
+  assert (v == 0 || v == 1 || v == 2); // version
+  assert (read (secret_chat_fd, &x, 4) == 4);
+  assert (x >= 0);
+  while (x -- > 0) {
+    read_secret_chat (TLS, secret_chat_fd, v);
+  }
+  close (secret_chat_fd);
+}
+
 void telegram_export_authorization (struct tgl_state *TLS);
 void export_auth_callback (struct tgl_state *TLS, void *extra, int success) {
   if (!error_if_val_false(TLS, success, "Authentication Export failed.")) {
@@ -397,6 +529,7 @@ static int check_all_authorized (gpointer arg) {
 void telegram_login (struct tgl_state *TLS) {    
   read_auth_file (TLS);
   read_state_file (TLS);
+  read_secret_chat_file (TLS);
   if (all_authorized (TLS)) {
     telegram_send_sms (TLS);
     return;

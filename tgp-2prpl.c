@@ -68,26 +68,12 @@ PurpleConnection *tg_get_conn (struct tgl_state *TLS) {
   return (PurpleConnection *) ((connection_data *)TLS->ev_base)->gc;
 }
 
-static char *peer_strdup_id(tgl_peer_id_t user) {
+static char *p2tgl_peer_strdup_id (tgl_peer_id_t user) {
   return g_strdup_printf("%d", tgl_get_peer_id(user));
 }
 
-char *p2tgl_strdup_alias(tgl_peer_t *user) {
-  char *alias = malloc(64);
-
-  // snprintf returs number of bytes it wanted to write
-  // negative return points on write error
-  // should never happen
-  int r = user_get_alias(user, alias, 64);
-  if (r >= 64) {
-    warning ("user name too long");
-    alias[63] = 0;
-  }
-  assert (r >= 0);
-
-  gchar *g_alias = g_strdup(alias);
-  free (alias);
-  return g_alias;
+gchar *p2tgl_strdup_alias (tgl_peer_t *user) {
+  return g_strdup (user->print_name);
 }
 
 int p2tgl_status_is_present (PurpleStatus *status)
@@ -203,6 +189,14 @@ PurpleBuddy *p2tgl_buddy_update (struct tgl_state *TLS, tgl_peer_t *user, unsign
     g_free (alias);
   }
   return b;
+}
+
+void p2tgl_prpl_got_set_status_mobile (struct tgl_state *TLS, tgl_peer_id_t user) {
+  char *name = peer_strdup_id (user);
+  
+  purple_prpl_got_user_status (tg_get_acc(TLS), name, "mobile", NULL);
+  
+  g_free (name);
 }
 
 void p2tgl_prpl_got_user_status (struct tgl_state *TLS, tgl_peer_id_t user, struct tgl_user_status *status) {
