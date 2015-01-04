@@ -220,6 +220,16 @@ static void tgl_do_send_unescape_message (struct tgl_state *TLS, const char *mes
   g_free(raw);
 }
 
+static tgl_peer_t *find_peer_by_name (struct tgl_state *TLS, const char *who) {
+  tgl_peer_t *peer = tgl_peer_get (TLS, TGL_MK_USER(atoi (who)));
+  if (peer) { return peer; }
+  peer = tgl_peer_get (TLS, TGL_MK_CHAT(atoi(who)));
+  if (peer) { return peer; }
+  peer = tgl_peer_get (TLS, TGL_MK_ENCR_CHAT(atoi(who)));
+  if (peer) { return peer; }
+  return NULL;
+}
+
 static int our_msg (struct tgl_state *TLS, struct tgl_message *M) {
   //return tgl_get_peer_id(M->from_id) == TLS->our_id;
   //return M->out;
@@ -455,22 +465,7 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
     purple_blist_add_buddy (buddy, NULL, tggroup, NULL);
     purple_blist_alias_buddy (buddy, U->print_name);
   }
-  
-  if (U->first_key_sha[0]) {
-    // display secret key
-    PurpleNotifyUserInfo *info = purple_notify_user_info_new();
-    int sha1key_store_id = generate_ident_icon (TLS, U->first_key_sha);
-    if (sha1key_store_id != -1) {
-      char *ident_icon = format_img_full (sha1key_store_id);
-      purple_notify_user_info_add_pair (info, "Secret Key", ident_icon);
-      g_free(ident_icon);
-    }
-    connection_data *conn = TLS->ev_base;
-    char *id = g_strdup_printf ("%d", tgl_get_peer_id (U->id));
-    purple_notify_userinfo (conn->gc, id, info, NULL, NULL);
-    g_free (id);
-  }
-  
+
   p2tgl_prpl_got_set_status_mobile (TLS, U->id);
 
   if ((flags & TGL_UPDATE_WORKING) || (flags & TGL_UPDATE_DELETED)) {
@@ -801,12 +796,7 @@ static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *m
      searching it in the peer tree. This allows us to give immediate feedback 
      by returning an error-code in case the peer doesn't exist
    */
-  tgl_peer_t *peer = tgl_peer_get (conn->TLS, TGL_MK_USER(atoi (who)));
-  if (peer) {
-    tgl_do_send_unescape_message (conn->TLS, message, peer->id);
-    return 1;
-  }
-  peer = tgl_peer_get (conn->TLS, TGL_MK_ENCR_CHAT(atoi(who)));
+  tgl_peer_t *peer = find_peer_by_name (conn->TLS, who);
   if (peer) {
     tgl_do_send_unescape_message (conn->TLS, message, peer->id);
     return 1;
@@ -831,11 +821,35 @@ static unsigned int tgprpl_send_typing (PurpleConnection * gc, const char *who, 
   return 0;
 }
 
-static void tgprpl_get_info (PurpleConnection * gc, const char *username) {
+static void tgprpl_get_info (PurpleConnection * gc, const char *who) {
   debug ("tgprpl_get_info()\n");
   connection_data *conn = purple_connection_get_protocol_data(gc);
-  tgl_peer_id_t u = TGL_MK_USER(atoi(username));
-  tgl_do_get_user_info (conn->TLS, u, 0, on_user_get_info, (void *)1l);
+  
+  tgl_peer_t *peer = find_peer_by_name (conn->TLS, who);
+  if (! peer) { return; }
+  
+  switch (tgl_get_peer_type (peer->id)) {
+    case TGL_PEER_USER:
+    case TGL_PEER_CHAT:
+      tgl_do_get_user_info (conn->TLS, peer->id, 0, on_user_get_info, (void *)1l);
+      break;
+    case TGL_PEER_ENCR_CHAT: {
+      if (peer->encr_chat.first_key_sha[0]) {
+          // display secret key
+          PurpleNotifyUserInfo *info = purple_notify_user_info_new();
+          int sha1key_store_id = generate_ident_icon (conn->TLS, peer->encr_chat.first_key_sha);
+          if (sha1key_store_id != -1) {
+            char *ident_icon = format_img_full (sha1key_store_id);
+            purple_notify_user_info_add_pair (info, "Secret Key", ident_icon);
+            g_free(ident_icon);
+          }
+          char *id = g_strdup_printf ("%d", tgl_get_peer_id (peer->id));
+          purple_notify_userinfo (conn->gc, id, info, NULL, NULL);
+          g_free (id);
+        }
+      }
+      break;
+  }
 }
 
 static void tgprpl_set_status (PurpleAccount * acct, PurpleStatus * status) {
