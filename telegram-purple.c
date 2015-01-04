@@ -51,6 +51,7 @@
 #include "request.h"
 
 #include <tgl.h>
+#include <tools.h>
 #include "tgp-structs.h"
 #include "tgp-2prpl.h"
 #include "tgp-net.h"
@@ -82,7 +83,7 @@ static char *format_status (struct tgl_user_status *status) {
 }
 
 static char *format_img_full (int imgstore) {
-  return g_strdup_printf ("<br><img id=\"%u\">", imgstore);
+  return g_strdup_printf ("<img id=\"%u\">", imgstore);
 }
 
 static char *format_img_thumb (int imgstore, char *filename) __attribute__ ((unused));
@@ -178,6 +179,40 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M)
   return txt;
 }
 
+static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4) {
+  const char *d[4];
+  d[0] = a1; d[1] = a2; d[2] = a3; d[3] = a4;
+  static char buf[10000];
+  buf[0] = 0;
+  int i;
+  int p = 0;
+  for (i = 0; i < 4; i++) {
+    if (d[i] && strlen (d[i])) {
+      p += tgl_snprintf (buf + p, 9999 - p, "%s%s", p ? " " : "", d[i]);
+      assert (p < 9990);
+    }
+  }
+  char *s = buf;
+  while (*s) {
+    if (*s == '\n') { *s = ' '; }
+    if (*s == '#') { *s = '@'; }
+    s++;
+  }
+  s = buf;
+  int fl = strlen (s);
+  int cc = 0;
+  while (1) {
+    tgl_peer_t *P = tgl_peer_get_by_name (TLS, s);
+    if (!P || !tgl_cmp_peer_id (P->id, id)) {
+      break;
+    }
+    cc ++;
+    assert (cc <= 9999);
+    tgl_snprintf (s + fl, 9999 - fl, " #%d", cc);
+  }
+  return tgl_strdup (s);
+}
+
 static void tgl_do_send_unescape_message (struct tgl_state *TLS, const char *message, tgl_peer_id_t to)
 {
   gchar *raw = purple_unescape_html(message);
@@ -250,7 +285,8 @@ struct tgl_update_callback tgp_callback = {
   .user_update = update_user_handler,
   .chat_update = update_chat_handler,
   .secret_chat_update = update_secret_chat_handler,
-  .type_notification = update_user_typing
+  .type_notification = update_user_typing,
+  .create_print_name = format_print_name
 };
 
 void on_message_load_photo (struct tgl_state *TLS, void *extra, int success, char *filename) {
