@@ -40,8 +40,13 @@ typedef struct {
   int in_fallback_chat;
 } connection_data;
 
+typedef struct { 
+  int show_info; 
+  tgl_peer_t *peer; 
+}get_user_info_data;
+
 struct download_desc {
-  int type;
+  get_user_info_data *get_user_info_data;
   void *data;
 };
 
