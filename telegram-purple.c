@@ -61,6 +61,8 @@
 #include "telegram-purple.h"
 #include "msglog.h"
 
+#define _(m) m
+
 PurplePlugin *_telegram_protocol = NULL;
 PurpleGroup *tggroup;
 const char *config_dir = ".telegram-purple";
@@ -458,6 +460,29 @@ static void write_secret_chat_cb (struct tgl_state *TLS, void *extra, int succes
   write_secret_chat_file (TLS);
 }
 
+struct accept_secret_chat_data {
+  struct tgl_state *TLS;
+  struct tgl_secret_chat *U;
+};
+
+static void accept_secret_chat_cb (gpointer _data, const gchar *code) {
+  struct accept_secret_chat_data *data = _data;
+  
+  tgl_do_accept_encr_chat_request (data->TLS, data->U, write_secret_chat_cb, 0);
+  
+  g_free (data);
+}
+
+static void decline_secret_chat_cb (gpointer _data, const gchar *code) {
+  struct accept_secret_chat_data *data = _data;
+  
+  /* TODO: implement the api call to cancel secret chats, see tgprpl_remove_buddy */
+  bl_do_encr_chat_delete (data->TLS, data->U);
+  purple_blist_remove_buddy (p2tgl_buddy_find(data->TLS, data->U->id));
+  
+  g_free (data);
+}
+
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *U, unsigned flags) {
   debug ("secret-chat-state: %d", U->state);
   
@@ -473,19 +498,39 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
       purple_blist_add_buddy (buddy, NULL, tggroup, NULL);
       purple_blist_alias_buddy (buddy, U->print_name);
     }
-    
     p2tgl_prpl_got_set_status_mobile (TLS, U->id);
   }
   
   if (flags & TGL_UPDATE_REQUESTED && buddy)  {
-    // TODO: autoaccept setting, otherwise prompt for ok
-    tgl_do_accept_encr_chat_request (TLS, U, write_secret_chat_cb, 0);
+    connection_data *conn = TLS->ev_base;
+    
+    const char* choice = purple_account_get_string (conn->pa, "accept-secret-chats", "ask");
+    if (! strcmp (choice, "always")) {
+      tgl_do_accept_encr_chat_request (TLS, U, write_secret_chat_cb, 0);
+      
+    } else if (! strcmp(choice, "ask")) {
+      PurpleBuddy *who = p2tgl_buddy_find (TLS, TGL_MK_USER(U->user_id));
+      
+      struct accept_secret_chat_data *data = g_new (struct accept_secret_chat_data, 1);
+      data->TLS = TLS;
+      data->U = U;
+     
+      gchar *message = g_strdup_printf ("Accept Secret Chat '%s'?", U->print_name);
+      
+      purple_request_accept_cancel (conn->gc, "Secret Chat", message, "Secret chats can only have one "
+                                    "end point. If you accept a secret chat on this device, its messages will "
+                                    "not be available anywhere else. If you decline, you can accept"
+                                    " the chat on other devices.", 0, conn->pa, who->name, NULL, data,
+                                    G_CALLBACK(accept_secret_chat_cb), G_CALLBACK(decline_secret_chat_cb));
+      g_free (message);
+    }
   }
   
   if (flags & TGL_UPDATE_CREATED && buddy) {
     purple_buddy_set_protocol_data (buddy, (gpointer)U);
     p2tgl_buddy_update (TLS, (tgl_peer_t *)U, flags);
   }
+  
   if (flags & TGL_UPDATE_DELETED && buddy) {
     p2tgl_got_im (TLS, U->id, "Secret chat terminated.", PURPLE_MESSAGE_SYSTEM | PURPLE_MESSAGE_WHISPER, time(0));
     p2tgl_prpl_got_set_status_offline (TLS, U->id);
@@ -1133,10 +1178,27 @@ static PurplePluginProtocolInfo prpl_info = {
   NULL                     // add_buddies_with_invite
 };
 
-
 static void tgprpl_init (PurplePlugin *plugin) {
+  
   PurpleAccountOption *opt;
   
+  GList *verification_values = NULL;
+  
+#define ADD_VALUE(list, desc, v) { \
+  PurpleKeyValuePair *kvp = g_new0(PurpleKeyValuePair, 1); \
+  kvp->key = g_strdup((desc)); \
+  kvp->value = g_strdup((v)); \
+  list = g_list_prepend(list, kvp); \
+}
+    
+  ADD_VALUE(verification_values, "Ask", "ask");
+  ADD_VALUE(verification_values, "Always", "always");
+  ADD_VALUE(verification_values, "Never", "never");
+ 
+  opt = purple_account_option_list_new("Accept Secret Chats", "accept-secret-chats", verification_values);
+  prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
+  
+
   opt = purple_account_option_bool_new("Fallback SMS verification", "compat-verification", 0);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
   
