@@ -86,13 +86,13 @@ static char *format_status (struct tgl_user_status *status) {
 }
 
 static char *format_img_full (int imgstore) {
-  return g_strdup_printf ("<br><img id=\"%u\">", imgstore);
-}
-
-static char *format_img_thumb (int imgstore, char *filename) __attribute__ ((unused));
-static char *format_img_thumb (int imgstore, char *filename) {
-  return g_strdup_printf("<a href=\"%s\"><img id=\"%u\"></a><br/><a href=\"%s\">%s</a>",
-           filename, imgstore, filename, filename);
+  const char *br = "<br>";
+  
+  // <br>'s look ugly in Adium, but no <br> will look ugly in Pidgin
+#ifdef __ADIUM_
+  br = "";
+#endif
+  return g_strdup_printf ("%s<img id=\"%u\">",br, imgstore);
 }
 
 static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M)
@@ -254,17 +254,13 @@ static gboolean queries_timerfunc (gpointer data) {
   return 1;
 }
 
-static void created_secret_chat (struct tgl_state *TLS, void *data, int success, struct tgl_secret_chat *chat) {
-  debug ("created_secret_chat: success=%d\n", success);
-}
-
 static void start_secret_chat (PurpleBlistNode *node, gpointer data) {
   PurpleBuddy *buddy = data;
   connection_data *conn = purple_connection_get_protocol_data (
                            purple_account_get_connection (purple_buddy_get_account(buddy)));
   
   tgl_do_create_secret_chat(conn->TLS, TGL_MK_USER(atoi (purple_buddy_get_name (buddy))),
-                            created_secret_chat, buddy);
+                            0, 0);
 }
 
 static void on_update_user_name (struct tgl_state *TLS, tgl_peer_t *user) __attribute__ ((unused));
@@ -609,10 +605,9 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
   char *who = g_strdup_printf ("%d", tgl_get_peer_id (U->id));
   if (dld->get_user_info_data->show_info == 1) {
     PurpleNotifyUserInfo *info = create_user_notify_info(U);
-    char *profile_image = profile_image = format_img_full(imgStoreId);
-    purple_notify_user_info_add_pair (info, "Profile image", profile_image);
     
     if (dld->get_user_info_data->peer && dld->get_user_info_data->peer->encr_chat.first_key_sha[0]) {
+      
       // display secret key
       int sha1key_store_id = generate_ident_icon (conn->TLS, dld->get_user_info_data->peer->encr_chat.first_key_sha);
       if (sha1key_store_id != -1) {
@@ -620,12 +615,15 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
         purple_notify_user_info_add_pair (info, "Secret key", ident_icon);
         g_free(ident_icon);
       }
-      char *id = g_strdup_printf ("%d", tgl_get_peer_id (dld->get_user_info_data->peer->id));
-      purple_notify_userinfo (conn->gc, id, info, NULL, NULL);
-      g_free (id);
-    } else {
-      purple_notify_userinfo (conn->gc, who, info, NULL, NULL);
+      
+      g_free (who);
+      who = g_strdup_printf ("%d", tgl_get_peer_id (dld->get_user_info_data->peer->id));
     }
+    
+    char *profile_image = profile_image = format_img_full (imgStoreId);
+    purple_notify_user_info_add_pair (info, "Profile image", profile_image);
+    purple_notify_userinfo (conn->gc, who, info, NULL, NULL);
+    
     g_free (profile_image);
   }
   if (dld->get_user_info_data->peer) {
