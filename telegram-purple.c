@@ -51,6 +51,7 @@
 #include "request.h"
 
 #include <tgl.h>
+#include <tgl-binlog.h>
 #include <tools.h>
 #include "tgp-structs.h"
 #include "tgp-2prpl.h"
@@ -425,7 +426,6 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
 }
 
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, unsigned flags) {
-//  if (!(flags & TGL_UPDATE_CREATED)) { return; }
   if (TLS->our_id == tgl_get_peer_id (user->id)) {
     if (flags & TGL_UPDATE_NAME) {
       p2tgl_connection_set_display_name (TLS, (tgl_peer_t *)user);
@@ -459,42 +459,40 @@ static void write_secret_chat_cb (struct tgl_state *TLS, void *extra, int succes
 }
 
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *U, unsigned flags) {
-  if (U->state == sc_none) { return; }
   debug ("secret-chat-state: %d", U->state);
   
-  PurpleBuddy *buddy = p2tgl_buddy_find (TLS, U->id);
-  if (!buddy) {
-    buddy = p2tgl_buddy_new (TLS, (tgl_peer_t *)U);
-    purple_blist_add_buddy (buddy, NULL, tggroup, NULL);
-    purple_blist_alias_buddy (buddy, U->print_name);
-  }
-
-  p2tgl_prpl_got_set_status_mobile (TLS, U->id);
-
-  if ((flags & TGL_UPDATE_WORKING) || (flags & TGL_UPDATE_DELETED)) {
+  if (flags & TGL_UPDATE_WORKING || flags & TGL_UPDATE_DELETED) {
     write_secret_chat_file (TLS);
   }
+
+  PurpleBuddy *buddy = p2tgl_buddy_find (TLS, U->id);
   
-  if ((flags & TGL_UPDATE_REQUESTED))  {
+  if (! (flags & TGL_UPDATE_DELETED)) {
+    if (!buddy) {
+      buddy = p2tgl_buddy_new (TLS, (tgl_peer_t *)U);
+      purple_blist_add_buddy (buddy, NULL, tggroup, NULL);
+      purple_blist_alias_buddy (buddy, U->print_name);
+    }
+    
+    p2tgl_prpl_got_set_status_mobile (TLS, U->id);
+  }
+  
+  if (flags & TGL_UPDATE_REQUESTED && buddy)  {
     // TODO: autoaccept setting, otherwise prompt for ok
     tgl_do_accept_encr_chat_request (TLS, U, write_secret_chat_cb, 0);
   }
   
-  if (flags & TGL_UPDATE_CREATED) {
+  if (flags & TGL_UPDATE_CREATED && buddy) {
     purple_buddy_set_protocol_data (buddy, (gpointer)U);
     p2tgl_buddy_update (TLS, (tgl_peer_t *)U, flags);
   }
-  if (flags & (TGL_UPDATE_NAME | TGL_UPDATE_REAL_NAME | TGL_UPDATE_USERNAME) && buddy) {
-  }
-  if (flags & (TGL_UPDATE_PHOTO)) {
-  }
   if (flags & TGL_UPDATE_DELETED && buddy) {
-    purple_blist_remove_buddy (buddy);
+    p2tgl_got_im (TLS, U->id, "Secret chat terminated.", PURPLE_MESSAGE_SYSTEM | PURPLE_MESSAGE_WHISPER, time(0));
+    p2tgl_prpl_got_set_status_offline (TLS, U->id);
   }
 }
 
 static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, unsigned flags) {
-  //tgl_do_get_chat_info (TLS, chat->id, 0, on_chat_get_info, 0);
   PurpleChat *ch = p2tgl_chat_find (TLS, chat->id);
   
   if (flags & TGL_UPDATE_CREATED) {
@@ -506,17 +504,14 @@ static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, u
   if (flags & TGL_UPDATE_TITLE && ch) {
     purple_blist_alias_chat (ch, chat->print_title);
   }
-  if (flags & (TGL_UPDATE_MEMBERS | TGL_UPDATE_ADMIN)) {
+  if (flags & (TGL_UPDATE_MEMBERS | TGL_UPDATE_ADMIN) && ch) {
     on_update_chat_participants (TLS, chat);
   }
-  if (flags & TGL_UPDATE_DELETED) {
-    PurpleChat *ch = p2tgl_chat_find (TLS, chat->id);
-    if (ch) {
-      purple_blist_remove_chat (ch);
-    } else {
-      warning ("Cannot delete chat %d, not in buddy list.", chat->id);
-    }
+  if (flags & TGL_UPDATE_DELETED && ch) {
+    purple_blist_remove_chat (ch);
   }
+  
+  // TODO: check if user is a member of the current chat and don't display the chat in that case
 }
 
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status) {
@@ -816,9 +811,7 @@ static void tgprpl_close (PurpleConnection * gc) {
 
 static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *message, PurpleMessageFlags flags) {
   debug ("tgprpl_send_im()\n");
-  
   connection_data *conn = purple_connection_get_protocol_data(gc);
-  PurpleAccount *pa = conn->pa;
  
   // this is part of a workaround to support clients without
   // the request API (request.h), see telegram-base.c:request_code()
@@ -828,12 +821,6 @@ static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *m
     return 1;
   }
   
-  PurpleBuddy *b = purple_find_buddy (pa, who);
-  if (!b) {
-    warning ("Buddy %s not found, cannot send IM\n", who);
-    return -1;
-  }
-  
   /* 
      Make sure that we only send messages to an existing peer by
      searching it in the peer tree. This allows us to give immediate feedback 
@@ -841,6 +828,12 @@ static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *m
    */
   tgl_peer_t *peer = find_peer_by_name (conn->TLS, who);
   if (peer) {
+
+    if (tgl_get_peer_type(peer->id) == TGL_PEER_ENCR_CHAT && peer->encr_chat.state != sc_ok) {
+      // secret chat not ready for sending messages or deleted
+      return -1;
+    }
+    
     tgl_do_send_unescape_message (conn->TLS, message, peer->id);
     return 1;
   }
@@ -920,12 +913,27 @@ static void tgprpl_add_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Purple
 static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, PurpleGroup * group) {
   debug ("tgprpl_remove_buddy()\n");
   if (!buddy) { return; }
-  
+
   connection_data *conn = purple_connection_get_protocol_data (gc);
-  struct tgl_user *user = purple_buddy_get_protocol_data (buddy);
-  if (!user) { warning ("cannot remove buddy '%s', no protocol data found\n", buddy->name); return; }
   
-  tgl_do_del_contact (conn->TLS, user->id, NULL, NULL);
+  tgl_peer_t *peer = find_peer_by_name (conn->TLS, buddy->name);
+  if (!peer) {
+    // telegram peer not existing, orphaned buddy
+    return;
+  }
+  
+  switch (tgl_get_peer_type(peer->id)) {
+    case TGL_PEER_ENCR_CHAT:
+      /* TODO: implement the api call cancel secret chats. Currently the chat will only be marked as 
+               deleted on our side so that it won't be added on startup 
+              (when the secret chat file is loaded) */
+      bl_do_encr_chat_delete (conn->TLS, &peer->encr_chat);
+      break;
+    case TGL_PEER_USER:
+      tgl_do_del_contact (conn->TLS, peer->id, NULL, NULL);
+      break;
+  }
+  
 }
 
 static void tgprpl_add_deny (PurpleConnection * gc, const char *name){

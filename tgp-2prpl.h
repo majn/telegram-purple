@@ -54,6 +54,7 @@ PurpleBuddy *p2tgl_buddy_update (struct tgl_state *TLS, tgl_peer_t *user, unsign
 void         p2tgl_buddy_add_data (struct tgl_state *TLS, tgl_peer_id_t user, void *data);
 void p2tgl_prpl_got_user_status (struct tgl_state *TLS, tgl_peer_id_t user, struct tgl_user_status *status);
 void p2tgl_prpl_got_set_status_mobile (struct tgl_state *TLS, tgl_peer_id_t user);
+void p2tgl_prpl_got_set_status_offline (struct tgl_state *TLS, tgl_peer_id_t user);
 
 void p2tgl_connection_set_display_name(struct tgl_state *TLS, tgl_peer_t *user);
 void p2tgl_conv_del_user (PurpleConversation *conv, tgl_peer_id_t user);

@@ -165,6 +165,14 @@ void p2tgl_prpl_got_set_status_mobile (struct tgl_state *TLS, tgl_peer_id_t user
   g_free (name);
 }
 
+void p2tgl_prpl_got_set_status_offline (struct tgl_state *TLS, tgl_peer_id_t user) {
+  char *name = p2tgl_peer_strdup_id (user);
+  
+  purple_prpl_got_user_status (tg_get_acc(TLS), name, "offline", NULL);
+  
+  g_free (name);
+}
+
 void p2tgl_prpl_got_user_status (struct tgl_state *TLS, tgl_peer_id_t user, struct tgl_user_status *status) {
   
   if (status->online == 1) {
