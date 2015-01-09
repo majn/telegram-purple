@@ -262,43 +262,14 @@ static void conn_try_write (gpointer arg, gint source, PurpleInputCondition cond
   }
 }
 
-#define MAX_EXP_TIMEOUT 3200
-#define MIN_EXP_TIMEOUT 100
-
-static gboolean reconnect_alarm (gpointer arg)
-{
-  struct connection *c = arg;
-  fail_connection (c);
-  return FALSE;
-}
-
-static int exp_timeout_inc (struct connection *c)
-{
-  if (c->conn_timeout * 2 <= MAX_EXP_TIMEOUT) {
-    return c->conn_timeout *= 2;
-  } else {
-    return MAX_EXP_TIMEOUT;
-  }
-}
-
-static void exp_timeout_res(struct connection *c)
-{
-  c->conn_timeout = MIN_EXP_TIMEOUT;
-}
-
 static void net_on_connected (gpointer arg, gint fd, const gchar *error_message) {
   struct connection *c = arg;
   struct tgl_state *TLS = c->TLS;
   vlogprintf (E_DEBUG - 2, "connect result: %d\n", fd);
 
   if (fd == -1) {
-    // reconnect after exponential timeout on failed connection, to prevent an
-    // infinite loop of reconnects in case the connection is completely gone
-    int t = exp_timeout_inc(c);
-    purple_timeout_add (t, reconnect_alarm, c);
     return;
   }
-  exp_timeout_res(c);
 
   c->fd = fd;
   c->read_ev = purple_input_add (fd, PURPLE_INPUT_READ, conn_try_read, c);
@@ -332,8 +303,6 @@ struct connection *tgln_create_connection (struct tgl_state *TLS, const char *ho
   c->dc = dc;
   c->session = session;
   c->methods = methods;
-  
-  c->conn_timeout = MIN_EXP_TIMEOUT;
 
   connection_data *conn = TLS->ev_base;
   c->prpl_data = purple_proxy_connect (conn->gc, conn->pa, host, port, net_on_connected, c);

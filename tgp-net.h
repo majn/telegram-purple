@@ -64,7 +64,6 @@ struct connection {
   int write_ev;
   double last_receive_time;
   void *prpl_data;
-  int conn_timeout;
 };
 
 //extern struct connection *Connections[];
