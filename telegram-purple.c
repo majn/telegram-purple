@@ -657,14 +657,11 @@ void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, stru
         if (sha1key_store_id != -1) {
           char *ident_icon = format_img_full (sha1key_store_id);
           purple_notify_user_info_add_pair (info, "Secret key", ident_icon);
-          g_free(ident_icon);
+          g_free (ident_icon);
         }
-        char *id = g_strdup_printf ("%d", tgl_get_peer_id (user_info_data->peer->id));
-        connection_data *conn = TLS->ev_base;
-        purple_notify_userinfo (conn->gc, id, info, NULL, NULL);
-        g_free (id);
+        p2tgl_notify_userinfo (TLS, user_info_data->peer->id, info, NULL, NULL);
       } else {
-	      p2tgl_notify_userinfo(TLS, U->id, info, NULL, NULL);
+	      p2tgl_notify_userinfo (TLS, U->id, info, NULL, NULL);
       }
     }
     g_free(user_info_data);
@@ -907,7 +904,6 @@ static void tgprpl_get_info (PurpleConnection * gc, const char *who) {
   tgl_peer_t *peer = find_peer_by_name (conn->TLS, who);
   if (! peer) { return; }
   
-
   get_user_info_data* info_data = malloc (sizeof(get_user_info_data));
   info_data->show_info = 1;
   info_data->peer = peer;
@@ -919,12 +915,20 @@ static void tgprpl_get_info (PurpleConnection * gc, const char *who) {
       break;
     case TGL_PEER_ENCR_CHAT: {
       tgl_peer_t *parent_peer;
-      if(peer->encr_chat.admin_id == conn->TLS->our_id){
+      
+      if (peer->encr_chat.state == sc_waiting) {
+        PurpleNotifyUserInfo *info = purple_notify_user_info_new();
+        purple_notify_user_info_add_pair (info, "", "Waiting for user to get online ...");
+        p2tgl_notify_userinfo (conn->TLS, peer->id, info, NULL, NULL);
+        return;
+      }
+      
+      if (peer->encr_chat.admin_id == conn->TLS->our_id){
         parent_peer = tgl_peer_get (conn->TLS, TGL_MK_USER(peer->encr_chat.user_id));
       } else {
         parent_peer = tgl_peer_get (conn->TLS, TGL_MK_USER(peer->encr_chat.admin_id));
       }
-      if(parent_peer){
+      if (parent_peer){
         tgl_do_get_user_info(conn->TLS, parent_peer->id, 0, on_user_get_info, info_data);
       }
       break;
