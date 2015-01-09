@@ -5,11 +5,50 @@ Telegram-purple is a Libpurple plugin that adds support for the Telegram messeng
 
 The plugin is based on the library [Libtgl](https://github.com/vysheng/tgl), which was written by Vitaly Valtman <mail@vysheng.ru> and others, see (http://github.com/vysheng/tgl)
 
+# Features
+
+    - Secret Chats (See the section below for further information)
+    - Chats/Group-Chats
+        * Send/receive messages
+        * Discover buddies/chats
+        * Discover buddy state and info
+    - Profile Pictures
+        * Download and use profile pictures
+    - Adium Plugin
+
+
+## Using secret chats
+
+You can use Telegram secret chats with this plugin, they will show up as a new buddy with a '!' in front of the buddy name.
+
+One caveat of secret chats in Telegram is that they can only have one endpoint, this is a limitation of the protocol. This means that if you create a secret chat in Pidgin you will not be able to use that chat on your phone. You will be asked whether to accept each secret chat, so you can always choose to accept the chat on a different device if you want. You can set a default behavior for dealing with secret chats (Accept or Decline) in the account settings if you don't want that prompt to appear every time.
+
+Self destructive messages will be ignored, since I don't know any way to delete them from the conversation and the history.
+
+
+### Confirming the key authenticity
+
+Click on the buddy in the buddy list and click on "Show Info" to visualize the key fingerprint.  
+
+### Initiate secret chats
+
+To initiate a secret chat from Pidgin, click on a Buddy in the Buddy List and hit ``Start Secret Chat''
+
+### Deleting secret chat
+
+If you delete a secret chat from the buddy list, it will be terminated and no longer be usable.
+
+
 # Changelog
 
 Warning, this version is mainly for development and testing and NOT for productive use. Even though it already provides basic features, you should still expect bugs and crashes when running it.
 
 When encountering a crash or some other bugs, please report it to us, preferably together with a backtrace of the crashed application [https://developer.pidgin.im/wiki/GetABacktrace]
+
+## Version 0.6
+
+    - Support for secret chats 
+
 
 ## Version 0.5
 
@@ -24,27 +63,11 @@ When encountering a crash or some other bugs, please report it to us, preferably
     
     - Use latest version of libtgl
 
-# Features
-
-## Already Implemented:
-
-    - Chats/Group-Chats
-        * Send/receive messages
-        * Discover buddies/chats
-        * Discover buddy state and info
-    - Profile Pictures
-        * Download and use profile pictures
-    - Adium Plugin
-
 ## TODO:
 
-The following features are currently planned and will probably be added in the future:
-
-    - Encrypted chats
     - Picture, audio and video messages
     - File transfers
     - Geo-locations
-    - Multiple accounts on one client
 
 
 ## Platform Support
@@ -84,15 +107,12 @@ On Debian-based systems you can use:
         sudo apt-get install libssl-dev libglib2.0-dev libpurple-dev
 
 
-
 ### OpenSUSE
 
-        
         sudo zypper install gcc glib glib-devel libpurple libpurple-devel zlib-devel openssl libopenssl-devel
 
 
 ## 3. Compile and install
-
 
         ./configure
         make
@@ -132,12 +152,10 @@ To clean all your user files run:
 This bundle was tested to work under OSX 10.8 to 10.10. If it doesn't work on your installation
 please send your Adium crash log (which you can find in ~/Library/Logs/Adium 2/).
 
-[Version 0.5](http://h2079792.stratoserver.net/telegram-purple/telegram-adium-0.5.zip)
-
 
 ### Older Versions
 
-[Version 0.3.2](http://h2079792.stratoserver.net/telegram-purple/telegram-adium-0.3.2.zip)
+[Version 0.5](http://h2079792.stratoserver.net/telegram-purple/telegram-adium-0.5.zip)
 
 [Version 0.3.3](http://h2079792.stratoserver.net/telegram-purple/telegram-adium-0.3.3.zip)
 
@@ -163,6 +181,3 @@ Telegram-Purple and Telegram-Adium were written by:
     - Christopher Althaus <althaus.christopher@gmail.com>
     - Markus Endres <endresma45241@th-nuernberg.de>
     - Vitaly Valtman
-
-
-
