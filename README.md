@@ -18,6 +18,42 @@ The plugin is based on the library [Libtgl](https://github.com/vysheng/tgl), whi
     - Display Pictures
     - Adium Support
 
+
+# Installation
+
+Unfortunately there are no packages right now, so you need to compile it yourself:
+
+## 1. Get this repository
+
+
+        git clone --recursive https://github.com/majn/telegram-purple
+
+
+## 2. Get all Dependencies
+
+
+### Fedora
+
+        sudo yum install gcc openssl-devel glib2-devel libpurple-devel
+
+
+### Debian
+
+        sudo apt-get install libssl-dev libglib2.0-dev libpurple-dev
+
+
+### OpenSUSE
+
+        sudo zypper install gcc glib glib-devel libpurple libpurple-devel zlib-devel openssl libopenssl-devel
+
+
+## 3. Compile and install
+
+        ./configure
+        make
+        sudo make install
+
+
 # Usage
 
 ## First Login
@@ -59,49 +95,6 @@ If you delete a secret chat from the buddy list, it will be terminated and no lo
 
 We only provide an installation guide for Linux right now, even though it should be possible to compile this plugin on other platforms. If someone manages to create a working Windows or BSD-build please let us know.
 
-
-# Installation Instructions
-
-Unfortunately there are no packages right now, so you need to compile it yourself:
-
-## 1. Get this repository
-
-
-        git clone --recursive https://github.com/majn/telegram-purple
-
-
-## 2. Fetch all needed dependencies
-
-This plugin depends on a working libpurple client (like Pidgin or Finch) and the following packages:
-
-        - glib-2.0
-        - libssl
-        - libpurple
-        - libzlib
-
-### Fedora
-
-On Fedora you can install all dependencies with:
-
-        sudo yum install gcc openssl-devel glib2-devel libpurple-devel
-
-### Debian
-
-On Debian-based systems you can use:
-
-        sudo apt-get install libssl-dev libglib2.0-dev libpurple-dev
-
-
-### OpenSUSE
-
-        sudo zypper install gcc glib glib-devel libpurple libpurple-devel zlib-devel openssl libopenssl-devel
-
-
-## 3. Compile and install
-
-        ./configure
-        make
-        sudo make install
 
 
 # Troubleshooting
