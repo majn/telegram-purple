@@ -216,6 +216,50 @@ static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const c
   return tgl_strdup (s);
 }
 
+static char *format_document_desc (char *type, char *caption, gint64 size) {
+  char *s = g_format_size (size);
+  char *msg = g_strdup_printf ("[%s] %s %s", type, caption, s);
+  g_free (s);
+  return msg;
+}
+
+static char *format_message (struct tgl_message *M) {
+
+  switch (M->media.type) {
+    case tgl_message_media_audio:
+      return format_document_desc("AUDIO", "", M->media.audio.size);
+      break;
+    case tgl_message_media_audio_encr:
+      return format_document_desc("AUDIO", "", M->media.encr_audio.size);
+      break;
+    case tgl_message_media_document:
+      return format_document_desc("DOCUMENT", M->media.document.caption, M->media.document.size);
+      break;
+    case tgl_message_media_document_encr:
+      return format_document_desc("DOCUMENT", M->media.encr_document.file_name, M->media.encr_document.size);
+      break;
+    case tgl_message_media_video:
+      return format_document_desc("VIDEO", M->media.video.caption, M->media.video.size);
+      break;
+    case tgl_message_media_video_encr:
+      return format_document_desc("VIDEO", "", M->media.encr_video.size);
+      break;
+    case tgl_message_media_photo_encr:
+      return format_document_desc("PHOTO", "", M->media.encr_photo.size);
+      break;
+    case tgl_message_media_contact:
+      return g_strdup ("[CONTACT]");
+      break;
+    default:
+      if (M->message && *M->message != 0) {
+        return purple_markup_escape_text (M->message, strlen (M->message));
+      }
+      return g_strdup("");
+      break;
+  }
+}
+
+
 static void tgl_do_send_unescape_message (struct tgl_state *TLS, const char *message, tgl_peer_id_t to)
 {
   gchar *raw = purple_unescape_html(message);
@@ -326,9 +370,6 @@ void on_message_load_photo (struct tgl_state *TLS, void *extra, int success, cha
         p2tgl_got_im (TLS, M->from_id, image, PURPLE_MESSAGE_RECV | PURPLE_MESSAGE_IMAGES, M->date);
       }
       break;
-      
-    case TGL_PEER_GEO_CHAT:
-      break;
   }
  
   g_free (image);
@@ -373,50 +414,38 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
     return;
   }
 
-  if (!M->message) {
+  if (!M->message || our_msg(TLS, M)) {
     return;
   }
 
-  char *text = purple_markup_escape_text (M->message, strlen (M->message));
+  char *text = format_message(M);
   switch (tgl_get_peer_type (M->to_id)) {
     case TGL_PEER_CHAT:
-      debug ("PEER_CHAT\n");
-      if (!our_msg(TLS, M)) {
-        chat_add_message (TLS, M, text);
-      }
+      chat_add_message (TLS, M, text);
       break;
       
     case TGL_PEER_ENCR_CHAT:
-      if (!our_msg(TLS, M)) {
         p2tgl_got_im (TLS, M->to_id, text, PURPLE_MESSAGE_RECV, M->date);
         
         pending_reads_add (conn->pending_reads, M->to_id);
         if (p2tgl_status_is_present (purple_account_get_active_status(conn->pa))) {
           pending_reads_send_all (conn->pending_reads, conn->TLS);
         }
-      }
       break;
       
     case TGL_PEER_USER:
-      debug ("PEER_USER\n");
       
-      // p2tgl_got_im (TLS, M->to_id, text, PURPLE_MESSAGE_SEND, M->date);
       // :TODO: figure out how to add messages from different devices to history
-      if (!our_msg(TLS, M)) {
-        if (out_msg(TLS, M)) {
-          p2tgl_got_im (TLS, M->to_id, text, PURPLE_MESSAGE_SEND, M->date);
-        } else {
-          p2tgl_got_im (TLS, M->from_id, text, PURPLE_MESSAGE_RECV, M->date);
-          
-          pending_reads_add (conn->pending_reads, M->from_id);
-          if (p2tgl_status_is_present (purple_account_get_active_status(conn->pa))) {
-            pending_reads_send_all (conn->pending_reads, conn->TLS);
-          }
+      if (out_msg(TLS, M)) {
+        p2tgl_got_im (TLS, M->to_id, text, PURPLE_MESSAGE_SEND, M->date);
+      } else {
+        p2tgl_got_im (TLS, M->from_id, text, PURPLE_MESSAGE_RECV, M->date);
+        
+        pending_reads_add (conn->pending_reads, M->from_id);
+        if (p2tgl_status_is_present (purple_account_get_active_status(conn->pa))) {
+          pending_reads_send_all (conn->pending_reads, conn->TLS);
         }
       }
-      break;
-      
-    case TGL_PEER_GEO_CHAT:
       break;
   }
   
@@ -713,7 +742,6 @@ void on_ready (struct tgl_state *TLS) {
   purple_blist_add_account(conn->pa);
   tggroup = purple_find_group ("Telegram");
   if (tggroup == NULL) {
-    debug ("PurpleGroup = NULL, creating");
     tggroup = purple_group_new ("Telegram");
     purple_blist_add_group (tggroup, NULL);
   }
@@ -1200,7 +1228,6 @@ static void tgprpl_init (PurplePlugin *plugin) {
   opt = purple_account_option_list_new("Accept Secret Chats", "accept-secret-chats", verification_values);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
   
-
   opt = purple_account_option_bool_new("Fallback SMS verification", "compat-verification", 0);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
   
