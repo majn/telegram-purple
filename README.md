@@ -152,12 +152,8 @@ When encountering a crash or some other bugs, please report it to us, preferably
 
 ## TODO:
 
-    - Picture, audio and video messages
-    - File transfers
-    - Geo-locations
-
-
-
+    - Picture Uploads
+    - Audio, Video and File Transfers
 
 # Authors
 
