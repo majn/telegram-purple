@@ -147,22 +147,17 @@ To clean all your user files run:
 
 # Adium Plugin
 
-## Prebuilt Bundle
+## Bundle
 
-This bundle was tested to work under OSX 10.8 to 10.10. If it doesn't work on your installation
+All Adium bundle releases are now provided as a [Github Release](https://github.com/majn/telegram-purple/releases)
+
+The bundles were tested to work on OSX 10.8 to 10.10. If it doesn't work on your installation
 please send your Adium crash log (which you can find in ~/Library/Logs/Adium 2/).
 
-
-### Older Versions
-
-[Version 0.5](http://h2079792.stratoserver.net/telegram-purple/telegram-adium-0.5.zip)
-
-[Version 0.3.3](http://h2079792.stratoserver.net/telegram-purple/telegram-adium-0.3.3.zip)
-
-
-## Build with XCode
+## Building with XCode
 
 1. Compile the source of your current Adium version and add the created frameworks to the Adium-Telegram build path.
+2. Build the tgl submodule
 2. Get zlib and libcrypto.a and provide it somewhere in your build path.
 3. Build the XCode-Project and execute the created bundle
 
