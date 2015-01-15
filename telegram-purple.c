@@ -226,24 +226,28 @@ static char *format_document_desc (char *type, char *caption, gint64 size) {
 static char *format_message (struct tgl_message *M) {
 
   switch (M->media.type) {
+      /*
     case tgl_message_media_audio:
       return format_document_desc("AUDIO", "", M->media.audio.size);
       break;
     case tgl_message_media_audio_encr:
       return format_document_desc("AUDIO", "", M->media.encr_audio.size);
       break;
+      */
     case tgl_message_media_document:
       return format_document_desc("DOCUMENT", M->media.document.caption, M->media.document.size);
       break;
     case tgl_message_media_document_encr:
-      return format_document_desc("DOCUMENT", M->media.encr_document.file_name, M->media.encr_document.size);
+      return format_document_desc("DOCUMENT", M->media.encr_document.caption, M->media.encr_document.size);
       break;
+      /*
     case tgl_message_media_video:
       return format_document_desc("VIDEO", M->media.video.caption, M->media.video.size);
       break;
     case tgl_message_media_video_encr:
       return format_document_desc("VIDEO", "", M->media.encr_video.size);
       break;
+      */
     case tgl_message_media_photo_encr:
       return format_document_desc("PHOTO", "", M->media.encr_photo.size);
       break;
