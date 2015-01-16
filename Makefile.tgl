@@ -1,4 +1,4 @@
-TGL_OBJECTS=${OBJ}/mtproto-common.o ${OBJ}/mtproto-client.o ${OBJ}/queries.o ${OBJ}/structures.o ${OBJ}/binlog.o ${OBJ}/tgl.o ${OBJ}/updates.o ${OBJ}/tg-mime-types.o
+TGL_OBJECTS=${OBJ}/mtproto-common.o ${OBJ}/mtproto-client.o ${OBJ}/mtproto-utils.o ${OBJ}/queries.o ${OBJ}/structures.o ${OBJ}/binlog.o ${OBJ}/tgl.o ${OBJ}/updates.o ${OBJ}/tg-mime-types.o
 TLD_OBJECTS=${OBJ}/dump-tl-file.o
 GENERATE_OBJECTS=${OBJ}/generate.o
 TGL_COMMON_OBJECTS=${OBJ}/tools.o
