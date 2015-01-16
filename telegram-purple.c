@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <regex.h>
 
 #include "purple.h"
 #include "notify.h"
@@ -1099,8 +1100,48 @@ static void tgprpl_rename_group (PurpleConnection * gc, const char *old_name, Pu
   debug ("tgprpl_rename_group()\n");
 }
 
-static void tgprpl_convo_closed (PurpleConnection * gc, const char *who){
+static void tgprpl_convo_closed (PurpleConnection * gc, const char *who) {
   debug ("tgprpl_convo_closed()\n");
+}
+
+static char *strdup_replace (char *str, const char *replace, char *with) {
+  char **splitted = g_strsplit (str, replace, -1);
+  char *joined = g_strjoinv ("", splitted);
+  g_strfreev (splitted);
+  return joined;
+}
+
+static char *tgprpl_normalize_phone_number (const PurpleAccount *account, const char *phone) {
+  
+  // remove all special characters
+  char *a = g_strdup(phone);
+  char *b = strdup_replace (a, " ", "");
+  char *c = strdup_replace (b, "/", "");
+  char *normalized = strdup_replace (c, "-", "");
+  g_free (b);
+  g_free (a);
+  g_free (c);
+  
+  if (strlen (normalized) >= 22 ||
+      strlen (normalized) < 5) {
+    return NULL;
+  }
+  
+  if (normalized[0] != '+') {
+    char *fixed = g_strdup_printf ("+%s", normalized);
+    g_free (normalized);
+    normalized = fixed;
+  }
+  
+  regex_t exp;
+  if (regcomp (&exp, "\\+[0-9]+$", REG_EXTENDED) != 0) {
+    warning ("Regex invalid");
+  }
+  if (regexec (&exp, normalized, 0, 0, 0) != 0) {
+    return NULL;
+  }
+  
+  return normalized;
 }
 
 static void tgprpl_set_buddy_icon (PurpleConnection * gc, PurpleStoredImage * img) {
@@ -1182,7 +1223,7 @@ static PurplePluginProtocolInfo prpl_info = {
   tgprpl_rename_group,
   NULL,                    // buddy_free
   tgprpl_convo_closed,     
-  purple_normalize_nocase, 
+  tgprpl_normalize_phone_number,
   tgprpl_set_buddy_icon,
   NULL,                    // remove_group
   NULL,                    // get_cb_real_name
