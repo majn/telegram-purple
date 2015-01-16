@@ -1111,7 +1111,7 @@ static char *strdup_replace (char *str, const char *replace, char *with) {
   return joined;
 }
 
-static char *tgprpl_normalize_phone_number (const PurpleAccount *account, const char *phone) {
+static const char *tgprpl_normalize_phone_number (const PurpleAccount *account, const char *phone) {
   
   // remove all special characters
   char *a = g_strdup(phone);
@@ -1136,6 +1136,7 @@ static char *tgprpl_normalize_phone_number (const PurpleAccount *account, const 
   regex_t exp;
   if (regcomp (&exp, "\\+[0-9]+$", REG_EXTENDED) != 0) {
     warning ("Regex invalid");
+    return NULL;
   }
   if (regexec (&exp, normalized, 0, 0, 0) != 0) {
     return NULL;
