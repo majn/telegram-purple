@@ -544,8 +544,8 @@ PurpleConversation *chat_show (PurpleConnection *gc, int id) {
   PurpleConversation *convo = purple_find_chat(gc, id);
   if (! convo) {
     gchar *name = g_strdup_printf ("%d", id);
-    if (! g_hash_table_contains (conn->joining_chats, name)) {
-      g_hash_table_insert(conn->joining_chats, name, 0);
+    if (! g_hash_table_lookup (conn->joining_chats, name)) {
+      g_hash_table_insert (conn->joining_chats, name, (void *)1);
       tgl_do_get_chat_info (conn->TLS, TGL_MK_CHAT(id), 0, on_chat_get_info, NULL);
     } else {
       g_free(name);
