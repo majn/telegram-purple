@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <regex.h>
 
 #include "purple.h"
 #include "notify.h"
@@ -247,24 +248,28 @@ static char *format_document_desc (char *type, char *caption, gint64 size) {
 static char *format_message (struct tgl_message *M) {
 
   switch (M->media.type) {
+      /*
     case tgl_message_media_audio:
       return format_document_desc("AUDIO", "", M->media.audio.size);
       break;
     case tgl_message_media_audio_encr:
       return format_document_desc("AUDIO", "", M->media.encr_audio.size);
       break;
+      */
     case tgl_message_media_document:
       return format_document_desc("DOCUMENT", M->media.document.caption, M->media.document.size);
       break;
     case tgl_message_media_document_encr:
-      return format_document_desc("DOCUMENT", M->media.encr_document.file_name, M->media.encr_document.size);
+      return format_document_desc("DOCUMENT", M->media.encr_document.caption, M->media.encr_document.size);
       break;
+      /*
     case tgl_message_media_video:
       return format_document_desc("VIDEO", M->media.video.caption, M->media.video.size);
       break;
     case tgl_message_media_video_encr:
       return format_document_desc("VIDEO", "", M->media.encr_video.size);
       break;
+      */
     case tgl_message_media_photo_encr:
       return format_document_desc("PHOTO", "", M->media.encr_photo.size);
       break;
@@ -1116,8 +1121,49 @@ static void tgprpl_rename_group (PurpleConnection * gc, const char *old_name, Pu
   debug ("tgprpl_rename_group()\n");
 }
 
-static void tgprpl_convo_closed (PurpleConnection * gc, const char *who){
+static void tgprpl_convo_closed (PurpleConnection * gc, const char *who) {
   debug ("tgprpl_convo_closed()\n");
+}
+
+static char *strdup_replace (char *str, const char *replace, char *with) {
+  char **splitted = g_strsplit (str, replace, -1);
+  char *joined = g_strjoinv ("", splitted);
+  g_strfreev (splitted);
+  return joined;
+}
+
+static const char *tgprpl_normalize_phone_number (const PurpleAccount *account, const char *phone) {
+  
+  // remove all special characters
+  char *a = g_strdup(phone);
+  char *b = strdup_replace (a, " ", "");
+  char *c = strdup_replace (b, "/", "");
+  char *normalized = strdup_replace (c, "-", "");
+  g_free (b);
+  g_free (a);
+  g_free (c);
+  
+  if (strlen (normalized) >= 22 ||
+      strlen (normalized) < 5) {
+    return NULL;
+  }
+  
+  if (normalized[0] != '+') {
+    char *fixed = g_strdup_printf ("+%s", normalized);
+    g_free (normalized);
+    normalized = fixed;
+  }
+  
+  regex_t exp;
+  if (regcomp (&exp, "\\+[0-9]+$", REG_EXTENDED) != 0) {
+    warning ("Regex invalid");
+    return NULL;
+  }
+  if (regexec (&exp, normalized, 0, 0, 0) != 0) {
+    return NULL;
+  }
+  
+  return normalized;
 }
 
 static void tgprpl_set_buddy_icon (PurpleConnection * gc, PurpleStoredImage * img) {
@@ -1199,7 +1245,7 @@ static PurplePluginProtocolInfo prpl_info = {
   tgprpl_rename_group,
   NULL,                    // buddy_free
   tgprpl_convo_closed,     
-  purple_normalize_nocase, 
+  tgprpl_normalize_phone_number,
   tgprpl_set_buddy_icon,
   NULL,                    // remove_group
   NULL,                    // get_cb_real_name
