@@ -64,14 +64,10 @@
 
 #define _(m) m
 
-#ifndef DESTDIR
-#define DESTDIR
-#endif
-
 PurplePlugin *_telegram_protocol = NULL;
 PurpleGroup *tggroup;
 const char *config_dir = ".telegram-purple";
-const char *pk_path = DESTDIR"/etc/telegram-purple/server.pub";
+const char *pk_path = "/etc/telegram-purple/server.pub";
 void tgprpl_login_on_connected();
 void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
 
