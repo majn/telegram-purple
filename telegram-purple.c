@@ -96,6 +96,23 @@ static char *format_img_full (int imgstore) {
   return g_strdup_printf ("%s<img id=\"%u\">",br, imgstore);
 }
 
+static char *format_size (gint64 size) {
+   char *sizes[] = {
+     "b",
+     "Kb",
+     "Mb",
+     "Gb",
+     "Pb"
+   };
+   int base = 0;
+   double s = (double) size;
+   while (s > 1024 && base < 4) {
+     s /= 1024;
+     ++ base;
+   }
+  return g_strdup_printf ("%.1f %s, ", s, sizes[base]);
+}
+
 static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M)
 {
   assert (M && M->service);
@@ -218,7 +235,7 @@ static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const c
 }
 
 static char *format_document_desc (char *type, char *caption, gint64 size) {
-  char *s = g_format_size (size);
+  char *s = format_size (size);
   char *msg = g_strdup_printf ("[%s] %s %s", type, caption, s);
   g_free (s);
   return msg;
@@ -768,7 +785,7 @@ static void tgprpl_tooltip_text (PurpleBuddy * buddy, PurpleNotifyUserInfo * inf
   
   tgl_peer_id_t *peer = purple_buddy_get_protocol_data(buddy);
   if (!peer) {
-    purple_notify_user_info_add_pair_plaintext(info, "Status", "Offline");
+    purple_notify_user_info_add_pair (info, "Status", "Offline");
     return;
   }
   tgl_peer_t *P = tgl_peer_get (get_conn_from_buddy (buddy)->TLS, *peer);
@@ -776,8 +793,8 @@ static void tgprpl_tooltip_text (PurpleBuddy * buddy, PurpleNotifyUserInfo * inf
     warning ("tgprpl_tooltip_text: warning peer with id %d not found in tree.\n", peer->id);
     return;
   }
-  purple_notify_user_info_add_pair_plaintext (info, "Status", format_status(&P->user.status));
-  purple_notify_user_info_add_pair_plaintext (info, "Last seen: ", format_time(P->user.status.when));
+  purple_notify_user_info_add_pair (info, "Status", format_status(&P->user.status));
+  purple_notify_user_info_add_pair (info, "Last seen: ", format_time(P->user.status.when));
 }
 
 static GList *tgprpl_status_types (PurpleAccount * acct) {

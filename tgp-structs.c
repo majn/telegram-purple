@@ -90,6 +90,16 @@ static void used_image_free (gpointer data)
   debug ("used_image: unref %d", id);
 }
 
+static void queue_free_full (GQueue *queue, GDestroyNotify free_func)
+{
+  void *entry;
+  
+  while ((entry = g_queue_pop_head(queue))) {
+    free_func (entry);
+  }
+  g_queue_free (queue);
+}
+
 void used_images_add (connection_data *data, gint imgid)
 {
   data->used_images = g_list_append (data->used_images, GINT_TO_POINTER(imgid));
@@ -104,15 +114,15 @@ connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *
   conn->pa = pa;
   conn->new_messages = g_queue_new ();
   conn->pending_reads = g_queue_new ();
-  conn->joining_chats = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+  conn->joining_chats = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
   return conn;
 }
 
 void *connection_data_free (connection_data *conn)
 {
   purple_timeout_remove(conn->timer);
-  g_queue_free_full (conn->pending_reads, pending_reads_free_cb);
-  g_queue_free_full (conn->new_messages, message_text_free);
+  queue_free_full (conn->pending_reads, pending_reads_free_cb);
+  queue_free_full (conn->new_messages, message_text_free);
   g_hash_table_destroy (conn->joining_chats);
   g_list_free_full (conn->used_images, used_image_free);
   tgl_free_all (conn->TLS);
