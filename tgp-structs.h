@@ -42,8 +42,8 @@ typedef struct {
 
 typedef struct { 
   int show_info; 
-  tgl_peer_t *peer; 
-}get_user_info_data;
+  tgl_peer_id_t peer;
+} get_user_info_data;
 
 struct download_desc {
   get_user_info_data *get_user_info_data;
@@ -65,5 +65,7 @@ void used_images_add (connection_data *data, gint imgid);
 
 void *connection_data_free (connection_data *conn);
 connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *gc, PurpleAccount *pa);
+
+get_user_info_data* get_user_info_data_new (int show_info, tgl_peer_id_t peer);
 
 #endif

@@ -42,5 +42,6 @@ void on_ready (struct tgl_state *TLS);
 extern const char *pk_path;
 extern const char *config_dir;
 extern PurplePlugin *_telegram_protocol;
+char *format_user_status (struct tgl_user_status *status);
 
 #endif

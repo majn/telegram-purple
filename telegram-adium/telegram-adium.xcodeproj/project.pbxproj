@@ -11,6 +11,7 @@
 		C410949019BB2D7D0083BF3F /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C410948E19BB2D7D0083BF3F /* InfoPlist.strings */; };
 		C410949B19BB337A0083BF3F /* TelegramPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = C410949A19BB337A0083BF3F /* TelegramPlugin.m */; };
 		C41D58411A16D88E00B22448 /* tgp-2prpl.c in Sources */ = {isa = PBXBuildFile; fileRef = C41D58401A16D88E00B22448 /* tgp-2prpl.c */; };
+		C425F9181A7069C300361AFC /* tgp-utils.c in Sources */ = {isa = PBXBuildFile; fileRef = C425F9161A7069C300361AFC /* tgp-utils.c */; };
 		C438CE271A12BEAF00E1DA0F /* telegram.png in Resources */ = {isa = PBXBuildFile; fileRef = C438CE231A12BEAF00E1DA0F /* telegram.png */; };
 		C438CE281A12BEAF00E1DA0F /* telegram16.png in Resources */ = {isa = PBXBuildFile; fileRef = C438CE241A12BEAF00E1DA0F /* telegram16.png */; };
 		C438CE291A12BEAF00E1DA0F /* telegram22.png in Resources */ = {isa = PBXBuildFile; fileRef = C438CE251A12BEAF00E1DA0F /* telegram22.png */; };
@@ -51,6 +52,8 @@
 		C410949A19BB337A0083BF3F /* TelegramPlugin.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TelegramPlugin.m; sourceTree = "<group>"; };
 		C41D583F1A16D86A00B22448 /* tgp-2prpl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "tgp-2prpl.h"; path = "../tgp-2prpl.h"; sourceTree = "<group>"; };
 		C41D58401A16D88E00B22448 /* tgp-2prpl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "tgp-2prpl.c"; path = "../tgp-2prpl.c"; sourceTree = "<group>"; };
+		C425F9161A7069C300361AFC /* tgp-utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "tgp-utils.c"; path = "../tgp-utils.c"; sourceTree = "<group>"; };
+		C425F9171A7069C300361AFC /* tgp-utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "tgp-utils.h"; path = "../tgp-utils.h"; sourceTree = "<group>"; };
 		C438CE231A12BEAF00E1DA0F /* telegram.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = telegram.png; path = ../imgs/telegram.png; sourceTree = "<group>"; };
 		C438CE241A12BEAF00E1DA0F /* telegram16.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = telegram16.png; path = ../imgs/telegram16.png; sourceTree = "<group>"; };
 		C438CE251A12BEAF00E1DA0F /* telegram22.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = telegram22.png; path = ../imgs/telegram22.png; sourceTree = "<group>"; };
@@ -197,6 +200,8 @@
 		C4BF990319BB8B200038D507 /* telegram-purple */ = {
 			isa = PBXGroup;
 			children = (
+				C425F9161A7069C300361AFC /* tgp-utils.c */,
+				C425F9171A7069C300361AFC /* tgp-utils.h */,
 				C4D819041A5C862E0044CBA9 /* tgp-structs.c */,
 				C4D819051A5C862E0044CBA9 /* tgp-structs.h */,
 				C438CE371A12C0C900E1DA0F /* msglog.h */,
@@ -301,6 +306,7 @@
 				C410949B19BB337A0083BF3F /* TelegramPlugin.m in Sources */,
 				C4877C1E19BB676B006FA91F /* AdiumTelegramAccount.m in Sources */,
 				C41D58411A16D88E00B22448 /* tgp-2prpl.c in Sources */,
+				C425F9181A7069C300361AFC /* tgp-utils.c in Sources */,
 				C4D819031A5C85FE0044CBA9 /* lodepng.c in Sources */,
 				C4D819061A5C862E0044CBA9 /* tgp-structs.c in Sources */,
 			);

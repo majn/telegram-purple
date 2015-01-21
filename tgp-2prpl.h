@@ -68,5 +68,11 @@ PurpleChat *p2tgl_chat_find (struct tgl_state *TLS, tgl_peer_id_t chat);
 
 void *p2tgl_notify_userinfo(struct tgl_state *TLS, tgl_peer_id_t user, PurpleNotifyUserInfo *user_info, PurpleNotifyCloseCallback cb, gpointer user_data);
 
+PurpleNotifyUserInfo *p2tgl_notify_peer_info_new (struct tgl_state *TLS, tgl_peer_t *P);
+PurpleNotifyUserInfo *p2tgl_notify_user_info_new (struct tgl_user *U);
+PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TLS, struct tgl_secret_chat *secret, struct tgl_user *U);
+
 void p2tgl_blist_alias_buddy (PurpleBuddy *buddy, struct tgl_user *user);
+int p2tgl_imgstore_add_with_id (const char* filename);
+void p2tgl_buddy_icons_set_for_user (PurpleAccount *pa, tgl_peer_id_t *id, const char* filename);
 #endif

@@ -61,6 +61,7 @@
 #include "telegram-base.h"
 #include "telegram-purple.h"
 #include "msglog.h"
+#include "tgp-utils.h"
 
 #define _(m) m
 
@@ -77,40 +78,8 @@ static connection_data *get_conn_from_buddy (PurpleBuddy *buddy) {
   return c;
 }
 
-static const char *format_time (time_t date) {
-  struct tm *datetime = localtime(&date);
-  return purple_utf8_strftime("%Y.%m.%d %H:%M:%S", datetime);
-}
-
 static char *format_status (struct tgl_user_status *status) {
   return status->online ? "Online" : "Mobile";
-}
-
-static char *format_img_full (int imgstore) {
-  const char *br = "<br>";
-  
-  // <br>'s look ugly in Adium, but no <br> will look ugly in Pidgin
-#ifdef __ADIUM_
-  br = "";
-#endif
-  return g_strdup_printf ("%s<img id=\"%u\">",br, imgstore);
-}
-
-static char *format_size (gint64 size) {
-   char *sizes[] = {
-     "b",
-     "Kb",
-     "Mb",
-     "Gb",
-     "Pb"
-   };
-   int base = 0;
-   double s = (double) size;
-   while (s > 1024 && base < 4) {
-     s /= 1024;
-     ++ base;
-   }
-  return g_strdup_printf ("%.1f %s, ", s, sizes[base]);
 }
 
 static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M)
@@ -200,6 +169,29 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M)
   return txt;
 }
 
+char *format_user_status (struct tgl_user_status *status)
+{
+  char *when;
+  switch (status->online) {
+    case -1:
+      when = g_strdup_printf("%s", format_time (status->when));
+      break;
+    case -2:
+      when = g_strdup_printf("recently");
+      break;
+    case -3:
+      when = g_strdup_printf("last week");
+      break;
+    case -4:
+      when = g_strdup_printf("last month");
+      break;
+    default:
+      when = g_strdup ("unknown");
+      break;
+  }
+  return when;
+}
+
 static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4) {
   const char *d[4];
   d[0] = a1; d[1] = a2; d[2] = a3; d[3] = a4;
@@ -235,7 +227,7 @@ static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const c
 }
 
 static char *format_document_desc (char *type, char *caption, gint64 size) {
-  char *s = format_size (size);
+  char *s = tgp_g_format_size (size);
   char *msg = g_strdup_printf ("[%s] %s %s", type, caption, s);
   g_free (s);
   return msg;
@@ -297,16 +289,6 @@ static tgl_peer_t *find_peer_by_name (struct tgl_state *TLS, const char *who) {
   peer = tgl_peer_get (TLS, TGL_MK_ENCR_CHAT(atoi(who)));
   if (peer) { return peer; }
   return NULL;
-}
-
-static int our_msg (struct tgl_state *TLS, struct tgl_message *M) {
-  //return tgl_get_peer_id(M->from_id) == TLS->our_id;
-  //return M->out;
-  return (M->flags & FLAG_SESSION_OUTBOUND) != 0;
-}
-
-static int out_msg (struct tgl_state *TLS, struct tgl_message *M) {
-  return M->out;
 }
 
 static gboolean queries_timerfunc (gpointer data) {
@@ -378,14 +360,12 @@ void on_message_load_photo (struct tgl_state *TLS, void *extra, int success, cha
   struct tgl_message *M = extra;
   switch (tgl_get_peer_type (M->to_id)) {
     case TGL_PEER_CHAT:
-      debug ("PEER_CHAT\n");
       if (!our_msg(TLS, M)) {
         chat_add_message (TLS, M, image);
       }
       break;
       
     case TGL_PEER_USER:
-      debug ("PEER_USER\n");
       if (out_msg(TLS, M)) {
         p2tgl_got_im (TLS, M->to_id, image, PURPLE_MESSAGE_SEND | PURPLE_MESSAGE_IMAGES, M->date);
       } else {
@@ -405,7 +385,6 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
   conn->updated = 1;
 
   if (M->service) {
-    debug ("service message, skipping...\n");
     char *text = format_service_msg (TLS, M);
     if (text) {
       switch (tgl_get_peer_type (M->to_id)) {
@@ -491,10 +470,7 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
       p2tgl_buddy_update (TLS, (tgl_peer_t *)user, flags);
     }
     if (flags & TGL_UPDATE_PHOTO) {
-      get_user_info_data* info_data = malloc (sizeof(get_user_info_data));
-      info_data->show_info = 0;
-      info_data->peer = 0;
-      tgl_do_get_user_info (TLS, user->id, 0, on_user_get_info, info_data);
+      tgl_do_get_user_info (TLS, user->id, 0, on_user_get_info, get_user_info_data_new (0, user->id));
     }
     if (flags & TGL_UPDATE_DELETED && buddy) {
       purple_blist_remove_buddy (buddy);
@@ -504,6 +480,7 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
 
 static void write_secret_chat_cb (struct tgl_state *TLS, void *extra, int success, struct tgl_secret_chat *E) {
   debug ("update_secret_chat_handle success=%d", success);
+  if (!success) { return; }
   write_secret_chat_file (TLS);
 }
 
@@ -612,15 +589,6 @@ static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum 
   }
 }
 
-PurpleNotifyUserInfo *create_user_notify_info(struct tgl_user *usr) {
-  PurpleNotifyUserInfo *info = purple_notify_user_info_new();
-  purple_notify_user_info_add_pair(info, "First name", usr->first_name);
-  purple_notify_user_info_add_pair(info, "Last name", usr->last_name);
-  purple_notify_user_info_add_pair(info, "Phone", usr->phone);
-  purple_notify_user_info_add_pair(info, "Status", usr->status.online == 1 ? "Online" : "Offline");
-  return info;
-}
-
 static void on_contact_added (struct tgl_state *TLS,void *callback_extra, int success, int size, struct tgl_user *users[]) {
   PurpleBuddy *buddy = callback_extra;
   
@@ -631,91 +599,52 @@ static void on_contact_added (struct tgl_state *TLS,void *callback_extra, int su
 }
 
 static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, char *filename) {
-  if (!success) {
-    struct download_desc *dld = extra;
-    struct tgl_user *U = dld->data;
-    warning ("Can not load userpic for user %s %s\n", U->first_name, U->last_name);
-  }
   connection_data *conn = TLS->ev_base;
-
-  gchar *data = NULL;
-  size_t len;
-  GError *err = NULL;
-  g_file_get_contents (filename, &data, &len, &err);
-  
-  int imgStoreId = purple_imgstore_add_with_id (g_memdup(data, (guint)len), len, NULL);
-  used_images_add (conn, imgStoreId);
   
   struct download_desc *dld = extra;
   struct tgl_user *U = dld->data;
+  tgl_peer_t *P = tgl_peer_get (TLS, dld->get_user_info_data->peer);
   
-  if (imgStoreId <= 0) {
+  if (!success || !P) {
     warning ("Can not load userpic for user %s %s\n", U->first_name, U->last_name);
+    goto fin;
   }
+  
+  int imgStoreId = p2tgl_imgstore_add_with_id (filename);
+  if (imgStoreId > 0) {
+    used_images_add (conn, imgStoreId);
 
-  char *who = g_strdup_printf ("%d", tgl_get_peer_id (U->id));
-  if (dld->get_user_info_data->show_info == 1) {
-    PurpleNotifyUserInfo *info = create_user_notify_info(U);
+    p2tgl_buddy_icons_set_for_user (conn->pa, &P->id, filename);
     
-    if (dld->get_user_info_data->peer && dld->get_user_info_data->peer->encr_chat.first_key_sha[0]) {
-      
-      // display secret key
-      int sha1key_store_id = generate_ident_icon (conn->TLS, dld->get_user_info_data->peer->encr_chat.first_key_sha);
-      if (sha1key_store_id != -1) {
-        char *ident_icon = format_img_full (sha1key_store_id);
-        purple_notify_user_info_add_pair (info, "Secret key", ident_icon);
-        g_free(ident_icon);
-      }
-      
-      g_free (who);
-      who = g_strdup_printf ("%d", tgl_get_peer_id (dld->get_user_info_data->peer->id));
+    if (dld->get_user_info_data->show_info == 1) {
+      PurpleNotifyUserInfo *info = p2tgl_notify_peer_info_new (TLS, P);
+      p2tgl_notify_userinfo (TLS, P->id, info, NULL, NULL);
     }
-    
-    char *profile_image = profile_image = format_img_full (imgStoreId);
-    purple_notify_user_info_add_pair (info, "Profile image", profile_image);
-    purple_notify_userinfo (conn->gc, who, info, NULL, NULL);
-    
-    g_free (profile_image);
   }
-  if (dld->get_user_info_data->peer) {
-     char *id = g_strdup_printf ("%d", tgl_get_peer_id (dld->get_user_info_data->peer->id));
-     gchar *img_data = NULL;
-     size_t len;
-     GError *err = NULL;
-     g_file_get_contents (filename, &img_data, &len, &err);
-     purple_buddy_icons_set_for_user(conn->pa, id, img_data, len, NULL);
-     g_free (id);
-  }
-  purple_buddy_icons_set_for_user(conn->pa, who, data, len, NULL);
-  g_free(who);
-  g_free(dld->get_user_info_data);
+  
+fin:
+  free (dld->get_user_info_data);
+  free (dld);
 }
 
 void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U)
 {
+  get_user_info_data *user_info_data = (get_user_info_data *)info_data;
+  tgl_peer_t *P = tgl_peer_get (TLS, user_info_data->peer);
+  
   if (! success) {
     warning ("on_user_get_info not successfull, aborting...\n");
     return;
   }
   
-  get_user_info_data *user_info_data = (get_user_info_data *)info_data;
   if (U->photo.sizes_num == 0) {
+    // No profile pic to load, display it right away
     if (user_info_data->show_info) {
-      PurpleNotifyUserInfo *info = create_user_notify_info(U);
-      if (user_info_data->peer && user_info_data->peer->encr_chat.first_key_sha[0]) {
-        // display secret key
-        int sha1key_store_id = generate_ident_icon (TLS, user_info_data->peer->encr_chat.first_key_sha);
-        if (sha1key_store_id != -1) {
-          char *ident_icon = format_img_full (sha1key_store_id);
-          purple_notify_user_info_add_pair (info, "Secret key", ident_icon);
-          g_free (ident_icon);
-        }
-        p2tgl_notify_userinfo (TLS, user_info_data->peer->id, info, NULL, NULL);
-      } else {
-	      p2tgl_notify_userinfo (TLS, U->id, info, NULL, NULL);
-      }
+      PurpleNotifyUserInfo *info = p2tgl_notify_peer_info_new (TLS, P);
+      p2tgl_notify_userinfo (TLS, P->id, info, NULL, NULL);
     }
-    g_free(user_info_data);
+    g_free (user_info_data);
+  
   } else {
     struct download_desc *dld = malloc (sizeof(struct download_desc));
     dld->data = U;
@@ -794,7 +723,10 @@ static void tgprpl_tooltip_text (PurpleBuddy * buddy, PurpleNotifyUserInfo * inf
     return;
   }
   purple_notify_user_info_add_pair (info, "Status", format_status(&P->user.status));
-  purple_notify_user_info_add_pair (info, "Last seen: ", format_time(P->user.status.when));
+  
+  gchar *status = format_user_status (&P->user.status);
+  purple_notify_user_info_add_pair (info, "last online: ", status);
+  g_free (status);
 }
 
 static GList *tgprpl_status_types (PurpleAccount * acct) {
@@ -954,36 +886,21 @@ static void tgprpl_get_info (PurpleConnection * gc, const char *who) {
   tgl_peer_t *peer = find_peer_by_name (conn->TLS, who);
   if (! peer) { return; }
   
-  get_user_info_data* info_data = malloc (sizeof(get_user_info_data));
-  info_data->show_info = 1;
-  info_data->peer = peer;
+  get_user_info_data* info_data = get_user_info_data_new (1, peer->id);
   
   switch (tgl_get_peer_type (peer->id)) {
     case TGL_PEER_USER:
     case TGL_PEER_CHAT:
       tgl_do_get_user_info (conn->TLS, peer->id, 0, on_user_get_info, info_data);
       break;
+      
     case TGL_PEER_ENCR_CHAT: {
-      tgl_peer_t *parent_peer;
-      
-      if (peer->encr_chat.state == sc_waiting) {
-        PurpleNotifyUserInfo *info = purple_notify_user_info_new();
-        purple_notify_user_info_add_pair (info, "", "Waiting for user to get online ...");
-        p2tgl_notify_userinfo (conn->TLS, peer->id, info, NULL, NULL);
-        return;
-      }
-      
-      if (peer->encr_chat.admin_id == conn->TLS->our_id){
-        parent_peer = tgl_peer_get (conn->TLS, TGL_MK_USER(peer->encr_chat.user_id));
-      } else {
-        parent_peer = tgl_peer_get (conn->TLS, TGL_MK_USER(peer->encr_chat.admin_id));
-      }
-      if (parent_peer){
-        tgl_do_get_user_info(conn->TLS, parent_peer->id, 0, on_user_get_info, info_data);
+      tgl_peer_t *parent_peer = tgp_encr_chat_get_partner(conn->TLS, &peer->encr_chat);
+      if (parent_peer) {
+        tgl_do_get_user_info (conn->TLS, parent_peer->id, 0, on_user_get_info, info_data);
       }
       break;
     }
-      
   }
 }
 

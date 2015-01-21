@@ -20,6 +20,9 @@
 #include "telegram-purple.h"
 #include "tgp-2prpl.h"
 #include "tgp-structs.h"
+#include "telegram-purple.h"
+#include "tgp-utils.h"
+#include "telegram-base.h"
 
 #include <server.h>
 #include <tgl.h>
@@ -174,36 +177,10 @@ void p2tgl_prpl_got_set_status_offline (struct tgl_state *TLS, tgl_peer_id_t use
 }
 
 void p2tgl_prpl_got_user_status (struct tgl_state *TLS, tgl_peer_id_t user, struct tgl_user_status *status) {
-  
   if (status->online == 1) {
-    char *name = p2tgl_peer_strdup_id (user);
-    purple_prpl_got_user_status (tg_get_acc(TLS), name, "available", NULL);
-    g_free (name);
+    p2tgl_prpl_got_set_status_offline(TLS, user);
   } else {
-    char *name = p2tgl_peer_strdup_id (user);
-    char *when;
-    switch (status->online) {
-    case -1:
-      when = g_strdup_printf("%d", status->when);
-      break;
-    case -2:
-      when = g_strdup_printf("recently");
-      break;
-    case -3:
-      when = g_strdup_printf("last week");
-      break;
-    case -4:
-      when = g_strdup_printf("last month");
-      break;
-    default:
-      when = g_strdup ("unknown");
-      break;
-    }
-  
-    purple_prpl_got_user_status (tg_get_acc(TLS), name, "mobile", "last online", when, NULL);
-  
-    g_free(name);
-    g_free(when);
+    p2tgl_prpl_got_set_status_mobile(TLS, user);
   }
 }
 
@@ -269,3 +246,105 @@ void p2tgl_blist_alias_buddy (PurpleBuddy *buddy, struct tgl_user *user) {
   
   g_free(name);
 }
+
+PurpleNotifyUserInfo *p2tgl_notify_user_info_new (struct tgl_user *U) {
+  PurpleNotifyUserInfo *info = purple_notify_user_info_new();
+  
+  if (str_not_empty(U->first_name) && str_not_empty(U->last_name)) {
+    purple_notify_user_info_add_pair (info, "First name", U->first_name);
+    purple_notify_user_info_add_pair (info, "Last name", U->last_name);
+  } else {
+    purple_notify_user_info_add_pair (info, "Name", U->print_name);
+  }
+  
+  if (str_not_empty (U->username)) {
+    purple_notify_user_info_add_pair (info, "Username", U->username);
+  }
+  
+  char *status = format_user_status (&U->status);
+  purple_notify_user_info_add_pair (info, "Last seen", status);
+  g_free (status);
+
+  if (str_not_empty (U->phone)) {
+    char *phone = g_strdup_printf("+%s", U->phone);
+    purple_notify_user_info_add_pair (info, "Phone", phone);
+    g_free (phone);
+  }
+ 
+  return info;
+}
+
+PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TLS,
+                                                            struct tgl_secret_chat *secret, struct tgl_user *U) {
+  
+  PurpleNotifyUserInfo *info = p2tgl_notify_user_info_new (U);
+  
+  if (secret->state == sc_waiting) {
+    purple_notify_user_info_add_pair (info, "", "Waiting for user to get online ...");
+    return info;
+  }
+  
+  const char *ttl_key = "Self destructiom timer";
+  if (secret->ttl) {
+    char *ttl = g_strdup_printf ("%d", secret->ttl);
+    purple_notify_user_info_add_pair (info, ttl_key, ttl);
+    g_free (ttl);
+  } else {
+    purple_notify_user_info_add_pair (info, ttl_key, "Off");
+  }
+  
+  if (secret->first_key_sha[0]) {
+    int sha1key_store_id = generate_ident_icon (TLS, secret->first_key_sha);
+    if (sha1key_store_id != -1) {
+      char *ident_icon = format_img_full (sha1key_store_id);
+      purple_notify_user_info_add_pair (info, "Secret key", ident_icon);
+      g_free(ident_icon);
+    }
+  }
+  
+  return info;
+}
+
+PurpleNotifyUserInfo *p2tgl_notify_peer_info_new (struct tgl_state *TLS, tgl_peer_t *P) {
+  switch (tgl_get_peer_type (P->id)) {
+    case TGL_PEER_ENCR_CHAT: {
+      struct tgl_secret_chat *chat = &P->encr_chat;
+      tgl_peer_t *partner = tgp_encr_chat_get_partner (TLS, chat);
+      return p2tgl_notify_encrypted_chat_info_new (TLS, chat, &partner->user);
+      break;
+    }
+      
+    case TGL_PEER_USER:
+      return p2tgl_notify_user_info_new (&P->user);
+      break;
+      
+    default:
+      return purple_notify_user_info_new ();
+  }
+}
+
+int p2tgl_imgstore_add_with_id (const char* filename)
+{
+  gchar *data = NULL;
+  size_t len;
+  GError *err = NULL;
+  g_file_get_contents (filename, &data, &len, &err);
+  
+  int id = purple_imgstore_add_with_id (data, len, NULL);
+  return id;
+}
+
+void p2tgl_buddy_icons_set_for_user (PurpleAccount *pa, tgl_peer_id_t *id, const char* filename)
+{
+  char *who = g_strdup_printf("%d", tgl_get_peer_id(*id));
+
+  gchar *data = NULL;
+  size_t len;
+  GError *err = NULL;
+  g_file_get_contents (filename, &data, &len, &err);
+  
+  purple_buddy_icons_set_for_user (pa, who, data, len, NULL);
+  
+  g_free (who);
+}
+
