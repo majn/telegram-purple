@@ -1,0 +1,22 @@
+Changelog
+---------
+
+##### Version 0.6
+
+    - Support for secret chats 
+    - Receiving geo messages
+
+##### Version 0.5
+
+    - Display incoming photos
+    - Respect received user and chat property updates
+    - Support changing own profile picture
+    - Support adding new contacts
+    - Display service messages
+    - Works with libpurple proxy settings
+
+##### TODO:
+
+    - Picture Uploads
+    - Audio, Video and File Transfers
+
