@@ -518,7 +518,9 @@ static int all_authorized (struct tgl_state *TLS) {
 
 static int check_all_authorized (gpointer arg) {
   struct tgl_state *TLS = arg;
+
   if (all_authorized (TLS)) {
+    ((connection_data *)TLS->ev_base)->login_timer = 0;
     telegram_send_sms (TLS);    
     return FALSE;
   } else {
@@ -526,7 +528,9 @@ static int check_all_authorized (gpointer arg) {
   }
 }
     
-void telegram_login (struct tgl_state *TLS) {    
+void telegram_login (struct tgl_state *TLS) {
+  connection_data *conn = TLS->ev_base;
+  
   read_auth_file (TLS);
   read_state_file (TLS);
   read_secret_chat_file (TLS);
@@ -534,7 +538,7 @@ void telegram_login (struct tgl_state *TLS) {
     telegram_send_sms (TLS);
     return;
   }
-  purple_timeout_add (100, check_all_authorized, TLS);
+  conn->login_timer = purple_timeout_add (100, check_all_authorized, TLS);
 }
 
 PurpleConversation *chat_show (PurpleConnection *gc, int id) {

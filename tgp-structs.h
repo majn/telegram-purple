@@ -37,6 +37,7 @@ typedef struct {
   GList *used_images;
   GHashTable *joining_chats;
   guint timer;
+  guint login_timer;
   int in_fallback_chat;
 } connection_data;
 

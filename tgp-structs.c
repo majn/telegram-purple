@@ -111,7 +111,8 @@ connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *
 
 void *connection_data_free (connection_data *conn)
 {
-  purple_timeout_remove(conn->timer);
+  purple_timeout_remove (conn->timer);
+  if (conn->login_timer) { purple_timeout_remove(conn->login_timer); }
   tgp_g_queue_free_full (conn->pending_reads, pending_reads_free_cb);
   tgp_g_queue_free_full (conn->new_messages, message_text_free);
   g_hash_table_destroy (conn->joining_chats);
