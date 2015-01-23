@@ -36,7 +36,7 @@ typedef struct {
   GQueue *pending_reads;
   GList *used_images;
   GHashTable *joining_chats;
-  guint timer;
+  guint write_timer;
   guint login_timer;
   int in_fallback_chat;
 } connection_data;

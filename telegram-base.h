@@ -26,6 +26,7 @@ void read_state_file (struct tgl_state *TLS);
 void read_auth_file (struct tgl_state *TLS);
 void write_auth_file (struct tgl_state *TLS);
 void write_state_file (struct tgl_state *TLS);
+void write_state_file_schedule (struct tgl_state *TLS);
 void read_secret_chat_file (struct tgl_state *TLS);
 void write_secret_chat_file (struct tgl_state *TLS);
 

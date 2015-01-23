@@ -291,17 +291,6 @@ static tgl_peer_t *find_peer_by_name (struct tgl_state *TLS, const char *who) {
   return NULL;
 }
 
-static gboolean queries_timerfunc (gpointer data) {
-  debug ("queries_timerfunc()\n");
-  connection_data *conn = data;
-  
-  if (conn->updated) {
-    conn->updated = 0;
-    write_state_file (conn->TLS);
-  }
-  return 1;
-}
-
 static void start_secret_chat (PurpleBlistNode *node, gpointer data) {
   PurpleBuddy *buddy = data;
   connection_data *conn = purple_connection_get_protocol_data (
@@ -347,43 +336,43 @@ struct tgl_update_callback tgp_callback = {
 };
 
 void on_message_load_photo (struct tgl_state *TLS, void *extra, int success, char *filename) {
+  
   connection_data *conn = TLS->ev_base;
-  
-  gchar *data = NULL;
-  size_t len;
-  GError *err = NULL;
-  g_file_get_contents (filename, &data, &len, &err);
-  int imgStoreId = purple_imgstore_add_with_id (g_memdup(data, (guint)len), len, NULL);
-  used_images_add (conn, imgStoreId);
-  
-  char *image = format_img_full (imgStoreId);
-  struct tgl_message *M = extra;
-  switch (tgl_get_peer_type (M->to_id)) {
-    case TGL_PEER_CHAT:
-      if (!our_msg(TLS, M)) {
-        chat_add_message (TLS, M, image);
-      }
-      break;
-      
-    case TGL_PEER_USER:
-      if (out_msg(TLS, M)) {
-        p2tgl_got_im (TLS, M->to_id, image, PURPLE_MESSAGE_SEND | PURPLE_MESSAGE_IMAGES, M->date);
-      } else {
-        p2tgl_got_im (TLS, M->from_id, image, PURPLE_MESSAGE_RECV | PURPLE_MESSAGE_IMAGES, M->date);
-      }
-      break;
+
+  int imgStoreId = p2tgl_imgstore_add_with_id (filename);
+  if (imgStoreId > 0) {
+    used_images_add (conn, imgStoreId);
+    char *image = format_img_full (imgStoreId);
+    
+    struct tgl_message *M = extra;
+    switch (tgl_get_peer_type (M->to_id)) {
+      case TGL_PEER_CHAT:
+        if (!our_msg (TLS, M)) {
+          chat_add_message (TLS, M, image);
+        }
+        break;
+        
+      case TGL_PEER_USER:
+        if (out_msg (TLS, M)) {
+          p2tgl_got_im (TLS, M->to_id, image, PURPLE_MESSAGE_SEND | PURPLE_MESSAGE_IMAGES, M->date);
+        } else {
+          p2tgl_got_im (TLS, M->from_id, image, PURPLE_MESSAGE_RECV | PURPLE_MESSAGE_IMAGES, M->date);
+        }
+        break;
+    }
+    g_free (image);
   }
- 
-  g_free (image);
-  conn = TLS->ev_base;
-  conn->updated = 1;
+
 }
 
 static void update_message_received (struct tgl_state *TLS, struct tgl_message *M) {
-  debug ("received message\n");
   connection_data *conn = TLS->ev_base;
-  conn->updated = 1;
-
+  
+  /* don't write to this file on every single message, which
+     can be pretty overkill on calls to tgl_do_get_difference that result in many
+     updates */
+  write_state_file_schedule (conn->TLS);
+  
   if (M->service) {
     char *text = format_service_msg (TLS, M);
     if (text) {
@@ -398,11 +387,15 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
       }
       g_free (text);
     }
-    conn->updated = 1;
     return;
   }
   
-  if ((M->flags & (FLAG_MESSAGE_EMPTY | FLAG_DELETED)) || !(M->flags & FLAG_CREATED)) {
+  if (
+      (M->flags & (FLAG_MESSAGE_EMPTY | FLAG_DELETED)) ||
+     !(M->flags & FLAG_CREATED) ||
+      !M->message ||
+      our_msg (TLS, M) // Message sent in this application, already added to history
+  ) {
     return;
   }
   if (!tgl_get_peer_type (M->to_id)) {
@@ -412,10 +405,6 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
 
   if (M->media.type == tgl_message_media_photo) {
     tgl_do_load_photo (TLS, &M->media.photo, on_message_load_photo, M);
-    return;
-  }
-
-  if (!M->message || our_msg(TLS, M)) {
     return;
   }
 
@@ -436,8 +425,9 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
       
     case TGL_PEER_USER:
       
-      // :TODO: figure out how to add messages from different devices to history
       if (out_msg(TLS, M)) {
+        // Outgoing message sent from a different device
+        // :TODO: figure out how to add messages from different devices to history
         p2tgl_got_im (TLS, M->to_id, text, PURPLE_MESSAGE_SEND, M->date);
       } else {
         p2tgl_got_im (TLS, M->from_id, text, PURPLE_MESSAGE_RECV, M->date);
@@ -701,8 +691,6 @@ void on_ready (struct tgl_state *TLS) {
   tgl_do_get_difference (TLS, 0, 0, 0);
   tgl_do_get_dialog_list (TLS, 0, 0);
   tgl_do_update_contact_list (TLS, 0, 0);
-  
-  conn->timer = purple_timeout_add (5000, queries_timerfunc, conn);
 }
 
 static const char *tgprpl_list_icon (PurpleAccount * acct, PurpleBuddy * buddy) {
@@ -826,7 +814,7 @@ static void tgprpl_login (PurpleAccount * acct) {
 static void tgprpl_close (PurpleConnection * gc) {
   debug ("tgprpl_close()\n");
   connection_data *conn = purple_connection_get_protocol_data (gc);
-  purple_timeout_remove (conn->timer);
+  
   
   connection_data_free (conn);
 }

@@ -106,6 +106,23 @@ void write_state_file (struct tgl_state *TLS) {
   close (state_file_fd); 
 }
 
+static gboolean write_state_file_gw (gpointer data) {
+  struct tgl_state *TLS = data;
+  
+  ((connection_data *)TLS->ev_base)->write_timer = 0;
+  write_state_file ((struct tgl_state *)TLS);
+  
+  return FALSE;
+}
+
+void write_state_file_schedule (struct tgl_state *TLS) {
+  connection_data *conn = TLS->ev_base;
+  
+  if (! conn->write_timer) {
+    conn->write_timer = purple_timeout_add (0, write_state_file_gw, TLS);
+  }
+}
+
 void write_dc (struct tgl_dc *DC, void *extra) {
   int auth_file_fd = *(int *)extra;
   if (!DC) { 
