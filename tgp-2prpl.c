@@ -236,6 +236,7 @@ void *p2tgl_notify_userinfo(struct tgl_state *TLS, tgl_peer_id_t user, PurpleNot
   handle = purple_notify_userinfo(tg_get_conn(TLS), name, user_info, cb, user_data);
   
   g_free(name);
+  g_free(user_info);
   return handle;
 }
 
