@@ -178,7 +178,6 @@ void read_dc (struct tgl_state *TLS, int auth_file_fd, int id, unsigned ver) {
   assert (read (auth_file_fd, &auth_key_id, 8) == 8);
   assert (read (auth_file_fd, auth_key, 256) == 256);
 
-  //bl_do_add_dc (id, ip, l, port, auth_key_id, auth_key);
   bl_do_dc_option (TLS, id, 2, "DC", l, ip, port);
   bl_do_set_auth_key_id (TLS, id, auth_key);
   bl_do_dc_signed (TLS, id);
@@ -264,7 +263,6 @@ void write_secret_chat (tgl_peer_t *_P, void *extra) {
   
   int id = tgl_get_peer_id (P->id);
   assert (write (fd, &id, 4) == 4);
-  //assert (write (fd, &P->flags, 4) == 4);
   int l = strlen (P->print_name);
   assert (write (fd, &l, 4) == 4);
   assert (write (fd, P->print_name, l) == l);
@@ -315,7 +313,6 @@ void read_secret_chat (struct tgl_state *TLS, int fd, int v) {
   static unsigned char key[256];
   static unsigned char sha[20];
   assert (read (fd, &id, 4) == 4);
-  //assert (read (fd, &flags, 4) == 4);
   assert (read (fd, &l, 4) == 4);
   assert (l > 0 && l < 1000);
   assert (read (fd, s, l) == l);
@@ -613,8 +610,7 @@ void chat_add_all_users (PurpleConversation *pc, struct tgl_chat *chat) {
 /**
  * This function generates a png image to visualize the sha1 key from an encrypted chat.
  */
-int generate_ident_icon (struct tgl_state *TLS, unsigned char* sha1_key)
-{
+int generate_ident_icon (struct tgl_state *TLS, unsigned char* sha1_key) {
   int colors[4] = {
     0xffffff,
     0xd5e6f3,

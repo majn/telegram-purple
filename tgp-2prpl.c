@@ -324,8 +324,7 @@ PurpleNotifyUserInfo *p2tgl_notify_peer_info_new (struct tgl_state *TLS, tgl_pee
   }
 }
 
-int p2tgl_imgstore_add_with_id (const char* filename)
-{
+int p2tgl_imgstore_add_with_id (const char* filename) {
   gchar *data = NULL;
   size_t len;
   GError *err = NULL;
@@ -335,8 +334,7 @@ int p2tgl_imgstore_add_with_id (const char* filename)
   return id;
 }
 
-void p2tgl_buddy_icons_set_for_user (PurpleAccount *pa, tgl_peer_id_t *id, const char* filename)
-{
+void p2tgl_buddy_icons_set_for_user (PurpleAccount *pa, tgl_peer_id_t *id, const char* filename) {
   char *who = g_strdup_printf("%d", tgl_get_peer_id(*id));
 
   gchar *data = NULL;

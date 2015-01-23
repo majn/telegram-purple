@@ -220,10 +220,6 @@ int tgln_read_in_lookup (struct connection *c, void *_data, int len) {
 void tgln_flush_out (struct connection *c) {
 }
 
-//#define MAX_CONNECTIONS 100
-//static struct connection *Connections[MAX_CONNECTIONS];
-//static int max_connection_fd;
-
 static void rotate_port (struct connection *c) {
   switch (c->port) {
   case 443:
@@ -478,51 +474,6 @@ static void try_read (struct connection *c) {
     try_rpc_read (c);
   }
 }
-/*
-int tgl_connections_make_poll_array (struct pollfd *fds, int max) {
-  int _max = max;
-  int i;
-  for (i = 0; i <= max_connection_fd; i++) {
-    if (Connections[i] && Connections[i]->state == conn_failed) {
-      restart_connection (Connections[i]);
-    }
-    if (Connections[i] && Connections[i]->state != conn_failed) {
-      assert (max > 0);
-      struct connection *c = Connections[i];
-      fds[0].fd = c->fd;
-      fds[0].events = POLLERR | POLLHUP | POLLRDHUP | POLLIN;
-      if (c->out_bytes || c->state == conn_connecting) {
-        fds[0].events |= POLLOUT;
-      }
-      fds ++;
-      max --;
-    }
-  }
-  return _max - max;
-}
-
-void tgl_connections_poll_result (struct pollfd *fds, int max) {
-  int i;
-  for (i = 0; i < max; i++) {
-    struct connection *c = Connections[fds[i].fd];
-    if (fds[i].revents & POLLIN) {
-      try_read (c);
-    }
-    if (fds[i].revents & (POLLHUP | POLLERR | POLLRDHUP)) {
-      vlogprintf (E_NOTICE, "fail_connection: events_mask=0x%08x\n", fds[i].revents);
-      fail_connection (c);
-    } else if (fds[i].revents & POLLOUT) {
-      if (c->state == conn_connecting) {
-        vlogprintf (E_DEBUG, "connection ready\n");
-        c->state = conn_ready;
-        c->last_receive_time = tglt_get_double_time ();
-      }
-      if (c->out_bytes) {
-        try_write (c);
-      }
-    }
-  }
-}*/
 
 static void incr_out_packet_num (struct connection *c) {
   c->out_packet_num ++;

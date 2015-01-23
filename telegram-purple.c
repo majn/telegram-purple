@@ -82,8 +82,7 @@ static char *format_status (struct tgl_user_status *status) {
   return status->online ? "Online" : "Mobile";
 }
 
-static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M)
-{
+static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
   assert (M && M->service);
 
   char *txt_user = NULL;
@@ -169,8 +168,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M)
   return txt;
 }
 
-char *format_user_status (struct tgl_user_status *status)
-{
+char *format_user_status (struct tgl_user_status *status) {
   char *when;
   switch (status->online) {
     case -1:
@@ -236,28 +234,12 @@ static char *format_document_desc (char *type, char *caption, gint64 size) {
 static char *format_message (struct tgl_message *M) {
 
   switch (M->media.type) {
-      /*
-    case tgl_message_media_audio:
-      return format_document_desc("AUDIO", "", M->media.audio.size);
-      break;
-    case tgl_message_media_audio_encr:
-      return format_document_desc("AUDIO", "", M->media.encr_audio.size);
-      break;
-      */
     case tgl_message_media_document:
       return format_document_desc("DOCUMENT", M->media.document.caption, M->media.document.size);
       break;
     case tgl_message_media_document_encr:
       return format_document_desc("DOCUMENT", M->media.encr_document.caption, M->media.encr_document.size);
       break;
-      /*
-    case tgl_message_media_video:
-      return format_document_desc("VIDEO", M->media.video.caption, M->media.video.size);
-      break;
-    case tgl_message_media_video_encr:
-      return format_document_desc("VIDEO", "", M->media.encr_video.size);
-      break;
-      */
     case tgl_message_media_photo_encr:
       return format_document_desc("PHOTO", "", M->media.encr_photo.size);
       break;
@@ -274,8 +256,7 @@ static char *format_message (struct tgl_message *M) {
 }
 
 
-static void tgl_do_send_unescape_message (struct tgl_state *TLS, const char *message, tgl_peer_id_t to)
-{
+static void tgl_do_send_unescape_message (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
   gchar *raw = purple_unescape_html(message);
   tgl_do_send_message (TLS, to, raw, (int)strlen (raw), 0, 0);
   g_free(raw);
@@ -408,7 +389,7 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
     return;
   }
 
-  char *text = format_message(M);
+  char *text = format_message (M);
   switch (tgl_get_peer_type (M->to_id)) {
     case TGL_PEER_CHAT:
       chat_add_message (TLS, M, text);
@@ -425,7 +406,7 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
       
     case TGL_PEER_USER:
       
-      if (out_msg(TLS, M)) {
+      if (out_msg (TLS, M)) {
         // Outgoing message sent from a different device
         // :TODO: figure out how to add messages from different devices to history
         p2tgl_got_im (TLS, M->to_id, text, PURPLE_MESSAGE_SEND, M->date);
@@ -678,9 +659,9 @@ void on_ready (struct tgl_state *TLS) {
   debug ("on_ready().\n");
   connection_data *conn = TLS->ev_base;
   
-  purple_connection_set_state(conn->gc, PURPLE_CONNECTED);
-  purple_connection_set_display_name(conn->gc, purple_account_get_username(conn->pa));
-  purple_blist_add_account(conn->pa);
+  purple_connection_set_state (conn->gc, PURPLE_CONNECTED);
+  purple_connection_set_display_name (conn->gc, purple_account_get_username(conn->pa));
+  purple_blist_add_account (conn->pa);
   tggroup = purple_find_group ("Telegram");
   if (tggroup == NULL) {
     tggroup = purple_group_new ("Telegram");
@@ -815,7 +796,6 @@ static void tgprpl_close (PurpleConnection * gc) {
   debug ("tgprpl_close()\n");
   connection_data *conn = purple_connection_get_protocol_data (gc);
   
-  
   connection_data_free (conn);
 }
 
@@ -938,11 +918,11 @@ static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Pur
   
 }
 
-static void tgprpl_add_deny (PurpleConnection * gc, const char *name){
+static void tgprpl_add_deny (PurpleConnection * gc, const char *name) {
   debug ("tgprpl_add_deny()\n");
 }
 
-static void tgprpl_rem_deny (PurpleConnection * gc, const char *name){
+static void tgprpl_rem_deny (PurpleConnection * gc, const char *name) {
   debug ("tgprpl_rem_deny()\n");
 }
 

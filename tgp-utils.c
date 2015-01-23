@@ -40,22 +40,15 @@ int str_not_empty (const char *string) {
   return string && string[0] != '\0';
 }
 
-/**
- * Return whether this message was created by our client in this session
- */
 int our_msg (struct tgl_state *TLS, struct tgl_message *M) {
   return (M->flags & FLAG_SESSION_OUTBOUND) != 0;
 }
 
-/**
- * Return whether this message was created by the current user.
- */
 int out_msg (struct tgl_state *TLS, struct tgl_message *M) {
   return M->out;
 }
 
-tgl_peer_t *tgp_encr_chat_get_partner (struct tgl_state *TLS, struct tgl_secret_chat *chat)
-{
+tgl_peer_t *tgp_encr_chat_get_partner (struct tgl_state *TLS, struct tgl_secret_chat *chat) {
   return tgl_peer_get (TLS, TGL_MK_USER(chat->admin_id == TLS->our_id ? chat->user_id : chat->admin_id));
 }
 
@@ -76,8 +69,7 @@ char *tgp_g_format_size (gint64 size) {
   return g_strdup_printf ("%.1f %s, ", s, sizes[base]);
 }
 
-void tgp_g_queue_free_full (GQueue *queue, GDestroyNotify free_func)
-{
+void tgp_g_queue_free_full (GQueue *queue, GDestroyNotify free_func) {
   void *entry;
   
   while ((entry = g_queue_pop_head(queue))) {

@@ -26,27 +26,19 @@
 #include <glib.h>
 #include <tgl.h>
 
-/*
- tgp-structs.c: Structs that are only used internally by the protocol plugin
- */
-
-void pending_reads_free_cb (gpointer data)
-{
+void pending_reads_free_cb (gpointer data) {
   free (data);
 }
 
-static void pending_reads_cb (struct tgl_state *TLS, void *extra, int success)
-{
+static void pending_reads_cb (struct tgl_state *TLS, void *extra, int success) {
   debug ("ack state: %d", success);
 }
 
-static gint pending_reads_compare (gconstpointer a, gconstpointer b)
-{
+static gint pending_reads_compare (gconstpointer a, gconstpointer b) {
   return !memcmp ((tgl_peer_id_t *)a, (tgl_peer_id_t *)b, sizeof(tgl_peer_id_t));
 }
 
-void pending_reads_send_all (GQueue *queue, struct tgl_state *TLS)
-{
+void pending_reads_send_all (GQueue *queue, struct tgl_state *TLS) {
   debug ("send all pending ack");
   
   tgl_peer_id_t *pending;
@@ -58,8 +50,7 @@ void pending_reads_send_all (GQueue *queue, struct tgl_state *TLS)
   }
 }
 
-void pending_reads_add (GQueue *queue, tgl_peer_id_t id)
-{
+void pending_reads_add (GQueue *queue, tgl_peer_id_t id) {
   tgl_peer_id_t *copy = malloc (sizeof(tgl_peer_id_t));
   *copy = id;
   if (! g_queue_find_custom (queue, copy, pending_reads_compare)) {
@@ -67,8 +58,7 @@ void pending_reads_add (GQueue *queue, tgl_peer_id_t id)
   }
 }
 
-struct message_text *message_text_init (struct tgl_message *M, gchar *text)
-{
+struct message_text *message_text_init (struct tgl_message *M, gchar *text) {
   struct message_text *mt = malloc (sizeof (struct message_text));
   mt->M = M;
   mt->text = text ? g_strdup (text) : text;
@@ -84,21 +74,16 @@ void message_text_free (gpointer data)
   free (mt);
 }
 
-static void used_image_free (gpointer data)
-{
+static void used_image_free (gpointer data) {
   int id = GPOINTER_TO_INT(data);
   purple_imgstore_unref_by_id (id);
-  debug ("used_image: unref %d", id);
 }
 
-void used_images_add (connection_data *data, gint imgid)
-{
+void used_images_add (connection_data *data, gint imgid) {
   data->used_images = g_list_append (data->used_images, GINT_TO_POINTER(imgid));
-  debug ("used_image: add %d", imgid);
 }
 
-connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *gc, PurpleAccount *pa)
-{
+connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *gc, PurpleAccount *pa) {
   connection_data *conn = g_new0 (connection_data, 1);
   conn->TLS = TLS;
   conn->gc = gc;
@@ -109,8 +94,7 @@ connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *
   return conn;
 }
 
-void *connection_data_free (connection_data *conn)
-{
+void *connection_data_free (connection_data *conn) {
   if (conn->write_timer) { purple_timeout_remove (conn->write_timer); }
   if (conn->login_timer) { purple_timeout_remove (conn->login_timer); }
   
@@ -125,8 +109,7 @@ void *connection_data_free (connection_data *conn)
   return NULL;
 }
 
-get_user_info_data* get_user_info_data_new (int show_info, tgl_peer_id_t peer)
-{
+get_user_info_data* get_user_info_data_new (int show_info, tgl_peer_id_t peer) {
   get_user_info_data *info_data = malloc (sizeof(get_user_info_data));
   info_data->show_info = show_info;
   info_data->peer = peer;

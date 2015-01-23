@@ -30,10 +30,17 @@ const char *format_time (time_t date);
 char *format_img_full (int imgstore);
 int str_not_empty (const char *string);
 
+/**
+ * Return whether this message was created by our client in this session
+ */
 int our_msg (struct tgl_state *TLS, struct tgl_message *M);
+
+/**
+ * Return whether this message was created by the current user.
+ */
 int out_msg (struct tgl_state *TLS, struct tgl_message *M);
 
 char *tgp_g_format_size (gint64 size);
 void tgp_g_queue_free_full (GQueue *queue, GDestroyNotify free_func);
 
-#endif /* defined(__telegram_adium__tgp_util__) */
+#endif
