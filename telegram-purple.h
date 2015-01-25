@@ -25,7 +25,6 @@
 #define PLUGIN_ID "prpl-telegram"
 #define TG_AUTHOR "Matthias Jentsch <mtthsjntsch@gmail.com>, Vitaly Valtman, Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>. Based on libtgl by Vitaly Valtman."
 #define TG_DESCRIPTION "Telegram protocol."
-#define TG_VERSION "0.6"
 #define TG_BUILD "11"
 
 #include <notify.h>

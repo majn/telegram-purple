@@ -14,6 +14,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 #import "TelegramPlugin.h"
 #import "TelegramService.h"
 #import "telegram-purple.h"
@@ -49,12 +53,12 @@ extern void purple_init_telegram_plugin();
 
 -(NSString *)pluginVersion
 {
-    return @TG_VERSION;
+    return @PACKAGE_VERSION;
 }
 
 -(NSString *)pluginDescription
 {
-    return @"Telegram";
+    return @TG_DESCRIPTION;
 }
 
 -(char*)getPkName

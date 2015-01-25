@@ -17,6 +17,11 @@
  
     Copyright Matthias Jentsch, Vitaly Valtman, Christopher Althaus, Markus Endres 2014
 */
+
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 #include <glib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -1157,7 +1162,7 @@ static PurplePluginInfo plugin_info = {
   PURPLE_PRIORITY_DEFAULT,
   PLUGIN_ID,
   "Telegram",
-  TG_VERSION " libtgl: " TGL_VERSION,
+  PACKAGE_VERSION " libtgl: " TGL_VERSION,
   "Telegram",
   TG_DESCRIPTION,
   TG_AUTHOR,
