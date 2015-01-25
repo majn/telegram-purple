@@ -51,7 +51,7 @@ int p2tgl_status_is_present (PurpleStatus *status)
   return !(strcmp (name, "unavailable") == 0 || strcmp (name, "away") == 0);
 }
 
-static PurpleChat *blist_find_chat_by_hasht_cond(PurpleConnection *gc,
+static PurpleChat *blist_find_chat_by_hasht_cond (PurpleConnection *gc,
     int (*fn)(GHashTable *hasht, void *data), void *data) {
   PurpleAccount *account = purple_connection_get_account(gc);
   PurpleBlistNode *node = purple_blist_get_root();

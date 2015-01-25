@@ -48,6 +48,16 @@ int out_msg (struct tgl_state *TLS, struct tgl_message *M) {
   return M->out;
 }
 
+tgl_peer_t *find_peer_by_name (struct tgl_state *TLS, const char *who) {
+  tgl_peer_t *peer = tgl_peer_get (TLS, TGL_MK_USER(atoi (who)));
+  if (peer) { return peer; }
+  peer = tgl_peer_get (TLS, TGL_MK_CHAT(atoi(who)));
+  if (peer) { return peer; }
+  peer = tgl_peer_get (TLS, TGL_MK_ENCR_CHAT(atoi(who)));
+  if (peer) { return peer; }
+  return NULL;
+}
+
 tgl_peer_t *tgp_encr_chat_get_partner (struct tgl_state *TLS, struct tgl_secret_chat *chat) {
   return tgl_peer_get (TLS, TGL_MK_USER(chat->admin_id == TLS->our_id ? chat->user_id : chat->admin_id));
 }

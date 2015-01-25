@@ -267,16 +267,6 @@ static void tgl_do_send_unescape_message (struct tgl_state *TLS, const char *mes
   g_free(raw);
 }
 
-static tgl_peer_t *find_peer_by_name (struct tgl_state *TLS, const char *who) {
-  tgl_peer_t *peer = tgl_peer_get (TLS, TGL_MK_USER(atoi (who)));
-  if (peer) { return peer; }
-  peer = tgl_peer_get (TLS, TGL_MK_CHAT(atoi(who)));
-  if (peer) { return peer; }
-  peer = tgl_peer_get (TLS, TGL_MK_ENCR_CHAT(atoi(who)));
-  if (peer) { return peer; }
-  return NULL;
-}
-
 static void start_secret_chat (PurpleBlistNode *node, gpointer data) {
   PurpleBuddy *buddy = data;
   connection_data *conn = purple_connection_get_protocol_data (
@@ -454,8 +444,7 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
   }
 }
 
-static void write_secret_chat_cb (struct tgl_state *TLS, void *extra, int success, struct tgl_secret_chat *E) {
-  debug ("update_secret_chat_handle success=%d", success);
+static void write_secret_chat_gw (struct tgl_state *TLS, void *extra, int success, struct tgl_secret_chat *E) {
   if (!success) { return; }
   write_secret_chat_file (TLS);
 }
@@ -468,7 +457,7 @@ struct accept_secret_chat_data {
 static void accept_secret_chat_cb (gpointer _data, const gchar *code) {
   struct accept_secret_chat_data *data = _data;
   
-  tgl_do_accept_encr_chat_request (data->TLS, data->U, write_secret_chat_cb, 0);
+  tgl_do_accept_encr_chat_request (data->TLS, data->U, write_secret_chat_gw, 0);
   
   g_free (data);
 }
@@ -476,7 +465,6 @@ static void accept_secret_chat_cb (gpointer _data, const gchar *code) {
 static void decline_secret_chat_cb (gpointer _data, const gchar *code) {
   struct accept_secret_chat_data *data = _data;
   
-  /* TODO: implement the api call to cancel secret chats, see tgprpl_remove_buddy */
   bl_do_encr_chat_delete (data->TLS, data->U);
   purple_blist_remove_buddy (p2tgl_buddy_find(data->TLS, data->U->id));
   
@@ -506,7 +494,7 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
     
     const char* choice = purple_account_get_string (conn->pa, "accept-secret-chats", "ask");
     if (! strcmp (choice, "always")) {
-      tgl_do_accept_encr_chat_request (TLS, U, write_secret_chat_cb, 0);
+      tgl_do_accept_encr_chat_request (TLS, U, write_secret_chat_gw, 0);
       
     } else if (! strcmp(choice, "ask")) {
       PurpleBuddy *who = p2tgl_buddy_find (TLS, TGL_MK_USER(U->user_id));
@@ -757,24 +745,24 @@ static GList *tgprpl_chat_join_info (PurpleConnection * gc) {
 
 static void tgprpl_login (PurpleAccount * acct) {
   debug ("tgprpl_login()\n");
-  PurpleConnection *gc = purple_account_get_connection(acct);
-  char const *username = purple_account_get_username(acct);
+  PurpleConnection *gc = purple_account_get_connection (acct);
+  char const *username = purple_account_get_username (acct);
   
   struct tgl_state *TLS = tgl_state_alloc ();
   
   const char *dir = config_dir;
-  struct passwd *pw = getpwuid(getuid());
+  struct passwd *pw = getpwuid (getuid ());
   size_t len = strlen (dir) + strlen (pw->pw_dir) + 2 + strlen (username);
   TLS->base_path = malloc (len);
   snprintf (TLS->base_path, len, "%s/%s/%s", pw->pw_dir, dir, username);
   debug ("base configuration path: '%s'", TLS->base_path);
-  g_mkdir_with_parents(TLS->base_path, 0700);
+  g_mkdir_with_parents (TLS->base_path, 0700);
   
   len += strlen ("/downloads");
   char *ddir = malloc (len);
   sprintf (ddir, "%s/downloads", TLS->base_path);
   tgl_set_download_directory (TLS, ddir);
-  g_mkdir_with_parents(ddir, 0700);
+  g_mkdir_with_parents (ddir, 0700);
   free (ddir);
   
   tgl_set_verbosity (TLS, 4);
@@ -1093,7 +1081,7 @@ static PurplePluginProtocolInfo prpl_info = {
   NULL,                    // normalize
   tgprpl_set_buddy_icon,
   NULL,                    // remove_group
-  NULL,                    // get_cb_real_name
+  NULL,
   NULL,                    // set_chat_topic
   NULL,                    // find_blist_chat
   NULL,                    // roomlist_get_list
