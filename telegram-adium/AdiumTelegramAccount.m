@@ -29,6 +29,11 @@
 	return @"149.154.167.50";
 }
 
+- (BOOL)shouldDisplayOutgoingMUCMessages
+{
+  return NO;
+}
+
 - (int)port
 {
 	return 443;

@@ -975,15 +975,9 @@ static int tgprpl_send_chat (PurpleConnection * gc, int id, const char *message,
   debug ("tgprpl_send_chat()\n");
   connection_data *conn = purple_connection_get_protocol_data (gc);
   tgl_do_send_unescape_message (conn->TLS, message, TGL_MK_CHAT(id));
-  
-  /* Pidgin won't display the written message if we don't call this, Adium will display it twice 
-     if we call it, so we don't do it for the adium Plugin.
-     TODO: there has to be a better way to do this, figure out how.
-   */
-#ifndef __ADIUM_
+
   p2tgl_got_chat_in(conn->TLS, TGL_MK_CHAT(id), TGL_MK_USER(conn->TLS->our_id), message,
     PURPLE_MESSAGE_RECV, time(NULL));
-#endif
   return 1;
 }
 
