@@ -304,7 +304,7 @@ void on_message_load_photo (struct tgl_state *TLS, void *extra, int success, cha
         
       case TGL_PEER_USER:
         if (out_msg (TLS, M)) {
-          p2tgl_got_im (TLS, M->to_id, image, PURPLE_MESSAGE_SEND | PURPLE_MESSAGE_IMAGES, M->date);
+          p2tgl_got_im_combo (TLS, M->to_id, image, PURPLE_MESSAGE_SEND | PURPLE_MESSAGE_IMAGES, M->date);
         } else {
           p2tgl_got_im (TLS, M->from_id, image, PURPLE_MESSAGE_RECV | PURPLE_MESSAGE_IMAGES, M->date);
         }
