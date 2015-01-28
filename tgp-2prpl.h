@@ -45,6 +45,7 @@ void p2tgl_got_chat_in (struct tgl_state *TLS, tgl_peer_id_t chat, tgl_peer_id_t
 
 void p2tgl_got_alias (struct tgl_state *TLS, tgl_peer_id_t who, const char *alias);
 void p2tgl_got_im (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, int flags, time_t when);
+void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, int flags, time_t when);
 void p2tgl_got_typing (struct tgl_state *TLS, tgl_peer_id_t name, int timeout);
 
 
@@ -60,7 +61,9 @@ void p2tgl_connection_set_display_name(struct tgl_state *TLS, tgl_peer_t *user);
 void p2tgl_conv_del_user (PurpleConversation *conv, tgl_peer_id_t user);
 void p2tgl_conv_add_users (PurpleConversation *conv, struct tgl_chat_user *list);
 void p2tgl_conv_add_user (PurpleConversation *conv, struct tgl_chat_user user, char *message, int flags, int new_arrival);
-
+PurpleConversation *p2tgl_find_conversation_with_account (struct tgl_state *TLS, tgl_peer_id_t peer);
+void p2tgl_conversation_write (PurpleConversation *conv, tgl_peer_id_t who, const char *message, int flags, int date);
+PurpleConversation *p2tgl_conversation_new (struct tgl_state *TLS, tgl_peer_id_t who);
 
 PurpleChat *p2tgl_chat_new (struct tgl_state *TLS, struct tgl_chat *chat);
 PurpleChat *p2tgl_chat_find (struct tgl_state *TLS, tgl_peer_id_t chat);

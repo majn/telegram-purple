@@ -255,7 +255,6 @@ static char *format_message (struct tgl_message *M) {
   }
 }
 
-
 static void tgl_do_send_unescape_message (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
   gchar *raw = purple_unescape_html(message);
   tgl_do_send_message (TLS, to, raw, (int)strlen (raw), 0, 0);
@@ -345,12 +344,9 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
       (M->flags & (FLAG_MESSAGE_EMPTY | FLAG_DELETED)) ||
      !(M->flags & FLAG_CREATED) ||
       !M->message ||
-      our_msg (TLS, M) // Message sent in this application, already added to history
+      our_msg (TLS, M) ||
+      !tgl_get_peer_type (M->to_id)
   ) {
-    return;
-  }
-  if (!tgl_get_peer_type (M->to_id)) {
-    warning ("Bad msg\n");
     return;
   }
 
@@ -367,7 +363,7 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
       
     case TGL_PEER_ENCR_CHAT:
         p2tgl_got_im (TLS, M->to_id, text, PURPLE_MESSAGE_RECV, M->date);
-        
+      
         pending_reads_add (conn->pending_reads, M->to_id);
         if (p2tgl_status_is_present (purple_account_get_active_status(conn->pa))) {
           pending_reads_send_all (conn->pending_reads, conn->TLS);
@@ -377,9 +373,7 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
     case TGL_PEER_USER:
       
       if (out_msg (TLS, M)) {
-        // Outgoing message sent from a different device
-        // :TODO: figure out how to add messages from different devices to history
-        p2tgl_got_im (TLS, M->to_id, text, PURPLE_MESSAGE_SEND, M->date);
+        p2tgl_got_im_combo (TLS, M->to_id, text, PURPLE_MESSAGE_SEND, M->date);
       } else {
         p2tgl_got_im (TLS, M->from_id, text, PURPLE_MESSAGE_RECV, M->date);
         

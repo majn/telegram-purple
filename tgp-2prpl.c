@@ -117,6 +117,31 @@ void p2tgl_got_im (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, in
   g_free (name);
 }
 
+void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, int flags, time_t when) {
+  
+  /* 
+     Outgoing messages are not well supported in different libpurple clients, 
+     p2tgl_conversation_write should have the best among different versions. Unfortunately 
+     this causes buggy formatting in Adium, so we don't use this workaround in that case.
+   
+     NOTE: Outgoing messages will not work in Adium <= 1.6.0, there is no way to print outgoing
+     messages in those versions at all.
+   */
+#ifndef __ADIUM_
+  if (flags & PURPLE_MESSAGE_SEND) {
+    PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, who);
+    if (!conv) {
+      conv = p2tgl_conversation_new(TLS, who);
+    }
+    p2tgl_conversation_write (conv, who, msg, PURPLE_MESSAGE_SEND, when);
+    return;
+  }
+#endif
+
+  p2tgl_got_im (TLS, who, msg, flags, when);
+}
+
+
 void p2tgl_got_typing (struct tgl_state *TLS, tgl_peer_id_t user, int timeout) {
   char *who = g_strdup_printf("%d", tgl_get_peer_id(user));
   
@@ -134,6 +159,39 @@ PurpleBuddy *p2tgl_buddy_find (struct tgl_state *TLS, tgl_peer_id_t user) {
   g_free (name);
   return b;
 }
+
+PurpleConversation *p2tgl_find_conversation_with_account (struct tgl_state *TLS, tgl_peer_id_t peer) {
+  int type = PURPLE_CONV_TYPE_IM;
+  if (tgl_get_peer_type (peer) == TGL_PEER_CHAT) {
+    type = PURPLE_CONV_TYPE_CHAT;
+  }
+  char *who = g_strdup_printf("%d", tgl_get_peer_id(peer));
+  
+  PurpleConversation *conv = purple_find_conversation_with_account (type, who, tg_get_acc(TLS));
+  
+  g_free (who);
+  return conv;
+}
+
+void p2tgl_conversation_write (PurpleConversation *conv, tgl_peer_id_t who, const char *message, int flags, int date) {
+  char *name = p2tgl_peer_strdup_id (who);
+  
+  purple_conv_im_write(purple_conversation_get_im_data(conv), name, message, flags, date);
+  // purple_conversation_write (conv, name, message, flags, date);
+  
+  g_free (name);
+}
+
+PurpleConversation *p2tgl_conversation_new (struct tgl_state *TLS, tgl_peer_id_t who) {
+  int type =  tgl_get_peer_type (who) == TGL_PEER_CHAT ? PURPLE_CONV_TYPE_CHAT : PURPLE_CONV_TYPE_IM;
+  
+  char *name = p2tgl_peer_strdup_id (who);
+  PurpleConversation *conv = purple_conversation_new(type, tg_get_acc(TLS), name);
+  g_free (name);
+  
+  return conv;
+}
+
 
 PurpleBuddy *p2tgl_buddy_new  (struct tgl_state *TLS, tgl_peer_t *user) {
   char *alias = p2tgl_strdup_alias (user);
