@@ -93,13 +93,12 @@ To clean all your user files run:
 Building the Adium Plugin
 -------------------------
 
-Compiling with XCode is a little bit problematic, since it requries you to compile Adium first and point the XCode project to the build output. My advice is to just use the [prebuild bundle](https://github.com/majn/telegram-purple/releases), but if you really want to do it, follow those steps.
+Compiling with XCode is a little bit problematic, since it requries you to compile Adium first to get the necessary framework files. My advice is to just use the [prebuild bundle](https://github.com/majn/telegram-purple/releases), but if you really want to do it, follow those steps.
 
-1. Compile the source of your current Adium version and add the created frameworks to the Adium-Telegram build path.
-2. Build the tgl submodule.
-2. Get zlib and libcrypto.a and provide it somewhere in your build path.
-3. Build the XCode-Project and execute the created bundle.
-
+1. Get the Adium source, compile it with XCode and copy the build output into telegram-adium/Frameworks/Adium. It should contain at least Adium.framework, AdiumLibpurple.framework and AIUitilies.framework
+2. Open the Adium source code, go to ./Frameworks and copy libglib.framework and libpurple.framework into telegram-adium/Frameworks/Adium
+3. Build the tgl submodule and delete libtgl.so from libs/ (it should only contain libtgl.a)
+4. Build the XCode-Project and execute the created bundle
 
 Authors
 -------
