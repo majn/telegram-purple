@@ -21,7 +21,8 @@
 #include "tgp-chat.h"
 
 void chat_add_all_users (PurpleConversation *pc, struct tgl_chat *chat) {
-  for (int i = 0; i < chat->user_list_size; i++) {
+  int i;
+  for (i = 0; i < chat->user_list_size; i++) {
     struct tgl_chat_user *uid = (chat->user_list + i);
     int flags = (chat->admin_id == uid->user_id ? PURPLE_CBFLAGS_FOUNDER : PURPLE_CBFLAGS_NONE);
     p2tgl_conv_add_user (pc, *uid, NULL, flags, 0);
@@ -64,7 +65,8 @@ int chat_add_message (struct tgl_state *TLS, struct tgl_message *M, char *text) 
 }
 
 int chat_is_member (int who, struct tgl_chat *chat) {
-  for (int i = 0; i < chat->user_list_size; i++) if ((chat->user_list + i)->user_id) {
+  int i;
+  for (i = 0; i < chat->user_list_size; i++) if ((chat->user_list + i)->user_id) {
     return TRUE;
   }
   return FALSE;
