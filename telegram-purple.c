@@ -67,6 +67,7 @@
 #include "telegram-purple.h"
 #include "msglog.h"
 #include "tgp-utils.h"
+#include "tgp-chat.h"
 
 #define _(m) m
 
@@ -74,14 +75,8 @@ PurplePlugin *_telegram_protocol = NULL;
 PurpleGroup *tggroup;
 const char *config_dir = ".telegram-purple";
 const char *pk_path = "/etc/telegram-purple/server.pub";
-void tgprpl_login_on_connected();
-void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
 
-static connection_data *get_conn_from_buddy (PurpleBuddy *buddy) {
-  connection_data *c = purple_connection_get_protocol_data (
-      purple_account_get_connection (purple_buddy_get_account (buddy)));
-  return c;
-}
+void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
 
 static char *format_status (struct tgl_user_status *status) {
   return status->online ? "Online" : "Mobile";
@@ -269,30 +264,10 @@ static void tgl_do_send_unescape_message (struct tgl_state *TLS, const char *mes
 
 static void start_secret_chat (PurpleBlistNode *node, gpointer data) {
   PurpleBuddy *buddy = data;
-  connection_data *conn = purple_connection_get_protocol_data (
-                           purple_account_get_connection (purple_buddy_get_account(buddy)));
-  
-  tgl_do_create_secret_chat(conn->TLS, TGL_MK_USER(atoi (purple_buddy_get_name (buddy))),
-                            0, 0);
-}
 
-static void on_update_user_name (struct tgl_state *TLS, tgl_peer_t *user) __attribute__ ((unused));
-static void on_update_user_name (struct tgl_state *TLS, tgl_peer_t *user) {
-  p2tgl_got_alias(TLS, user->id, p2tgl_strdup_alias(user));
-}
-
-static void on_update_chat_participants (struct tgl_state *TLS, struct tgl_chat *chat) {
-  PurpleConversation *pc = purple_find_chat(tg_get_conn(TLS), tgl_get_peer_id(chat->id));
-  if (pc) {
-    purple_conv_chat_clear_users (purple_conversation_get_chat_data(pc));
-    chat_add_all_users (pc, chat);
-  }
-}
-
-static void on_update_new_user_status (struct tgl_state *TLS, void *peer) __attribute__ ((unused));
-static void on_update_new_user_status (struct tgl_state *TLS, void *peer) {
-  tgl_peer_t *p = peer;
-  p2tgl_prpl_got_user_status(TLS, p->id, &p->user.status);
+  connection_data *conn = get_conn_from_buddy (buddy);
+  const char *name = purple_buddy_get_name (buddy);
+  tgl_do_create_secret_chat (conn->TLS, TGL_MK_USER(atoi (name)), 0, 0);
 }
 
 static void update_message_received (struct tgl_state *TLS, struct tgl_message *M);
@@ -527,24 +502,19 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
 
 static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, unsigned flags) {
   PurpleChat *ch = p2tgl_chat_find (TLS, chat->id);
-  
+
   if (flags & TGL_UPDATE_CREATED) {
-    if (!ch) {
-      ch = p2tgl_chat_new (TLS, chat);
-      purple_blist_add_chat(ch, NULL, NULL);
-    }
+    tgl_do_get_chat_info (TLS, chat->id, 0, on_chat_get_info, 0);
   }
   if (flags & TGL_UPDATE_TITLE && ch) {
     purple_blist_alias_chat (ch, chat->print_title);
   }
   if (flags & (TGL_UPDATE_MEMBERS | TGL_UPDATE_ADMIN) && ch) {
-    on_update_chat_participants (TLS, chat);
+    chat_users_update (TLS, chat);
   }
   if (flags & TGL_UPDATE_DELETED && ch) {
     purple_blist_remove_chat (ch);
   }
-  
-  // TODO: check if user is a member of the current chat and don't display the chat in that case
 }
 
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status) {
@@ -618,34 +588,17 @@ void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, stru
 }
 
 void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *C) {
-  assert (success);
-  
-  debug ("on_chat_joined(%d)\n", tgl_get_peer_id (C->id));
-  connection_data *conn = TLS->ev_base;
-
-  PurpleConversation *conv;
-  if (!(conv = purple_find_chat (conn->gc, tgl_get_peer_id(C->id)))) {
-    // chat conversation is not existing, create it
-    conv = serv_got_joined_chat (conn->gc, tgl_get_peer_id(C->id), C->title);
-  }
-  purple_conv_chat_clear_users (purple_conversation_get_chat_data(conv));
-  chat_add_all_users (conv, C);
-  
-  struct message_text *mt = 0;
-  while ((mt = g_queue_pop_head (conn->new_messages))) {
-    if (!chat_add_message(TLS, mt->M, mt->text)) {
-      warning ("WARNING, chat %d still not existing... \n", tgl_get_peer_id (C->id));
-      break;
-    }
-    if (mt->text) {
-      g_free (mt->text);
-    }
-    free (mt);
+  if (!success || !chat_is_member (TLS->our_id, C)) {
+    return;
   }
   
-  gchar *name = g_strdup_printf ("%d", tgl_get_peer_id (C->id));
-  g_hash_table_remove (conn->joining_chats, name);
-  g_free (name);
+  PurpleChat *PC = p2tgl_chat_find (TLS, C->id);
+  if (!PC) {
+    PC = p2tgl_chat_new (TLS, C);
+    purple_blist_add_chat (PC, NULL, NULL);
+  }
+  
+  chat_users_update (TLS, C);
 }
 
 void on_ready (struct tgl_state *TLS) {
@@ -896,7 +849,6 @@ static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Pur
     // telegram peer not existing, orphaned buddy
     return;
   }
-  
   switch (tgl_get_peer_type(peer->id)) {
     case TGL_PEER_ENCR_CHAT:
       /* TODO: implement the api call cancel secret chats. Currently the chat will only be marked as 
@@ -923,17 +875,9 @@ static void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
   debug ("tgprpl_chat_join()\n");
   
   connection_data *conn = purple_connection_get_protocol_data (gc);
-  const char *groupname = g_hash_table_lookup (data, "subject");
-  
-  char *id = g_hash_table_lookup(data, "id");
-  if (!id) {
-    warning ("Got no chat id, aborting...\n");
-    return;
-  }
-  if (!purple_find_chat(gc, atoi(id))) {
-    tgl_do_get_chat_info (conn->TLS, TGL_MK_CHAT(atoi(id)), 0, on_chat_get_info, 0);
-  } else {
-    serv_got_joined_chat(conn->gc, atoi(id), groupname);
+  int id = atoi (g_hash_table_lookup (data, "id"));
+  if (id) {
+    chat_show (conn->gc, id);
   }
 }
 

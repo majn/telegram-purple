@@ -94,9 +94,9 @@ void p2tgl_got_chat_left (struct tgl_state *TLS, tgl_peer_id_t chat) {
 }
 
 void p2tgl_got_chat_in (struct tgl_state *TLS, tgl_peer_id_t chat, tgl_peer_id_t who, const char *message, int flags, time_t when) {
-  char *name = p2tgl_peer_strdup_id(who);
+  char *name = p2tgl_peer_strdup_id (who);
   
-  serv_got_chat_in(tg_get_conn(TLS), tgl_get_peer_id (chat), name, flags, message, when);
+  serv_got_chat_in (tg_get_conn(TLS), tgl_get_peer_id (chat), name, flags, message, when);
   
   g_free (name);
 }

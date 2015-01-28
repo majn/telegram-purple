@@ -20,11 +20,14 @@
 #ifndef __telegram_adium__tgp_util__
 #define __telegram_adium__tgp_util__
 
+#include "tgp-structs.h"
+
 #include <stdio.h>
 #include <time.h>
 #include <tgl.h>
 #include <glib.h>
 
+connection_data *get_conn_from_buddy (PurpleBuddy *buddy);
 tgl_peer_t *tgp_encr_chat_get_partner (struct tgl_state *TLS, struct tgl_secret_chat *chat);
 tgl_peer_t *find_peer_by_name (struct tgl_state *TLS, const char *who);
 

@@ -19,7 +19,13 @@
  */
 
 #include "tgp-utils.h"
-#include "purple.h"
+#include <purple.h>
+
+connection_data *get_conn_from_buddy (PurpleBuddy *buddy) {
+  connection_data *c = purple_connection_get_protocol_data (
+                            purple_account_get_connection (purple_buddy_get_account (buddy)));
+  return c;
+}
 
 const char *format_time (time_t date) {
   struct tm *datetime = localtime(&date);

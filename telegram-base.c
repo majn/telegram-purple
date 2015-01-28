@@ -555,58 +555,6 @@ void telegram_login (struct tgl_state *TLS) {
   conn->login_timer = purple_timeout_add (100, check_all_authorized, TLS);
 }
 
-PurpleConversation *chat_show (PurpleConnection *gc, int id) {
-  debug ("show chat");
-  connection_data *conn = purple_connection_get_protocol_data(gc);
-  
-  PurpleConversation *convo = purple_find_chat(gc, id);
-  if (! convo) {
-    gchar *name = g_strdup_printf ("%d", id);
-    if (! g_hash_table_lookup (conn->joining_chats, name)) {
-      g_hash_table_insert (conn->joining_chats, name, (void *)1);
-      tgl_do_get_chat_info (conn->TLS, TGL_MK_CHAT(id), 0, on_chat_get_info, NULL);
-    } else {
-      g_free(name);
-    }
-  }
-  return convo;
-}
-
-int chat_add_message (struct tgl_state *TLS, struct tgl_message *M, char *text) {
-  connection_data *conn = TLS->ev_base;
-  
-  if (chat_show (conn->gc, tgl_get_peer_id (M->to_id))) {
-    p2tgl_got_chat_in(TLS, M->to_id, M->from_id, text ? text : M->message,
-                      M->service ? PURPLE_MESSAGE_SYSTEM : PURPLE_MESSAGE_RECV, M->date);
-    
-    pending_reads_add (conn->pending_reads, M->to_id);
-    if (p2tgl_status_is_present(purple_account_get_active_status(conn->pa))) {
-      pending_reads_send_all (conn->pending_reads, conn->TLS);
-    }
-    return 1;
-  } else {
-    // add message once the chat was initialised
-    struct message_text *mt = message_text_init (M, text);
-    g_queue_push_tail (conn->new_messages, mt);
-    return 0;
-  }
-}
-
-void chat_add_all_users (PurpleConversation *pc, struct tgl_chat *chat) {
-  struct tgl_chat_user *curr =  chat->user_list;
-  if (!curr) {
-    warning ("add_all_users_to_chat: chat contains no user list, cannot add users\n.");
-    return;
-  }
-  
-  int i;
-  for (i = 0; i < chat->user_list_size; i++) {
-    struct tgl_chat_user *uid = (curr + i);
-    int flags = (chat->admin_id == uid->user_id ? PURPLE_CBFLAGS_FOUNDER : PURPLE_CBFLAGS_NONE);
-    p2tgl_conv_add_user(pc, *uid, NULL, flags, 0);
-  }
-}
-
 /**
  * This function generates a png image to visualize the sha1 key from an encrypted chat.
  */
