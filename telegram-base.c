@@ -393,6 +393,7 @@ void export_auth_callback (struct tgl_state *TLS, void *extra, int success) {
 void telegram_export_authorization (struct tgl_state *TLS) {
   int i;
   for (i = 0; i <= TLS->max_dc_num; i++) if (TLS->DC_list[i] && !tgl_signed_dc (TLS, TLS->DC_list[i])) {
+    debug ("tgl_do_export_auth(%d)", i);
     tgl_do_export_auth (TLS, i, export_auth_callback, (void*)(long)TLS->DC_list[i]);    
     return;
   }
@@ -404,7 +405,7 @@ static void request_code (struct tgl_state *TLS);
 static void request_name_and_code (struct tgl_state *TLS);
 static void code_receive_result (struct tgl_state *TLS, void *extra, int success, struct tgl_user *U) {
   if (!success) {
-    debug ("Bad code...\n");
+    debug ("Bad code...");
     request_code (TLS);
   } else {
     telegram_export_authorization (TLS);
@@ -413,7 +414,7 @@ static void code_receive_result (struct tgl_state *TLS, void *extra, int success
 
 static void code_auth_receive_result (struct tgl_state *TLS, void *extra, int success, struct tgl_user *U) {
   if (!success) {
-    debug ("Bad code...\n");
+    debug ("Bad code...");
     request_name_and_code (TLS);
   } else {
     telegram_export_authorization (TLS);
@@ -452,7 +453,7 @@ static void request_name_code_entered (PurpleConnection* gc, PurpleRequestFields
 }
 
 static void request_code (struct tgl_state *TLS) {
-  debug ("Client is not registered, registering...\n");
+  debug ("Client is not registered, registering...");
   connection_data *conn = TLS->ev_base;
   int compat = purple_account_get_bool (tg_get_acc(TLS), "compat-verification", 0);
   
@@ -473,7 +474,7 @@ static void request_code (struct tgl_state *TLS) {
 }
 
 static void request_name_and_code (struct tgl_state *TLS) {
-  debug ("Phone is not registered, registering...\n");
+  debug ("Phone is not registered, registering...");
 
   connection_data *conn = TLS->ev_base;
 
@@ -506,7 +507,7 @@ static void sign_in_callback (struct tgl_state *TLS, void *extra, int success, i
   if (!error_if_val_false (TLS, success, "Invalid phone number",
           "Please enter only numbers in the international phone number format, "
           "a leading + following by the country prefix and the phone number.\n"
-          "Don't use any whitespaces or any other special characters.")) {
+          "Do not use any other special chars.")) {
     conn->hash = strdup (mhash);
     if (registered) {
       request_code (TLS);

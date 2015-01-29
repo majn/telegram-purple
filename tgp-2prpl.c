@@ -210,7 +210,7 @@ PurpleBuddy *p2tgl_buddy_update (struct tgl_state *TLS, tgl_peer_t *user, unsign
     b = p2tgl_buddy_new (TLS, user);
   }
   if (flags & (TGL_UPDATE_NAME | TGL_UPDATE_REAL_NAME | TGL_UPDATE_USERNAME)) {
-    debug ("Update username for id%d (name %s %s)\n", tgl_get_peer_id (user->id), user->user.first_name, user->user.last_name);
+    debug ("Update username for id%d (name %s %s)", tgl_get_peer_id (user->id), user->user.first_name, user->user.last_name);
     char *alias = p2tgl_strdup_alias (user);
     purple_blist_alias_buddy(b, alias);
     g_free (alias);

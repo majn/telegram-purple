@@ -22,7 +22,7 @@
 #include <debug.h>
 #include "telegram-purple.h"
 
-#ifdef DEBUG
+#ifndef __ADIUM_
 #define COLOR_GREY "\033[37;1m"
 #define COLOR_YELLOW "\033[33;1m"
 #define COLOR_RED "\033[0;31m"
@@ -44,8 +44,13 @@
 
 void log_level_printf (const char* format, va_list ap, int level, char *color) {
   char buffer[256];
-  vsnprintf(buffer, sizeof(buffer), format, ap);
-  purple_debug(level, PLUGIN_ID, "%s%s%s ", color, buffer, COLOR_NORMAL);
+  vsnprintf (buffer, sizeof(buffer), format, ap);
+  
+  int last = (int)strlen (buffer) - 1;
+  if (last >= 2 && buffer[last] == '\n') {
+    buffer[last] = '\0';
+  }
+  purple_debug (level, PLUGIN_ID, "%s%s%s\n", color, buffer, COLOR_NORMAL);
 }
 
 void debug(const char* format, ...) {

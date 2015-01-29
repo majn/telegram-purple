@@ -144,16 +144,16 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
       txt_action = g_strdup_printf ("updated layer to %d", M->action.layer);
       break;
     case tgl_message_action_request_key:
-      txt_action = g_strdup_printf ("Request rekey #%016llx\n", M->action.exchange_id);
+      txt_action = g_strdup_printf ("Request rekey #%016llx", M->action.exchange_id);
       break;
     case tgl_message_action_accept_key:
-      txt_action = g_strdup_printf ("Accept rekey #%016llx\n", M->action.exchange_id);
+      txt_action = g_strdup_printf ("Accept rekey #%016llx", M->action.exchange_id);
       break;
     case tgl_message_action_commit_key:
-      txt_action = g_strdup_printf ("Commit rekey #%016llx\n", M->action.exchange_id);
+      txt_action = g_strdup_printf ("Commit rekey #%016llx", M->action.exchange_id);
       break;
     case tgl_message_action_abort_key:
-      txt_action = g_strdup_printf ("Abort rekey #%016llx\n", M->action.exchange_id);
+      txt_action = g_strdup_printf ("Abort rekey #%016llx", M->action.exchange_id);
       break;
     default:
       txt_action = NULL;
@@ -534,7 +534,7 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
   tgl_peer_t *P = tgl_peer_get (TLS, dld->get_user_info_data->peer);
   
   if (!success || !P) {
-    warning ("Can not load userpic for user %s %s\n", U->first_name, U->last_name);
+    warning ("Can not load userpic for user %s %s", U->first_name, U->last_name);
     goto fin;
   }
   
@@ -561,7 +561,7 @@ void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, stru
   tgl_peer_t *P = tgl_peer_get (TLS, user_info_data->peer);
   
   if (! success) {
-    warning ("on_user_get_info not successfull, aborting...\n");
+    warning ("on_user_get_info not successfull, aborting...");
     return;
   }
   
@@ -596,7 +596,7 @@ void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct t
 }
 
 void on_ready (struct tgl_state *TLS) {
-  debug ("on_ready().\n");
+  debug ("on_ready().");
   connection_data *conn = TLS->ev_base;
   
   purple_connection_set_state (conn->gc, PURPLE_CONNECTED);
@@ -608,7 +608,7 @@ void on_ready (struct tgl_state *TLS) {
     purple_blist_add_group (tggroup, NULL);
   }
   
-  debug ("seq = %d, pts = %d\n", TLS->seq, TLS->pts);
+  debug ("seq = %d, pts = %d", TLS->seq, TLS->pts);
   tgl_do_get_difference (TLS, 0, 0, 0);
   tgl_do_get_dialog_list (TLS, 0, 0);
   tgl_do_update_contact_list (TLS, 0, 0);
@@ -619,7 +619,7 @@ static const char *tgprpl_list_icon (PurpleAccount * acct, PurpleBuddy * buddy) 
 }
 
 static void tgprpl_tooltip_text (PurpleBuddy * buddy, PurpleNotifyUserInfo * info, gboolean full) {
-  debug ("tgprpl_tooltip_text()\n", buddy->name);
+  debug ("tgprpl_tooltip_text()", buddy->name);
   
   tgl_peer_id_t *peer = purple_buddy_get_protocol_data(buddy);
   if (!peer) {
@@ -628,7 +628,7 @@ static void tgprpl_tooltip_text (PurpleBuddy * buddy, PurpleNotifyUserInfo * inf
   }
   tgl_peer_t *P = tgl_peer_get (get_conn_from_buddy (buddy)->TLS, *peer);
   if (!P) {
-    warning ("tgprpl_tooltip_text: warning peer with id %d not found in tree.\n", peer->id);
+    warning ("tgprpl_tooltip_text: warning peer with id %d not found in tree.", peer->id);
     return;
   }
   purple_notify_user_info_add_pair (info, "Status", format_status(&P->user.status));
@@ -639,7 +639,7 @@ static void tgprpl_tooltip_text (PurpleBuddy * buddy, PurpleNotifyUserInfo * inf
 }
 
 static GList *tgprpl_status_types (PurpleAccount * acct) {
-  debug ("tgprpl_status_types()\n");
+  debug ("tgprpl_status_types()");
   GList *types = NULL;
   PurpleStatusType *type;
   
@@ -666,7 +666,7 @@ static GList *tgprpl_status_types (PurpleAccount * acct) {
 }
 
 static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
-  purple_debug_info (PLUGIN_ID, "tgprpl_blist_node_menu()\n");
+  purple_debug_info (PLUGIN_ID, "tgprpl_blist_node_menu()");
   
   GList* menu = NULL;
   if (PURPLE_BLIST_NODE_IS_BUDDY(node)) {
@@ -680,7 +680,7 @@ static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
 }
 
 static GList *tgprpl_chat_join_info (PurpleConnection * gc) {
-  debug ("tgprpl_chat_join_info()\n");
+  debug ("tgprpl_chat_join_info()");
   struct proto_chat_entry *pce;
   
   pce = g_new0(struct proto_chat_entry, 1);
@@ -691,7 +691,7 @@ static GList *tgprpl_chat_join_info (PurpleConnection * gc) {
 }
 
 static void tgprpl_login (PurpleAccount * acct) {
-  debug ("tgprpl_login()\n");
+  debug ("tgprpl_login()");
   PurpleConnection *gc = purple_account_get_connection (acct);
   char const *username = purple_account_get_username (acct);
   
@@ -733,14 +733,14 @@ static void tgprpl_login (PurpleAccount * acct) {
 }
 
 static void tgprpl_close (PurpleConnection * gc) {
-  debug ("tgprpl_close()\n");
+  debug ("tgprpl_close()");
   connection_data *conn = purple_connection_get_protocol_data (gc);
   
   connection_data_free (conn);
 }
 
 static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *message, PurpleMessageFlags flags) {
-  debug ("tgprpl_send_im()\n");
+  debug ("tgprpl_send_im()");
   connection_data *conn = purple_connection_get_protocol_data(gc);
  
   // this is part of a workaround to support clients without
@@ -773,7 +773,7 @@ static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *m
 }
 
 static unsigned int tgprpl_send_typing (PurpleConnection * gc, const char *who, PurpleTypingState typing) {
-  debug ("tgprpl_send_typing()\n");
+  debug ("tgprpl_send_typing()");
   int id = atoi (who);
   connection_data *conn = purple_connection_get_protocol_data(gc);
   tgl_peer_t *U = tgl_peer_get (conn->TLS, TGL_MK_USER (id));
@@ -788,7 +788,7 @@ static unsigned int tgprpl_send_typing (PurpleConnection * gc, const char *who, 
 }
 
 static void tgprpl_get_info (PurpleConnection * gc, const char *who) {
-  debug ("tgprpl_get_info()\n");
+  debug ("tgprpl_get_info()");
   connection_data *conn = purple_connection_get_protocol_data(gc);
   
   tgl_peer_t *peer = find_peer_by_name (conn->TLS, who);
@@ -813,8 +813,8 @@ static void tgprpl_get_info (PurpleConnection * gc, const char *who) {
 }
 
 static void tgprpl_set_status (PurpleAccount * acct, PurpleStatus * status) {
-  debug ("tgprpl_set_status(%s)\n", purple_status_get_name (status));
-  debug ("tgprpl_set_status(currstatus=%s)\n", purple_status_get_name(purple_account_get_active_status(acct)));
+  debug ("tgprpl_set_status(%s)", purple_status_get_name (status));
+  debug ("tgprpl_set_status(currstatus=%s)", purple_status_get_name(purple_account_get_active_status(acct)));
 
   PurpleConnection *gc = purple_account_get_connection(acct);
   if (!gc) { return; }
@@ -833,7 +833,7 @@ static void tgprpl_add_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Purple
 }
 
 static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, PurpleGroup * group) {
-  debug ("tgprpl_remove_buddy()\n");
+  debug ("tgprpl_remove_buddy()");
   if (!buddy) { return; }
 
   connection_data *conn = purple_connection_get_protocol_data (gc);
@@ -858,15 +858,15 @@ static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Pur
 }
 
 static void tgprpl_add_deny (PurpleConnection * gc, const char *name) {
-  debug ("tgprpl_add_deny()\n");
+  debug ("tgprpl_add_deny()");
 }
 
 static void tgprpl_rem_deny (PurpleConnection * gc, const char *name) {
-  debug ("tgprpl_rem_deny()\n");
+  debug ("tgprpl_rem_deny()");
 }
 
 static void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
-  debug ("tgprpl_chat_join()\n");
+  debug ("tgprpl_chat_join()");
   
   connection_data *conn = purple_connection_get_protocol_data (gc);
   int id = atoi (g_hash_table_lookup (data, "id"));
@@ -876,26 +876,26 @@ static void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
 }
 
 static char *tgprpl_get_chat_name (GHashTable * data) {
-  debug ("tgprpl_get_chat_name()\n");
+  debug ("tgprpl_get_chat_name()");
   return g_strdup(g_hash_table_lookup(data, "subject"));
 }
 
 static PurpleXfer *tgprpl_new_xfer (PurpleConnection * gc, const char *who) {
-  debug ("tgprpl_new_xfer()\n");
+  debug ("tgprpl_new_xfer()");
   return (PurpleXfer *)NULL;
 }
 
 static void tgprpl_send_file (PurpleConnection * gc, const char *who, const char *file) {
-  debug ("tgprpl_send_file()\n");
+  debug ("tgprpl_send_file()");
 }
 
 static GHashTable *tgprpl_chat_info_deflt (PurpleConnection * gc, const char *chat_name) {
-  debug ("tgprpl_chat_info_defaults()\n");
+  debug ("tgprpl_chat_info_defaults()");
   return NULL;
 }
 
 static void tgprpl_chat_invite (PurpleConnection * gc, int id, const char *message, const char *name) {
-  debug ("tgprpl_chat_invite()\n");
+  debug ("tgprpl_chat_invite()");
 
   connection_data *conn = purple_connection_get_protocol_data (gc);
   tgl_peer_t *chat = tgl_peer_get(conn->TLS, TGL_MK_CHAT (id));
@@ -910,7 +910,7 @@ static void tgprpl_chat_invite (PurpleConnection * gc, int id, const char *messa
 }
 
 static int tgprpl_send_chat (PurpleConnection * gc, int id, const char *message, PurpleMessageFlags flags) {
-  debug ("tgprpl_send_chat()\n");
+  debug ("tgprpl_send_chat()");
   connection_data *conn = purple_connection_get_protocol_data (gc);
   tgl_do_send_unescape_message (conn->TLS, message, TGL_MK_CHAT(id));
 
@@ -920,19 +920,19 @@ static int tgprpl_send_chat (PurpleConnection * gc, int id, const char *message,
 }
 
 static void tgprpl_group_buddy (PurpleConnection * gc, const char *who, const char *old_group, const char *new_group) {
-  debug ("tgprpl_group_buddy()\n");
+  debug ("tgprpl_group_buddy()");
 }
 
 static void tgprpl_rename_group (PurpleConnection * gc, const char *old_name, PurpleGroup * group, GList * moved_buddies) {
-  debug ("tgprpl_rename_group()\n");
+  debug ("tgprpl_rename_group()");
 }
 
 static void tgprpl_convo_closed (PurpleConnection * gc, const char *who) {
-  debug ("tgprpl_convo_closed()\n");
+  debug ("tgprpl_convo_closed()");
 }
 
 static void tgprpl_set_buddy_icon (PurpleConnection * gc, PurpleStoredImage * img) {
-  debug ("tgprpl_set_buddy_icon()\n");
+  debug ("tgprpl_set_buddy_icon()");
   
   connection_data *conn = purple_connection_get_protocol_data (gc);
   if (purple_imgstore_get_filename (img)) {
@@ -946,12 +946,12 @@ static void tgprpl_set_buddy_icon (PurpleConnection * gc, PurpleStoredImage * im
 }
 
 static gboolean tgprpl_can_receive_file (PurpleConnection * gc, const char *who) {
-  debug ("tgprpl_can_receive_file()\n");
+  debug ("tgprpl_can_receive_file()");
   return 0;
 }
 
 static gboolean tgprpl_offline_message (const PurpleBuddy * buddy) {
-  debug ("tgprpl_offline_message()\n");
+  debug ("tgprpl_offline_message()");
   return 0;
 }
 
