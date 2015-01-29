@@ -183,11 +183,14 @@ void read_dc (struct tgl_state *TLS, int auth_file_fd, int id, unsigned ver) {
   bl_do_dc_signed (TLS, id);
 }
 
-int error_if_val_false (struct tgl_state *TLS, int val, const char *msg) {
+int error_if_val_false (struct tgl_state *TLS, int val, const char *cause, const char *msg) {
   if (!val) {
     connection_data *conn = TLS->ev_base;
     purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, msg);
-    return 1;
+    
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR,
+            cause, msg, NULL, NULL, NULL);
+    return TRUE;
   }
   return 0;
 }
@@ -382,7 +385,7 @@ void read_secret_chat_file (struct tgl_state *TLS) {
 
 void telegram_export_authorization (struct tgl_state *TLS);
 void export_auth_callback (struct tgl_state *TLS, void *extra, int success) {
-  if (!error_if_val_false(TLS, success, "Authentication Export failed.")) {
+  if (!error_if_val_false(TLS, success, "Login Canceled", "Authentication export failed.")) {
     telegram_export_authorization (TLS);
   }
 }
@@ -500,7 +503,10 @@ static void request_name_and_code (struct tgl_state *TLS) {
 
 static void sign_in_callback (struct tgl_state *TLS, void *extra, int success, int registered, const char *mhash) {
   connection_data *conn = TLS->ev_base;
-  if (!error_if_val_false (TLS, success, "Invalid or non-existing phone number.")) {
+  if (!error_if_val_false (TLS, success, "Invalid phone number",
+          "Please enter only numbers in the international phone number format, "
+          "a leading + following by the country prefix and the phone number.\n"
+          "Don't use any whitespaces or any other special characters.")) {
     conn->hash = strdup (mhash);
     if (registered) {
       request_code (TLS);
