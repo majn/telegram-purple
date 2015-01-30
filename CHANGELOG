@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+##### Version 0.6.1
+
+    - Fix many stability issues
+    - Do not readd left chats on login
+
 ##### Version 0.6
 
     - Support for secret chats 
