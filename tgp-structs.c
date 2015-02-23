@@ -105,8 +105,8 @@ void *connection_data_free (connection_data *conn) {
   
   tgp_g_queue_free_full (conn->pending_reads, pending_reads_free_cb);
   tgp_g_queue_free_full (conn->new_messages, message_text_free);
-  g_list_free_full (conn->used_images, used_image_free);
-  g_list_free_full (conn->transfers, tgp_xfer_send_data_free);
+  tgp_g_list_free_full (conn->used_images, used_image_free);
+  tgp_g_list_free_full (conn->transfers, tgp_xfer_send_data_free);
   tgl_free_all (conn->TLS);
   free (conn->TLS);
   

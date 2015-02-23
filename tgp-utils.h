@@ -46,5 +46,6 @@ char *format_img_full (int imgstore);
 int str_not_empty (const char *string);
 char *tgp_g_format_size (gint64 size);
 void tgp_g_queue_free_full (GQueue *queue, GDestroyNotify free_func);
+void tgp_g_list_free_full (GList *list, GDestroyNotify free_func);
 
 #endif
