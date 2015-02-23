@@ -68,6 +68,7 @@
 #include "msglog.h"
 #include "tgp-utils.h"
 #include "tgp-chat.h"
+#include "tgp-ft.h"
 
 #define _(m) m
 
@@ -255,10 +256,56 @@ static char *format_message (struct tgl_message *M) {
   }
 }
 
+static void picture_message_done (struct tgl_state *TLS, void *callback_extra, int success, struct tgl_message *M) {
+  if (success) {
+    debug ("send photo sucess!");
+  } else {
+    debug ("send photo fail!");
+  }
+}
+
 static void tgl_do_send_unescape_message (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
-  gchar *raw = purple_unescape_html(message);
+  
+  debug (message);
+  
+  // search for outgoing embedded image tags and send them
+  gchar *img = NULL;
+  if ((img = g_strrstr (message, "<IMG")) || (img = g_strrstr (message, "<img"))) {
+    debug ("img found: %s", img);
+    
+    gchar *id;
+    if ((id = g_strrstr (img, "ID=\"")) || (id = g_strrstr (img, "id=\""))) {
+      id += 4;
+      debug ("id found: %s", id);
+      int imgid = atoi (id);
+      
+      if (imgid > 0) {
+        PurpleStoredImage *psi = purple_imgstore_find_by_id (imgid);
+        
+        gchar *tmp = g_build_filename(g_get_tmp_dir(), purple_imgstore_get_filename (psi), NULL) ;
+        
+        GError *err = NULL;
+        gconstpointer data = purple_imgstore_get_data (psi);
+        g_file_set_contents (tmp, data, purple_imgstore_get_size (psi), &err);
+        if (! err) {
+          tgl_do_send_document (TLS, -2, to, tmp, picture_message_done, NULL);
+        } else {
+          failure ("Cannot store image, temp directory not available: %s\n", err->message);
+          g_error_free (err);
+        }
+      }
+    }
+  }
+  
+  // remove all remaining html elements that would mess up the message
+  gchar *stripped = purple_markup_strip_html (message);
+  
+  // unescape all escaped html markup, so that we don't see any escape symbols in the message
+  gchar *raw = purple_unescape_html (stripped);
   tgl_do_send_message (TLS, to, raw, (int)strlen (raw), 0, 0);
-  g_free(raw);
+  g_free (raw);
+  
+  g_free (stripped);
 }
 
 static void start_secret_chat (PurpleBlistNode *node, gpointer data) {
@@ -352,6 +399,15 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
 
   if (M->media.type == tgl_message_media_photo) {
     tgl_do_load_photo (TLS, &M->media.photo, on_message_load_photo, M);
+    return;
+  }
+  
+  if (M->media.type == tgl_message_media_document) {
+    char *who = g_strdup_printf("%d", tgl_get_peer_id(M->from_id));
+    
+    tgprpl_recv_file (conn->gc, who, &M->media.document);
+    
+    g_free (who);
     return;
   }
 
@@ -666,7 +722,7 @@ static GList *tgprpl_status_types (PurpleAccount * acct) {
 }
 
 static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
-  purple_debug_info (PLUGIN_ID, "tgprpl_blist_node_menu()");
+  debug ("tgprpl_blist_node_menu()");
   
   GList* menu = NULL;
   if (PURPLE_BLIST_NODE_IS_BUDDY(node)) {
@@ -880,15 +936,6 @@ static char *tgprpl_get_chat_name (GHashTable * data) {
   return g_strdup(g_hash_table_lookup(data, "subject"));
 }
 
-static PurpleXfer *tgprpl_new_xfer (PurpleConnection * gc, const char *who) {
-  debug ("tgprpl_new_xfer()");
-  return (PurpleXfer *)NULL;
-}
-
-static void tgprpl_send_file (PurpleConnection * gc, const char *who, const char *file) {
-  debug ("tgprpl_send_file()");
-}
-
 static GHashTable *tgprpl_chat_info_deflt (PurpleConnection * gc, const char *chat_name) {
   debug ("tgprpl_chat_info_defaults()");
   return NULL;
@@ -947,16 +994,11 @@ static void tgprpl_set_buddy_icon (PurpleConnection * gc, PurpleStoredImage * im
 
 static gboolean tgprpl_can_receive_file (PurpleConnection * gc, const char *who) {
   debug ("tgprpl_can_receive_file()");
-  return 0;
-}
-
-static gboolean tgprpl_offline_message (const PurpleBuddy * buddy) {
-  debug ("tgprpl_offline_message()");
-  return 0;
+  return TRUE;
 }
 
 static PurplePluginProtocolInfo prpl_info = {
-  OPT_PROTO_NO_PASSWORD,
+  OPT_PROTO_NO_PASSWORD | OPT_PROTO_IM_IMAGE,
   NULL,                    // user_splits, initialized in tgprpl_init()
   NULL,                    // protocol_options, initialized in tgprpl_init()
   {
@@ -1022,7 +1064,7 @@ static PurplePluginProtocolInfo prpl_info = {
   tgprpl_can_receive_file,
   tgprpl_send_file,       
   tgprpl_new_xfer,        
-  tgprpl_offline_message,
+  NULL,                    // offline_message
   NULL,                    // whiteboard_prpl_ops
   NULL,                    // send_raw
   NULL,                    // roomlist_room_serialize

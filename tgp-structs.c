@@ -93,6 +93,12 @@ connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *
   return conn;
 }
 
+static void tgp_xfer_send_data_free (gpointer _data) {
+  struct tgp_xfer_send_data *data = _data;
+  if (data->timer) { purple_timeout_remove(data->timer); }
+  g_free (data);
+}
+
 void *connection_data_free (connection_data *conn) {
   if (conn->write_timer) { purple_timeout_remove (conn->write_timer); }
   if (conn->login_timer) { purple_timeout_remove (conn->login_timer); }
@@ -100,6 +106,7 @@ void *connection_data_free (connection_data *conn) {
   tgp_g_queue_free_full (conn->pending_reads, pending_reads_free_cb);
   tgp_g_queue_free_full (conn->new_messages, message_text_free);
   g_list_free_full (conn->used_images, used_image_free);
+  g_list_free_full (conn->transfers, tgp_xfer_send_data_free);
   tgl_free_all (conn->TLS);
   free (conn->TLS);
   

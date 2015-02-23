@@ -34,6 +34,7 @@ PurpleAccount *tg_get_acc (struct tgl_state *TLS);
 PurpleConnection *tg_get_conn (struct tgl_state *TLS);
 tgl_peer_t *p2tgl_get_peer (tgl_peer_id_t peer);
 tgl_peer_t *p2tgl_get_peer_by_id (int id);
+char *p2tgl_peer_strdup_id (tgl_peer_id_t user);
 char *p2tgl_strdup_alias(tgl_peer_t *user);
 
 int p2tgl_status_is_present (PurpleStatus *status);

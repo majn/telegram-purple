@@ -42,5 +42,6 @@ extern const char *pk_path;
 extern const char *config_dir;
 extern PurplePlugin *_telegram_protocol;
 char *format_user_status (struct tgl_user_status *status);
+char *p2tgl_peer_strdup_id (tgl_peer_id_t user);
 
 #endif

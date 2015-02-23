@@ -37,7 +37,7 @@ PurpleConnection *tg_get_conn (struct tgl_state *TLS) {
   return (PurpleConnection *) ((connection_data *)TLS->ev_base)->gc;
 }
 
-static char *p2tgl_peer_strdup_id (tgl_peer_id_t user) {
+char *p2tgl_peer_strdup_id (tgl_peer_id_t user) {
   return g_strdup_printf("%d", tgl_get_peer_id(user));
 }
 
@@ -51,6 +51,11 @@ int p2tgl_status_is_present (PurpleStatus *status)
   return !(strcmp (name, "unavailable") == 0 || strcmp (name, "away") == 0);
 }
 
+/* 
+   Disclaimer: I stole this function from davidgfnet's whatsapp plugin, all 
+   credit for it goes to him
+   @see: https://github.com/davidgfnet/whatsapp-purple
+ */
 static PurpleChat *blist_find_chat_by_hasht_cond (PurpleConnection *gc,
     int (*fn)(GHashTable *hasht, void *data), void *data) {
   PurpleAccount *account = purple_connection_get_account(gc);
@@ -261,7 +266,8 @@ PurpleChat *p2tgl_chat_new (struct tgl_state *TLS, struct tgl_chat *chat) {
   g_hash_table_insert(ht, g_strdup("id"), name);
   g_hash_table_insert(ht, g_strdup("owner"), admin);
   
-  return purple_chat_new(tg_get_acc(TLS), chat->title, ht);
+  PurpleChat *C = purple_chat_new(tg_get_acc(TLS), chat->title, ht);
+  return C;
 }
 
 PurpleChat *p2tgl_chat_find (struct tgl_state *TLS, tgl_peer_id_t id) {

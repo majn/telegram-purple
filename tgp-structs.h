@@ -37,6 +37,7 @@ typedef struct {
   GList *used_images;
   guint write_timer;
   guint login_timer;
+  GList *transfers;
   int in_fallback_chat;
 } connection_data;
 
@@ -44,6 +45,14 @@ typedef struct {
   int show_info; 
   tgl_peer_id_t peer;
 } get_user_info_data;
+
+struct tgp_xfer_send_data {
+  int timer;
+  int done;
+  PurpleXfer *xfer;
+  connection_data *conn;
+  struct tgl_document *document;
+};
 
 struct download_desc {
   get_user_info_data *get_user_info_data;
