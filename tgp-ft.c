@@ -166,6 +166,11 @@ PurpleXfer *tgprpl_new_xfer (PurpleConnection * gc, const char *who) {
   connection_data *conn = purple_connection_get_protocol_data (gc);
   
   PurpleXfer *X = purple_xfer_new (conn->pa, PURPLE_XFER_SEND, who);
+  if (X) {
+    purple_xfer_set_init_fnc (X, tgprpl_xfer_send_init);
+    purple_xfer_set_cancel_send_fnc (X, tgprpl_xfer_canceled);
+    tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), NULL);
+  }
   
   return (PurpleXfer *)X;
 }
@@ -179,7 +184,6 @@ void tgprpl_recv_file (PurpleConnection * gc, const char *who, struct tgl_docume
   purple_xfer_set_filename (X, D->caption);
   purple_xfer_set_init_fnc (X, tgprpl_xfer_recv_init);
   purple_xfer_set_cancel_recv_fnc (X, tgprpl_xfer_canceled);
-  
   tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), D);
   
   purple_xfer_request (X);
@@ -189,8 +193,6 @@ void tgprpl_send_file (PurpleConnection * gc, const char *who, const char *file)
   debug ("tgprpl_send_file()");
   
   PurpleXfer *X = tgprpl_new_xfer (gc, who);
-  purple_xfer_set_init_fnc (X, tgprpl_xfer_send_init);
-  purple_xfer_set_cancel_send_fnc (X, tgprpl_xfer_canceled);
   
   if (file) {
     purple_xfer_request_accepted (X, file);
@@ -198,7 +200,5 @@ void tgprpl_send_file (PurpleConnection * gc, const char *who, const char *file)
   } else {
     purple_xfer_request (X);
   }
-  
-  tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), NULL);
 }
 

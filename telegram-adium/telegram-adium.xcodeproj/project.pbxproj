@@ -36,6 +36,7 @@
 		C49A915819BBC5C5001B3DC0 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C49A915719BBC5C5001B3DC0 /* libz.dylib */; };
 		C4D819031A5C85FE0044CBA9 /* lodepng.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D819011A5C85FE0044CBA9 /* lodepng.c */; };
 		C4D819061A5C862E0044CBA9 /* tgp-structs.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D819041A5C862E0044CBA9 /* tgp-structs.c */; };
+		C4E528111A8A907200C4B915 /* tgp-ft.c in Sources */ = {isa = PBXBuildFile; fileRef = C4E5280F1A8A907200C4B915 /* tgp-ft.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -85,6 +86,8 @@
 		C4D819021A5C85FE0044CBA9 /* lodepng.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lodepng.h; sourceTree = "<group>"; };
 		C4D819041A5C862E0044CBA9 /* tgp-structs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "tgp-structs.c"; path = "../tgp-structs.c"; sourceTree = "<group>"; };
 		C4D819051A5C862E0044CBA9 /* tgp-structs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "tgp-structs.h"; path = "../tgp-structs.h"; sourceTree = "<group>"; };
+		C4E5280F1A8A907200C4B915 /* tgp-ft.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "tgp-ft.c"; path = "../tgp-ft.c"; sourceTree = "<group>"; };
+		C4E528101A8A907200C4B915 /* tgp-ft.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "tgp-ft.h"; path = "../tgp-ft.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -203,6 +206,8 @@
 				C41D58401A16D88E00B22448 /* tgp-2prpl.c */,
 				C431EB7B1A76C737006521CB /* tgp-chat.c */,
 				C431EB7C1A76C737006521CB /* tgp-chat.h */,
+				C4E5280F1A8A907200C4B915 /* tgp-ft.c */,
+				C4E528101A8A907200C4B915 /* tgp-ft.h */,
 			);
 			name = "telegram-purple";
 			sourceTree = "<group>";
@@ -289,6 +294,7 @@
 				C438CE331A12C07800E1DA0F /* telegram-base.c in Sources */,
 				C438CE341A12C07800E1DA0F /* telegram-purple.c in Sources */,
 				C4877C1819BB37EA006FA91F /* TelegramService.m in Sources */,
+				C4E528111A8A907200C4B915 /* tgp-ft.c in Sources */,
 				C438CE361A12C07800E1DA0F /* tgp-timers.c in Sources */,
 				C410949B19BB337A0083BF3F /* TelegramPlugin.m in Sources */,
 				C4877C1E19BB676B006FA91F /* AdiumTelegramAccount.m in Sources */,

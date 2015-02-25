@@ -16,7 +16,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import <AdiumLibpurple/CBPurpleAccount.h>
+#import <Adium/AIAccount.h>
 
-@interface AdiumTelegramAccount : CBPurpleAccount
-
+@interface AdiumTelegramAccount : CBPurpleAccount<AIAccount_Files>
 @end

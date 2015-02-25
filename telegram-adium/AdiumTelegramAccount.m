@@ -16,6 +16,9 @@
 
 #import "AdiumTelegramAccount.h"
 #import <libpurple/conversation.h>
+#import <Adium/ESFileTransfer.h>
+#import <Adium/AIListContact.h>
+#import "tgp-ft.h"
 
 @implementation AdiumTelegramAccount
 
@@ -42,6 +45,26 @@
 - (BOOL)canSendOfflineMessageToContact:(AIListContact *)inContact
 {
 	return YES;
+}
+
+- (void)beginSendOfFileTransfer:(ESFileTransfer *)fileTransfer
+{
+  [super _beginSendOfFileTransfer:fileTransfer];
+}
+
+- (void)acceptFileTransferRequest:(ESFileTransfer *)fileTransfer
+{
+  [super acceptFileTransferRequest:fileTransfer];
+}
+
+- (void)rejectFileReceiveRequest:(ESFileTransfer *)fileTransfer
+{
+  [super rejectFileReceiveRequest:fileTransfer];
+}
+
+- (void)cancelFileTransfer:(ESFileTransfer *)fileTransfer
+{
+  [super cancelFileTransfer:fileTransfer];
 }
 
 @end
