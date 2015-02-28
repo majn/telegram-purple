@@ -33,6 +33,8 @@ static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, in
 
   if (success) {
     if (!data->done) {
+      debug ("purple_xfer_set_completed");
+      purple_xfer_set_bytes_sent (data->xfer, purple_xfer_get_size (data->xfer));
       purple_xfer_set_completed (data->xfer, TRUE);
     }
     
@@ -53,6 +55,8 @@ static void tgprpl_xfer_on_finished (struct tgl_state *TLS, void *_data, int suc
   
   if (success) {
     if (!data->done) {
+      debug ("purple_xfer_set_completed");
+      purple_xfer_set_bytes_sent (data->xfer, purple_xfer_get_size (data->xfer));
       purple_xfer_set_completed (data->xfer, TRUE);
     }
   } else {
@@ -83,6 +87,7 @@ static gboolean tgprpl_xfer_upload_progress (gpointer _data) {
       purple_xfer_set_bytes_sent (X, conn->TLS->cur_uploaded_bytes);
       purple_xfer_update_progress (X);
       
+      debug ("PURPLE_XFER_RECEIVER progress %d / %d", conn->TLS->cur_uploaded_bytes, conn->TLS->cur_uploading_bytes);
       if (conn->TLS->cur_uploaded_bytes == conn->TLS->cur_uploading_bytes) {
         data->timer = 0;
         return FALSE;
@@ -90,12 +95,11 @@ static gboolean tgprpl_xfer_upload_progress (gpointer _data) {
       break;
       
     case PURPLE_XFER_RECEIVE:
-      debug ("PURPLE_XFER_RECEIVER progress ...");
       purple_xfer_set_size (X, conn->TLS->cur_downloading_bytes);
       purple_xfer_set_bytes_sent (X, conn->TLS->cur_downloaded_bytes);
       purple_xfer_update_progress (X);
       
-      debug ("PURPLE_XFER_RECEIVER progress %d", conn->TLS->cur_downloaded_bytes);
+      debug ("PURPLE_XFER_RECEIVER progress %d / %d", conn->TLS->cur_downloading_bytes, conn->TLS->cur_downloaded_bytes);
       if (conn->TLS->cur_downloading_bytes == conn->TLS->cur_downloaded_bytes) {
         data->timer = 0;
         return FALSE;
