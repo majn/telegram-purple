@@ -270,6 +270,7 @@ static void tgl_do_send_unescape_message (struct tgl_state *TLS, const char *mes
   
   // search for outgoing embedded image tags and send them
   gchar *img = NULL;
+  gchar *stripped = NULL;
   if ((img = g_strrstr (message, "<IMG")) || (img = g_strrstr (message, "<img"))) {
     debug ("img found: %s", img);
     
@@ -295,17 +296,39 @@ static void tgl_do_send_unescape_message (struct tgl_state *TLS, const char *mes
         }
       }
     }
+    
+    // send remaining text as additional plaintext message
+    stripped = purple_markup_strip_html (message);
+    tgl_do_send_message (TLS, to, stripped, (int)strlen (stripped), 0, 0);
+    g_free (stripped);
+    return;
   }
   
-  // remove all remaining html elements that would mess up the message
-  gchar *stripped = purple_markup_strip_html (message);
+#ifndef __ADIUM_
+  /* 
+     Adium won't escape any HTML markup and just pass it through,
+     while Pidgin will replace special chars with the escape chars.
+     Also, Pidgin will add additional markup for RTL languages and such,
+     which Adium doesn't do either. 
+     
+     TODO: This is ridiculous, there has to a better way to handle this across platforms.
+   */
   
-  // unescape all escaped html markup, so that we don't see any escape symbols in the message
-  gchar *raw = purple_unescape_html (stripped);
-  tgl_do_send_message (TLS, to, raw, (int)strlen (raw), 0, 0);
-  g_free (raw);
+  /* first, we remove any HTML markup added by Pidgin, since Telegram won't handle it properly.
+     User-entered HTML is still escaped and therefore won't be harmed. */
+  stripped = purple_markup_strip_html (message);
   
+  /* now unescape the markup, so that html special chars will still show
+     up properly in Telegram */
+  gchar *unescaped = purple_unescape_text (stripped);
+  tgl_do_send_message (TLS, to, unescaped, (int)strlen (unescaped), 0, 0);
+  
+  g_free (unescaped);
   g_free (stripped);
+  return;
+#endif
+  
+  tgl_do_send_message (TLS, to, message, (int)strlen (message), 0, 0);
 }
 
 static void start_secret_chat (PurpleBlistNode *node, gpointer data) {
