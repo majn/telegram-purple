@@ -5,6 +5,8 @@ LDFLAGS=@LDFLAGS@ @OPENSSL_LDFLAGS@ @PURPLE_LIBS@ @LIBS@ -lcrypto -rdynamic -ggd
 CPPFLAGS=@CPPFLAGS@ -DFLAGS
 COMPILE_FLAGS=${CFLAGS} ${CPPFLAGS}
 LINK_FLAGS=${LDFLAGS}
+DIR_PERM=0755
+FILE_PERM=0644
 
 CC=@CC@
 
@@ -61,16 +63,16 @@ strip: $(PRPL_LIBNAME)
 
 .PHONY: install
 install: $(PRPL_LIBNAME)
-	mkdir -m 0755 -p $(DESTDIR)$(PLUGIN_DIR_PURPLE)
-	install -m 0755 $(PRPL_LIBNAME) $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
-	mkdir -m 0644 -p $(DESTDIR)/etc/telegram-purple
-	install -m 0644 tg-server.pub $(DESTDIR)/etc/telegram-purple/server.pub
-	mkdir -m 0644 -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16
-	install -m 0644 imgs/telegram16.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
-	mkdir -m 0644 -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22
-	install -m 0644 imgs/telegram22.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
-	mkdir -m 0644 -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48
-	install -m 0644 imgs/telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(PLUGIN_DIR_PURPLE)
+	install -m $(FILE_PERM) $(PRPL_LIBNAME) $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)/etc/telegram-purple
+	install -m $(FILE_PERM) tg-server.pub $(DESTDIR)/etc/telegram-purple/server.pub
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16
+	install -m $(FILE_PERM) imgs/telegram16.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22
+	install -m $(FILE_PERM) imgs/telegram22.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48
+	install -m $(FILE_PERM) imgs/telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
 
 .PHONY: local_install
 local_install:
