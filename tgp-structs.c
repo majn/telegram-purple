@@ -22,6 +22,7 @@
 #include "purple.h"
 #include "msglog.h"
 #include "tgp-utils.h"
+#include "tgp-ft.h"
 
 #include <glib.h>
 #include <tgl.h>
@@ -106,7 +107,7 @@ void *connection_data_free (connection_data *conn) {
   tgp_g_queue_free_full (conn->pending_reads, pending_reads_free_cb);
   tgp_g_queue_free_full (conn->new_messages, message_text_free);
   tgp_g_list_free_full (conn->used_images, used_image_free);
-  tgp_g_list_free_full (conn->transfers, tgp_xfer_send_data_free);
+  tgprpl_xfer_free_all (conn);
   tgl_free_all (conn->TLS);
   free (conn->TLS);
   

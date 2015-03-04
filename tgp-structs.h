@@ -37,7 +37,6 @@ typedef struct {
   GList *used_images;
   guint write_timer;
   guint login_timer;
-  GList *transfers;
   int in_fallback_chat;
 } connection_data;
 

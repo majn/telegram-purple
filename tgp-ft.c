@@ -27,6 +27,8 @@
 #include <glib.h>
 #include <glib/gstdio.h>
 
+static void tgprpl_xfer_free_data (struct tgp_xfer_send_data *data);
+
 static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, int success, char *filename) {
   debug ("tgprpl_xfer_recv_on_finished()");
   struct tgp_xfer_send_data *data = _data;
@@ -36,6 +38,7 @@ static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, in
       debug ("purple_xfer_set_completed");
       purple_xfer_set_bytes_sent (data->xfer, purple_xfer_get_size (data->xfer));
       purple_xfer_set_completed (data->xfer, TRUE);
+      purple_xfer_end(data->xfer);
     }
     
     g_unlink (purple_xfer_get_local_filename (data->xfer));
@@ -44,9 +47,9 @@ static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, in
   } else {
     failure ("ERROR xfer failed");
   }
-  
-  if (data->timer) { purple_timeout_remove(data->timer); }
-  data->timer = 0;
+
+  data->xfer->data = NULL;
+  tgprpl_xfer_free_data (data);
 }
 
 static void tgprpl_xfer_on_finished (struct tgl_state *TLS, void *_data, int success, struct tgl_message *M) {
@@ -58,21 +61,19 @@ static void tgprpl_xfer_on_finished (struct tgl_state *TLS, void *_data, int suc
       debug ("purple_xfer_set_completed");
       purple_xfer_set_bytes_sent (data->xfer, purple_xfer_get_size (data->xfer));
       purple_xfer_set_completed (data->xfer, TRUE);
+      purple_xfer_end(data->xfer);
     }
   } else {
     failure ("ERROR xfer failed");
   }
   
-  if (data->timer) { purple_timeout_remove(data->timer); }
-  data->timer = 0;
+  data->xfer->data = NULL;
+  tgprpl_xfer_free_data (data);
 }
 
 static void tgprpl_xfer_canceled (PurpleXfer *X) {
   struct tgp_xfer_send_data *data = X->data;
-  data->done = TRUE;
-  
-  if (data->timer) { purple_timeout_remove (data->timer); }
-  data->timer = 0;
+  tgprpl_xfer_free_data (data);
 }
 
 static gboolean tgprpl_xfer_upload_progress (gpointer _data) {
@@ -87,7 +88,7 @@ static gboolean tgprpl_xfer_upload_progress (gpointer _data) {
       purple_xfer_set_bytes_sent (X, conn->TLS->cur_uploaded_bytes);
       purple_xfer_update_progress (X);
       
-      debug ("PURPLE_XFER_RECEIVER progress %d / %d", conn->TLS->cur_uploaded_bytes, conn->TLS->cur_uploading_bytes);
+      debug ("PURPLE_XFER_SEND progress %d / %d", conn->TLS->cur_uploaded_bytes, conn->TLS->cur_uploading_bytes);
       if (conn->TLS->cur_uploaded_bytes == conn->TLS->cur_uploading_bytes) {
         data->timer = 0;
         return FALSE;
@@ -99,7 +100,7 @@ static gboolean tgprpl_xfer_upload_progress (gpointer _data) {
       purple_xfer_set_bytes_sent (X, conn->TLS->cur_downloaded_bytes);
       purple_xfer_update_progress (X);
       
-      debug ("PURPLE_XFER_RECEIVER progress %d / %d", conn->TLS->cur_downloading_bytes, conn->TLS->cur_downloaded_bytes);
+      debug ("PURPLE_XFER_RECEIVER progress %d / %d", conn->TLS->cur_downloaded_bytes, conn->TLS->cur_downloading_bytes);
       if (conn->TLS->cur_downloading_bytes == conn->TLS->cur_downloaded_bytes) {
         data->timer = 0;
         return FALSE;
@@ -154,13 +155,30 @@ static void tgprpl_xfer_send_init (PurpleXfer *X) {
 
 static void tgprpl_xfer_init_data (PurpleXfer *X, connection_data *conn, struct tgl_document *D) {
   if (!X->data) {
-    // TODO: free this somewhere
     struct tgp_xfer_send_data *data = g_malloc0 (sizeof (struct tgp_xfer_send_data));
     data->xfer = X;
     data->conn = conn;
     data->document = D;
     X->data = data;
-    conn->transfers = g_list_append (conn->transfers, data);
+  }
+}
+
+static void tgprpl_xfer_free_data (struct tgp_xfer_send_data *data) {
+    if (data->timer) { purple_input_remove(data->timer); }
+    data->timer = 0;
+    g_free (data);
+}
+
+void tgprpl_xfer_free_all (connection_data *conn) {
+  GList *xfers = purple_xfers_get_all();
+  while (xfers) {
+    PurpleXfer *xfer = xfers->data;
+    struct tgp_xfer_send_data *data = xfer->data;
+    
+    if (data) {
+      purple_xfer_cancel_local (xfer);
+    }
+    xfers = g_list_next(xfers);
   }
 }
 
