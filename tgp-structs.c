@@ -94,12 +94,6 @@ connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *
   return conn;
 }
 
-static void tgp_xfer_send_data_free (gpointer _data) {
-  struct tgp_xfer_send_data *data = _data;
-  if (data->timer) { purple_timeout_remove(data->timer); }
-  g_free (data);
-}
-
 void *connection_data_free (connection_data *conn) {
   if (conn->write_timer) { purple_timeout_remove (conn->write_timer); }
   if (conn->login_timer) { purple_timeout_remove (conn->login_timer); }

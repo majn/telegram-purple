@@ -388,10 +388,21 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
   }
   
   if (
+      // ignore all empty or deleted messages
       (M->flags & (FLAG_MESSAGE_EMPTY | FLAG_DELETED)) ||
+     
+      // ignore all messages that are not created for the first time
      !(M->flags & FLAG_CREATED) ||
+      
+      // drop all messages that don't contain any data
       !M->message ||
+      
+      // drop messages that were created by *this* client and were already
+      // added to the conversation
       our_msg (TLS, M) ||
+      
+      // drop all messages with an invalid peer id.
+      // TODO: Verify if we actually need this
       !tgl_get_peer_type (M->to_id)
   ) {
     return;
