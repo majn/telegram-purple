@@ -19,6 +19,7 @@
  */
 
 #include "tgp-chat.h"
+#include "msglog.h"
 
 void chat_add_all_users (PurpleConversation *pc, struct tgl_chat *chat) {
   int i;
@@ -39,13 +40,18 @@ void chat_users_update (struct tgl_state *TLS, struct tgl_chat *chat) {
 
 PurpleConversation *chat_show (PurpleConnection *gc, int id) {
   connection_data *conn = purple_connection_get_protocol_data(gc);
-  
   PurpleConversation *convo = purple_find_chat (gc, id);
+  tgl_peer_t *P = tgl_peer_get (conn->TLS, TGL_MK_CHAT(id));
+  
   if (! convo) {
-    tgl_peer_t *P = tgl_peer_get (conn->TLS, TGL_MK_CHAT(id));
+    if (! P) {
+      warning ("Chat %d not existing, not showing...", id);
+      return NULL;
+    }
     convo = p2tgl_got_joined_chat (conn->TLS, &P->chat);
     chat_users_update (conn->TLS, &P->chat);
   }
+  
   return convo;
 }
 
