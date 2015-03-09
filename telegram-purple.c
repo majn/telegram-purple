@@ -74,7 +74,7 @@
 
 PurplePlugin *_telegram_protocol = NULL;
 PurpleGroup *tggroup;
-const char *config_dir = ".telegram-purple";
+const char *config_dir = "telegram-purple";
 const char *pk_path = "/etc/telegram-purple/server.pub";
 
 void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
@@ -782,25 +782,18 @@ static GList *tgprpl_chat_join_info (PurpleConnection * gc) {
 
 static void tgprpl_login (PurpleAccount * acct) {
   debug ("tgprpl_login()");
+  struct tgl_state *TLS = tgl_state_alloc ();
   PurpleConnection *gc = purple_account_get_connection (acct);
   char const *username = purple_account_get_username (acct);
   
-  struct tgl_state *TLS = tgl_state_alloc ();
-  
-  const char *dir = config_dir;
-  struct passwd *pw = getpwuid (getuid ());
-  size_t len = strlen (dir) + strlen (pw->pw_dir) + 2 + strlen (username);
-  TLS->base_path = malloc (len);
-  snprintf (TLS->base_path, len, "%s/%s/%s", pw->pw_dir, dir, username);
-  debug ("base configuration path: '%s'", TLS->base_path);
-  g_mkdir_with_parents (TLS->base_path, 0700);
-  
-  len += strlen ("/downloads");
-  char *ddir = malloc (len);
-  sprintf (ddir, "%s/downloads", TLS->base_path);
+  TLS->base_path = g_strdup_printf ("%s/%s/%s", purple_user_dir(), config_dir, username);
+  char *ddir = g_strdup_printf ("%s/%s", TLS->base_path, "downloads");
   tgl_set_download_directory (TLS, ddir);
+  g_mkdir_with_parents (TLS->base_path, 0700);
   g_mkdir_with_parents (ddir, 0700);
   free (ddir);
+  
+  debug ("base configuration path: '%s'", TLS->base_path);
   
   tgl_set_verbosity (TLS, 4);
   tgl_set_rsa_key (TLS, pk_path);

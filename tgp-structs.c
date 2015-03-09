@@ -103,6 +103,7 @@ void *connection_data_free (connection_data *conn) {
   tgp_g_list_free_full (conn->used_images, used_image_free);
   tgprpl_xfer_free_all (conn);
   tgl_free_all (conn->TLS);
+  g_free(conn->TLS->base_path);
   free (conn->TLS);
   
   free (conn);
