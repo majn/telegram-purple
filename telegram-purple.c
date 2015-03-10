@@ -264,9 +264,34 @@ static void picture_message_done (struct tgl_state *TLS, void *callback_extra, i
   }
 }
 
-static void tgl_do_send_unescape_message (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
+static int tgp_do_send_split(struct tgl_state *TLS, const char *message, tgl_peer_id_t to)
+{
+  connection_data *data = TLS->ev_base;
+  int max =  purple_account_get_int(data->pa, "max-msg-split-count",
+                                    TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
+  if (max < 1) {
+    max = 1;
+  }
   
-  debug (message);
+  int size = (int)g_utf8_strlen(message, -1);
+  if (size > TGP_MAX_MSG_SIZE * max) {
+    return -E2BIG;
+  }
+
+  int start = 0;
+  while (size > start) {
+    int e = start + (int)TGP_MAX_MSG_SIZE;
+    
+    gchar *chunk = g_utf8_substring (message, start, e);
+    tgl_do_send_message (TLS, to, chunk, (int)strlen (chunk), NULL, NULL);
+    g_free (chunk);
+    
+    start = e;
+  }
+  return 1;
+}
+
+static int tgl_do_send_unescape_message (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
   
   // search for outgoing embedded image tags and send them
   gchar *img = NULL;
@@ -299,9 +324,9 @@ static void tgl_do_send_unescape_message (struct tgl_state *TLS, const char *mes
     
     // send remaining text as additional plaintext message
     stripped = purple_markup_strip_html (message);
-    tgl_do_send_message (TLS, to, stripped, (int)strlen (stripped), 0, 0);
+    int ret = tgp_do_send_split (TLS, stripped, to);
     g_free (stripped);
-    return;
+    return ret;
   }
   
 #ifndef __ADIUM_
@@ -321,14 +346,14 @@ static void tgl_do_send_unescape_message (struct tgl_state *TLS, const char *mes
   /* now unescape the markup, so that html special chars will still show
      up properly in Telegram */
   gchar *unescaped = purple_unescape_text (stripped);
-  tgl_do_send_message (TLS, to, unescaped, (int)strlen (unescaped), 0, 0);
+  int ret = tgp_do_send_split (TLS, stripped, to);
   
   g_free (unescaped);
   g_free (stripped);
-  return;
+  return ret;
 #endif
   
-  tgl_do_send_message (TLS, to, message, (int)strlen (message), 0, 0);
+  return tgp_do_send_split (TLS, message, to);
 }
 
 static void start_secret_chat (PurpleBlistNode *node, gpointer data) {
@@ -850,15 +875,14 @@ static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *m
   if (peer) {
 
     if (tgl_get_peer_type(peer->id) == TGL_PEER_ENCR_CHAT && peer->encr_chat.state != sc_ok) {
-      // secret chat not ready for sending messages or deleted
+      warning ("secret chat not ready for sending messages or deleted");
       return -1;
     }
     
-    tgl_do_send_unescape_message (conn->TLS, message, peer->id);
-    return 1;
+    return tgl_do_send_unescape_message (conn->TLS, message, peer->id);;
   }
   
-  // peer not found
+  warning ("peer not found");
   return -1;
 }
 
@@ -993,11 +1017,11 @@ static void tgprpl_chat_invite (PurpleConnection * gc, int id, const char *messa
 static int tgprpl_send_chat (PurpleConnection * gc, int id, const char *message, PurpleMessageFlags flags) {
   debug ("tgprpl_send_chat()");
   connection_data *conn = purple_connection_get_protocol_data (gc);
-  tgl_do_send_unescape_message (conn->TLS, message, TGL_MK_CHAT(id));
+  int ret = tgl_do_send_unescape_message (conn->TLS, message, TGL_MK_CHAT(id));
 
   p2tgl_got_chat_in(conn->TLS, TGL_MK_CHAT(id), TGL_MK_USER(conn->TLS->our_id), message,
     PURPLE_MESSAGE_RECV, time(NULL));
-  return 1;
+  return ret;
 }
 
 static void tgprpl_group_buddy (PurpleConnection * gc, const char *who, const char *old_group, const char *new_group) {
@@ -1120,23 +1144,31 @@ static void tgprpl_init (PurplePlugin *plugin) {
   
   PurpleAccountOption *opt;
   
-  GList *verification_values = NULL;
-  
 #define ADD_VALUE(list, desc, v) { \
   PurpleKeyValuePair *kvp = g_new0(PurpleKeyValuePair, 1); \
   kvp->key = g_strdup((desc)); \
   kvp->value = g_strdup((v)); \
   list = g_list_prepend(list, kvp); \
 }
-    
+  
+  // Login
+  
+  opt = purple_account_option_bool_new("Fallback SMS Verification", "compat-verification", 0);
+  prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
+ 
+  
+  // Messaging
+  
+  GList *verification_values = NULL;
   ADD_VALUE(verification_values, "Ask", "ask");
   ADD_VALUE(verification_values, "Always", "always");
   ADD_VALUE(verification_values, "Never", "never");
- 
+  
   opt = purple_account_option_list_new("Accept Secret Chats", "accept-secret-chats", verification_values);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_bool_new("Fallback SMS verification", "compat-verification", 0);
+  opt = purple_account_option_int_new ("Split oversized messages in up to (N) chunks.", "max-msg-split-count",
+                                 TGP_DEFAULT_MAX_MSG_SPLIT_COUNT);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
   
   _telegram_protocol = plugin;

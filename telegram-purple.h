@@ -36,6 +36,8 @@
 #define TGP_APP_HASH "99428c722d0ed59b9cd844e4577cb4bb"
 #define TGP_APP_ID 16154
 
+#define TGP_MAX_MSG_SIZE 4096
+#define TGP_DEFAULT_MAX_MSG_SPLIT_COUNT 4
 void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *C);
 void on_ready (struct tgl_state *TLS);
 extern const char *pk_path;
