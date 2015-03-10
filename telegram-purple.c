@@ -782,26 +782,33 @@ static GList *tgprpl_chat_join_info (PurpleConnection * gc) {
 
 static void tgprpl_login (PurpleAccount * acct) {
   debug ("tgprpl_login()");
-  struct tgl_state *TLS = tgl_state_alloc ();
+  
   PurpleConnection *gc = purple_account_get_connection (acct);
   char const *username = purple_account_get_username (acct);
   
+  struct tgl_state *TLS = tgl_state_alloc ();
+  connection_data *conn = connection_data_init (TLS, gc, acct);
+  purple_connection_set_protocol_data (gc, conn);
+
   TLS->base_path = g_strdup_printf ("%s/%s/%s", purple_user_dir(), config_dir, username);
   char *ddir = g_strdup_printf ("%s/%s", TLS->base_path, "downloads");
   tgl_set_download_directory (TLS, ddir);
   g_mkdir_with_parents (TLS->base_path, 0700);
   g_mkdir_with_parents (ddir, 0700);
   free (ddir);
-  
   debug ("base configuration path: '%s'", TLS->base_path);
+  
+  if (!g_file_test(pk_path, G_FILE_TEST_EXISTS)) {
+    gchar *msg = g_strdup_printf ("Error, server public key not found at %s."
+                                  " Make sure that Telegram-Purple is installed properly.",
+                                  pk_path);
+    purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_CERT_OTHER_ERROR, msg);
+    g_free (msg);
+    return;
+  }
   
   tgl_set_verbosity (TLS, 4);
   tgl_set_rsa_key (TLS, pk_path);
-  
-  // create handle to store additional info for libpurple in
-  // the new telegram instance
-  connection_data *conn = connection_data_init (TLS, gc, acct);
-  purple_connection_set_protocol_data (gc, conn);
   
   tgl_set_ev_base (TLS, conn);
   tgl_set_net_methods (TLS, &tgp_conn_methods);
