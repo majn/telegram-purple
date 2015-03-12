@@ -6,7 +6,7 @@ Telegram-purple is a Libpurple plugin that adds support for the Telegram messeng
 Build
 -----
 
-Below, you will find instructions of how to build the libpurple protocol plugin. If you just want to use the plugin in Adium, [download precompiled packages here.](https://github.com/majn/telegram-purple/releases)
+Below, you will find instructions on how to build the libpurple protocol plugin. If you just want to use the plugin in Adium, [download precompiled packages here.](https://github.com/majn/telegram-purple/releases)
 
 #### 1. Clone
 
@@ -14,6 +14,7 @@ This repository has submodules, so you need to clone recursively
 
 
         git clone --recursive https://github.com/majn/telegram-purple
+        cd telegram-purple
 
 
 #### 2. Fetch all dependencies
@@ -38,6 +39,16 @@ This repository has submodules, so you need to clone recursively
         ./configure
         make
         sudo make install
+
+
+Pulling Updates
+---------------
+
+This repository contains submodules and just a simple pull won't be enough to update all submodule files. Pull new changes with:
+
+
+        git pull
+        git submodule update --recursive
 
 
 Usage

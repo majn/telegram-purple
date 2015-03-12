@@ -15,7 +15,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
 
-    Copyright Matthias Jentsch 2014
+    Copyright Matthias Jentsch 2014-2015
 */
 #ifndef __telegram_adium__purple2tgl__
 #define __telegram_adium__purple2tgl__

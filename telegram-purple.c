@@ -15,7 +15,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  
-    Copyright Matthias Jentsch, Vitaly Valtman, Christopher Althaus, Markus Endres 2014
+    Copyright Matthias Jentsch, Vitaly Valtman, Christopher Althaus, Markus Endres 2014-2015
 */
 
 #ifdef HAVE_CONFIG_H
@@ -539,8 +539,7 @@ static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *m
    */
   tgl_peer_t *peer = find_peer_by_name (conn->TLS, who);
   if (peer) {
-
-    if (tgl_get_peer_type(peer->id) == TGL_PEER_ENCR_CHAT && peer->encr_chat.state != sc_ok) {
+    if (tgl_get_peer_type (peer->id) == TGL_PEER_ENCR_CHAT && peer->encr_chat.state != sc_ok) {
       warning ("secret chat not ready for sending messages or deleted");
       return -1;
     }
@@ -838,8 +837,7 @@ static void tgprpl_init (PurplePlugin *plugin) {
   _telegram_protocol = plugin;
 }
 
-static GList *tgprpl_actions(PurplePlugin * plugin, gpointer context) {
-  // return possible actions (See Libpurple doc)
+static GList *tgprpl_actions (PurplePlugin * plugin, gpointer context) {
   return (GList *)NULL;
 }
 

@@ -15,7 +15,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
 
-    Copyright Matthias Jentsch, Vitaly Valtman, Christopher Althaus, Markus Endres 2014
+    Copyright Matthias Jentsch, Vitaly Valtman, Christopher Althaus, Markus Endres 2014-2015
 */
 #ifndef __TELEGRAM_BASE_H__
 #define __TELEGRAM_BASE_H__

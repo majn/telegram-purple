@@ -15,7 +15,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  
- Copyright Matthias Jentsch 2014
+ Copyright Matthias Jentsch 2014-2015
  */
 
 #include <assert.h>
@@ -379,7 +379,6 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M)
   }
   
   if (M->media.type == tgl_message_media_geo) {
-    C->done = FALSE;
   }
   
   if (M->media.type == tgl_message_media_photo_encr) {

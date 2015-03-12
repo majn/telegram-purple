@@ -15,7 +15,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  
- Copyright Matthias Jentsch 2014
+ Copyright Matthias Jentsch 2014-2015
  */
 
 #include "tgp-utils.h"
@@ -100,7 +100,7 @@ static gboolean tgprpl_xfer_upload_progress (gpointer _data) {
       purple_xfer_set_bytes_sent (X, conn->TLS->cur_downloaded_bytes);
       purple_xfer_update_progress (X);
       
-      debug ("PURPLE_XFER_RECEIVER progress %d / %d", conn->TLS->cur_downloaded_bytes, conn->TLS->cur_downloading_bytes);
+      debug ("PURPLE_XFER_RECEIVE progress %d / %d", conn->TLS->cur_downloaded_bytes, conn->TLS->cur_downloading_bytes);
       if (conn->TLS->cur_downloading_bytes == conn->TLS->cur_downloaded_bytes) {
         data->timer = 0;
         return FALSE;
