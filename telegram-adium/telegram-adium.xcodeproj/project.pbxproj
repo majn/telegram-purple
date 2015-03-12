@@ -25,6 +25,7 @@
 		C438CE351A12C07800E1DA0F /* tgp-net.c in Sources */ = {isa = PBXBuildFile; fileRef = C438CE301A12C07800E1DA0F /* tgp-net.c */; };
 		C438CE361A12C07800E1DA0F /* tgp-timers.c in Sources */ = {isa = PBXBuildFile; fileRef = C438CE311A12C07800E1DA0F /* tgp-timers.c */; };
 		C438CE3D1A12C15100E1DA0F /* tg-server.pub in Resources */ = {isa = PBXBuildFile; fileRef = C438CE3C1A12C15100E1DA0F /* tg-server.pub */; };
+		C448ADA71AB0789A001B7ECD /* tgp-msg.c in Sources */ = {isa = PBXBuildFile; fileRef = C448ADA61AB0789A001B7ECD /* tgp-msg.c */; };
 		C466937819E703370036A108 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C466937719E703370036A108 /* AppKit.framework */; };
 		C4877C1819BB37EA006FA91F /* TelegramService.m in Sources */ = {isa = PBXBuildFile; fileRef = C4877C1719BB37EA006FA91F /* TelegramService.m */; };
 		C4877C1E19BB676B006FA91F /* AdiumTelegramAccount.m in Sources */ = {isa = PBXBuildFile; fileRef = C4877C1D19BB676B006FA91F /* AdiumTelegramAccount.m */; };
@@ -70,6 +71,8 @@
 		C438CE3A1A12C0C900E1DA0F /* tgp-net.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "tgp-net.h"; path = "../tgp-net.h"; sourceTree = "<group>"; };
 		C438CE3B1A12C0C900E1DA0F /* tgp-timers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "tgp-timers.h"; path = "../tgp-timers.h"; sourceTree = "<group>"; };
 		C438CE3C1A12C15100E1DA0F /* tg-server.pub */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "tg-server.pub"; path = "../tg-server.pub"; sourceTree = "<group>"; };
+		C448ADA61AB0789A001B7ECD /* tgp-msg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "tgp-msg.c"; path = "../tgp-msg.c"; sourceTree = "<group>"; };
+		C448ADA81AB078BB001B7ECD /* tgp-msg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "tgp-msg.h"; path = "../tgp-msg.h"; sourceTree = "<group>"; };
 		C466937719E703370036A108 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/System/Library/Frameworks/AppKit.framework; sourceTree = DEVELOPER_DIR; };
 		C4877C1619BB37EA006FA91F /* TelegramService.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TelegramService.h; sourceTree = "<group>"; };
 		C4877C1719BB37EA006FA91F /* TelegramService.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TelegramService.m; sourceTree = "<group>"; };
@@ -200,6 +203,8 @@
 				C438CE2D1A12C07800E1DA0F /* msglog.c */,
 				C438CE2E1A12C07800E1DA0F /* telegram-base.c */,
 				C438CE2F1A12C07800E1DA0F /* telegram-purple.c */,
+				C448ADA61AB0789A001B7ECD /* tgp-msg.c */,
+				C448ADA81AB078BB001B7ECD /* tgp-msg.h */,
 				C438CE301A12C07800E1DA0F /* tgp-net.c */,
 				C438CE311A12C07800E1DA0F /* tgp-timers.c */,
 				C41D583F1A16D86A00B22448 /* tgp-2prpl.h */,
@@ -294,6 +299,7 @@
 				C438CE331A12C07800E1DA0F /* telegram-base.c in Sources */,
 				C438CE341A12C07800E1DA0F /* telegram-purple.c in Sources */,
 				C4877C1819BB37EA006FA91F /* TelegramService.m in Sources */,
+				C448ADA71AB0789A001B7ECD /* tgp-msg.c in Sources */,
 				C4E528111A8A907200C4B915 /* tgp-ft.c in Sources */,
 				C438CE361A12C07800E1DA0F /* tgp-timers.c in Sources */,
 				C410949B19BB337A0083BF3F /* TelegramPlugin.m in Sources */,

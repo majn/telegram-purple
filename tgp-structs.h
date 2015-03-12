@@ -58,22 +58,21 @@ struct download_desc {
   void *data;
 };
 
-struct message_text {
-  struct tgl_message *M;
-  char *text;
+struct tgp_msg_loading {
+  int done;
+  struct tgl_message *msg;
+  void *data;
 };
 
 void pending_reads_send_all (GQueue *queue, struct tgl_state *TLS);
 void pending_reads_add (GQueue *queue, tgl_peer_id_t id);
-
 struct message_text *message_text_init (struct tgl_message *M, gchar *text);
 void message_text_free (gpointer data);
-
 void used_images_add (connection_data *data, gint imgid);
-
 void *connection_data_free (connection_data *conn);
 connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *gc, PurpleAccount *pa);
-
 get_user_info_data* get_user_info_data_new (int show_info, tgl_peer_id_t peer);
+struct tgp_msg_loading *tgp_msg_loading_init (int done, struct tgl_message *M);
+void tgp_msg_loading_free (gpointer data);
 
 #endif

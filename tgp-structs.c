@@ -59,22 +59,6 @@ void pending_reads_add (GQueue *queue, tgl_peer_id_t id) {
   }
 }
 
-struct message_text *message_text_init (struct tgl_message *M, gchar *text) {
-  struct message_text *mt = malloc (sizeof (struct message_text));
-  mt->M = M;
-  mt->text = text ? g_strdup (text) : text;
-  return mt;
-}
-
-void message_text_free (gpointer data)
-{
-  struct message_text *mt = (struct message_text*)data;
-  if (mt->text) {
-    g_free (mt->text);
-  }
-  free (mt);
-}
-
 static void used_image_free (gpointer data) {
   int id = GPOINTER_TO_INT(data);
   purple_imgstore_unref_by_id (id);
@@ -82,6 +66,18 @@ static void used_image_free (gpointer data) {
 
 void used_images_add (connection_data *data, gint imgid) {
   data->used_images = g_list_append (data->used_images, GINT_TO_POINTER(imgid));
+}
+
+void tgp_msg_loading_free (gpointer data) {
+  struct tgp_msg_loading *C = data;
+  free (C);
+}
+
+struct tgp_msg_loading *tgp_msg_loading_init (int done, struct tgl_message *M) {
+  struct tgp_msg_loading *C = malloc (sizeof (struct tgp_msg_loading));
+  C->done = done;
+  C->msg = M;
+  return C;
 }
 
 connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *gc, PurpleAccount *pa) {
@@ -99,7 +95,7 @@ void *connection_data_free (connection_data *conn) {
   if (conn->login_timer) { purple_timeout_remove (conn->login_timer); }
   
   tgp_g_queue_free_full (conn->pending_reads, pending_reads_free_cb);
-  tgp_g_queue_free_full (conn->new_messages, message_text_free);
+  tgp_g_queue_free_full (conn->new_messages, tgp_msg_loading_free);
   tgp_g_list_free_full (conn->used_images, used_image_free);
   tgprpl_xfer_free_all (conn);
   tgl_free_all (conn->TLS);

@@ -51,23 +51,8 @@ PurpleConversation *chat_show (PurpleConnection *gc, int id) {
     convo = p2tgl_got_joined_chat (conn->TLS, &P->chat);
     chat_users_update (conn->TLS, &P->chat);
   }
-  
-  return convo;
-}
 
-int chat_add_message (struct tgl_state *TLS, struct tgl_message *M, char *text) {
-  connection_data *conn = TLS->ev_base;
-  
-  if (chat_show (conn->gc, tgl_get_peer_id (M->to_id))) {
-    p2tgl_got_chat_in(TLS, M->to_id, M->from_id, text ? text : M->message, M->service ? PURPLE_MESSAGE_SYSTEM : PURPLE_MESSAGE_RECV, M->date);
-    
-    pending_reads_add (conn->pending_reads, M->to_id);
-    if (p2tgl_status_is_present (purple_account_get_active_status (conn->pa))) {
-      pending_reads_send_all (conn->pending_reads, conn->TLS);
-    }
-    return 1;
-  }
-  return 0;
+  return convo;
 }
 
 int chat_is_member (int who, struct tgl_chat *chat) {
