@@ -38,6 +38,8 @@
 
 #define TGP_MAX_MSG_SIZE 4096
 #define TGP_DEFAULT_MAX_MSG_SPLIT_COUNT 4
+#define TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD 14
+
 void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *C);
 void on_ready (struct tgl_state *TLS);
 extern const char *pk_path;

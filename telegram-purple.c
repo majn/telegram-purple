@@ -390,8 +390,9 @@ void on_ready (struct tgl_state *TLS) {
     purple_blist_add_group (tggroup, NULL);
   }
   
-  debug ("seq = %d, pts = %d", TLS->seq, TLS->pts);
-  tgl_do_get_difference (TLS, 0, 0, 0);
+  debug ("seq = %d, pts = %d, date = %d", TLS->seq, TLS->pts, TLS->date);
+  tgl_do_get_difference (TLS, purple_account_get_bool (conn->pa, "history-sync-all", FALSE),
+                         NULL, NULL);
   tgl_do_get_dialog_list (TLS, 0, 0);
   tgl_do_update_contact_list (TLS, 0, 0);
 }
@@ -830,10 +831,20 @@ static void tgprpl_init (PurplePlugin *plugin) {
   opt = purple_account_option_list_new("Accept Secret Chats", "accept-secret-chats", verification_values);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_int_new ("Split oversized messages in up to (N) chunks.", "max-msg-split-count",
-                                 TGP_DEFAULT_MAX_MSG_SPLIT_COUNT);
+  opt = purple_account_option_int_new ("Split oversized messages in up to (N) chunks.",
+                                       "max-msg-split-count",
+                                       TGP_DEFAULT_MAX_MSG_SPLIT_COUNT);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
   
+  opt = purple_account_option_int_new ("Don't fetch messages older than (N) days.\n"
+                                       "Set 0 for unlimited.",
+                                       "history-retrieve-days",
+                                       TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
+  prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
+
+  opt = purple_account_option_bool_new ("Fetch past history on first login.\n"
+                                       "Can be very slow on big histories.",
+                                        "history-sync-all", FALSE);
   _telegram_protocol = plugin;
 }
 

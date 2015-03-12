@@ -168,7 +168,7 @@ static void tgp_msg_send_done (struct tgl_state *TLS, void *callback_extra, int 
 static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
   connection_data *data = TLS->ev_base;
   int max =  purple_account_get_int (data->pa, "max-msg-split-count",
-                 TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
+                 TGP_DEFAULT_MAX_MSG_SPLIT_COUNT);
   if (max < 1) {
     max = 1;
   }
@@ -346,6 +346,18 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   g_free (text);
 }
 
+static time_t tgp_msg_oldest_relevant_ts (struct tgl_state *TLS) {
+  connection_data *conn = TLS->ev_base;
+  time_t now;
+  time (&now);
+  int daysAgo = purple_account_get_int (conn->pa, "history-retrieve-days",
+                                         TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
+  if (daysAgo == 0) {
+    return 0;
+  }
+  return now - 24 * 3600 * (time_t)daysAgo;
+}
+
 static void tgp_msg_process_ready (struct tgl_state *TLS)
 {
   connection_data *conn = TLS->ev_base;
@@ -372,6 +384,11 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M)
 {
   connection_data *conn = TLS->ev_base;
   struct tgp_msg_loading *C = tgp_msg_loading_init (TRUE, M);
+  
+  if (M->date != 0 && M->date < tgp_msg_oldest_relevant_ts (TLS)) {
+    debug ("Message from %d on %d too old, ignored.", tgl_get_peer_id (M->from_id), M->date);
+    return;
+  }
   
   if (M->media.type == tgl_message_media_photo) {
     C->done = FALSE;
