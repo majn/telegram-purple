@@ -29,6 +29,7 @@
 
 static void tgprpl_xfer_free_data (struct tgp_xfer_send_data *data);
 
+
 static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, int success, char *filename) {
   debug ("tgprpl_xfer_recv_on_finished()");
   struct tgp_xfer_send_data *data = _data;
@@ -38,7 +39,7 @@ static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, in
       debug ("purple_xfer_set_completed");
       purple_xfer_set_bytes_sent (data->xfer, purple_xfer_get_size (data->xfer));
       purple_xfer_set_completed (data->xfer, TRUE);
-      purple_xfer_end(data->xfer);
+      purple_xfer_end (data->xfer);
     }
     
     g_unlink (purple_xfer_get_local_filename (data->xfer));

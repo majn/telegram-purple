@@ -135,13 +135,13 @@ static char *format_message (struct tgl_message *M) {
       return format_document_desc ("DOCUMENT", M->media.encr_document.caption, M->media.encr_document.size);
       break;
     case tgl_message_media_photo_encr:
-      return format_document_desc ("PHOTO", "", M->media.encr_photo.size);
+      return format_document_desc ("ENCRYPTED PHOTO", "(not yet supported)", M->media.encr_photo.size);
       break;
     case tgl_message_media_contact:
       return g_strdup_printf ("<b>%s %s</b><br>%s", M->media.first_name, M->media.last_name, M->media.phone);
       break;
     case tgl_message_media_geo:
-      return g_strdup_printf("<a href=\"http://openstreetmap.org/?lat=%f&lon=%f&zoom=20\">"
+      return g_strdup_printf ("<a href=\"http://openstreetmap.org/?lat=%f&lon=%f&zoom=20\">"
                              "http://openstreetmap.org/?lat=%f&lon=%f&zoom=20</a>",
                              M->media.geo.latitude, M->media.geo.longitude,
                              M->media.geo.latitude, M->media.geo.longitude);
@@ -151,7 +151,7 @@ static char *format_message (struct tgl_message *M) {
       if (*M->message != 0) {
         return purple_markup_escape_text (M->message, strlen (M->message));
       }
-      return g_strdup("");
+      return NULL;
       break;
   }
 }
@@ -269,7 +269,7 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
 static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   connection_data *conn = TLS->ev_base;
   struct tgl_message *M = C->msg;
-  char *text;
+  char *text = NULL;
   int flags = 0;
   
   // Filter message updates and deletes, are not created and
@@ -311,6 +311,10 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   }
   
   
+  if (! text || ! *text) {
+    warning ("No text to display");
+    return;
+  }
   switch (tgl_get_peer_type (M->to_id)) {
     case TGL_PEER_CHAT: {
       if (chat_show (conn->gc, tgl_get_peer_id (M->to_id))) {
@@ -396,10 +400,7 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M)
   }
   
   if (M->media.type == tgl_message_media_geo) {
-  }
-  
-  if (M->media.type == tgl_message_media_photo_encr) {
-    // TODO: handle encrypted document.
+    // TODO: load geo thumbnail
   }
   
   g_queue_push_tail (conn->new_messages, C);

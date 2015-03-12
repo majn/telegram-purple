@@ -382,7 +382,7 @@ void on_ready (struct tgl_state *TLS) {
   connection_data *conn = TLS->ev_base;
   
   purple_connection_set_state (conn->gc, PURPLE_CONNECTED);
-  purple_connection_set_display_name (conn->gc, purple_account_get_username(conn->pa));
+  purple_connection_set_display_name (conn->gc, purple_account_get_username (conn->pa));
   purple_blist_add_account (conn->pa);
   tggroup = purple_find_group ("Telegram");
   if (tggroup == NULL) {
@@ -655,7 +655,6 @@ static void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
 }
 
 static char *tgprpl_get_chat_name (GHashTable * data) {
-  debug ("tgprpl_get_chat_name()");
   return g_strdup(g_hash_table_lookup(data, "subject"));
 }
 
@@ -688,18 +687,6 @@ static int tgprpl_send_chat (PurpleConnection * gc, int id, const char *message,
   return ret;
 }
 
-static void tgprpl_group_buddy (PurpleConnection * gc, const char *who, const char *old_group, const char *new_group) {
-  debug ("tgprpl_group_buddy()");
-}
-
-static void tgprpl_rename_group (PurpleConnection * gc, const char *old_name, PurpleGroup * group, GList * moved_buddies) {
-  debug ("tgprpl_rename_group()");
-}
-
-static void tgprpl_convo_closed (PurpleConnection * gc, const char *who) {
-  debug ("tgprpl_convo_closed()");
-}
-
 static void tgprpl_set_buddy_icon (PurpleConnection * gc, PurpleStoredImage * img) {
   debug ("tgprpl_set_buddy_icon()");
   
@@ -715,7 +702,6 @@ static void tgprpl_set_buddy_icon (PurpleConnection * gc, PurpleStoredImage * im
 }
 
 static gboolean tgprpl_can_receive_file (PurpleConnection * gc, const char *who) {
-  debug ("tgprpl_can_receive_file()");
   return TRUE;
 }
 
@@ -770,10 +756,10 @@ static PurplePluginProtocolInfo prpl_info = {
   NULL,                    // get_cb_info
   NULL,                    // get_cb_away
   NULL,                    // alias_buddy
-  tgprpl_group_buddy, 
-  tgprpl_rename_group,
+  NULL,                    // group_buddy
+  NULL,                    // rename_group
   NULL,                    // buddy_free
-  tgprpl_convo_closed,     
+  NULL,                    // convo_closed
   NULL,                    // normalize
   tgprpl_set_buddy_icon,
   NULL,                    // remove_group
