@@ -128,7 +128,13 @@ static void tgprpl_xfer_recv_init (PurpleXfer *X) {
   tgl_peer_t *P = find_peer_by_name (data->conn->TLS, who);
   
   if (P) {
-    tgl_do_load_document (data->conn->TLS, data->document, tgprpl_xfer_recv_on_finished, data);
+    if (data->document) {
+      tgl_do_load_document (data->conn->TLS, data->document, tgprpl_xfer_recv_on_finished, data);
+    }
+    else if (data->encr_document) {
+      tgl_do_load_encr_document (data->conn->TLS, data->encr_document,
+                                 tgprpl_xfer_recv_on_finished, data);
+    }
   } else {
     warning ("User not found, not downloading...");
   }
@@ -154,12 +160,13 @@ static void tgprpl_xfer_send_init (PurpleXfer *X) {
   data->timer = purple_timeout_add (100, tgprpl_xfer_upload_progress, X);
 }
 
-static void tgprpl_xfer_init_data (PurpleXfer *X, connection_data *conn, struct tgl_document *D) {
+static void tgprpl_xfer_init_data (PurpleXfer *X, connection_data *conn, struct tgl_document *D, struct tgl_encr_document *ED) {
   if (!X->data) {
     struct tgp_xfer_send_data *data = g_malloc0 (sizeof (struct tgp_xfer_send_data));
     data->xfer = X;
     data->conn = conn;
     data->document = D;
+    data->encr_document = ED;
     X->data = data;
   }
 }
@@ -192,23 +199,37 @@ PurpleXfer *tgprpl_new_xfer (PurpleConnection * gc, const char *who) {
   if (X) {
     purple_xfer_set_init_fnc (X, tgprpl_xfer_send_init);
     purple_xfer_set_cancel_send_fnc (X, tgprpl_xfer_canceled);
-    tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), NULL);
+    tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), NULL, NULL);
   }
   
   return (PurpleXfer *)X;
 }
 
-void tgprpl_recv_file (PurpleConnection * gc, const char *who, struct tgl_document *D) {
-  debug ("tgprpl_recv_file()");
+static PurpleXfer *tgprpl_new_xfer_recv (PurpleConnection * gc, const char *who) {
   connection_data *conn = purple_connection_get_protocol_data (gc);
-
-  PurpleXfer *X = purple_xfer_new (conn->pa, PURPLE_XFER_RECEIVE, who);
   
-  purple_xfer_set_filename (X, D->caption ? D->caption : D->mime_type);
+  PurpleXfer *X = purple_xfer_new (conn->pa, PURPLE_XFER_RECEIVE, who);
   purple_xfer_set_init_fnc (X, tgprpl_xfer_recv_init);
   purple_xfer_set_cancel_recv_fnc (X, tgprpl_xfer_canceled);
-  tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), D);
   
+  return X;
+}
+
+void tgprpl_recv_file (PurpleConnection * gc, const char *who, struct tgl_document *D) {
+  debug ("tgprpl_recv_file()");
+  PurpleXfer *X = tgprpl_new_xfer_recv (gc, who);
+  
+  purple_xfer_set_filename (X, D->caption ? D->caption : D->mime_type);
+  tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), D, NULL);
+  purple_xfer_request (X);
+}
+
+void tgprpl_recv_encr_file (PurpleConnection * gc, const char *who, struct tgl_encr_document *D) {
+  debug ("tgprpl_recv_encr_file()");
+  PurpleXfer *X = tgprpl_new_xfer_recv (gc, who);
+  
+  purple_xfer_set_filename (X, D->caption ? D->caption : D->mime_type);
+  tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), NULL, D);
   purple_xfer_request (X);
 }
 

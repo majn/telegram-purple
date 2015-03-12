@@ -51,6 +51,7 @@ struct tgp_xfer_send_data {
   PurpleXfer *xfer;
   connection_data *conn;
   struct tgl_document *document;
+  struct tgl_encr_document *encr_document;
 };
 
 struct download_desc {

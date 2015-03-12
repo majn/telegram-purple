@@ -29,6 +29,7 @@
 PurpleXfer *tgprpl_new_xfer (PurpleConnection * gc, const char *who);
 void tgprpl_send_file (PurpleConnection * gc, const char *who, const char *file);
 void tgprpl_recv_file (PurpleConnection * gc, const char *who, struct tgl_document *D);
+void tgprpl_recv_encr_file (PurpleConnection * gc, const char *who, struct tgl_encr_document *D);
 void tgprpl_xfer_free_all (connection_data *conn);
 
 #endif

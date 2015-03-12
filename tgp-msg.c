@@ -129,11 +129,7 @@ static char *format_document_desc (char *type, char *caption, gint64 size) {
 }
 
 static char *format_message (struct tgl_message *M) {
-  
   switch (M->media.type) {
-    case tgl_message_media_document_encr:
-      return format_document_desc ("DOCUMENT", M->media.encr_document.caption, M->media.encr_document.size);
-      break;
     case tgl_message_media_photo_encr:
       return format_document_desc ("ENCRYPTED PHOTO", "(not yet supported)", M->media.encr_photo.size);
       break;
@@ -289,13 +285,21 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   }
   else if (M->media.type == tgl_message_media_document) {
     char *who = p2tgl_peer_strdup_id (M->from_id);
-    tgprpl_recv_file (conn->gc, who, &M->media.document);
+    if (! out_msg(TLS, M)) {
+      tgprpl_recv_file (conn->gc, who, &M->media.document);
+    }
     g_free (who);
     return;
   }
+  else if (M->media.type == tgl_message_media_document_encr) {
+    char *who = p2tgl_peer_strdup_id (M->from_id);
+    if (! out_msg(TLS, M)) {
+      tgprpl_recv_encr_file (conn->gc, who, &M->media.encr_document);
+    }
+    g_free (who);
+  }
   else if (M->media.type == tgl_message_media_photo) {
     char *filename = C->data;
-    
     int imgStoreId = p2tgl_imgstore_add_with_id (filename);
     if (imgStoreId <= 0) {
       failure ("Cannot display picture message, adding to imgstore failed.");
