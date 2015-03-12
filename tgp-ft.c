@@ -200,10 +200,10 @@ PurpleXfer *tgprpl_new_xfer (PurpleConnection * gc, const char *who) {
 void tgprpl_recv_file (PurpleConnection * gc, const char *who, struct tgl_document *D) {
   debug ("tgprpl_recv_file()");
   connection_data *conn = purple_connection_get_protocol_data (gc);
-  
-  PurpleXfer *X = purple_xfer_new (conn->pa, PURPLE_XFER_RECEIVE, who);
 
-  purple_xfer_set_filename (X, D->caption);
+  PurpleXfer *X = purple_xfer_new (conn->pa, PURPLE_XFER_RECEIVE, who);
+  
+  purple_xfer_set_filename (X, D->caption ? D->caption : D->mime_type);
   purple_xfer_set_init_fnc (X, tgprpl_xfer_recv_init);
   purple_xfer_set_cancel_recv_fnc (X, tgprpl_xfer_canceled);
   tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), D);
