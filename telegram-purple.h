@@ -37,15 +37,15 @@
 #define TGP_APP_ID 16154
 
 #define TGP_MAX_MSG_SIZE 4096
+#define TGP_DEFAULT_INACTIVE_DAYS_OFFLINE 7
 #define TGP_DEFAULT_MAX_MSG_SPLIT_COUNT 4
 #define TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD 14
+
 
 void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *C);
 void on_ready (struct tgl_state *TLS);
 extern const char *pk_path;
 extern const char *config_dir;
 extern PurplePlugin *_telegram_protocol;
-char *format_user_status (struct tgl_user_status *status);
-char *p2tgl_peer_strdup_id (tgl_peer_id_t user);
 
 #endif

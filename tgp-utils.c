@@ -42,6 +42,28 @@ char *format_img_full (int imgstore) {
   return g_strdup_printf ("%s<img id=\"%u\">", br, imgstore);
 }
 
+char *tgp_format_user_status (struct tgl_user_status *status) {
+  char *when;
+  switch (status->online) {
+    case -1:
+      when = g_strdup_printf("%s", format_time (status->when));
+      break;
+    case -2:
+      when = g_strdup_printf("recently");
+      break;
+    case -3:
+      when = g_strdup_printf("last week");
+      break;
+    case -4:
+      when = g_strdup_printf("last month");
+      break;
+    default:
+      when = g_strdup ("unknown");
+      break;
+  }
+  return when;
+}
+
 int str_not_empty (const char *string) {
   return string && string[0] != '\0';
 }
@@ -67,6 +89,12 @@ tgl_peer_t *find_peer_by_name (struct tgl_state *TLS, const char *who) {
 tgl_peer_t *tgp_encr_chat_get_partner (struct tgl_state *TLS, struct tgl_secret_chat *chat) {
   return tgl_peer_get (TLS, TGL_MK_USER(chat->admin_id == TLS->our_id ? chat->user_id : chat->admin_id));
 }
+
+long tgp_time_n_days_ago (int days) {
+  time_t now;
+  time (&now);
+  return now - 24 * 3600 * (time_t)days;
+};
 
 char *tgp_g_format_size (gint64 size) {
   char *sizes[] = {

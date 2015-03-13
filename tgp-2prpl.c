@@ -240,11 +240,29 @@ void p2tgl_prpl_got_set_status_offline (struct tgl_state *TLS, tgl_peer_id_t use
   g_free (name);
 }
 
+void p2tgl_prpl_got_set_status_online (struct tgl_state *TLS, tgl_peer_id_t user) {
+  char *name = p2tgl_peer_strdup_id (user);
+  
+  purple_prpl_got_user_status (tg_get_acc(TLS), name, "available", NULL);
+  
+  g_free (name);
+}
+
 void p2tgl_prpl_got_user_status (struct tgl_state *TLS, tgl_peer_id_t user, struct tgl_user_status *status) {
+  connection_data *data = TLS->ev_base;
+  
   if (status->online == 1) {
-    p2tgl_prpl_got_set_status_offline(TLS, user);
+    p2tgl_prpl_got_set_status_online (TLS, user);
   } else {
-    p2tgl_prpl_got_set_status_mobile(TLS, user);
+    debug ("%d: when=%d", user.id, status->when);
+    if (tgp_time_n_days_ago (purple_account_get_int (data->pa, "inactive-days-offline", TGP_DEFAULT_INACTIVE_DAYS_OFFLINE)) > status->when && status->when) {
+      debug ("offline");
+      p2tgl_prpl_got_set_status_offline (TLS, user);
+    }
+    else {
+      debug ("mobile");
+      p2tgl_prpl_got_set_status_mobile (TLS, user);
+    }
   }
 }
 
@@ -327,7 +345,7 @@ PurpleNotifyUserInfo *p2tgl_notify_user_info_new (struct tgl_user *U) {
     purple_notify_user_info_add_pair (info, "Username", U->username);
   }
   
-  char *status = format_user_status (&U->status);
+  char *status = tgp_format_user_status (&U->status);
   purple_notify_user_info_add_pair (info, "Last seen", status);
   g_free (status);
 

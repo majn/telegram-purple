@@ -80,31 +80,6 @@ const char *pk_path = "/etc/telegram-purple/server.pub";
 
 void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
 
-static char *format_status (struct tgl_user_status *status) {
-  return status->online ? "Online" : "Mobile";
-}
-
-char *format_user_status (struct tgl_user_status *status) {
-  char *when;
-  switch (status->online) {
-    case -1:
-      when = g_strdup_printf("%s", format_time (status->when));
-      break;
-    case -2:
-      when = g_strdup_printf("recently");
-      break;
-    case -3:
-      when = g_strdup_printf("last week");
-      break;
-    case -4:
-      when = g_strdup_printf("last month");
-      break;
-    default:
-      when = g_strdup ("unknown");
-      break;
-  }
-  return when;
-}
 
 static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4) {
   const char *d[4];
@@ -150,6 +125,7 @@ static void start_secret_chat (PurpleBlistNode *node, gpointer data) {
 
 static void update_message_received (struct tgl_state *TLS, struct tgl_message *M);
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *U, unsigned flags);
+static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *U);
 static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *C, unsigned flags);
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *C, unsigned flags);
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status);
@@ -158,6 +134,7 @@ struct tgl_update_callback tgp_callback = {
   .new_msg = update_message_received, 
   .msg_receive = update_message_received,
   .user_update = update_user_handler,
+  .user_status_update = update_user_status_handler,
   .chat_update = update_chat_handler,
   .secret_chat_update = update_secret_chat_handler,
   .type_notification = update_user_typing,
@@ -192,6 +169,10 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
       purple_blist_remove_buddy (buddy);
     }
   }
+}
+
+static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *U) {
+  p2tgl_prpl_got_user_status (TLS, U->id, &U->status);
 }
 
 static void write_secret_chat_gw (struct tgl_state *TLS, void *extra, int success, struct tgl_secret_chat *E) {
@@ -406,17 +387,16 @@ static void tgprpl_tooltip_text (PurpleBuddy * buddy, PurpleNotifyUserInfo * inf
   
   tgl_peer_id_t *peer = purple_buddy_get_protocol_data(buddy);
   if (!peer) {
-    purple_notify_user_info_add_pair (info, "Status", "Offline");
     return;
   }
+  
   tgl_peer_t *P = tgl_peer_get (get_conn_from_buddy (buddy)->TLS, *peer);
   if (!P) {
-    warning ("tgprpl_tooltip_text: warning peer with id %d not found in tree.", peer->id);
+    warning ("Warning peer with id %d not found in tree.", peer->id);
     return;
   }
-  purple_notify_user_info_add_pair (info, "Status", format_status(&P->user.status));
   
-  gchar *status = format_user_status (&P->user.status);
+  gchar *status = tgp_format_user_status (&P->user.status);
   purple_notify_user_info_add_pair (info, "last online: ", status);
   g_free (status);
 }
@@ -814,23 +794,30 @@ static void tgprpl_init (PurplePlugin *plugin) {
   ADD_VALUE(verification_values, "Always", "always");
   ADD_VALUE(verification_values, "Never", "never");
   
-  opt = purple_account_option_list_new("Accept Secret Chats", "accept-secret-chats", verification_values);
+  opt = purple_account_option_list_new ("Accept Secret Chats", "accept-secret-chats", verification_values);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
+  
+  opt = purple_account_option_int_new ("Display users not seen for (N) days as offline.",
+                                       "inactive-days-offline",
+                                       TGP_DEFAULT_INACTIVE_DAYS_OFFLINE);
+  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
   opt = purple_account_option_int_new ("Split oversized messages in up to (N) chunks.",
                                        "max-msg-split-count",
                                        TGP_DEFAULT_MAX_MSG_SPLIT_COUNT);
-  prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
-  
-  opt = purple_account_option_int_new ("Don't fetch messages older than (N) days.\n"
-                                       "Set 0 for unlimited.",
-                                       "history-retrieve-days",
-                                       TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
-  prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
+  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
 
   opt = purple_account_option_bool_new ("Fetch past history on first login.\n"
-                                       "Can be very slow on big histories.",
+                                       "(Warning, can be slow)",
                                         "history-sync-all", FALSE);
+  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
+  
+  opt = purple_account_option_int_new ("Don't fetch messages older than (N) days.\n"
+                                       "0 for unlimited.",
+                                       "history-retrieve-days",
+                                       TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
+  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
+  
   _telegram_protocol = plugin;
 }
 
