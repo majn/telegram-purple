@@ -73,56 +73,6 @@
 
 #define _(m) m
 
-PurplePlugin *_telegram_protocol = NULL;
-PurpleGroup *tggroup;
-const char *config_dir = "telegram-purple";
-const char *pk_path = "/etc/telegram-purple/server.pub";
-
-void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
-
-
-static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4) {
-  const char *d[4];
-  d[0] = a1; d[1] = a2; d[2] = a3; d[3] = a4;
-  static char buf[10000];
-  buf[0] = 0;
-  int i;
-  int p = 0;
-  for (i = 0; i < 4; i++) {
-    if (d[i] && strlen (d[i])) {
-      p += tgl_snprintf (buf + p, 9999 - p, "%s%s", p ? " " : "", d[i]);
-      assert (p < 9990);
-    }
-  }
-  char *s = buf;
-  while (*s) {
-    if (*s == '\n') { *s = ' '; }
-    if (*s == '#') { *s = '@'; }
-    s++;
-  }
-  s = buf;
-  int fl = (int)strlen (s);
-  int cc = 0;
-  while (1) {
-    tgl_peer_t *P = tgl_peer_get_by_name (TLS, s);
-    if (!P || !tgl_cmp_peer_id (P->id, id)) {
-      break;
-    }
-    cc ++;
-    assert (cc <= 9999);
-    tgl_snprintf (s + fl, 9999 - fl, " #%d", cc);
-  }
-  return tgl_strdup (s);
-}
-
-static void start_secret_chat (PurpleBlistNode *node, gpointer data) {
-  PurpleBuddy *buddy = data;
-
-  connection_data *conn = get_conn_from_buddy (buddy);
-  const char *name = purple_buddy_get_name (buddy);
-  tgl_do_create_secret_chat (conn->TLS, TGL_MK_USER(atoi (name)), 0, 0);
-}
-
 static void update_message_received (struct tgl_state *TLS, struct tgl_message *M);
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *U, unsigned flags);
 static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *U);
@@ -130,6 +80,12 @@ static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *C, unsi
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *C, unsigned flags);
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status);
 static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_message *list[]);
+static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4);
+
+PurpleGroup *tggroup;
+const char *config_dir = "telegram-purple";
+const char *pk_path = "/etc/telegram-purple/server.pub";
+
 struct tgl_update_callback tgp_callback = {
   .logprintf = debug,
   .new_msg = update_message_received, 
@@ -139,8 +95,8 @@ struct tgl_update_callback tgp_callback = {
   .chat_update = update_chat_handler,
   .secret_chat_update = update_secret_chat_handler,
   .type_notification = update_user_typing,
-  .create_print_name = format_print_name,
-  .marked_read = update_marked_read
+  .marked_read = update_marked_read,
+  .create_print_name = format_print_name
 };
 
 static void update_message_received (struct tgl_state *TLS, struct tgl_message *M) {
@@ -148,6 +104,7 @@ static void update_message_received (struct tgl_state *TLS, struct tgl_message *
   tgp_msg_recv (TLS, M);
 }
 
+void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, unsigned flags) {
   if (TLS->our_id == tgl_get_peer_id (user->id)) {
     if (flags & TGL_UPDATE_NAME) {
@@ -306,11 +263,46 @@ static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_messa
   }
 }
 
+static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4) {
+  const char *d[4];
+  d[0] = a1; d[1] = a2; d[2] = a3; d[3] = a4;
+  static char buf[10000];
+  buf[0] = 0;
+  int i;
+  int p = 0;
+  for (i = 0; i < 4; i++) {
+    if (d[i] && strlen (d[i])) {
+      p += tgl_snprintf (buf + p, 9999 - p, "%s%s", p ? " " : "", d[i]);
+      assert (p < 9990);
+    }
+  }
+  char *s = buf;
+  while (*s) {
+    if (*s == '\n') { *s = ' '; }
+    if (*s == '#') { *s = '@'; }
+    s++;
+  }
+  s = buf;
+  int fl = (int)strlen (s);
+  int cc = 0;
+  while (1) {
+    tgl_peer_t *P = tgl_peer_get_by_name (TLS, s);
+    if (!P || !tgl_cmp_peer_id (P->id, id)) {
+      break;
+    }
+    cc ++;
+    assert (cc <= 9999);
+    tgl_snprintf (s + fl, 9999 - fl, " #%d", cc);
+  }
+  return tgl_strdup (s);
+}
+
 static void on_contact_added (struct tgl_state *TLS,void *callback_extra, int success, int size, struct tgl_user *users[]) {
   PurpleBuddy *buddy = callback_extra;
   
   purple_blist_remove_buddy (buddy);
   if (!success || !size) {
+    
     purple_notify_error (_telegram_protocol, "Adding Buddy Failed", "Buddy Not Found",
                          "No contact with this phone number was found.");
   }
@@ -453,6 +445,14 @@ static GList *tgprpl_status_types (PurpleAccount * acct) {
   types = g_list_prepend (types, type);
   
   return g_list_reverse (types);
+}
+
+static void start_secret_chat (PurpleBlistNode *node, gpointer data) {
+  PurpleBuddy *buddy = data;
+  
+  connection_data *conn = get_conn_from_buddy (buddy);
+  const char *name = purple_buddy_get_name (buddy);
+  tgl_do_create_secret_chat (conn->TLS, TGL_MK_USER(atoi (name)), 0, 0);
 }
 
 static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
@@ -704,6 +704,8 @@ static gboolean tgprpl_can_receive_file (PurpleConnection * gc, const char *who)
   return TRUE;
 }
 
+PurplePlugin *_telegram_protocol = NULL;
+
 static PurplePluginProtocolInfo prpl_info = {
   OPT_PROTO_NO_PASSWORD | OPT_PROTO_IM_IMAGE,
   NULL,                    // user_splits, initialized in tgprpl_init()
@@ -826,15 +828,15 @@ static void tgprpl_init (PurplePlugin *plugin) {
                                        TGP_DEFAULT_MAX_MSG_SPLIT_COUNT);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
 
-  opt = purple_account_option_bool_new ("Fetch past history on first login.\n"
-                                       "(Warning, can be slow)",
-                                        "history-sync-all", FALSE);
-  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
-  
   opt = purple_account_option_int_new ("Don't fetch messages older than (N) days\n"
-                                       "0 for unlimited",
+                                       "(0 for unlimited)",
                                        "history-retrieve-days",
                                        TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
+  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
+  
+  opt = purple_account_option_bool_new ("Fetch past history on first login "
+                                        "(Warning, can be slow)",
+                                        "history-sync-all", FALSE);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
   opt = purple_account_option_bool_new ("Display read notifications (annoying)",
