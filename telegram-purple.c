@@ -616,14 +616,6 @@ static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Pur
   
 }
 
-static void tgprpl_add_deny (PurpleConnection * gc, const char *name) {
-  debug ("tgprpl_add_deny()");
-}
-
-static void tgprpl_rem_deny (PurpleConnection * gc, const char *name) {
-  debug ("tgprpl_rem_deny()");
-}
-
 static void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
   debug ("tgprpl_chat_join()");
   
@@ -720,9 +712,9 @@ static PurplePluginProtocolInfo prpl_info = {
   tgprpl_remove_buddy,
   NULL,                    // remove_buddies
   NULL,                    // add_permit
-  tgprpl_add_deny,
+  NULL,                    // add_deny
   NULL,                    // rem_permit
-  tgprpl_rem_deny,
+  NULL,                    // rem_deny
   NULL,                    // set_permit_deny
   tgprpl_chat_join,
   NULL,                    // reject_chat
