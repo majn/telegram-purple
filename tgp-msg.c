@@ -284,7 +284,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     flags |= PURPLE_MESSAGE_SYSTEM;
   }
   else if (M->media.type == tgl_message_media_document) {
-    char *who = p2tgl_peer_strdup_id (M->from_id);
+    char *who = p2tgl_strdup_id (M->from_id);
     if (! out_msg(TLS, M)) {
       tgprpl_recv_file (conn->gc, who, &M->media.document);
     }
@@ -292,7 +292,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     return;
   }
   else if (M->media.type == tgl_message_media_document_encr) {
-    char *who = p2tgl_peer_strdup_id (M->from_id);
+    char *who = p2tgl_strdup_id (M->from_id);
     if (! out_msg(TLS, M)) {
       tgprpl_recv_encr_file (conn->gc, who, &M->media.encr_document);
     }
