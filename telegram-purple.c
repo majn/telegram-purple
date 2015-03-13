@@ -129,6 +129,7 @@ static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *
 static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *C, unsigned flags);
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *C, unsigned flags);
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status);
+static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_message *list[]);
 struct tgl_update_callback tgp_callback = {
   .logprintf = debug,
   .new_msg = update_message_received, 
@@ -138,7 +139,8 @@ struct tgl_update_callback tgp_callback = {
   .chat_update = update_chat_handler,
   .secret_chat_update = update_secret_chat_handler,
   .type_notification = update_user_typing,
-  .create_print_name = format_print_name
+  .create_print_name = format_print_name,
+  .marked_read = update_marked_read
 };
 
 static void update_message_received (struct tgl_state *TLS, struct tgl_message *M) {
@@ -276,6 +278,31 @@ static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, u
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status) {
   if (status == tgl_typing_typing) {
     p2tgl_got_typing(TLS, U->id, 2);
+  }
+}
+
+static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_message *list[]) {
+  connection_data *conn = TLS->ev_base;
+  if (! purple_account_get_bool (conn->pa, "display-read-notifications", FALSE)) {
+    return;
+  }
+  
+  int i;
+  for (i = 0; i < num; i++) if (list[i]) {
+    tgl_peer_id_t to_id;
+    if (tgl_get_peer_type (list[i]->to_id) == TGL_PEER_USER && tgl_get_peer_id (list[i]->to_id) == TLS->our_id) {
+      to_id = list[i]->from_id;
+    } else {
+      to_id = list[i]->to_id;
+    }
+        PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, to_id);
+    if (conv) {
+      conv = p2tgl_conversation_new (TLS, to_id);
+      gchar *who = p2tgl_strdup_id (to_id);
+      purple_conversation_write (conv, who, "Messages marked as read.",
+                                 PURPLE_MESSAGE_NO_LOG | PURPLE_MESSAGE_SYSTEM, time (NULL));
+      g_free (who);
+    }
   }
 }
 
@@ -789,12 +816,12 @@ static void tgprpl_init (PurplePlugin *plugin) {
   opt = purple_account_option_list_new ("Accept Secret Chats", "accept-secret-chats", verification_values);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_int_new ("Display users not seen for (N) days as offline.",
+  opt = purple_account_option_int_new ("Display users not seen for (N) days as offline",
                                        "inactive-days-offline",
                                        TGP_DEFAULT_INACTIVE_DAYS_OFFLINE);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_int_new ("Split oversized messages in up to (N) chunks.",
+  opt = purple_account_option_int_new ("Split oversized messages in up to (N) chunks",
                                        "max-msg-split-count",
                                        TGP_DEFAULT_MAX_MSG_SPLIT_COUNT);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
@@ -804,10 +831,15 @@ static void tgprpl_init (PurplePlugin *plugin) {
                                         "history-sync-all", FALSE);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_int_new ("Don't fetch messages older than (N) days.\n"
-                                       "0 for unlimited.",
+  opt = purple_account_option_int_new ("Don't fetch messages older than (N) days\n"
+                                       "0 for unlimited",
                                        "history-retrieve-days",
                                        TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
+  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
+  
+  opt = purple_account_option_bool_new ("Display read notifications (annoying)",
+                                        "display-read-notifications",
+                                        TGP_DEFAULT_DISPLAY_READ_NOTIFICATIONS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
   _telegram_protocol = plugin;
