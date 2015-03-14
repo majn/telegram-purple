@@ -35,6 +35,9 @@
 		C487A1911A792EA50044F135 /* libglib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C487A18F1A792EA50044F135 /* libglib.framework */; };
 		C487A1921A792EA50044F135 /* libpurple.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C487A1901A792EA50044F135 /* libpurple.framework */; };
 		C49A915819BBC5C5001B3DC0 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C49A915719BBC5C5001B3DC0 /* libz.dylib */; };
+		C4B4BE2E1AB392F80064AC17 /* TelegramAccountView.xib in Resources */ = {isa = PBXBuildFile; fileRef = C4B4BE2D1AB392F80064AC17 /* TelegramAccountView.xib */; };
+		C4B4BE311AB393800064AC17 /* TelegramAccountViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C4B4BE2F1AB393800064AC17 /* TelegramAccountViewController.m */; };
+		C4B4BE331AB4536F0064AC17 /* PurpleDefaultsTelegram.plist in Resources */ = {isa = PBXBuildFile; fileRef = C4B4BE321AB4536F0064AC17 /* PurpleDefaultsTelegram.plist */; };
 		C4D819031A5C85FE0044CBA9 /* lodepng.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D819011A5C85FE0044CBA9 /* lodepng.c */; };
 		C4D819061A5C862E0044CBA9 /* tgp-structs.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D819041A5C862E0044CBA9 /* tgp-structs.c */; };
 		C4E528111A8A907200C4B915 /* tgp-ft.c in Sources */ = {isa = PBXBuildFile; fileRef = C4E5280F1A8A907200C4B915 /* tgp-ft.c */; };
@@ -85,6 +88,10 @@
 		C487A18F1A792EA50044F135 /* libglib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libglib.framework; path = Frameworks/Adium/libglib.framework; sourceTree = "<group>"; };
 		C487A1901A792EA50044F135 /* libpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libpurple.framework; path = Frameworks/Adium/libpurple.framework; sourceTree = "<group>"; };
 		C49A915719BBC5C5001B3DC0 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
+		C4B4BE2D1AB392F80064AC17 /* TelegramAccountView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = TelegramAccountView.xib; sourceTree = "<group>"; };
+		C4B4BE2F1AB393800064AC17 /* TelegramAccountViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TelegramAccountViewController.m; sourceTree = "<group>"; };
+		C4B4BE301AB393800064AC17 /* TelegramAccountViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TelegramAccountViewController.h; sourceTree = "<group>"; };
+		C4B4BE321AB4536F0064AC17 /* PurpleDefaultsTelegram.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = PurpleDefaultsTelegram.plist; sourceTree = "<group>"; };
 		C4D819011A5C85FE0044CBA9 /* lodepng.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = lodepng.c; sourceTree = "<group>"; };
 		C4D819021A5C85FE0044CBA9 /* lodepng.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lodepng.h; sourceTree = "<group>"; };
 		C4D819041A5C862E0044CBA9 /* tgp-structs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "tgp-structs.c"; path = "../tgp-structs.c"; sourceTree = "<group>"; };
@@ -117,9 +124,10 @@
 		C410947D19BB2D7D0083BF3F = {
 			isa = PBXGroup;
 			children = (
+				C4B4BE321AB4536F0064AC17 /* PurpleDefaultsTelegram.plist */,
+				C438CE251A12BEAF00E1DA0F /* telegram22.png */,
 				C438CE231A12BEAF00E1DA0F /* telegram.png */,
 				C438CE241A12BEAF00E1DA0F /* telegram16.png */,
-				C438CE251A12BEAF00E1DA0F /* telegram22.png */,
 				C438CE261A12BEAF00E1DA0F /* telegram48.png */,
 				C410949919BB337A0083BF3F /* TelegramPlugin.h */,
 				C410949A19BB337A0083BF3F /* TelegramPlugin.m */,
@@ -127,6 +135,9 @@
 				C4877C1719BB37EA006FA91F /* TelegramService.m */,
 				C4877C1C19BB676B006FA91F /* AdiumTelegramAccount.h */,
 				C4877C1D19BB676B006FA91F /* AdiumTelegramAccount.m */,
+				C4B4BE301AB393800064AC17 /* TelegramAccountViewController.h */,
+				C4B4BE2F1AB393800064AC17 /* TelegramAccountViewController.m */,
+				C4B4BE2D1AB392F80064AC17 /* TelegramAccountView.xib */,
 				C4BF990319BB8B200038D507 /* telegram-purple */,
 				C410948B19BB2D7D0083BF3F /* telegram-adium */,
 				C410948819BB2D7D0083BF3F /* Frameworks */,
@@ -279,11 +290,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				C438CE271A12BEAF00E1DA0F /* telegram.png in Resources */,
+				C4B4BE2E1AB392F80064AC17 /* TelegramAccountView.xib in Resources */,
 				C438CE281A12BEAF00E1DA0F /* telegram16.png in Resources */,
 				C438CE291A12BEAF00E1DA0F /* telegram22.png in Resources */,
 				C438CE2A1A12BEAF00E1DA0F /* telegram48.png in Resources */,
 				C410949019BB2D7D0083BF3F /* InfoPlist.strings in Resources */,
 				C438CE3D1A12C15100E1DA0F /* tg-server.pub in Resources */,
+				C4B4BE331AB4536F0064AC17 /* PurpleDefaultsTelegram.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -303,6 +316,7 @@
 				C4E528111A8A907200C4B915 /* tgp-ft.c in Sources */,
 				C438CE361A12C07800E1DA0F /* tgp-timers.c in Sources */,
 				C410949B19BB337A0083BF3F /* TelegramPlugin.m in Sources */,
+				C4B4BE311AB393800064AC17 /* TelegramAccountViewController.m in Sources */,
 				C4877C1E19BB676B006FA91F /* AdiumTelegramAccount.m in Sources */,
 				C41D58411A16D88E00B22448 /* tgp-2prpl.c in Sources */,
 				C425F9181A7069C300361AFC /* tgp-utils.c in Sources */,

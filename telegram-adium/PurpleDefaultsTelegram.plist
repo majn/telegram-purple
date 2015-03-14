@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Telegram:accept-secret-chats</key>
+	<string>ask</string>
+	<key>Telegram:inactive-days-offline</key>
+	<string>7</string>
+	<key>Telegram:display-read-notifications</key>
+	<false/>
+	<key>Telegram:history-retrieve-days</key>
+	<string>14</string>
+	<key>Telegram:history-sync-all</key>
+	<false/>
+</dict>
+</plist>

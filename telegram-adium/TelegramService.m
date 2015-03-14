@@ -18,6 +18,7 @@
 
 #import "TelegramService.h"
 #import "AdiumTelegramAccount.h"
+#import "TelegramAccountViewController.h"
 
 #import <Adium/AIStatusControllerProtocol.h>
 #import <AIUtilities/AIImageAdditions.h>
@@ -28,6 +29,9 @@
 	return [AdiumTelegramAccount class];
 }
 
+- (AIAccountViewController *)accountViewController{
+  return [TelegramAccountViewController accountViewController];
+}
 //Service Description
 - (NSString *)serviceCodeUniqueID{
     return @"prpl-telegram";

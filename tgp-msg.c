@@ -162,9 +162,7 @@ static void tgp_msg_send_done (struct tgl_state *TLS, void *callback_extra, int 
 }
 
 static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
-  connection_data *data = TLS->ev_base;
-  int max =  purple_account_get_int (data->pa, "max-msg-split-count",
-                 TGP_DEFAULT_MAX_MSG_SPLIT_COUNT);
+  int max = TGP_DEFAULT_MAX_MSG_SPLIT_COUNT;
   if (max < 1) {
     max = 1;
   }

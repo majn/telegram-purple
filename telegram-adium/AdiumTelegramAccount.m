@@ -22,6 +22,8 @@
 #import <Adium/AIListContact.h>
 #import "tgp-ft.h"
 
+#include "telegram-purple.h"
+
 @implementation AdiumTelegramAccount
 
 - (const char*)protocolPlugin
@@ -42,6 +44,37 @@
 - (int)port
 {
 	return 443;
+}
+
+
+- (void)configurePurpleAccount
+{
+  [super configurePurpleAccount];
+  
+  purple_account_set_string (account, TGP_KEY_ACCEPT_SECRET_CHATS,
+                              [[self preferenceForKey:@"Telegram:"TGP_KEY_ACCEPT_SECRET_CHATS
+                                                group:GROUP_ACCOUNT_STATUS]
+                               UTF8String]);
+  
+  purple_account_set_bool (account, TGP_KEY_DISPLAY_READ_NOTIFICATIONS,
+                              [[self preferenceForKey:@"Telegram:"TGP_KEY_DISPLAY_READ_NOTIFICATIONS
+                                                group:GROUP_ACCOUNT_STATUS]
+                               boolValue]);
+  
+  purple_account_set_bool (account, TGP_KEY_HISTORY_SYNC_ALL,
+                              [[self preferenceForKey:@"Telegram:"TGP_KEY_HISTORY_SYNC_ALL
+                                                group:GROUP_ACCOUNT_STATUS]
+                               boolValue]);
+  
+  purple_account_set_int (account, TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD,
+                              [[self preferenceForKey:@"Telegram:"TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD
+                                                group:GROUP_ACCOUNT_STATUS]
+                               intValue]);
+  
+  purple_account_set_int (account, TGP_KEY_INACTIVE_DAYS_OFFLINE,
+                              [[self preferenceForKey:@"Telegram:"TGP_KEY_INACTIVE_DAYS_OFFLINE
+                                                group:GROUP_ACCOUNT_STATUS]
+                               intValue]);
 }
 
 - (BOOL)canSendOfflineMessageToContact:(AIListContact *)inContact

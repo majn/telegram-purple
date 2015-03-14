@@ -815,32 +815,29 @@ static void tgprpl_init (PurplePlugin *plugin) {
   ADD_VALUE(verification_values, "Always", "always");
   ADD_VALUE(verification_values, "Never", "never");
   
-  opt = purple_account_option_list_new ("Accept Secret Chats", "accept-secret-chats", verification_values);
+  opt = purple_account_option_list_new ("Accept Secret Chats",
+                                        TGP_KEY_ACCEPT_SECRET_CHATS,
+                                        verification_values);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_int_new ("Display users not seen for (N) days as offline",
-                                       "inactive-days-offline",
-                                       TGP_DEFAULT_INACTIVE_DAYS_OFFLINE);
+  opt = purple_account_option_int_new ("Display peers offline after (days)",
+                                      TGP_KEY_INACTIVE_DAYS_OFFLINE,
+                                      TGP_DEFAULT_INACTIVE_DAYS_OFFLINE);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_int_new ("Split oversized messages in up to (N) chunks",
-                                       "max-msg-split-count",
-                                       TGP_DEFAULT_MAX_MSG_SPLIT_COUNT);
+  opt = purple_account_option_bool_new ("Fetch past history on first login",
+                                        TGP_KEY_HISTORY_SYNC_ALL,
+                                        TGP_DEFAULT_HISTORY_SYNC_ALL);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
-
-  opt = purple_account_option_int_new ("Don't fetch messages older than (N) days\n"
+  
+  opt = purple_account_option_int_new ("Don't fetch messages older than (days)\n"
                                        "(0 for unlimited)",
-                                       "history-retrieve-days",
+                                       TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD,
                                        TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_bool_new ("Fetch past history on first login "
-                                        "(Warning, can be slow)",
-                                        "history-sync-all", FALSE);
-  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
-  
-  opt = purple_account_option_bool_new ("Display read notifications (annoying)",
-                                        "display-read-notifications",
+  opt = purple_account_option_bool_new ("Display read notifications",
+                                        TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD,
                                         TGP_DEFAULT_DISPLAY_READ_NOTIFICATIONS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
