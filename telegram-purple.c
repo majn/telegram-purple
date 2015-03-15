@@ -647,9 +647,9 @@ static void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
   debug ("tgprpl_chat_join()");
   
   connection_data *conn = purple_connection_get_protocol_data (gc);
-  int id = atoi (g_hash_table_lookup (data, "id"));
-  if (id) {
-    chat_show (conn->gc, id);
+  gpointer value = g_hash_table_lookup (data, "id");
+  if (value && atoi (value)) {
+    chat_show (conn->gc, atoi (value));
   }
 }
 
