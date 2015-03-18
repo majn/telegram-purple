@@ -38,6 +38,8 @@
 		C4B4BE2E1AB392F80064AC17 /* TelegramAccountView.xib in Resources */ = {isa = PBXBuildFile; fileRef = C4B4BE2D1AB392F80064AC17 /* TelegramAccountView.xib */; };
 		C4B4BE311AB393800064AC17 /* TelegramAccountViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C4B4BE2F1AB393800064AC17 /* TelegramAccountViewController.m */; };
 		C4B4BE331AB4536F0064AC17 /* PurpleDefaultsTelegram.plist in Resources */ = {isa = PBXBuildFile; fileRef = C4B4BE321AB4536F0064AC17 /* PurpleDefaultsTelegram.plist */; };
+		C4B4BE371AB5FB5C0064AC17 /* TelegramJoinChatViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C4B4BE351AB5FB5C0064AC17 /* TelegramJoinChatViewController.m */; };
+		C4B4BE391AB613950064AC17 /* TelegramJoinChatView.xib in Resources */ = {isa = PBXBuildFile; fileRef = C4B4BE381AB613950064AC17 /* TelegramJoinChatView.xib */; };
 		C4D819031A5C85FE0044CBA9 /* lodepng.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D819011A5C85FE0044CBA9 /* lodepng.c */; };
 		C4D819061A5C862E0044CBA9 /* tgp-structs.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D819041A5C862E0044CBA9 /* tgp-structs.c */; };
 		C4E528111A8A907200C4B915 /* tgp-ft.c in Sources */ = {isa = PBXBuildFile; fileRef = C4E5280F1A8A907200C4B915 /* tgp-ft.c */; };
@@ -92,6 +94,9 @@
 		C4B4BE2F1AB393800064AC17 /* TelegramAccountViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TelegramAccountViewController.m; sourceTree = "<group>"; };
 		C4B4BE301AB393800064AC17 /* TelegramAccountViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TelegramAccountViewController.h; sourceTree = "<group>"; };
 		C4B4BE321AB4536F0064AC17 /* PurpleDefaultsTelegram.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = PurpleDefaultsTelegram.plist; sourceTree = "<group>"; };
+		C4B4BE351AB5FB5C0064AC17 /* TelegramJoinChatViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TelegramJoinChatViewController.m; sourceTree = "<group>"; };
+		C4B4BE361AB5FB5C0064AC17 /* TelegramJoinChatViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TelegramJoinChatViewController.h; sourceTree = "<group>"; };
+		C4B4BE381AB613950064AC17 /* TelegramJoinChatView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = TelegramJoinChatView.xib; sourceTree = "<group>"; };
 		C4D819011A5C85FE0044CBA9 /* lodepng.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = lodepng.c; sourceTree = "<group>"; };
 		C4D819021A5C85FE0044CBA9 /* lodepng.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lodepng.h; sourceTree = "<group>"; };
 		C4D819041A5C862E0044CBA9 /* tgp-structs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "tgp-structs.c"; path = "../tgp-structs.c"; sourceTree = "<group>"; };
@@ -135,6 +140,9 @@
 				C4877C1719BB37EA006FA91F /* TelegramService.m */,
 				C4877C1C19BB676B006FA91F /* AdiumTelegramAccount.h */,
 				C4877C1D19BB676B006FA91F /* AdiumTelegramAccount.m */,
+				C4B4BE361AB5FB5C0064AC17 /* TelegramJoinChatViewController.h */,
+				C4B4BE351AB5FB5C0064AC17 /* TelegramJoinChatViewController.m */,
+				C4B4BE381AB613950064AC17 /* TelegramJoinChatView.xib */,
 				C4B4BE301AB393800064AC17 /* TelegramAccountViewController.h */,
 				C4B4BE2F1AB393800064AC17 /* TelegramAccountViewController.m */,
 				C4B4BE2D1AB392F80064AC17 /* TelegramAccountView.xib */,
@@ -290,6 +298,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C438CE271A12BEAF00E1DA0F /* telegram.png in Resources */,
+				C4B4BE391AB613950064AC17 /* TelegramJoinChatView.xib in Resources */,
 				C4B4BE2E1AB392F80064AC17 /* TelegramAccountView.xib in Resources */,
 				C438CE281A12BEAF00E1DA0F /* telegram16.png in Resources */,
 				C438CE291A12BEAF00E1DA0F /* telegram22.png in Resources */,
@@ -310,6 +319,7 @@
 				C438CE321A12C07800E1DA0F /* msglog.c in Sources */,
 				C438CE351A12C07800E1DA0F /* tgp-net.c in Sources */,
 				C438CE331A12C07800E1DA0F /* telegram-base.c in Sources */,
+				C4B4BE371AB5FB5C0064AC17 /* TelegramJoinChatViewController.m in Sources */,
 				C438CE341A12C07800E1DA0F /* telegram-purple.c in Sources */,
 				C4877C1819BB37EA006FA91F /* TelegramService.m in Sources */,
 				C448ADA71AB0789A001B7ECD /* tgp-msg.c in Sources */,

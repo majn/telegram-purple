@@ -645,11 +645,24 @@ static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Pur
 
 static void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
   debug ("tgprpl_chat_join()");
-  
+  const char *subject = NULL;
+  gpointer value;
   connection_data *conn = purple_connection_get_protocol_data (gc);
-  gpointer value = g_hash_table_lookup (data, "id");
+  
+  value = g_hash_table_lookup (data, "id");
   if (value && atoi (value)) {
     chat_show (conn->gc, atoi (value));
+    return;
+  }
+  
+  subject = g_hash_table_lookup(data, "subject");
+  if (str_not_empty (subject)) {
+    tgl_peer_t *P = tgl_peer_get_by_name (conn->TLS, subject);
+    if (P && tgl_get_peer_type (P->id) == TGL_PEER_CHAT) {
+      chat_show (conn->gc, tgl_get_peer_id (P->id));
+      return;
+    }
+    debug ("Peer with name %s not found or not a chat.", subject);
   }
 }
 

@@ -49,7 +49,7 @@
                     </textFieldCell>
                 </textField>
             </subviews>
-            <point key="canvasLocation" x="380.5" y="76"/>
+            <point key="canvasLocation" x="380.5" y="13"/>
         </customView>
         <customView id="DGa-mQ-g3C" userLabel="Options">
             <rect key="frame" x="0.0" y="0.0" width="272" height="167"/>
@@ -84,7 +84,7 @@
                 <matrix verticalHuggingPriority="750" fixedFrame="YES" allowsEmptySelection="NO" autorecalculatesCellSize="YES" translatesAutoresizingMaskIntoConstraints="NO" id="RGC-Jo-M5e">
                     <rect key="frame" x="176" y="103" width="76" height="58"/>
                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                    <size key="cellSize" width="76" height="18"/>
+                    <size key="cellSize" width="66" height="18"/>
                     <size key="intercellSpacing" width="4" height="2"/>
                     <buttonCell key="prototype" type="radio" title="Radio" imagePosition="left" alignment="left" inset="2" id="XXf-7E-yhf">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -154,7 +154,7 @@
                     </textFieldCell>
                 </textField>
             </subviews>
-            <point key="canvasLocation" x="356" y="272.5"/>
+            <point key="canvasLocation" x="356" y="201.5"/>
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="OjL-yD-9te"/>
     </objects>

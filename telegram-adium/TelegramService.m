@@ -19,6 +19,7 @@
 #import "TelegramService.h"
 #import "AdiumTelegramAccount.h"
 #import "TelegramAccountViewController.h"
+#import "TelegramJoinChatViewController.h"
 
 #import <Adium/AIStatusControllerProtocol.h>
 #import <AIUtilities/AIImageAdditions.h>
@@ -32,6 +33,11 @@
 - (AIAccountViewController *)accountViewController{
   return [TelegramAccountViewController accountViewController];
 }
+
+- (DCJoinChatViewController *)joinChatView{
+  return [TelegramJoinChatViewController joinChatView];
+}
+
 //Service Description
 - (NSString *)serviceCodeUniqueID{
     return @"prpl-telegram";
