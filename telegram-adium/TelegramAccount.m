@@ -16,7 +16,7 @@
  * Copyright Matthias Jentsch 2014-2015
  */
 
-#import "AdiumTelegramAccount.h"
+#import "TelegramAccount.h"
 #import <libpurple/conversation.h>
 #import <Adium/ESFileTransfer.h>
 #import <Adium/AIListContact.h>
@@ -24,7 +24,7 @@
 
 #include "telegram-purple.h"
 
-@implementation AdiumTelegramAccount
+@implementation TelegramAccount
 
 - (const char*)protocolPlugin
 {

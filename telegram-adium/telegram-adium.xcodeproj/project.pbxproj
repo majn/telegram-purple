@@ -28,7 +28,7 @@
 		C448ADA71AB0789A001B7ECD /* tgp-msg.c in Sources */ = {isa = PBXBuildFile; fileRef = C448ADA61AB0789A001B7ECD /* tgp-msg.c */; };
 		C466937819E703370036A108 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C466937719E703370036A108 /* AppKit.framework */; };
 		C4877C1819BB37EA006FA91F /* TelegramService.m in Sources */ = {isa = PBXBuildFile; fileRef = C4877C1719BB37EA006FA91F /* TelegramService.m */; };
-		C4877C1E19BB676B006FA91F /* AdiumTelegramAccount.m in Sources */ = {isa = PBXBuildFile; fileRef = C4877C1D19BB676B006FA91F /* AdiumTelegramAccount.m */; };
+		C4877C1E19BB676B006FA91F /* TelegramAccount.m in Sources */ = {isa = PBXBuildFile; fileRef = C4877C1D19BB676B006FA91F /* TelegramAccount.m */; };
 		C487A17B1A792CF00044F135 /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C487A17A1A792CF00044F135 /* libcrypto.dylib */; };
 		C487A18C1A792E9B0044F135 /* Adium.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C487A1891A792E9B0044F135 /* Adium.framework */; };
 		C487A18E1A792E9B0044F135 /* AIUtilities.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C487A18B1A792E9B0044F135 /* AIUtilities.framework */; };
@@ -81,8 +81,8 @@
 		C466937719E703370036A108 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/System/Library/Frameworks/AppKit.framework; sourceTree = DEVELOPER_DIR; };
 		C4877C1619BB37EA006FA91F /* TelegramService.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TelegramService.h; sourceTree = "<group>"; };
 		C4877C1719BB37EA006FA91F /* TelegramService.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TelegramService.m; sourceTree = "<group>"; };
-		C4877C1C19BB676B006FA91F /* AdiumTelegramAccount.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AdiumTelegramAccount.h; sourceTree = "<group>"; };
-		C4877C1D19BB676B006FA91F /* AdiumTelegramAccount.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AdiumTelegramAccount.m; sourceTree = "<group>"; };
+		C4877C1C19BB676B006FA91F /* TelegramAccount.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TelegramAccount.h; sourceTree = "<group>"; };
+		C4877C1D19BB676B006FA91F /* TelegramAccount.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TelegramAccount.m; sourceTree = "<group>"; };
 		C487A1781A792CD80044F135 /* libssl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libssl.dylib; path = usr/lib/libssl.dylib; sourceTree = SDKROOT; };
 		C487A17A1A792CF00044F135 /* libcrypto.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.dylib; path = usr/lib/libcrypto.dylib; sourceTree = SDKROOT; };
 		C487A1891A792E9B0044F135 /* Adium.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Adium.framework; path = Frameworks/Adium/Adium.framework; sourceTree = "<group>"; };
@@ -138,8 +138,8 @@
 				C410949A19BB337A0083BF3F /* TelegramPlugin.m */,
 				C4877C1619BB37EA006FA91F /* TelegramService.h */,
 				C4877C1719BB37EA006FA91F /* TelegramService.m */,
-				C4877C1C19BB676B006FA91F /* AdiumTelegramAccount.h */,
-				C4877C1D19BB676B006FA91F /* AdiumTelegramAccount.m */,
+				C4877C1C19BB676B006FA91F /* TelegramAccount.h */,
+				C4877C1D19BB676B006FA91F /* TelegramAccount.m */,
 				C4B4BE361AB5FB5C0064AC17 /* TelegramJoinChatViewController.h */,
 				C4B4BE351AB5FB5C0064AC17 /* TelegramJoinChatViewController.m */,
 				C4B4BE381AB613950064AC17 /* TelegramJoinChatView.xib */,
@@ -327,7 +327,7 @@
 				C438CE361A12C07800E1DA0F /* tgp-timers.c in Sources */,
 				C410949B19BB337A0083BF3F /* TelegramPlugin.m in Sources */,
 				C4B4BE311AB393800064AC17 /* TelegramAccountViewController.m in Sources */,
-				C4877C1E19BB676B006FA91F /* AdiumTelegramAccount.m in Sources */,
+				C4877C1E19BB676B006FA91F /* TelegramAccount.m in Sources */,
 				C41D58411A16D88E00B22448 /* tgp-2prpl.c in Sources */,
 				C425F9181A7069C300361AFC /* tgp-utils.c in Sources */,
 				C4D819031A5C85FE0044CBA9 /* lodepng.c in Sources */,

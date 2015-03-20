@@ -15,7 +15,7 @@
  */
 
 #import "TelegramAccountViewController.h"
-#import "AdiumTelegramAccount.h"
+#import "TelegramAccount.h"
 
 #import <Adium/AIService.h>
 #import <AIUtilities/AIStringFormatter.h>

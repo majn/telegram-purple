@@ -20,5 +20,5 @@
 #import <AdiumLibpurple/CBPurpleAccount.h>
 #import <Adium/AIAccount.h>
 
-@interface AdiumTelegramAccount : CBPurpleAccount<AIAccount_Files>
+@interface TelegramAccount : CBPurpleAccount<AIAccount_Files>
 @end

@@ -17,7 +17,7 @@
  */
 
 #import "TelegramService.h"
-#import "AdiumTelegramAccount.h"
+#import "TelegramAccount.h"
 #import "TelegramAccountViewController.h"
 #import "TelegramJoinChatViewController.h"
 
@@ -27,7 +27,7 @@
 @implementation TelegramService
 
 - (Class)accountClass{
-	return [AdiumTelegramAccount class];
+	return [TelegramAccount class];
 }
 
 - (AIAccountViewController *)accountViewController{
