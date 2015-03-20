@@ -127,7 +127,7 @@ void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *m
   
   /* 
      Outgoing messages are not well supported in different libpurple clients, 
-     p2tgl_conversation_write should have the best among different versions. Unfortunately 
+     p2tgl_conv_im_write should have the best among different versions. Unfortunately
      this causes buggy formatting in Adium, so we don't use this workaround in that case.
    
      NOTE: Outgoing messages will not work in Adium <= 1.6.0, there is no way to print outgoing
@@ -139,7 +139,7 @@ void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *m
     if (!conv) {
       conv = p2tgl_conversation_new(TLS, who);
     }
-    p2tgl_conversation_write (conv, who, msg, PURPLE_MESSAGE_SEND, when);
+    p2tgl_conv_im_write (conv, who, msg, PURPLE_MESSAGE_SEND, when);
     return;
   }
 #endif
@@ -182,9 +182,16 @@ PurpleConversation *p2tgl_find_conversation_with_account (struct tgl_state *TLS,
 void p2tgl_conversation_write (PurpleConversation *conv, tgl_peer_id_t who, const char *message, int flags, int date) {
   char *name = p2tgl_strdup_id (who);
   
-  purple_conv_im_write(purple_conversation_get_im_data(conv), name, message, flags, date);
-  // purple_conversation_write (conv, name, message, flags, date);
+  purple_conversation_write (conv, name, message, flags, date);
   
+  g_free (name);
+}
+
+void p2tgl_conv_im_write (PurpleConversation *conv, tgl_peer_id_t who, const char *message, int flags, int date) {
+  char *name = p2tgl_strdup_id (who);
+  
+  purple_conv_im_write(purple_conversation_get_im_data(conv), name, message, flags, date);
+
   g_free (name);
 }
 

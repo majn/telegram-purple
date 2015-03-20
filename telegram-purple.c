@@ -255,10 +255,8 @@ static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_messa
         PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, to_id);
     if (conv) {
       conv = p2tgl_conversation_new (TLS, to_id);
-      gchar *who = p2tgl_strdup_id (to_id);
-      purple_conversation_write (conv, who, "Messages marked as read.",
-                                 PURPLE_MESSAGE_NO_LOG | PURPLE_MESSAGE_SYSTEM, time (NULL));
-      g_free (who);
+      p2tgl_conversation_write (conv, to_id, "Messages marked as read.",
+                                 PURPLE_MESSAGE_NO_LOG | PURPLE_MESSAGE_SYSTEM, (int)time (NULL));
     }
   }
 }
