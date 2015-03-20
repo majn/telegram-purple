@@ -1,4 +1,4 @@
-/* 
+/*
  * Adium is the legal property of its developers, whose names are listed in the copyright file included
  * with this source distribution.
  * 
@@ -18,6 +18,7 @@
 #include "TelegramJoinChatViewController.h"
 #include "telegram-purple.h"
 #include "tgp-structs.h"
+#include "tgp-chat.h"
 
 #import <Adium/AIContactControllerProtocol.h>
 #import <AIUtilities/AICompletingTextField.h>
@@ -34,7 +35,7 @@
 static void tgl_peer_iterator_cb (tgl_peer_t *peer, void *extra) {
   NSMutableArray *A = (__bridge NSMutableArray *)(extra);
   if (tgl_get_peer_type (peer->id) == TGL_PEER_CHAT) {
-    [A addObject: [[NSString alloc] initWithUTF8String:peer->print_name]];
+    [A addObject: [NSValue valueWithPointer: peer]];
   }
 }
 
@@ -49,11 +50,32 @@ static void tgl_peer_iterator_cb (tgl_peer_t *peer, void *extra) {
     
     [popupButton_existingChat removeAllItems];
     
-    NSMutableArray *A = [NSMutableArray new];
-    tgl_peer_iterator_ex (conn->TLS, tgl_peer_iterator_cb, (__bridge void *)(A));
-    for (NSString *name in A) {
-      [popupButton_existingChat addItemWithTitle:name];
+    NSMutableArray *a = [NSMutableArray new];
+    tgl_peer_iterator_ex (conn->TLS, tgl_peer_iterator_cb, (__bridge void *)(a));
+    
+    NSMutableArray *chats = [NSMutableArray new];
+    NSMutableArray *leftChats = [NSMutableArray new];
+    for (NSValue *V in a) {
+      tgl_peer_t *P = [V pointerValue];
+      NSString *name = [[NSString alloc] initWithUTF8String:P->print_name];
+      if (chat_is_member (conn->TLS->our_id, &P->chat)) {
+        [chats addObject: name];
+      }
+      else {
+        [leftChats addObject: name];
+      }
     }
+    
+    NSArray *sortedChats = [chats sortedArrayUsingComparator:^NSComparisonResult(id a, id b) {
+      return [(NSString*)a
+              compare:b
+              options:NSDiacriticInsensitiveSearch | NSCaseInsensitiveSearch];
+    }];
+    [popupButton_existingChat addItemsWithTitles: sortedChats];
+    
+    // TODO: Display left chats with a grey font to indicate that those are no
+    // longer, but still allow the user to view the history
+    // [popupButton_existingChat addItemsWithTitles: leftChats];
   }
 }
 
