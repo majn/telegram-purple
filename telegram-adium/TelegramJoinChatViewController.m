@@ -16,11 +16,14 @@
 
 #include <tgl.h>
 #include "TelegramJoinChatViewController.h"
+#include "telegram-purple.h"
+#include "tgp-structs.h"
 
 #import <Adium/AIContactControllerProtocol.h>
 #import <AIUtilities/AICompletingTextField.h>
 #import <Adium/AIListContact.h>
 #import <Adium/AIWindowController.h>
+#import <AdiumLibpurple/CBPurpleAccount.h>
 
 @interface NSObject (JointChatViewDelegate)
 - (void)setJoinChatEnabled:(BOOL)enabled;
@@ -28,9 +31,35 @@
 
 @implementation TelegramJoinChatViewController
 
+static void tgl_peer_iterator_cb (tgl_peer_t *peer, void *extra) {
+  NSMutableArray *A = (__bridge NSMutableArray *)(extra);
+  if (tgl_get_peer_type (peer->id) == TGL_PEER_CHAT) {
+    [A addObject: [[NSString alloc] initWithUTF8String:peer->print_name]];
+  }
+}
+
+- (void)configureForAccount:(AIAccount *)inAccount
+{
+  [super configureForAccount:inAccount];
+  
+  PurpleAccount *pa = [(CBPurpleAccount *)inAccount purpleAccount];
+  PurpleConnection *gc = purple_account_get_connection(pa);
+  if (gc && PURPLE_CONNECTION_IS_CONNECTED(gc)) {
+    connection_data *conn = purple_connection_get_protocol_data (gc);
+    
+    [popupButton_existingChat removeAllItems];
+    
+    NSMutableArray *A = [NSMutableArray new];
+    tgl_peer_iterator_ex (conn->TLS, tgl_peer_iterator_cb, (__bridge void *)(A));
+    for (NSString *name in A) {
+      [popupButton_existingChat addItemWithTitle:name];
+    }
+  }
+}
+
 - (void)joinChatWithAccount:(AIAccount *)inAccount
-{	
-	NSString *room = [textField_roomName stringValue];
+{
+	NSString *room = [[popupButton_existingChat selectedItem] title];
 
   NSDictionary *chatCreationInfo = [NSDictionary
                                     dictionaryWithObjectsAndKeys:room, @"subject", nil];

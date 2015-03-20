@@ -19,7 +19,8 @@
 @class AIAccount, AICompletingTextField;
 
 @interface TelegramJoinChatViewController : DCJoinChatViewController {
-	IBOutlet		NSTextField		*textField_roomName;
+	// IBOutlet NSTextField *textField_newChat;
+  IBOutlet NSPopUpButton *popupButton_existingChat;
 }
 
 @end
