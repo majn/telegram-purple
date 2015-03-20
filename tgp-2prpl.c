@@ -123,6 +123,22 @@ void p2tgl_got_im (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, in
   g_free (name);
 }
 
+void p2tgl_conversation_write (PurpleConversation *conv, tgl_peer_id_t who, const char *message, int flags, int date) {
+  char *name = p2tgl_strdup_id (who);
+  
+  purple_conversation_write (conv, name, message, flags, date);
+  
+  g_free (name);
+}
+
+void p2tgl_conv_im_write (PurpleConversation *conv, tgl_peer_id_t who, const char *message, int flags, int date) {
+  char *name = p2tgl_strdup_id (who);
+  
+  purple_conv_im_write(purple_conversation_get_im_data(conv), name, message, flags, date);
+  
+  g_free (name);
+}
+
 void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, int flags, time_t when) {
   
   /* 
@@ -177,22 +193,6 @@ PurpleConversation *p2tgl_find_conversation_with_account (struct tgl_state *TLS,
   
   g_free (who);
   return conv;
-}
-
-void p2tgl_conversation_write (PurpleConversation *conv, tgl_peer_id_t who, const char *message, int flags, int date) {
-  char *name = p2tgl_strdup_id (who);
-  
-  purple_conversation_write (conv, name, message, flags, date);
-  
-  g_free (name);
-}
-
-void p2tgl_conv_im_write (PurpleConversation *conv, tgl_peer_id_t who, const char *message, int flags, int date) {
-  char *name = p2tgl_strdup_id (who);
-  
-  purple_conv_im_write(purple_conversation_get_im_data(conv), name, message, flags, date);
-
-  g_free (name);
 }
 
 PurpleConversation *p2tgl_conversation_new (struct tgl_state *TLS, tgl_peer_id_t who) {

@@ -252,10 +252,9 @@ static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_messa
     } else {
       to_id = list[i]->to_id;
     }
-        PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, to_id);
+    PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, to_id);
     if (conv) {
-      conv = p2tgl_conversation_new (TLS, to_id);
-      p2tgl_conversation_write (conv, to_id, "Messages marked as read.",
+      p2tgl_conversation_write (conv, to_id, "Message marked as read.",
                                  PURPLE_MESSAGE_NO_LOG | PURPLE_MESSAGE_SYSTEM, (int)time (NULL));
     }
   }
@@ -613,7 +612,10 @@ static void tgprpl_add_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Purple
   connection_data *conn = purple_connection_get_protocol_data(gc);
   const char* first = buddy->alias ? buddy->alias : "";
   
-  tgl_do_add_contact (conn->TLS, buddy->name, (int)strlen (buddy->name), first, (int)strlen (first), "", 0, 0, on_contact_added, buddy);
+  if (! tgl_peer_get (conn->TLS, TGL_MK_USER (atoi (buddy->name)))) {
+    tgl_do_add_contact (conn->TLS, buddy->name, (int)strlen (buddy->name),
+                        first, (int)strlen (first), "", 0, 0, on_contact_added, buddy);
+  }
 }
 
 static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, PurpleGroup * group) {
@@ -848,7 +850,7 @@ static void tgprpl_init (PurplePlugin *plugin) {
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
   opt = purple_account_option_bool_new ("Display read notifications",
-                                        TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD,
+                                        TGP_KEY_DISPLAY_READ_NOTIFICATIONS,
                                         TGP_DEFAULT_DISPLAY_READ_NOTIFICATIONS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
