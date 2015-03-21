@@ -1,6 +1,17 @@
 Changelog
 ---------
 
+##### Version 1.0.0 (Beta 1)
+
+    - Move state files into .purple/telegram-purple directory
+
+    - Add extended account settings for controlling history and read notifications
+
+    - Improved support for Adium
+        * fix chat bookmarking
+        * add custom views for account settings and chat joining
+
+
 ##### Version 0.7
 
     - Support uploads and downloads (with some caveats though):
