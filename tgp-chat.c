@@ -50,10 +50,6 @@ PurpleConversation *chat_show (PurpleConnection *gc, int id) {
     }
     convo = p2tgl_got_joined_chat (conn->TLS, &P->chat);
     chat_users_update (conn->TLS, &P->chat);
-    if (PURPLE_CONNECTION_IS_CONNECTED(gc) && ! chat_is_member(conn->TLS->our_id, &P->chat)) {
-      p2tgl_conversation_write (convo, TGL_MK_CHAT(id), "You are no longer a member of this chat.",
-                                PURPLE_MESSAGE_SYSTEM | PURPLE_MESSAGE_NO_LOG, (int)time (NULL));
-    }
   }
 
   return convo;
