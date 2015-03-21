@@ -1,7 +1,13 @@
 Telegram-Purple (Beta)
 ===============
 
-Telegram-purple is a Libpurple plugin that adds support for the Telegram messenger. Its still alpha and not ready for production use.
+Telegram-purple is a Libpurple plugin that adds support for the Telegram messenger.
+
+
+Beta 1
+------
+
+If you migrate from an older version, the Telegram authentication files have been moved to .purple/telegram-purple. If you want to keep your old secret chats, please copy it manually from ~/.telegram-purple, otherwise you will just be prompted for a new SMS code.
 
 Build
 -----
