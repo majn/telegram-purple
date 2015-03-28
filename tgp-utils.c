@@ -91,9 +91,7 @@ tgl_peer_t *tgp_encr_chat_get_partner (struct tgl_state *TLS, struct tgl_secret_
 }
 
 long tgp_time_n_days_ago (int days) {
-  time_t now;
-  time (&now);
-  return now - 24 * 3600 * (time_t)days;
+  return time(NULL) - 24 * 3600 * days;
 };
 
 char *tgp_g_format_size (gint64 size) {

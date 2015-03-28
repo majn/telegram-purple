@@ -354,8 +354,9 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
 
 static time_t tgp_msg_oldest_relevant_ts (struct tgl_state *TLS) {
   connection_data *conn = TLS->ev_base;
-  return tgp_time_n_days_ago (purple_account_get_int (conn->pa, "history-retrieve-days",
-                                 TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD));
+  int days = purple_account_get_int (conn->pa, TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD,
+                                     TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
+  return days > 0 ? tgp_time_n_days_ago (days) : 0;
 }
 
 static void tgp_msg_process_ready (struct tgl_state *TLS)
