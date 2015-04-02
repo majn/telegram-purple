@@ -37,7 +37,6 @@ static void tgp_msg_err_out (struct tgl_state *TLS, const char *error, tgl_peer_
 
 static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
   assert (M && M->service);
-  
   char *txt_user = NULL;
   char *txt_action = NULL;
   char *txt = NULL;
@@ -47,7 +46,6 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
     return NULL;
   }
   txt_user = p2tgl_strdup_alias (peer);
-  
   switch (M->action.type) {
     case tgl_message_action_chat_create:
       txt_action = g_strdup_printf ("created chat %s", M->action.title);
@@ -166,12 +164,10 @@ static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_p
   if (max < 1) {
     max = 1;
   }
-  
   int size = (int)g_utf8_strlen(message, -1);
   if (size > TGP_MAX_MSG_SIZE * max) {
     return -E2BIG;
   }
-  
   int start = 0;
   while (size > start) {
     int e = start + (int)TGP_MAX_MSG_SIZE;
@@ -199,13 +195,11 @@ static void tgp_msg_err_out (struct tgl_state *TLS, const char *error, tgl_peer_
 }
 
 int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
-  
   // search for outgoing embedded image tags and send them
   gchar *img = NULL;
   gchar *stripped = NULL;
   if ((img = g_strrstr (message, "<IMG")) || (img = g_strrstr (message, "<img"))) {
     debug ("img found: %s", img);
-    
     gchar *id;
     if ((id = g_strrstr (img, "ID=\"")) || (id = g_strrstr (img, "id=\""))) {
       id += 4;
@@ -214,7 +208,6 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
       if (imgid > 0) {
         PurpleStoredImage *psi = purple_imgstore_find_by_id (imgid);
         gchar *tmp = g_build_filename(g_get_tmp_dir(), purple_imgstore_get_filename (psi), NULL) ;
-  
         GError *err = NULL;
         gconstpointer data = purple_imgstore_get_data (psi);
         g_file_set_contents (tmp, data, purple_imgstore_get_size (psi), &err);
@@ -226,7 +219,6 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
         }
       }
     }
-    
     // send remaining text as additional plaintext message
     stripped = purple_markup_strip_html (message);
     int ret = tgp_msg_send_split (TLS, stripped, to);
@@ -276,7 +268,6 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     return;
   }
   
-  
   if (M->service) {
     text = format_service_msg (TLS, M);
     flags |= PURPLE_MESSAGE_SYSTEM;
@@ -312,7 +303,6 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     flags |= PURPLE_MESSAGE_RECV;
   }
   
-  
   if (! text || ! *text) {
     warning ("No text to display");
     return;
@@ -343,11 +333,9 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     }
   }
   
-  
   if (p2tgl_status_is_present (purple_account_get_active_status (conn->pa))) {
     pending_reads_send_all (conn->pending_reads, conn->TLS);
   }
-
   
   g_free (text);
 }
@@ -390,16 +378,13 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M)
     debug ("Message from %d on %d too old, ignored.", tgl_get_peer_id (M->from_id), M->date);
     return;
   }
-  
   if (M->media.type == tgl_message_media_photo) {
     C->done = FALSE;
     tgl_do_load_photo (TLS, &M->media.photo, tgp_msg_on_loaded_photo, C);
   }
-  
   if (M->media.type == tgl_message_media_geo) {
     // TODO: load geo thumbnail
   }
-  
   g_queue_push_tail (conn->new_messages, C);
   tgp_msg_process_ready (TLS);
 }
