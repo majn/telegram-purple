@@ -80,12 +80,27 @@ struct tgp_msg_loading *tgp_msg_loading_init (int done, struct tgl_message *M) {
   return C;
 }
 
+struct tgp_msg_sending *tgp_msg_sending_init (struct tgl_state *TLS, gchar *M, tgl_peer_id_t to) {
+  struct tgp_msg_sending *C = malloc (sizeof (struct tgp_msg_sending));
+  C->TLS = TLS;
+  C->msg = M;
+  C->to = to;
+  return C;
+}
+
+void tgp_msg_sending_free (gpointer data) {
+  struct tgp_msg_sending *C = data;
+  g_free (C->msg);
+  free (C);
+}
+
 connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *gc, PurpleAccount *pa) {
   connection_data *conn = g_new0 (connection_data, 1);
   conn->TLS = TLS;
   conn->gc = gc;
   conn->pa = pa;
   conn->new_messages = g_queue_new ();
+  conn->out_messages = g_queue_new ();
   conn->pending_reads = g_queue_new ();
   return conn;
 }
@@ -93,9 +108,11 @@ connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *
 void *connection_data_free (connection_data *conn) {
   if (conn->write_timer) { purple_timeout_remove (conn->write_timer); }
   if (conn->login_timer) { purple_timeout_remove (conn->login_timer); }
+  if (conn->out_timer) { purple_timeout_remove (conn->out_timer); }
   
   tgp_g_queue_free_full (conn->pending_reads, pending_reads_free_cb);
   tgp_g_queue_free_full (conn->new_messages, tgp_msg_loading_free);
+  tgp_g_queue_free_full (conn->out_messages, tgp_msg_sending_free);
   tgp_g_list_free_full (conn->used_images, used_image_free);
   tgprpl_xfer_free_all (conn);
   tgl_free_all (conn->TLS);

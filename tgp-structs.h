@@ -33,10 +33,12 @@ typedef struct {
   PurpleConnection *gc;
   int updated;
   GQueue *new_messages;
+  GQueue *out_messages;
   GQueue *pending_reads;
   GList *used_images;
   guint write_timer;
   guint login_timer;
+  guint out_timer;
   int in_fallback_chat;
 } connection_data;
 
@@ -65,6 +67,12 @@ struct tgp_msg_loading {
   void *data;
 };
 
+struct tgp_msg_sending {
+  struct tgl_state *TLS;
+  tgl_peer_id_t to;
+  gchar *msg;
+};
+
 void pending_reads_send_all (GQueue *queue, struct tgl_state *TLS);
 void pending_reads_add (GQueue *queue, tgl_peer_id_t id);
 struct message_text *message_text_init (struct tgl_message *M, gchar *text);
@@ -74,6 +82,7 @@ void *connection_data_free (connection_data *conn);
 connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *gc, PurpleAccount *pa);
 get_user_info_data* get_user_info_data_new (int show_info, tgl_peer_id_t peer);
 struct tgp_msg_loading *tgp_msg_loading_init (int done, struct tgl_message *M);
+struct tgp_msg_sending *tgp_msg_sending_init (struct tgl_state *TLS, char *M, tgl_peer_id_t to);
 void tgp_msg_loading_free (gpointer data);
-
+void tgp_msg_sending_free (gpointer data);
 #endif

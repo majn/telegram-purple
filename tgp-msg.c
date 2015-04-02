@@ -159,6 +159,30 @@ static void tgp_msg_send_done (struct tgl_state *TLS, void *callback_extra, int 
   }
 }
 
+static gboolean tgp_msg_send_schedule_cb (gpointer data) {
+  connection_data *conn = data;
+  conn->out_timer = 0;
+  struct tgp_msg_sending *D = NULL;
+  
+  while ((D = g_queue_peek_head (conn->out_messages))) {
+    g_queue_pop_head (conn->out_messages);
+    tgl_do_send_message (D->TLS, D->to, D->msg, (int)strlen (D->msg), tgp_msg_send_done, NULL);
+    tgp_msg_sending_free (D);
+  }
+  return FALSE;
+}
+
+static void tgp_msg_send_schedule (struct tgl_state *TLS, gchar *chunk, tgl_peer_id_t to) {
+  connection_data *conn = TLS->ev_base;
+  struct tgp_msg_sending *D = tgp_msg_sending_init (TLS, chunk, to);
+  g_queue_push_tail (conn->out_messages, D);
+
+  if (conn->out_timer) {
+    purple_timeout_remove (conn->out_timer);
+  }
+  conn->out_timer = purple_timeout_add (0, tgp_msg_send_schedule_cb, conn);
+}
+
 static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
   int max = TGP_DEFAULT_MAX_MSG_SPLIT_COUNT;
   if (max < 1) {
@@ -172,8 +196,7 @@ static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_p
   while (size > start) {
     int e = start + (int)TGP_MAX_MSG_SIZE;
     gchar *chunk = g_utf8_substring (message, start, e);
-    tgl_do_send_message (TLS, to, chunk, (int)strlen (chunk), tgp_msg_send_done, NULL);
-    g_free (chunk);
+    tgp_msg_send_schedule (TLS, chunk, to);
     start = e;
   }
   return 1;
@@ -347,8 +370,7 @@ static time_t tgp_msg_oldest_relevant_ts (struct tgl_state *TLS) {
   return days > 0 ? tgp_time_n_days_ago (days) : 0;
 }
 
-static void tgp_msg_process_ready (struct tgl_state *TLS)
-{
+static void tgp_msg_process_in_ready (struct tgl_state *TLS) {
   connection_data *conn = TLS->ev_base;
   struct tgp_msg_loading *C;
   
@@ -366,11 +388,10 @@ static void tgp_msg_on_loaded_photo (struct tgl_state *TLS, void *extra, int suc
   struct tgp_msg_loading *C = extra;
   C->data = filename;
   C->done = TRUE;
-  tgp_msg_process_ready (TLS);
+  tgp_msg_process_in_ready (TLS);
 }
 
-void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M)
-{
+void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
   connection_data *conn = TLS->ev_base;
   struct tgp_msg_loading *C = tgp_msg_loading_init (TRUE, M);
   
@@ -386,7 +407,6 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M)
     // TODO: load geo thumbnail
   }
   g_queue_push_tail (conn->new_messages, C);
-  tgp_msg_process_ready (TLS);
+  tgp_msg_process_in_ready (TLS);
 }
-
 
