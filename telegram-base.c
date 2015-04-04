@@ -40,6 +40,7 @@
 #include "lodepng/lodepng.h"
 
 
+#define _(m) m
 #define DC_SERIALIZED_MAGIC 0x868aa81d
 #define STATE_FILE_MAGIC 0x28949a93
 #define SECRET_CHAT_FILE_MAGIC 0x37a1988a
@@ -500,6 +501,44 @@ static void request_name_and_code (struct tgl_state *TLS) {
     purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, error);
     purple_notify_error(_telegram_protocol, "Not Registered", "Not Registered", error);
   }
+}
+
+void write_secret_chat_gw (struct tgl_state *TLS, void *extra, int success, struct tgl_secret_chat *E) {
+  if (!success) { return; }
+  write_secret_chat_file (TLS);
+}
+
+static void accept_secret_chat_cb (gpointer _data, const gchar *code) {
+  struct accept_secret_chat_data *data = _data;
+  
+  tgl_do_accept_encr_chat_request (data->TLS, data->U, write_secret_chat_gw, 0);
+  
+  g_free (data);
+}
+
+static void decline_secret_chat_cb (gpointer _data, const gchar *code) {
+  struct accept_secret_chat_data *data = _data;
+  
+  bl_do_encr_chat_delete (data->TLS, data->U);
+  purple_blist_remove_buddy (p2tgl_buddy_find(data->TLS, data->U->id));
+  
+  g_free (data);
+}
+
+void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *U) {
+  connection_data *conn = TLS->ev_base;
+  PurpleBuddy *who = p2tgl_buddy_find (TLS, TGL_MK_USER (U->user_id));
+  struct accept_secret_chat_data *data = g_new (struct accept_secret_chat_data, 1);
+  data->TLS = TLS;
+  data->U = U;
+  
+  gchar *message = g_strdup_printf ("Accept Secret Chat '%s'?", U->print_name);
+  purple_request_accept_cancel (conn->gc, "Secret Chat", message, "Secret chats can only have one "
+                                "end point. If you accept a secret chat on this device, its messages will "
+                                "not be available anywhere else. If you decline, you can accept"
+                                " the chat on other devices.", 0, conn->pa, who->name, NULL, data,
+                                G_CALLBACK(accept_secret_chat_cb), G_CALLBACK(decline_secret_chat_cb));
+  g_free (message);
 }
 
 static void sign_in_callback (struct tgl_state *TLS, void *extra, int success, int registered, const char *mhash) {

@@ -71,8 +71,6 @@
 #include "tgp-ft.h"
 #include "tgp-msg.h"
 
-#define _(m) m
-
 static void update_message_received (struct tgl_state *TLS, struct tgl_message *M);
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *U, unsigned flags);
 static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *U);
@@ -134,33 +132,6 @@ static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *
   p2tgl_prpl_got_user_status (TLS, U->id, &U->status);
 }
 
-static void write_secret_chat_gw (struct tgl_state *TLS, void *extra, int success, struct tgl_secret_chat *E) {
-  if (!success) { return; }
-  write_secret_chat_file (TLS);
-}
-
-struct accept_secret_chat_data {
-  struct tgl_state *TLS;
-  struct tgl_secret_chat *U;
-};
-
-static void accept_secret_chat_cb (gpointer _data, const gchar *code) {
-  struct accept_secret_chat_data *data = _data;
-  
-  tgl_do_accept_encr_chat_request (data->TLS, data->U, write_secret_chat_gw, 0);
-  
-  g_free (data);
-}
-
-static void decline_secret_chat_cb (gpointer _data, const gchar *code) {
-  struct accept_secret_chat_data *data = _data;
-  
-  bl_do_encr_chat_delete (data->TLS, data->U);
-  purple_blist_remove_buddy (p2tgl_buddy_find(data->TLS, data->U->id));
-  
-  g_free (data);
-}
-
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *U, unsigned flags) {
   debug ("secret-chat-state: %d", U->state);
   
@@ -181,26 +152,11 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
   
   if (flags & TGL_UPDATE_REQUESTED && buddy)  {
     connection_data *conn = TLS->ev_base;
-    
     const char* choice = purple_account_get_string (conn->pa, "accept-secret-chats", "ask");
     if (! strcmp (choice, "always")) {
       tgl_do_accept_encr_chat_request (TLS, U, write_secret_chat_gw, 0);
-      
     } else if (! strcmp(choice, "ask")) {
-      PurpleBuddy *who = p2tgl_buddy_find (TLS, TGL_MK_USER(U->user_id));
-      
-      struct accept_secret_chat_data *data = g_new (struct accept_secret_chat_data, 1);
-      data->TLS = TLS;
-      data->U = U;
-     
-      gchar *message = g_strdup_printf ("Accept Secret Chat '%s'?", U->print_name);
-      
-      purple_request_accept_cancel (conn->gc, "Secret Chat", message, "Secret chats can only have one "
-                                    "end point. If you accept a secret chat on this device, its messages will "
-                                    "not be available anywhere else. If you decline, you can accept"
-                                    " the chat on other devices.", 0, conn->pa, who->name, NULL, data,
-                                    G_CALLBACK(accept_secret_chat_cb), G_CALLBACK(decline_secret_chat_cb));
-      g_free (message);
+      request_accept_secret_chat(TLS, U);
     }
   }
   
