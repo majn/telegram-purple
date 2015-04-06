@@ -208,7 +208,7 @@ void empty_auth_file (struct tgl_state *TLS) {
     bl_do_dc_option (TLS, 3, 0, "", strlen (TG_SERVER_3), TG_SERVER_3, 443);
     bl_do_dc_option (TLS, 4, 0, "", strlen (TG_SERVER_4), TG_SERVER_4, 443);
     bl_do_dc_option (TLS, 5, 0, "", strlen (TG_SERVER_5), TG_SERVER_5, 443);
-    bl_do_set_working_dc (TLS, TG_SERVER_DEFAULT);;
+    bl_do_set_working_dc (TLS, TG_SERVER_DEFAULT);
   }
 }
 

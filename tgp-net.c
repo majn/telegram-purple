@@ -43,6 +43,7 @@
 
 #include "tgp-net.h"
 #include "tgp-structs.h"
+#include "telegram-base.h"
 #include <tgl.h>
 #include <tgl-inner.h>
 
@@ -55,15 +56,16 @@
 #define POLLRDHUP 0
 #endif
 
-//double get_utime (int clock_id);
-
-//extern struct mtproto_methods auth_methods;
+#define PING_TIMEOUT 15
+#define CONNECT_TIMEOUT 5
 
 static void fail_connection (struct connection *c);
-
-#define PING_TIMEOUT 10
-
+static void restart_connection (struct connection *c);
 static void start_ping_timer (struct connection *c);
+static void conn_try_write (gpointer arg, gint source, PurpleInputCondition cond);
+static void try_read (struct connection *c);
+static void try_write (struct connection *c);
+
 static int ping_alarm (gpointer arg) {
   struct connection *c = arg;
   struct tgl_state *TLS = c->TLS;
@@ -91,8 +93,6 @@ static void start_ping_timer (struct connection *c) {
   c->ping_ev = purple_timeout_add_seconds (PING_TIMEOUT, ping_alarm, c);
 }
 
-static void restart_connection (struct connection *c);
-
 static int fail_alarm (gpointer arg) {
   struct connection *c = arg;
   c->in_fail_timer = 0;
@@ -102,9 +102,8 @@ static int fail_alarm (gpointer arg) {
 
 static void start_fail_timer (struct connection *c) {
   if (c->in_fail_timer) { return; }
-  c->in_fail_timer = 1;  
-
-  c->fail_ev = purple_timeout_add_seconds (10, fail_alarm, c);
+  c->in_fail_timer = 1;
+  c->fail_ev = purple_timeout_add_seconds (CONNECT_TIMEOUT, fail_alarm, c);
 }
 
 static struct connection_buffer *new_connection_buffer (int size) {
@@ -121,7 +120,6 @@ static void delete_connection_buffer (struct connection_buffer *b) {
   free (b);
 }
 
-static void conn_try_write (gpointer arg, gint source, PurpleInputCondition cond);
 int tgln_write_out (struct connection *c, const void *_data, int len) {
   struct tgl_state *TLS = c->TLS;
   vlogprintf (E_DEBUG, "write_out: %d bytes\n", len);
@@ -234,9 +232,6 @@ static void rotate_port (struct connection *c) {
   }
 }
 
-static void try_read (struct connection *c);
-static void try_write (struct connection *c);
-
 static void conn_try_read (gpointer arg, gint source, PurpleInputCondition cond) {
   struct connection *c = arg;
   struct tgl_state *TLS = c->TLS;
@@ -263,7 +258,15 @@ static void net_on_connected (gpointer arg, gint fd, const gchar *error_message)
   struct tgl_state *TLS = c->TLS;
   vlogprintf (E_DEBUG - 2, "connect result: %d\n", fd);
 
+  if (c->fail_ev >= 0) {
+    purple_timeout_remove (c->fail_ev);
+    c->fail_ev = -1;
+  }
+  
   if (fd == -1) {
+    const char *msg = "Connection not possible, either your network or a Telegram data center is down, or the"
+    " Telegram network configuratio has changed.";
+    warning (msg);
     return;
   }
 
@@ -303,23 +306,39 @@ struct connection *tgln_create_connection (struct tgl_state *TLS, const char *ho
   connection_data *conn = TLS->ev_base;
   c->prpl_data = purple_proxy_connect (conn->gc, conn->pa, host, port, net_on_connected, c);
 
+  start_fail_timer (c);
+  
   return c;
 }
 
 static void restart_connection (struct connection *c) {
+  debug("restart_connection()");
   struct tgl_state *TLS = c->TLS;
-  if (c->last_connect_time == time (0)) {
-    start_fail_timer (c);
-    return;
+  connection_data *conn = TLS->ev_base;
+
+  if (strcmp (c->ip, c->dc->ip) != 0 || c->port != c->dc->port) {
+    info ("DC%d address changed from %s:%d to %s:%d, updating settings.\n",
+          c->dc->id, c->ip, c->port, c->dc->ip, c->dc->port);
+    if (c->ip) {
+      free (c->ip);
+    }
+    c->ip = strdup (c->dc->ip);
+    c->port = c->dc->port;
   }
   
-  connection_data *conn = TLS->ev_base;
-  purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_NETWORK_ERROR, "Lost connection with server");
-  // c->prpl_data = purple_proxy_connect (conn->gc, conn->pa, c->ip, c->port, net_on_connected, c);
+  if (tglt_get_double_time () - c->last_receive_time > 6 * PING_TIMEOUT) {
+    purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+                                    "Cannot connect to server");
+    return;
+  }
+  purple_proxy_connect_cancel (c->prpl_data);
+  c->prpl_data = purple_proxy_connect (conn->gc, conn->pa, c->ip, c->port, net_on_connected, c);
 }
 
 static void fail_connection (struct connection *c) {
   struct tgl_state *TLS = c->TLS;
+  connection_data *conn = TLS->ev_base;
+  
   if (c->state == conn_ready) {
     stop_ping_timer (c);
   }
@@ -349,15 +368,12 @@ static void fail_connection (struct connection *c) {
   c->out_head = c->out_tail = c->in_head = c->in_tail = 0;
   c->state = conn_failed;
   c->out_bytes = c->in_bytes = 0;
-
-  if (c->state == conn_ready) {
-    connection_data *conn = TLS->ev_base; 
-    purple_connection_error_reason(conn->gc, PURPLE_CONNECTION_ERROR_OTHER_ERROR, "connection fail");
-  }
-  c->prpl_data = NULL; // Did not find any destroy code. What should be done here?
+  
+  c->prpl_data = NULL;
 
   vlogprintf (E_NOTICE, "Lost connection to server... %s:%d\n", c->ip, c->port);
-  restart_connection (c);
+  purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+                                  "Lost connection to server...");
 }
 
 //extern FILE *log_net_f;

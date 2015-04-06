@@ -453,8 +453,7 @@ static void tgprpl_login (PurpleAccount * acct) {
   
   if (!g_file_test(pk_path, G_FILE_TEST_EXISTS)) {
     gchar *msg = g_strdup_printf ("Error, server public key not found at %s."
-                                  " Make sure that Telegram-Purple is installed properly.",
-                                  pk_path);
+                                  " Make sure that Telegram-Purple is installed properly.", pk_path);
     purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_CERT_OTHER_ERROR, msg);
     g_free (msg);
     return;
