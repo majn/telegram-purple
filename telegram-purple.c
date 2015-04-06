@@ -98,7 +98,7 @@ struct tgl_update_callback tgp_callback = {
 };
 
 static void update_message_received (struct tgl_state *TLS, struct tgl_message *M) {
-  write_state_file_schedule (TLS);
+  write_files_schedule (TLS);
   tgp_msg_recv (TLS, M);
 }
 
