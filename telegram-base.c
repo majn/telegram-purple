@@ -386,6 +386,41 @@ void read_secret_chat_file (struct tgl_state *TLS) {
   close (secret_chat_fd);
 }
 
+gchar *get_config_dir (struct tgl_state *TLS, char const *username) {
+  gchar *dir = g_strconcat (purple_user_dir(), G_DIR_SEPARATOR_S, config_dir,
+                                G_DIR_SEPARATOR_S, username, NULL);
+  
+  if (g_str_has_prefix (dir, g_get_tmp_dir())) {
+    // telepathy-haze will set purple user dir to a tmp path,
+    // but we need the files to be persistent
+    g_free (dir);
+    dir = g_strconcat (g_get_home_dir(), G_DIR_SEPARATOR_S, ".telegram-purple",
+                                  G_DIR_SEPARATOR_S, username, NULL);
+  }
+  g_mkdir_with_parents (dir, 0700);
+  return dir;
+}
+
+gchar *get_download_dir (struct tgl_state *TLS) {
+  assert (TLS->base_path);
+  static gchar *dir;
+  if (dir) {
+    g_free (dir);
+  }
+  dir = g_strconcat (TLS->base_path, G_DIR_SEPARATOR_S, "downloads", NULL);
+  g_mkdir_with_parents (dir, 0700);
+  return dir;
+}
+
+void assert_file_exists (PurpleConnection *gc, const char *filepath, const char *format) {
+  if (!g_file_test (filepath, G_FILE_TEST_EXISTS)) {
+    gchar *msg = g_strdup_printf (format, filepath);
+    purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_CERT_OTHER_ERROR, msg);
+    g_free (msg);
+    return;
+  }
+}
+
 void telegram_export_authorization (struct tgl_state *TLS);
 void export_auth_callback (struct tgl_state *TLS, void *extra, int success) {
   if (!error_if_val_false(TLS, success, "Login Canceled", "Authentication export failed.")) {

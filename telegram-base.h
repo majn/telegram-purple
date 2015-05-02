@@ -36,4 +36,9 @@ void request_code_entered (gpointer data, const gchar *code);
 int generate_ident_icon(struct tgl_state *TLS, unsigned char* sha1_key);
 
 void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *U);
+
+gchar *get_config_dir (struct tgl_state *TLS, char const *username);
+gchar *get_download_dir (struct tgl_state *TLS);
+void assert_file_exists (PurpleConnection *gc, const char *filepath, const char *format);
+
 #endif
