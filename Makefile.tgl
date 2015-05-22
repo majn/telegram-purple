@@ -1,10 +1,12 @@
-TGL_OBJECTS=${OBJ}/mtproto-common.o ${OBJ}/mtproto-client.o ${OBJ}/queries.o ${OBJ}/structures.o ${OBJ}/binlog.o ${OBJ}/tgl.o ${OBJ}/updates.o ${OBJ}/tg-mime-types.o ${OBJ}/mtproto-utils.o
+TGL_OBJECTS=${OBJ}/mtproto-common.o ${OBJ}/mtproto-client.o ${OBJ}/queries.o ${OBJ}/structures.o ${OBJ}/binlog.o ${OBJ}/tgl.o ${OBJ}/updates.o ${OBJ}/tgl-net.o ${OBJ}/tgl-timers.o ${OBJ}/tg-mime-types.o ${OBJ}/mtproto-utils.o 
+
+TGL_OBJECTS_AUTO=${OBJ}/auto/auto-skip.o ${OBJ}/auto/auto-fetch.o ${OBJ}/auto/auto-store.o ${OBJ}/auto/auto-autocomplete.o ${OBJ}/auto/auto-types.o ${OBJ}/auto/auto-fetch-ds.o  ${OBJ}/auto/auto-free-ds.o ${OBJ}/auto/auto-store-ds.o ${OBJ}/auto/auto-print-ds.o
+
+
 TLD_OBJECTS=${OBJ}/dump-tl-file.o
 GENERATE_OBJECTS=${OBJ}/generate.o
 TGL_COMMON_OBJECTS=${OBJ}/tools.o
 TGL_OBJ_C=${GENERATE_OBJECTS} ${TGL_COMMON_OBJECTS} ${TGL_OBJECTS} ${TLD_OBJECTS}
-
-ALL_OBJS+=${TGL_OBJ_C}
 
 .SUFFIXES:
 
@@ -12,16 +14,19 @@ ALL_OBJS+=${TGL_OBJ_C}
 
 dump-tl: ${EXE}/dump-tl-file
 
-${OBJ}/auto/auto.o ${TGL_OBJECTS}: ${AUTO}/constants.h ${AUTO}/auto-header.h
+${TGL_OBJECTS}: ${AUTO}/constants.h ${AUTO}/auto-skip.h ${AUTO}/auto-fetch.h ${AUTO}/auto-store.h ${AUTO}/auto-autocomplete.h ${AUTO}/auto-types.h ${AUTO}/auto-fetch-ds.h ${AUTO}/auto-free-ds.h ${AUTO}/auto-store-ds.h ${AUTO}/auto-print-ds.h
 
 ${TGL_OBJ_C}: ${OBJ}/%.o: ${srcdir}/tgl/%.c | create_dirs
 	${CC} ${INCLUDE} ${COMPILE_FLAGS} -iquote ${srcdir}/tgl -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
 
-${OBJ}/auto/auto.o: ${AUTO}/auto.c
-	${CC} ${INCLUDE} ${COMPILE_FLAGS} -iquote ${srcdir}/tgl -c -MP -MD -MF ${DEP}/auto/auto.d -MQ ${OBJ}/auto/auto.o -o $@ $<
+${TGL_OBJECTS_AUTO}: ${OBJ}/auto/%.o: ${AUTO}/%.c | create_dirs
+	${CC} ${INCLUDE} ${COMPILE_FLAGS} -iquote ${srcdir}/tgl -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
 
-${LIB}/libtgl.a: ${TGL_OBJECTS} ${TGL_COMMON_OBJECTS} ${OBJ}/auto/auto.o
-	ar ruv $@ $^
+#${OBJ}/auto/auto.o: ${AUTO}/auto.c
+#	${CC} ${INCLUDE} ${COMPILE_FLAGS} -iquote ${srcdir}/tgl -c -MP -MD -MF ${DEP}/auto/auto.d -MQ ${OBJ}/auto/auto.o -o $@ $<
+
+${LIB}/libtgl.a: ${TGL_OBJECTS} ${TGL_COMMON_OBJECTS} ${TGL_OBJECTS_AUTO}
+	rm -f $@ && ar ruv $@ $^
 
 ${EXE}/generate: ${GENERATE_OBJECTS} ${TGL_COMMON_OBJECTS}
 	${CC} ${GENERATE_OBJECTS} ${TGL_COMMON_OBJECTS} ${LINK_FLAGS} -o $@
@@ -35,11 +40,11 @@ ${AUTO}/scheme.tl: ${srcdir}/tgl/scheme.tl ${srcdir}/tgl/encrypted_scheme.tl ${s
 ${AUTO}/scheme2.tl: ${AUTO}/scheme.tl ${EXE}/tl-parser
 	${EXE}/tl-parser -E ${AUTO}/scheme.tl 2> $@  || ( cat $@ && rm $@ && false )
 
-${AUTO}/auto.c: ${AUTO}/scheme.tlo ${EXE}/generate
-	${EXE}/generate ${AUTO}/scheme.tlo > $@
+${AUTO}/auto-%.c: ${AUTO}/scheme.tlo ${EXE}/generate auto/constants.h ${AUTO}/auto-%.h | create_dirs_and_headers
+	${EXE}/generate -g $(patsubst ${AUTO}/auto-%.c,%,$@) ${AUTO}/scheme.tlo > $@ || rm $@
 
-${AUTO}/auto-header.h: ${AUTO}/scheme.tlo ${EXE}/generate
-	${EXE}/generate -H ${AUTO}/scheme.tlo > $@
+${AUTO}/auto-%.h: ${AUTO}/scheme.tlo ${EXE}/generate
+	${EXE}/generate -g $(patsubst ${AUTO}/auto-%.h,%-header,$@) ${AUTO}/scheme.tlo > $@ || rm $@
 
 ${AUTO}/constants.h: ${AUTO}/scheme2.tl ${srcdir}/tgl/gen_constants_h.awk
 	awk -f ${srcdir}/tgl/gen_constants_h.awk < $< > $@

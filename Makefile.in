@@ -35,7 +35,7 @@ include ${srcdir}/Makefile.tl-parser
 include ${srcdir}/Makefile.tgl
 
 create_dirs: ${DIR_LIST}
-create_dirs_and_headers: ${DIR_LIST} ${AUTO}/auto.c ${AUTO}/auto-header.h ${AUTO}/constants.h
+create_dirs_and_headers: ${DIR_LIST} ${AUTO}/auto-skip.h ${AUTO}/auto-fetch.h ${AUTO}/auto-store.h ${AUTO}/auto-types.h
 
 ${DIR_LIST}:
 	@test -d $@ || mkdir -p $@

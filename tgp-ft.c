@@ -30,7 +30,7 @@
 static void tgprpl_xfer_free_data (struct tgp_xfer_send_data *data);
 
 
-static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, int success, char *filename) {
+static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, int success, const char *filename) {
   debug ("tgprpl_xfer_recv_on_finished()");
   struct tgp_xfer_send_data *data = _data;
 
@@ -43,7 +43,7 @@ static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, in
     }
     
     g_unlink (purple_xfer_get_local_filename (data->xfer));
-    g_rename (filename, purple_xfer_get_local_filename(data->xfer));
+    g_rename (filename, purple_xfer_get_local_filename (data->xfer));
 
   } else {
     failure ("ERROR xfer failed");
@@ -154,7 +154,8 @@ static void tgprpl_xfer_send_init (PurpleXfer *X) {
   
   tgl_peer_t *P = find_peer_by_name (data->conn->TLS, who);
   if (P) {
-    tgl_do_send_document (data->conn->TLS, -2, P->id, (char*)localfile, tgprpl_xfer_on_finished, data);
+    tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL,
+                          0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, tgprpl_xfer_on_finished, data);
   }
   
   data->timer = purple_timeout_add (100, tgprpl_xfer_upload_progress, X);

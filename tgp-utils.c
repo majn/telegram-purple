@@ -68,12 +68,12 @@ int str_not_empty (const char *string) {
   return string && string[0] != '\0';
 }
 
-int our_msg (struct tgl_state *TLS, struct tgl_message *M) {
-  return (M->flags & FLAG_SESSION_OUTBOUND) != 0;
+int tgp_outgoing_msg (struct tgl_state *TLS, struct tgl_message *M) {
+  return (M->flags & TGLMF_OUT);
 }
 
-int out_msg (struct tgl_state *TLS, struct tgl_message *M) {
-  return M->out;
+int tgp_our_msg (struct tgl_state *TLS, struct tgl_message *M) {
+  return TLS->our_id == tgl_get_peer_id(M->from_id);
 }
 
 tgl_peer_t *find_peer_by_name (struct tgl_state *TLS, const char *who) {

@@ -34,12 +34,12 @@ tgl_peer_t *find_peer_by_name (struct tgl_state *TLS, const char *who);
 /**
  * Return whether this message was created by our client in this session
  */
-int our_msg (struct tgl_state *TLS, struct tgl_message *M);
+int tgp_outgoing_msg (struct tgl_state *TLS, struct tgl_message *M);
 
 /**
- * Return whether this message was created by the current user.
+ * Return whether this message was created by the current user
  */
-int out_msg (struct tgl_state *TLS, struct tgl_message *M);
+int tgp_our_msg (struct tgl_state *TLS, struct tgl_message *M);
 
 const char *format_time (time_t date);
 char *format_img_full (int imgstore);

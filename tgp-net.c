@@ -46,6 +46,8 @@
 #include "telegram-base.h"
 #include <tgl.h>
 #include <tgl-inner.h>
+#include <tools.h>
+#include <mtproto-client.h>
 
 #include <glib.h>
 #include <eventloop.h>

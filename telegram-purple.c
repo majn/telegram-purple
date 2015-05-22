@@ -59,6 +59,7 @@
 #include <tgl.h>
 #include <tgl-binlog.h>
 #include <tools.h>
+#include <tgl-methods-in.h>
 #include "tgp-structs.h"
 #include "tgp-2prpl.h"
 #include "tgp-net.h"
@@ -261,7 +262,7 @@ static void on_contact_added (struct tgl_state *TLS,void *callback_extra, int su
   }
 }
 
-static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, char *filename) {
+static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, const char *filename) {
   connection_data *conn = TLS->ev_base;
   
   struct download_desc *dld = extra;
@@ -299,8 +300,8 @@ void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, stru
     warning ("on_user_get_info not successfull, aborting...");
     return;
   }
-  
-  if (U->photo.sizes_num == 0) {
+
+  if (!U->photo || U->photo->sizes_num == 0) {
     // No profile pic to load, display it right away
     if (user_info_data->show_info) {
       PurpleNotifyUserInfo *info = p2tgl_notify_peer_info_new (TLS, P);
@@ -312,7 +313,7 @@ void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, stru
     struct download_desc *dld = malloc (sizeof(struct download_desc));
     dld->data = U;
     dld->get_user_info_data = info_data;
-    tgl_do_load_photo (TLS, &U->photo, on_userpic_loaded, dld);
+    tgl_do_load_photo (TLS, U->photo, on_userpic_loaded, dld);
   }
 }
 
@@ -342,11 +343,11 @@ void on_ready (struct tgl_state *TLS) {
     tggroup = purple_group_new ("Telegram");
     purple_blist_add_group (tggroup, NULL);
   }
-  
+
   debug ("seq = %d, pts = %d, date = %d", TLS->seq, TLS->pts, TLS->date);
   tgl_do_get_difference (TLS, purple_account_get_bool (conn->pa, "history-sync-all", FALSE),
                          NULL, NULL);
-  tgl_do_get_dialog_list (TLS, 0, 0);
+  tgl_do_get_dialog_list (TLS, 0, 0, NULL, NULL);
   tgl_do_update_contact_list (TLS, 0, 0);
 }
 
