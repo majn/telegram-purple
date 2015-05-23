@@ -18,6 +18,10 @@
  Copyright Matthias Jentsch 2014-2015
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <assert.h>
 #include <tgl.h>
 #include <glib.h>
@@ -292,6 +296,38 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     text = format_service_msg (TLS, M);
     flags |= PURPLE_MESSAGE_SYSTEM;
   }
+  else if (M->media.type == tgl_message_media_document && M->media.document->flags & TGLDF_STICKER) {
+#ifdef HAVE_LIBWEBP
+    char *filename = C->data;
+    int img = p2tgl_imgstore_add_with_id_webp (filename);
+    if (img <= 0) { failure ("Cannot display sticker, adding to imgstore failed"); return; }
+    used_images_add (conn, img);
+    text = format_img_full (img);
+    flags |= PURPLE_MESSAGE_IMAGES;
+    g_free (filename);
+#else
+    char *txt_user = p2tgl_strdup_alias (tgl_peer_get (TLS, M->from_id));
+    text = g_strdup_printf ("%s sent a sticker", txt_user);
+    flags |= PURPLE_MESSAGE_SYSTEM;
+    g_free (txt_user);
+#endif
+  }
+  else if (M->media.type == tgl_message_media_photo ||
+           (M->media.type == tgl_message_media_document_encr && M->media.encr_document->flags & TGLDF_IMAGE) ||
+           (M->media.type == tgl_message_media_document &&
+                 M->media.document->flags & TGLDF_IMAGE &&
+               !(M->media.document->flags & TGLDF_STICKER))) {
+    char *filename = C->data;
+    int img = p2tgl_imgstore_add_with_id (filename);
+    if (img <= 0) {
+      failure ("Cannot display picture message, adding to imgstore failed.");
+      return;
+    }
+    used_images_add (conn, img);
+    text = format_img_full (img);
+    flags |= PURPLE_MESSAGE_IMAGES;
+    g_free (filename);
+  }
   else if (M->media.type == tgl_message_media_document) {
     char *who = p2tgl_strdup_id (M->from_id);
     if (! tgp_our_msg(TLS, M)) {
@@ -307,19 +343,6 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     }
     g_free (who);
     return;
-  }
-  else if (M->media.type == tgl_message_media_photo ||
-             (M->media.type == tgl_message_media_document_encr &&
-              M->media.encr_document->flags & TGLDF_IMAGE)) {
-    char *filename = C->data;
-    int imgStoreId = p2tgl_imgstore_add_with_id (filename);
-    if (imgStoreId <= 0) {
-      failure ("Cannot display picture message, adding to imgstore failed.");
-      return;
-    }
-    used_images_add (conn, imgStoreId);
-    text = format_img_full (imgStoreId);
-    flags |= PURPLE_MESSAGE_IMAGES;
   }
   else {
     text = format_message (M);
@@ -384,9 +407,9 @@ static void tgp_msg_process_in_ready (struct tgl_state *TLS) {
   }
 }
 
-static void tgp_msg_on_loaded_photo (struct tgl_state *TLS, void *extra, int success, const char *filename) {
+static void tgp_msg_on_loaded_document (struct tgl_state *TLS, void *extra, int success, const char *filename) {
   struct tgp_msg_loading *C = extra;
-  C->data = (void *)filename;
+  C->data = (void *) g_strdup (filename);
   C->done = TRUE;
   tgp_msg_process_in_ready (TLS);
 }
@@ -394,19 +417,28 @@ static void tgp_msg_on_loaded_photo (struct tgl_state *TLS, void *extra, int suc
 void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
   connection_data *conn = TLS->ev_base;
   struct tgp_msg_loading *C = tgp_msg_loading_init (TRUE, M);
-  
+
   if (M->date != 0 && M->date < tgp_msg_oldest_relevant_ts (TLS)) {
     debug ("Message from %d on %d too old, ignored.", tgl_get_peer_id (M->from_id), M->date);
     return;
   }
   if (M->media.type == tgl_message_media_photo) {
     C->done = FALSE;
-    tgl_do_load_photo (TLS, M->media.photo, tgp_msg_on_loaded_photo, C);
+    tgl_do_load_photo (TLS, M->media.photo, tgp_msg_on_loaded_document, C);
   }
-  if (M->media.type == tgl_message_media_document_encr && M->media.encr_document->flags & TGLDF_IMAGE) {
+  if (M->media.type == tgl_message_media_document_encr &&
+      M->media.encr_document->flags & TGLDF_IMAGE &&
+    !(M->media.encr_document->flags & TGLDF_STICKER)) {
     C->done = FALSE;
-    tgl_do_load_encr_document (TLS, M->media.encr_document, tgp_msg_on_loaded_photo, C);
+    tgl_do_load_encr_document (TLS, M->media.encr_document, tgp_msg_on_loaded_document, C);
   }
+  #ifdef HAVE_LIBWEBP
+  if (M->media.type == tgl_message_media_document && M->media.document->flags & TGLDF_STICKER) {
+    C->done = FALSE;
+    tgl_do_load_document (TLS, M->media.document, tgp_msg_on_loaded_document, C);
+  }
+  #endif
+
   if (M->media.type == tgl_message_media_geo) {
     // TODO: load geo thumbnail
   }

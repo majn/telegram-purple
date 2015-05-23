@@ -18,8 +18,15 @@
  Copyright Matthias Jentsch 2014-2015
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "tgp-utils.h"
 #include <purple.h>
+#ifdef HAVE_LIBWEBP
+#include <webp/decode.h>
+#endif
 
 connection_data *get_conn_from_buddy (PurpleBuddy *buddy) {
   connection_data *c = purple_connection_get_protocol_data (
@@ -135,3 +142,27 @@ const char *tgp_mime_to_filetype (const char *mime) {
   }
   return NULL;
 }
+
+#ifdef HAVE_LIBWEBP
+void *tgp_webp_load_png (const char *filename, size_t *size) {
+  gchar *data = NULL;
+  size_t len;
+  GError *err = NULL;
+  g_file_get_contents (filename, &data, &len, &err);
+  if (err) { warning ("cannot open file %s: %s.", filename, err->message); return NULL; }
+  
+  int width, height;
+  uint8_t* decoded = WebPDecodeRGBA ((const uint8_t*)data, len, &width, &height);
+  g_free (data);
+  if (! decoded) { warning ("failed decoding webp"); return NULL; }
+  
+  unsigned char* png = NULL;
+  size_t pnglen;
+  unsigned error = lodepng_encode32 (&png, &pnglen, decoded, width, height);
+  free (decoded);
+  if (error) { warning ("failed encoding png"); return NULL; }
+  
+  *size = pnglen;
+  return png;
+}
+#endif

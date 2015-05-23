@@ -27,17 +27,17 @@ This repository has submodules, so you need to clone recursively
 
 ##### Fedora
 
-        sudo yum install gcc openssl-devel glib2-devel libpurple-devel
+        sudo yum install gcc openssl-devel glib2-devel libpurple-devel libwebp-devel
 
 
-###### Debian
+###### Debian / Ubuntu
 
-        sudo apt-get install libssl-dev libglib2.0-dev libpurple-dev
+        sudo apt-get install libssl-dev libglib2.0-dev libpurple-dev libwebp-dev
 
 
 ###### OpenSUSE
 
-        sudo zypper install gcc glib glib-devel libpurple libpurple-devel zlib-devel openssl libopenssl-devel
+        sudo zypper install gcc glib glib-devel libpurple libpurple-devel zlib-devel openssl libopenssl-devel libwebp-devel
 
 
 #### 3. Compile and install
