@@ -26,9 +26,35 @@
 #include <purple.h>
 #include <glib.h>
 #include <glib/gstdio.h>
+#include "telegram-purple.h"
 
 static void tgprpl_xfer_free_data (struct tgp_xfer_send_data *data);
 
+static char *tgp_strdup_determine_filename (const char *mime, const char *caption,
+                                            int flags, long long hash) {
+  if (caption) {
+    return g_strdup (caption);
+  }
+  
+  const char *type = NULL;
+  if (mime) {
+    type = tgp_mime_to_filetype (mime);
+  }
+  if (!type) {
+    if (flags & TGLDF_IMAGE) {
+      type = "png";
+    } else if (flags & TGLDF_AUDIO) {
+      type = "ogg";
+    } else if (flags & TGLDF_VIDEO) {
+      type = "mp4";
+    } else if (flags & TGLDF_STICKER) {
+      type = "webp";
+    } else {
+      type = "bin";
+    }
+  }
+  return g_strdup_printf ("%lld.%s", ABS(hash), type);
+}
 
 static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, int success, const char *filename) {
   debug ("tgprpl_xfer_recv_on_finished()");
@@ -219,8 +245,12 @@ static PurpleXfer *tgprpl_new_xfer_recv (PurpleConnection * gc, const char *who)
 void tgprpl_recv_file (PurpleConnection * gc, const char *who, struct tgl_document *D) {
   debug ("tgprpl_recv_file()");
   PurpleXfer *X = tgprpl_new_xfer_recv (gc, who);
+
+  char *filename = tgp_strdup_determine_filename (D->mime_type, D->caption, D->flags,
+                                                  D->access_hash);
+  purple_xfer_set_filename (X, filename);
+  g_free (filename);
   
-  purple_xfer_set_filename (X, D->caption ? D->caption : D->mime_type);
   tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), D, NULL);
   purple_xfer_request (X);
 }
@@ -229,7 +259,11 @@ void tgprpl_recv_encr_file (PurpleConnection * gc, const char *who, struct tgl_e
   debug ("tgprpl_recv_encr_file()");
   PurpleXfer *X = tgprpl_new_xfer_recv (gc, who);
   
-  purple_xfer_set_filename (X, D->caption ? D->caption : D->mime_type);
+  char *filename = tgp_strdup_determine_filename (D->mime_type, D->caption, D->flags,
+                                                  D->access_hash);
+  purple_xfer_set_filename (X, filename);
+  g_free (filename);
+  
   tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), NULL, D);
   purple_xfer_request (X);
 }

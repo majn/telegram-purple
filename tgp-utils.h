@@ -49,5 +49,6 @@ long tgp_time_n_days_ago (int days);
 char *tgp_g_format_size (gint64 size);
 void tgp_g_queue_free_full (GQueue *queue, GDestroyNotify free_func);
 void tgp_g_list_free_full (GList *list, GDestroyNotify free_func);
+const char *tgp_mime_to_filetype (const char *mime);
 
 #endif
