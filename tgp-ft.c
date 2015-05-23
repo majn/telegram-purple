@@ -146,13 +146,9 @@ static gboolean tgprpl_xfer_upload_progress (gpointer _data) {
 static void tgprpl_xfer_recv_init (PurpleXfer *X) {
   debug ("tgprpl_xfer_recv_init");
   struct tgp_xfer_send_data *data = X->data;
-  
   purple_xfer_start (X, -1, NULL, 0);
-  
   const char *who = purple_xfer_get_remote_user (X);
-  debug ("who: %s", who);
   tgl_peer_t *P = find_peer_by_name (data->conn->TLS, who);
-  
   if (P) {
     if (data->document) {
       tgl_do_load_document (data->conn->TLS, data->document, tgprpl_xfer_recv_on_finished, data);
@@ -164,7 +160,6 @@ static void tgprpl_xfer_recv_init (PurpleXfer *X) {
   } else {
     warning ("User not found, not downloading...");
   }
-  
   data->timer = purple_timeout_add (100, tgprpl_xfer_upload_progress, X);
 }
 

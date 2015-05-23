@@ -119,13 +119,6 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
   return txt;
 }
 
-static char *format_document_desc (char *type, char *caption, gint64 size) {
-  char *s = tgp_g_format_size (size);
-  char *msg = g_strdup_printf ("[%s] %s %s", type, caption, s);
-  g_free (s);
-  return msg;
-}
-
 static char *format_message (struct tgl_message *M) {
   switch (M->media.type) {
     case tgl_message_media_contact:
