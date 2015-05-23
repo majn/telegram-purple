@@ -228,8 +228,7 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
         g_file_set_contents (tmp, data, purple_imgstore_get_size (psi), &err);
         if (! err) {
           stripped = purple_markup_strip_html (message);
-          tgl_do_send_document (TLS, to, tmp, stripped, (int)strlen (stripped), TGL_SEND_MSG_FLAG_DOCUMENT_AUTO,
-                                tgp_msg_send_done, NULL);
+          tgl_do_send_document (TLS, to, tmp, stripped, (int)strlen (stripped), TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, tgp_msg_send_done, NULL);
           g_free (stripped);
           return 1;
         } else {
@@ -297,13 +296,16 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     return;
   }
   else if (M->media.type == tgl_message_media_document_encr) {
-    char *who = p2tgl_strdup_id (M->from_id);
+    char *who = p2tgl_strdup_id (M->to_id);
     if (! tgp_our_msg(TLS, M)) {
       tgprpl_recv_encr_file (conn->gc, who, M->media.encr_document);
     }
     g_free (who);
+    return;
   }
-  else if (M->media.type == tgl_message_media_photo) {
+  else if (M->media.type == tgl_message_media_photo ||
+             (M->media.type == tgl_message_media_document_encr &&
+              M->media.encr_document->flags & TGLDF_IMAGE)) {
     char *filename = C->data;
     int imgStoreId = p2tgl_imgstore_add_with_id (filename);
     if (imgStoreId <= 0) {
@@ -395,6 +397,10 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
   if (M->media.type == tgl_message_media_photo) {
     C->done = FALSE;
     tgl_do_load_photo (TLS, M->media.photo, tgp_msg_on_loaded_photo, C);
+  }
+  if (M->media.type == tgl_message_media_document_encr && M->media.encr_document->flags & TGLDF_IMAGE) {
+    C->done = FALSE;
+    tgl_do_load_encr_document (TLS, M->media.encr_document, tgp_msg_on_loaded_photo, C);
   }
   if (M->media.type == tgl_message_media_geo) {
     // TODO: load geo thumbnail
