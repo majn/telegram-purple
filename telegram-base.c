@@ -39,8 +39,8 @@
 #include "msglog.h"
 #include "tgp-2prpl.h"
 #include "tgp-structs.h"
+#include "tgp-utils.h"
 #include "lodepng/lodepng.h"
-
 
 #define _(m) m
 #define DC_SERIALIZED_MAGIC 0x868aa81d
@@ -637,7 +637,7 @@ void telegram_login (struct tgl_state *TLS) {
 /**
  * This function generates a png image to visualize the sha1 key from an encrypted chat.
  */
-int generate_ident_icon (struct tgl_state *TLS, unsigned char* sha1_key) {
+int tgp_visualize_key (struct tgl_state *TLS, unsigned char* sha1_key) {
   int colors[4] = {
     0xffffff,
     0xd5e6f3,

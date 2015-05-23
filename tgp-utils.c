@@ -23,6 +23,9 @@
 #endif
 
 #include "tgp-utils.h"
+#include "msglog.h"
+#include "lodepng/lodepng.h"
+
 #include <purple.h>
 #ifdef HAVE_LIBWEBP
 #include <webp/decode.h>

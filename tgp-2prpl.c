@@ -390,7 +390,7 @@ PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TL
   }
   
   if (secret->first_key_sha[0]) {
-    int sha1key_store_id = generate_ident_icon (TLS, secret->first_key_sha);
+    int sha1key_store_id = tgp_visualize_key (TLS, secret->first_key_sha);
     if (sha1key_store_id != -1) {
       char *ident_icon = format_img_full (sha1key_store_id);
       purple_notify_user_info_add_pair (info, "Secret key", ident_icon);
