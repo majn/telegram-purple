@@ -214,6 +214,11 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
   gchar *img = NULL;
   gchar *stripped = NULL;
   if ((img = g_strrstr (message, "<IMG")) || (img = g_strrstr (message, "<img"))) {
+    if (tgl_get_peer_type(to) == TGL_PEER_ENCR_CHAT) {
+      tgp_msg_err_out (TLS, "Sorry, sending documents to encrypted chats not yet supported.", to);
+      return 0;
+    }
+    
     debug ("img found: %s", img);
     gchar *id;
     if ((id = g_strrstr (img, "ID=\"")) || (id = g_strrstr (img, "id=\""))) {

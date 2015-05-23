@@ -175,8 +175,15 @@ static void tgprpl_xfer_send_init (PurpleXfer *X) {
   
   tgl_peer_t *P = find_peer_by_name (data->conn->TLS, who);
   if (P) {
-    tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL,
-                          0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, tgprpl_xfer_on_finished, data);
+    if (tgl_get_peer_type (P->id) != TGL_PEER_ENCR_CHAT) {
+      tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL,
+                            0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, tgprpl_xfer_on_finished, data);
+    }
+    else {
+      purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, "Not supported",
+                             "Sorry, sending documents to encrypted chats not yet supported.",
+                             NULL, NULL, NULL);
+    }
   }
   
   data->timer = purple_timeout_add (100, tgprpl_xfer_upload_progress, X);
