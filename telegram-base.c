@@ -344,9 +344,12 @@ void read_secret_chat (struct tgl_state *TLS, int fd, int v) {
     assert (read (fd, &out_seq_no, 4) == 4);
   }
 
-  bl_do_encr_chat_new(TLS, id, &access_hash, &date, &admin_id, &user_id, &admin_id,
-                      key, NULL, &state, &ttl, &layer, &in_seq_no, &last_in_seq_no,
-                      &out_seq_no, &key_fingerprint, TGLECF_CREATE | TGLECF_CREATED);
+  bl_do_encr_chat_new (TLS, id,
+    &access_hash, &date, &admin_id, &user_id,
+    key, NULL, sha, &state, &ttl, &layer,
+    &in_seq_no, &last_in_seq_no, &out_seq_no,
+    &key_fingerprint, TGLECF_CREATE | TGLECF_CREATED
+  );
 }
 
 void read_secret_chat_file (struct tgl_state *TLS) {
