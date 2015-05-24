@@ -253,6 +253,8 @@ void tgprpl_recv_file (PurpleConnection * gc, const char *who, struct tgl_docume
   purple_xfer_set_filename (X, filename);
   g_free (filename);
   
+  purple_xfer_set_size (X, D->size);
+  
   tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), D, NULL);
   purple_xfer_request (X);
 }
@@ -265,6 +267,8 @@ void tgprpl_recv_encr_file (PurpleConnection * gc, const char *who, struct tgl_e
                                                   D->access_hash);
   purple_xfer_set_filename (X, filename);
   g_free (filename);
+  
+  purple_xfer_set_size (X, D->size);
   
   tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), NULL, D);
   purple_xfer_request (X);
