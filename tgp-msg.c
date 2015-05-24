@@ -313,10 +313,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
 #endif
   }
   else if (M->media.type == tgl_message_media_photo ||
-           (M->media.type == tgl_message_media_document_encr && M->media.encr_document->flags & TGLDF_IMAGE) ||
-           (M->media.type == tgl_message_media_document &&
-                 M->media.document->flags & TGLDF_IMAGE &&
-               !(M->media.document->flags & TGLDF_STICKER))) {
+          (M->media.type == tgl_message_media_document_encr && M->media.encr_document->flags & TGLDF_IMAGE)) {
     char *filename = C->data;
     int img = p2tgl_imgstore_add_with_id (filename);
     if (img <= 0) {
