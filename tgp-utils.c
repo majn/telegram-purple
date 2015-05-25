@@ -79,7 +79,7 @@ int str_not_empty (const char *string) {
 }
 
 int tgp_outgoing_msg (struct tgl_state *TLS, struct tgl_message *M) {
-  return (M->flags & TGLMF_OUT);
+  return (M->flags & TGLMF_SESSION_OUTBOUND);
 }
 
 int tgp_our_msg (struct tgl_state *TLS, struct tgl_message *M) {
