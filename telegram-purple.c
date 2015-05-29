@@ -72,6 +72,7 @@
 #include "tgp-ft.h"
 #include "tgp-msg.h"
 
+static void get_password (struct tgl_state *TLS, const char *prompt, int flags, void (*callback)(struct tgl_state *TLS, const char *string, void *arg), void *arg);
 static void update_message_received (struct tgl_state *TLS, struct tgl_message *M);
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *U, unsigned flags);
 static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *U);
@@ -87,6 +88,7 @@ const char *pk_path = "/etc/telegram-purple/server.pub";
 
 struct tgl_update_callback tgp_callback = {
   .logprintf = debug,
+  .get_string = get_password,
   .new_msg = update_message_received, 
   .msg_receive = update_message_received,
   .user_update = update_user_handler,
@@ -249,6 +251,19 @@ static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const c
     tgl_snprintf (s + fl, 9999 - fl, " #%d", cc);
   }
   return tgl_strdup (s);
+}
+
+static void get_password (struct tgl_state *TLS, const char *prompt, int flags,
+                        void (*callback)(struct tgl_state *TLS, const char *string, void *arg), void *arg) {
+  connection_data *conn = TLS->ev_base;
+  const char *P = purple_account_get_string (conn->pa, TGP_KEY_PASSWORD_TWO_FACTOR, NULL);
+  if (str_not_empty (P)) {
+    if (conn->password_retries++ < 1) {
+      callback (TLS, P, arg);
+      return;
+    }
+  }
+  request_password (TLS, callback, arg);
 }
 
 static void on_contact_added (struct tgl_state *TLS,void *callback_extra, int success, int size, struct tgl_user *users[]) {
@@ -762,10 +777,14 @@ static void tgprpl_init (PurplePlugin *plugin) {
   
   // Login
   
+  opt = purple_account_option_string_new ("Password (two factor authentication)",
+                                          TGP_KEY_PASSWORD_TWO_FACTOR, NULL);
+  prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
+  
   opt = purple_account_option_bool_new("Fallback SMS Verification", "compat-verification", 0);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
  
-  
+
   // Messaging
   
   GList *verification_values = NULL;

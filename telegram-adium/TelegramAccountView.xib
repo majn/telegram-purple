@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6751" systemVersion="14C1514" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="7706" systemVersion="14D136" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="6751"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="7706"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="TelegramAccountViewController">
@@ -14,6 +14,7 @@
                 <outlet property="textField_accountUIDLabel" destination="yae-v6-YMB" id="XHk-zX-T5y"/>
                 <outlet property="textField_historyRetrieveDays" destination="gKj-Oj-qll" id="tvW-aI-8ws"/>
                 <outlet property="textField_inactiveDaysOffline" destination="Nvv-1I-L31" id="8Sn-4f-M5j"/>
+                <outlet property="textField_passwordTwoFactor" destination="Hkg-uU-btb" id="LvJ-1q-ud2"/>
                 <outlet property="view_options" destination="DGa-mQ-g3C" id="L0S-pj-8w4"/>
                 <outlet property="view_setup" destination="c22-O7-iKe" id="xp5-o5-fb9"/>
             </connections>
@@ -21,11 +22,11 @@
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <customView id="c22-O7-iKe" userLabel="Setup">
-            <rect key="frame" x="0.0" y="0.0" width="321" height="100"/>
+            <rect key="frame" x="0.0" y="5" width="321" height="150"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Mv3-b8-21b">
-                    <rect key="frame" x="124" y="56" width="177" height="22"/>
+                    <rect key="frame" x="124" y="106" width="177" height="22"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="+491573123456" drawsBackground="YES" id="ddM-ki-WMe">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
@@ -33,26 +34,53 @@
                     </textFieldCell>
                 </textField>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="yae-v6-YMB">
-                    <rect key="frame" x="-54" y="59" width="172" height="17"/>
+                    <rect key="frame" x="-54" y="109" width="172" height="17"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Phone Number:" id="0UB-Dx-PpB">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
+                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="CGg-HM-Fxl">
+                    <rect key="frame" x="-54" y="39" width="172" height="17"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Password:" id="8u1-y6-XZw">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
                 <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" setsMaxLayoutWidthAtFirstLayout="YES" translatesAutoresizingMaskIntoConstraints="NO" id="MCb-6Q-kUW">
-                    <rect key="frame" x="28" y="20" width="264" height="28"/>
-                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Your phone number in the international format, a leading '+' and without any other special chars." id="2C9-SB-kKZ">
+                    <rect key="frame" x="22" y="70" width="274" height="28"/>
+                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Your phone number in the international format, a leading '+' and without any other special chars." id="2C9-SB-kKZ">
                         <font key="font" metaFont="smallSystem"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
+                <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" setsMaxLayoutWidthAtFirstLayout="YES" translatesAutoresizingMaskIntoConstraints="NO" id="PaN-W9-uI1">
+                    <rect key="frame" x="22" y="0.0" width="285" height="28"/>
+                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Needed when using two factor authentication." id="cCC-Jv-B6B">
+                        <font key="font" metaFont="smallSystem"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <secureTextField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Hkg-uU-btb">
+                    <rect key="frame" x="124" y="36" width="177" height="22"/>
+                    <secureTextFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="xzm-aB-xvz">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                        <allowedInputSourceLocales>
+                            <string>NSAllRomanInputSourcesLocaleIdentifier</string>
+                        </allowedInputSourceLocales>
+                    </secureTextFieldCell>
+                </secureTextField>
             </subviews>
-            <point key="canvasLocation" x="380.5" y="13"/>
+            <point key="canvasLocation" x="380.5" y="38"/>
         </customView>
         <customView id="DGa-mQ-g3C" userLabel="Options">
-            <rect key="frame" x="0.0" y="0.0" width="272" height="183"/>
+            <rect key="frame" x="0.0" y="0.0" width="272" height="190"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zRH-KJ-uvC" userLabel="Accept Secret Chats">
@@ -170,7 +198,7 @@
                     </textFieldCell>
                 </textField>
             </subviews>
-            <point key="canvasLocation" x="356" y="209.5"/>
+            <point key="canvasLocation" x="356" y="294"/>
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="OjL-yD-9te"/>
     </objects>

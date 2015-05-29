@@ -22,6 +22,12 @@
 
 #include "telegram-purple.h"
 
+struct request_password_data {
+  struct tgl_state *TLS;
+  void (*callback)(struct tgl_state *TLS, const char *string, void *arg);
+  void *arg;
+};
+
 void read_state_file (struct tgl_state *TLS);
 void read_auth_file (struct tgl_state *TLS);
 void write_auth_file (struct tgl_state *TLS);
@@ -33,6 +39,7 @@ void write_secret_chat_gw (struct tgl_state *TLS, void *extra, int success, stru
 
 void telegram_login (struct tgl_state *TLS);
 void request_code_entered (gpointer data, const gchar *code);
+void request_password (struct tgl_state *TLS, void (*callback)(struct tgl_state *TLS, const char *string, void *arg), void *arg);
 
 void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *U);
 

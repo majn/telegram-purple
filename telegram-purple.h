@@ -54,6 +54,8 @@
 #define TGP_KEY_HISTORY_SYNC_ALL "history-sync-all"
 #define TGP_DEFAULT_HISTORY_SYNC_ALL FALSE
 
+#define TGP_KEY_PASSWORD_TWO_FACTOR "password-two-factor"
+
 void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *C);
 void on_ready (struct tgl_state *TLS);
 extern const char *pk_path;

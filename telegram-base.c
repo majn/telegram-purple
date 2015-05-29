@@ -467,25 +467,6 @@ static void request_code_canceled (gpointer data) {
       PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, "registration canceled");
 }
 
-static void request_name_code_entered (PurpleConnection* gc, PurpleRequestFields* fields) {
-  connection_data *conn = purple_connection_get_protocol_data(gc);
-  struct tgl_state *TLS = conn->TLS;
-  char const *username = purple_account_get_username(conn->pa);
-  
-  const char* first = purple_request_fields_get_string(fields, "first_name");
-  const char* last = purple_request_fields_get_string(fields, "last_name");
-  const char* code = purple_request_fields_get_string(fields, "code");
-  if (!first || !last || !code) {
-    request_name_and_code (TLS);
-    return;
-  }
-
-  tgl_do_send_code_result_auth(TLS, username, (int)strlen(username), conn->hash,
-                               (int)strlen (conn->hash), code, (int)strlen (code), first,
-                               (int)strlen (first), last, (int)strlen (last),
-                               code_auth_receive_result, NULL);
-}
-
 static void request_code (struct tgl_state *TLS) {
   debug ("Client is not registered, registering...");
   connection_data *conn = TLS->ev_base;
@@ -505,6 +486,25 @@ static void request_code (struct tgl_state *TLS) {
     purple_conversation_write (conv, "777000", "What is your SMS verification code?",
           PURPLE_MESSAGE_RECV | PURPLE_MESSAGE_SYSTEM, 0);
   }
+}
+
+static void request_name_code_entered (PurpleConnection* gc, PurpleRequestFields* fields) {
+  connection_data *conn = purple_connection_get_protocol_data(gc);
+  struct tgl_state *TLS = conn->TLS;
+  char const *username = purple_account_get_username(conn->pa);
+  
+  const char* first = purple_request_fields_get_string(fields, "first_name");
+  const char* last = purple_request_fields_get_string(fields, "last_name");
+  const char* code = purple_request_fields_get_string(fields, "code");
+  if (!first || !last || !code) {
+    request_name_and_code (TLS);
+    return;
+  }
+  
+  tgl_do_send_code_result_auth(TLS, username, (int)strlen(username), conn->hash,
+                               (int)strlen (conn->hash), code, (int)strlen (code), first,
+                               (int)strlen (first), last, (int)strlen (last),
+                               code_auth_receive_result, NULL);
 }
 
 static void request_name_and_code (struct tgl_state *TLS) {
@@ -533,6 +533,41 @@ static void request_name_and_code (struct tgl_state *TLS) {
     const char *error = "Phone number is not registered, please register your phone on a different client.";
     purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, error);
     purple_notify_error(_telegram_protocol, "Not Registered", "Not Registered", error);
+  }
+}
+
+static void request_password_entered (struct request_password_data *data, PurpleRequestFields* fields) {
+  const char* pass = purple_request_fields_get_string (fields, "password");
+  data->callback (data->TLS, pass, data->arg);
+  free (data);
+}
+
+void request_password (struct tgl_state *TLS,
+                       void (*callback)(struct tgl_state *TLS, const char *string, void *arg),
+                       void *arg) {
+  connection_data *conn = TLS->ev_base;
+  
+  struct request_password_data *data = malloc (sizeof(struct request_password_data));
+  data->TLS = TLS;
+  data->arg = arg;
+  data->callback = callback;
+  
+  PurpleRequestFields* fields = purple_request_fields_new();
+  PurpleRequestField* field = NULL;
+  
+  PurpleRequestFieldGroup* group = purple_request_field_group_new ("");
+  field = purple_request_field_string_new ("password", "Password", "", 0);
+  purple_request_field_string_set_masked (field, TRUE);
+  purple_request_field_group_add_field (group, field);
+  purple_request_fields_add_group (fields, group);
+  
+  if (!purple_request_fields (conn->gc, "Password needed", "Enter password for two factor authentication",
+                              NULL, fields, "Ok", G_CALLBACK(request_password_entered), "Cancel", NULL, conn->pa,
+                              NULL, NULL, data)) {
+    
+    const char *error = "No password for two factor authentication, enter it in extended settings.";
+    purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, error);
+    purple_notify_error (_telegram_protocol, "Password invalid", "Password invalid", error);
   }
 }
 
