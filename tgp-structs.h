@@ -40,6 +40,7 @@ typedef struct {
   guint login_timer;
   guint out_timer;
   int in_fallback_chat;
+  int password_retries;
 } connection_data;
 
 typedef struct { 
