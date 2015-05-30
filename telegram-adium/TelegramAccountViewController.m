@@ -22,7 +22,7 @@
 #import <Adium/AIService.h>
 #import <AIUtilities/AIStringFormatter.h>
 #import <AIUtilities/AIAttributedStringAdditions.h>
-#import <AIUtilities/AIPopUpButtonAdditions.h>
+#import <AIUtilities/AIPopUpButtonAdditions.h>DISPLAY
 
 #include "telegram-purple.h"
 
@@ -55,8 +55,11 @@
   id s = [account preferenceForKey:@"Telegram:"TGP_KEY_HISTORY_SYNC_ALL group:GROUP_ACCOUNT_STATUS];
   [checkbox_historySyncAll setState:[s boolValue]];
   
-  id s4 = [account preferenceForKey:@"Telegram:"TGP_KEY_DISPLAY_READ_NOTIFICATIONS group:GROUP_ACCOUNT_STATUS];
-  [checkbox_displayReadNotifications setState:[s4 boolValue]];
+  id read = [account preferenceForKey:@"Telegram:"TGP_KEY_DISPLAY_READ_NOTIFICATIONS group:GROUP_ACCOUNT_STATUS];
+  [checkbox_displayReadNotifications setState:[read boolValue]];
+  
+  id send = [account preferenceForKey:@"Telegram:"TGP_KEY_SEND_READ_NOTIFICATIONS group:GROUP_ACCOUNT_STATUS];
+  [checkbox_sendReadNotifications setState:[send boolValue]];
 
   NSString *inactiveDaysOffline = [account
                                    preferenceForKey:@"Telegram:"TGP_KEY_INACTIVE_DAYS_OFFLINE
@@ -89,6 +92,10 @@
   
   [account setPreference:[NSNumber numberWithBool:[checkbox_displayReadNotifications state]]
                   forKey:@"Telegram:"TGP_KEY_DISPLAY_READ_NOTIFICATIONS
+                   group:GROUP_ACCOUNT_STATUS];
+  
+  [account setPreference:[NSNumber numberWithBool: [checkbox_sendReadNotifications state]]
+                  forKey:@"Telegram:"TGP_KEY_SEND_READ_NOTIFICATIONS
                    group:GROUP_ACCOUNT_STATUS];
   
   [account setPreference:[textField_historyRetrieveDays stringValue]

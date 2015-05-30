@@ -563,7 +563,7 @@ static void tgprpl_set_status (PurpleAccount * acct, PurpleStatus * status) {
   if (!gc) { return; }
   connection_data *conn = purple_connection_get_protocol_data (gc);
 
-  if (p2tgl_status_is_present(status)) {
+  if (p2tgl_status_is_present (status) && p2tgl_send_notifications (acct)) {
     pending_reads_send_all (conn->pending_reads, conn->TLS);
   }
 }
@@ -812,10 +812,18 @@ static void tgprpl_init (PurplePlugin *plugin) {
                                        TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD,
                                        TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
+
+
+  // Read notifications
   
   opt = purple_account_option_bool_new ("Display read notifications",
                                         TGP_KEY_DISPLAY_READ_NOTIFICATIONS,
                                         TGP_DEFAULT_DISPLAY_READ_NOTIFICATIONS);
+  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
+  
+  opt = purple_account_option_bool_new ("Send read notifications when present.",
+                                        TGP_KEY_SEND_READ_NOTIFICATIONS,
+                                        TGP_DEFAULT_SEND_READ_NOTIFICATIONS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
   _telegram_protocol = plugin;

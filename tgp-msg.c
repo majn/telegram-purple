@@ -376,7 +376,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     }
   }
   
-  if (p2tgl_status_is_present (purple_account_get_active_status (conn->pa))) {
+  if (p2tgl_status_is_present (purple_account_get_active_status (conn->pa)) && p2tgl_send_notifications(conn->pa)) {
     pending_reads_send_all (conn->pending_reads, conn->TLS);
   }
   

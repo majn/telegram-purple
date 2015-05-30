@@ -50,10 +50,15 @@ gchar *p2tgl_strdup_alias (tgl_peer_t *user) {
   return g_strdup (user->print_name);
 }
 
-int p2tgl_status_is_present (PurpleStatus *status)
-{
+int p2tgl_status_is_present (PurpleStatus *status) {
   const char *name = purple_status_get_id (status);
   return !(strcmp (name, "unavailable") == 0 || strcmp (name, "away") == 0);
+}
+
+int p2tgl_send_notifications (PurpleAccount *acct) {
+  int ret = purple_account_get_bool (acct, TGP_KEY_SEND_READ_NOTIFICATIONS, TGP_DEFAULT_SEND_READ_NOTIFICATIONS);
+  debug ("sending notifications: %d", ret);
+  return ret;
 }
 
 /* 

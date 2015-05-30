@@ -22,6 +22,7 @@
 @interface TelegramAccountViewController : PurpleAccountViewController {
   IBOutlet NSButton *checkbox_historySyncAll;
   IBOutlet NSButton *checkbox_displayReadNotifications;
+  IBOutlet NSButton *checkbox_sendReadNotifications;
   
   IBOutlet NSTextField *textField_maxMsgSplitCount;
   IBOutlet NSTextField *textField_inactiveDaysOffline;
