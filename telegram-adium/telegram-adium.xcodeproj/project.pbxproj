@@ -101,6 +101,7 @@
 		C487A18F1A792EA50044F135 /* libglib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libglib.framework; path = Frameworks/Adium/libglib.framework; sourceTree = "<group>"; };
 		C487A1901A792EA50044F135 /* libpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libpurple.framework; path = Frameworks/Adium/libpurple.framework; sourceTree = "<group>"; };
 		C49A915719BBC5C5001B3DC0 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
+		C4A71A911B18DD9300AE2E2B /* Makefile.tgl */ = {isa = PBXFileReference; lastKnownFileType = text; name = Makefile.tgl; path = ../Makefile.tgl; sourceTree = "<group>"; };
 		C4B4BE2D1AB392F80064AC17 /* TelegramAccountView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = TelegramAccountView.xib; sourceTree = "<group>"; };
 		C4B4BE2F1AB393800064AC17 /* TelegramAccountViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TelegramAccountViewController.m; sourceTree = "<group>"; };
 		C4B4BE301AB393800064AC17 /* TelegramAccountViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TelegramAccountViewController.h; sourceTree = "<group>"; };
@@ -235,6 +236,7 @@
 				C4B57BE81B10D814006997F4 /* configure.ac */,
 				C4B57BE91B10D822006997F4 /* Makefile.in */,
 				C4B57BE51B109E6D006997F4 /* README.md */,
+				C4A71A911B18DD9300AE2E2B /* Makefile.tgl */,
 				C425F9161A7069C300361AFC /* tgp-utils.c */,
 				C425F9171A7069C300361AFC /* tgp-utils.h */,
 				C4D819041A5C862E0044CBA9 /* tgp-structs.c */,
@@ -629,6 +631,7 @@
 				C4B57BF41B160951006997F4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
