@@ -4,19 +4,26 @@ Telegram-Purple (Beta)
 Telegram-purple is a Libpurple plugin that adds support for the Telegram messenger.
 
 
-Beta 1
+Beta 2
 ------
 
-If you migrate from an older version, the Telegram authentication files have been moved to .purple/telegram-purple. If you want to keep your old secret chats, please copy it manually from ~/.telegram-purple, otherwise you will just be prompted for a new SMS code.
+    - update to libtgl 2
+    - support two-factor authentication
+    - improve sticker support
+    - add option to control message read recipes
+    - many bugfixes
+
+
+If you migrate from an older version, the Telegram authentication files have been moved to .purple/telegram-purple. If you want to keep your old secret chats, please copy it manually from ~/.telegram-purple, otherwise you will be prompted for a new SMS code.
 
 Build
 -----
 
-Below, you will find instructions on how to build the libpurple protocol plugin. If you just want to use the plugin in Adium, [download precompiled packages here.](https://github.com/majn/telegram-purple/releases)
+Below, you will find instructions on how to build the libpurple protocol plugin. If you just want to use the plugin in Adium, [download precompiled packages here.](https://github.com/majn/telegram-purple/releases). 
 
 #### 1. Clone
 
-This repository has submodules, so you need to clone recursively
+This repository has submodules, so you need to clone recursively.
 
 
         git clone --recursive https://github.com/majn/telegram-purple
@@ -41,6 +48,8 @@ This repository has submodules, so you need to clone recursively
 
 
 #### 3. Compile and install
+
+If libwebp is not available, you can disable sticker support by calling ./configure --disable-libweb instead.
 
         ./configure
         make
