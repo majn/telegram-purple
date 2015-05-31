@@ -306,8 +306,7 @@ fin:
   free (dld);
 }
 
-void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U)
-{
+void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U) {
   get_user_info_data *user_info_data = (get_user_info_data *)info_data;
   tgl_peer_t *P = tgl_peer_get (TLS, user_info_data->peer);
   
