@@ -15,6 +15,9 @@
 /* Define to 1 if you have the `rt' library (-lrt). */
 #undef HAVE_LIBRT
 
+/* Define to 1 if you have the `webp' library (-lwebp). */
+#undef HAVE_LIBWEBP
+
 /* Define to 1 if you have `z' library (-lz) */
 #undef HAVE_LIBZ
 

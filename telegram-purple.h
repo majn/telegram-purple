@@ -25,7 +25,7 @@
 #define PLUGIN_ID "prpl-telegram"
 #define TG_AUTHOR "Matthias Jentsch <mtthsjntsch@gmail.com>, Vitaly Valtman, Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>. Based on libtgl by Vitaly Valtman."
 #define TG_DESCRIPTION "Telegram protocol."
-#define TG_BUILD "11"
+#define TG_BUILD "12"
 
 #include <notify.h>
 #include <plugin.h>
@@ -39,20 +39,25 @@
 #define TGP_MAX_MSG_SIZE 4096
 #define TGP_DEFAULT_MAX_MSG_SPLIT_COUNT 4
 
+#define TGP_KEY_PASSWORD_TWO_FACTOR "password-two-factor"
+
 #define TGP_DEFAULT_ACCEPT_SECRET_CHATS "ask"
 #define TGP_KEY_ACCEPT_SECRET_CHATS "accept-secret-chats"
 
 #define TGP_DEFAULT_INACTIVE_DAYS_OFFLINE 7
 #define TGP_KEY_INACTIVE_DAYS_OFFLINE  "inactive-days-offline"
 
-#define TGP_DEFAULT_DISPLAY_READ_NOTIFICATIONS FALSE
-#define TGP_KEY_DISPLAY_READ_NOTIFICATIONS "display-read-notifications"
-
 #define TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD 14
 #define TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD  "history-retrieve-days"
 
 #define TGP_KEY_HISTORY_SYNC_ALL "history-sync-all"
 #define TGP_DEFAULT_HISTORY_SYNC_ALL FALSE
+
+#define TGP_DEFAULT_DISPLAY_READ_NOTIFICATIONS FALSE
+#define TGP_KEY_DISPLAY_READ_NOTIFICATIONS "display-read-notifications"
+
+#define TGP_DEFAULT_SEND_READ_NOTIFICATIONS TRUE
+#define TGP_KEY_SEND_READ_NOTIFICATIONS "send-read-notifications"
 
 void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *C);
 void on_ready (struct tgl_state *TLS);

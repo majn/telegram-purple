@@ -1,6 +1,16 @@
 Changelog
 ---------
 
+
+##### Version 1.1.0 (Beta 2)
+
+    - update to libtgl 2
+    - support two-factor authentication
+    - improve sticker support
+    - add option to control message read recipes
+    - many bugfixes
+
+
 ##### Version 1.0.0 (Beta 1)
 
     - Move state files into .purple/telegram-purple directory

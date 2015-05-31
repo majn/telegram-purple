@@ -38,6 +38,7 @@ char *p2tgl_strdup_id (tgl_peer_id_t user);
 char *p2tgl_strdup_alias(tgl_peer_t *user);
 
 int p2tgl_status_is_present (PurpleStatus *status);
+int p2tgl_send_notifications (PurpleAccount *acct);
 
 PurpleConversation *p2tgl_got_joined_chat (struct tgl_state *TLS, struct tgl_chat *chat);
 void p2tgl_got_chat_invite (PurpleConnection *gc, tgl_peer_t *chat, tgl_peer_id_t inviter, const char *message);
@@ -78,5 +79,6 @@ PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TL
 
 void p2tgl_blist_alias_buddy (PurpleBuddy *buddy, struct tgl_user *user);
 int p2tgl_imgstore_add_with_id (const char* filename);
+int p2tgl_imgstore_add_with_id_webp (const char *filename);
 void p2tgl_buddy_icons_set_for_user (PurpleAccount *pa, tgl_peer_id_t *id, const char* filename);
 #endif

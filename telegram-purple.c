@@ -59,6 +59,7 @@
 #include <tgl.h>
 #include <tgl-binlog.h>
 #include <tools.h>
+#include <tgl-methods-in.h>
 #include "tgp-structs.h"
 #include "tgp-2prpl.h"
 #include "tgp-net.h"
@@ -71,6 +72,7 @@
 #include "tgp-ft.h"
 #include "tgp-msg.h"
 
+static void get_password (struct tgl_state *TLS, const char *prompt, int flags, void (*callback)(struct tgl_state *TLS, const char *string, void *arg), void *arg);
 static void update_message_received (struct tgl_state *TLS, struct tgl_message *M);
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *U, unsigned flags);
 static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *U);
@@ -86,6 +88,7 @@ const char *pk_path = "/etc/telegram-purple/server.pub";
 
 struct tgl_update_callback tgp_callback = {
   .logprintf = debug,
+  .get_string = get_password,
   .new_msg = update_message_received, 
   .msg_receive = update_message_received,
   .user_update = update_user_handler,
@@ -250,6 +253,19 @@ static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const c
   return tgl_strdup (s);
 }
 
+static void get_password (struct tgl_state *TLS, const char *prompt, int flags,
+                        void (*callback)(struct tgl_state *TLS, const char *string, void *arg), void *arg) {
+  connection_data *conn = TLS->ev_base;
+  const char *P = purple_account_get_string (conn->pa, TGP_KEY_PASSWORD_TWO_FACTOR, NULL);
+  if (str_not_empty (P)) {
+    if (conn->password_retries++ < 1) {
+      callback (TLS, P, arg);
+      return;
+    }
+  }
+  request_password (TLS, callback, arg);
+}
+
 static void on_contact_added (struct tgl_state *TLS,void *callback_extra, int success, int size, struct tgl_user *users[]) {
   PurpleBuddy *buddy = callback_extra;
   
@@ -261,7 +277,7 @@ static void on_contact_added (struct tgl_state *TLS,void *callback_extra, int su
   }
 }
 
-static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, char *filename) {
+static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, const char *filename) {
   connection_data *conn = TLS->ev_base;
   
   struct download_desc *dld = extra;
@@ -290,8 +306,7 @@ fin:
   free (dld);
 }
 
-void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U)
-{
+void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U) {
   get_user_info_data *user_info_data = (get_user_info_data *)info_data;
   tgl_peer_t *P = tgl_peer_get (TLS, user_info_data->peer);
   
@@ -299,8 +314,8 @@ void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, stru
     warning ("on_user_get_info not successfull, aborting...");
     return;
   }
-  
-  if (U->photo.sizes_num == 0) {
+
+  if (!U->photo || U->photo->sizes_num == 0) {
     // No profile pic to load, display it right away
     if (user_info_data->show_info) {
       PurpleNotifyUserInfo *info = p2tgl_notify_peer_info_new (TLS, P);
@@ -312,7 +327,7 @@ void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, stru
     struct download_desc *dld = malloc (sizeof(struct download_desc));
     dld->data = U;
     dld->get_user_info_data = info_data;
-    tgl_do_load_photo (TLS, &U->photo, on_userpic_loaded, dld);
+    tgl_do_load_photo (TLS, U->photo, on_userpic_loaded, dld);
   }
 }
 
@@ -342,11 +357,11 @@ void on_ready (struct tgl_state *TLS) {
     tggroup = purple_group_new ("Telegram");
     purple_blist_add_group (tggroup, NULL);
   }
-  
+
   debug ("seq = %d, pts = %d, date = %d", TLS->seq, TLS->pts, TLS->date);
   tgl_do_get_difference (TLS, purple_account_get_bool (conn->pa, "history-sync-all", FALSE),
                          NULL, NULL);
-  tgl_do_get_dialog_list (TLS, 0, 0);
+  tgl_do_get_dialog_list (TLS, 0, 0, NULL, NULL);
   tgl_do_update_contact_list (TLS, 0, 0);
 }
 
@@ -437,27 +452,16 @@ static void tgprpl_login (PurpleAccount * acct) {
   debug ("tgprpl_login()");
   
   PurpleConnection *gc = purple_account_get_connection (acct);
-  char const *username = purple_account_get_username (acct);
   
   struct tgl_state *TLS = tgl_state_alloc ();
   connection_data *conn = connection_data_init (TLS, gc, acct);
   purple_connection_set_protocol_data (gc, conn);
 
-  TLS->base_path = g_strdup_printf ("%s/%s/%s", purple_user_dir(), config_dir, username);
-  char *ddir = g_strdup_printf ("%s/%s", TLS->base_path, "downloads");
-  tgl_set_download_directory (TLS, ddir);
-  g_mkdir_with_parents (TLS->base_path, 0700);
-  g_mkdir_with_parents (ddir, 0700);
-  free (ddir);
+  TLS->base_path = get_config_dir(TLS, purple_account_get_username (acct));
+  tgl_set_download_directory (TLS, get_download_dir(TLS));
+  assert_file_exists (gc, pk_path, "Error, server public key not found at %s."
+                      " Make sure that Telegram-Purple is installed properly.");
   debug ("base configuration path: '%s'", TLS->base_path);
-  
-  if (!g_file_test(pk_path, G_FILE_TEST_EXISTS)) {
-    gchar *msg = g_strdup_printf ("Error, server public key not found at %s."
-                                  " Make sure that Telegram-Purple is installed properly.", pk_path);
-    purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_CERT_OTHER_ERROR, msg);
-    g_free (msg);
-    return;
-  }
   
   tgl_set_verbosity (TLS, 4);
   tgl_set_rsa_key (TLS, pk_path);
@@ -558,7 +562,7 @@ static void tgprpl_set_status (PurpleAccount * acct, PurpleStatus * status) {
   if (!gc) { return; }
   connection_data *conn = purple_connection_get_protocol_data (gc);
 
-  if (p2tgl_status_is_present(status)) {
+  if (p2tgl_status_is_present (status) && p2tgl_send_notifications (acct)) {
     pending_reads_send_all (conn->pending_reads, conn->TLS);
   }
 }
@@ -772,10 +776,14 @@ static void tgprpl_init (PurplePlugin *plugin) {
   
   // Login
   
+  opt = purple_account_option_string_new ("Password (two factor authentication)",
+                                          TGP_KEY_PASSWORD_TWO_FACTOR, NULL);
+  prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
+  
   opt = purple_account_option_bool_new("Fallback SMS Verification", "compat-verification", 0);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
  
-  
+
   // Messaging
   
   GList *verification_values = NULL;
@@ -803,10 +811,18 @@ static void tgprpl_init (PurplePlugin *plugin) {
                                        TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD,
                                        TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
+
+
+  // Read notifications
   
   opt = purple_account_option_bool_new ("Display read notifications",
                                         TGP_KEY_DISPLAY_READ_NOTIFICATIONS,
                                         TGP_DEFAULT_DISPLAY_READ_NOTIFICATIONS);
+  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
+  
+  opt = purple_account_option_bool_new ("Send read notifications when present.",
+                                        TGP_KEY_SEND_READ_NOTIFICATIONS,
+                                        TGP_DEFAULT_SEND_READ_NOTIFICATIONS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
   _telegram_protocol = plugin;

@@ -9,6 +9,11 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
+		<key>telegram-purple.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
 		<key>telegrma-adium Release.xcscheme</key>
 		<dict>
 			<key>isShown</key>
@@ -20,6 +25,11 @@
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
 		<key>C410948519BB2D7D0083BF3F</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>C4B57BF11B160950006997F4</key>
 		<dict>
 			<key>primary</key>
 			<true/>

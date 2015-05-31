@@ -51,6 +51,11 @@
 {
   [super configurePurpleAccount];
   
+  purple_account_set_string (account, TGP_KEY_PASSWORD_TWO_FACTOR,
+                             [[self preferenceForKey:@"Telegram:"TGP_KEY_PASSWORD_TWO_FACTOR
+                                               group:GROUP_ACCOUNT_STATUS]
+                              UTF8String]);
+  
   purple_account_set_string (account, TGP_KEY_ACCEPT_SECRET_CHATS,
                               [[self preferenceForKey:@"Telegram:"TGP_KEY_ACCEPT_SECRET_CHATS
                                                 group:GROUP_ACCOUNT_STATUS]
@@ -60,6 +65,11 @@
                               [[self preferenceForKey:@"Telegram:"TGP_KEY_DISPLAY_READ_NOTIFICATIONS
                                                 group:GROUP_ACCOUNT_STATUS]
                                boolValue]);
+  
+  purple_account_set_bool (account, TGP_KEY_SEND_READ_NOTIFICATIONS,
+                           [[self preferenceForKey:@"Telegram:"TGP_KEY_SEND_READ_NOTIFICATIONS
+                                             group:GROUP_ACCOUNT_STATUS]
+                            boolValue]);
   
   purple_account_set_bool (account, TGP_KEY_HISTORY_SYNC_ALL,
                               [[self preferenceForKey:@"Telegram:"TGP_KEY_HISTORY_SYNC_ALL

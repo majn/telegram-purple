@@ -18,10 +18,6 @@
     Copyright Vitaly Valtman 2013-2015
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #define _GNU_SOURCE
 #include <string.h>
 #include <stdlib.h>
@@ -46,6 +42,8 @@
 #include "telegram-base.h"
 #include <tgl.h>
 #include <tgl-inner.h>
+#include <tools.h>
+#include <mtproto-client.h>
 
 #include <glib.h>
 #include <eventloop.h>

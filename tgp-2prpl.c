@@ -17,6 +17,11 @@
 
     Copyright Matthias Jentsch 2014
 */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "telegram-purple.h"
 #include "tgp-2prpl.h"
 #include "tgp-structs.h"
@@ -45,10 +50,15 @@ gchar *p2tgl_strdup_alias (tgl_peer_t *user) {
   return g_strdup (user->print_name);
 }
 
-int p2tgl_status_is_present (PurpleStatus *status)
-{
+int p2tgl_status_is_present (PurpleStatus *status) {
   const char *name = purple_status_get_id (status);
   return !(strcmp (name, "unavailable") == 0 || strcmp (name, "away") == 0);
+}
+
+int p2tgl_send_notifications (PurpleAccount *acct) {
+  int ret = purple_account_get_bool (acct, TGP_KEY_SEND_READ_NOTIFICATIONS, TGP_DEFAULT_SEND_READ_NOTIFICATIONS);
+  debug ("sending notifications: %d", ret);
+  return ret;
 }
 
 /* 
@@ -385,7 +395,7 @@ PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TL
   }
   
   if (secret->first_key_sha[0]) {
-    int sha1key_store_id = generate_ident_icon (TLS, secret->first_key_sha);
+    int sha1key_store_id = tgp_visualize_key (TLS, secret->first_key_sha);
     if (sha1key_store_id != -1) {
       char *ident_icon = format_img_full (sha1key_store_id);
       purple_notify_user_info_add_pair (info, "Secret key", ident_icon);
@@ -423,6 +433,21 @@ int p2tgl_imgstore_add_with_id (const char* filename) {
   int id = purple_imgstore_add_with_id (data, len, NULL);
   return id;
 }
+
+#ifdef HAVE_LIBWEBP
+int p2tgl_imgstore_add_with_id_webp (const char *filename) {
+  size_t pngsize;
+  void *png = tgp_webp_load_png (filename, &pngsize);
+  if (!png) { return -1; }
+  
+  // will be owned by libpurple imgstore, which uses glib functions for managing memory
+  void *pngdub = g_memdup (png, (guint)pngsize);
+  free (png);
+  
+  int imgStoreId = purple_imgstore_add_with_id (pngdub, pngsize, NULL);
+  return imgStoreId;
+}
+#endif
 
 void p2tgl_buddy_icons_set_for_user (PurpleAccount *pa, tgl_peer_id_t *id, const char* filename) {
   char *who = g_strdup_printf("%d", tgl_get_peer_id(*id));
