@@ -22,6 +22,11 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_LIBWEBP
+#include <webp/decode.h>
+#include "lodepng/lodepng.h"
+#endif
+
 #include "telegram-purple.h"
 #include "tgp-2prpl.h"
 #include "tgp-structs.h"
@@ -436,15 +441,54 @@ int p2tgl_imgstore_add_with_id (const char* filename) {
 
 #ifdef HAVE_LIBWEBP
 int p2tgl_imgstore_add_with_id_webp (const char *filename) {
-  size_t pngsize;
-  void *png = tgp_webp_load_png (filename, &pngsize);
-  if (!png) { return -1; }
+  
+  const uint8_t *data = NULL;
+  size_t len;
+  GError *err = NULL;
+  g_file_get_contents (filename, (gchar **) &data, &len, &err);
+  if (err) { warning ("cannot open file %s: %s.", filename, err->message); return 0; }
+  
+  // downscale oversized sticker images displayed in chat, otherwise it would harm readabillity
+  WebPDecoderConfig config;
+  WebPInitDecoderConfig (&config);
+  if (! WebPGetFeatures(data, len, &config.input) == VP8_STATUS_OK) {
+    warning ("error reading webp bitstream: %s", filename);
+    g_free ((gchar *)data);
+    return 0;
+  }
+  int H = config.input.height;
+  int W = config.input.width;
+  while (H > 256 || W > 256) {
+    H /= 2;
+    W /= 2;
+  }
+  config.options.use_scaling = 1;
+  config.options.scaled_width = W;
+  config.options.scaled_height = H;
+  config.output.colorspace = MODE_RGBA;
+  if (! WebPDecode(data, len, &config) == VP8_STATUS_OK) {
+    warning ("error decoding webp: %s", filename);
+    g_free ((gchar *)data);
+    return 0;
+  }
+  g_free ((gchar *)data);
+  const uint8_t *decoded = config.output.u.RGBA.rgba;
+
+  // convert to png
+  unsigned char* png = NULL;
+  size_t pnglen;
+  unsigned error = lodepng_encode32 (&png, &pnglen, decoded, config.options.scaled_width, config.options.scaled_height);
+  WebPFreeDecBuffer (&config.output);
+  if (error) {
+    warning ("error encoding webp as png: %s", filename);
+    return 0;
+  }
   
   // will be owned by libpurple imgstore, which uses glib functions for managing memory
-  void *pngdub = g_memdup (png, (guint)pngsize);
+  void *pngdub = g_memdup (png, (guint)pnglen);
   free (png);
   
-  int imgStoreId = purple_imgstore_add_with_id (pngdub, pngsize, NULL);
+  int imgStoreId = purple_imgstore_add_with_id (pngdub, pnglen, NULL);
   return imgStoreId;
 }
 #endif
