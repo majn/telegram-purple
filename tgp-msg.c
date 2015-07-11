@@ -339,6 +339,12 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     }
     used_images_add (conn, img);
     text = format_img_full (img);
+    
+    if (M->media.type == tgl_message_media_photo && str_not_empty (M->media.caption)) {
+      char *old = text;
+      text = g_strdup_printf ("%s<br>%s", old, M->media.caption);
+      g_free (old);
+    }
     flags |= PURPLE_MESSAGE_IMAGES;
     g_free (filename);
   }
