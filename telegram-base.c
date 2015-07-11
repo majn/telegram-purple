@@ -479,7 +479,6 @@ static void request_code (struct tgl_state *TLS) {
 
     // purple request API is not available, so we create a new conversation (the Telegram system
     // account "7770000") to prompt the user for the code
-          
     conn->in_fallback_chat = 1;
     purple_connection_set_state (conn->gc, PURPLE_CONNECTED);
     PurpleConversation *conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, conn->pa, "777000");
@@ -721,3 +720,4 @@ int tgp_visualize_key (struct tgl_state *TLS, unsigned char* sha1_key) {
   g_free(image);
   return imgStoreId;
 }
+

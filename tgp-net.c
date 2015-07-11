@@ -118,7 +118,6 @@ static void delete_connection_buffer (struct connection_buffer *b) {
 }
 
 int tgln_write_out (struct connection *c, const void *_data, int len) {
-  struct tgl_state *TLS = c->TLS;
   debug ( "write_out: %d bytes\n", len);
   const unsigned char *data = _data;
   if (!len) { return 0; }
@@ -231,7 +230,6 @@ static void rotate_port (struct connection *c) {
 
 static void conn_try_read (gpointer arg, gint source, PurpleInputCondition cond) {
   struct connection *c = arg;
-  struct tgl_state *TLS = c->TLS;
   debug ("Try read. Fd = %d\n", c->fd);
   try_read (c);
 }
@@ -252,7 +250,6 @@ static void conn_try_write (gpointer arg, gint source, PurpleInputCondition cond
 
 static void net_on_connected (gpointer arg, gint fd, const gchar *error_message) {
   struct connection *c = arg;
-  struct tgl_state *TLS = c->TLS;
   debug ("connect result: %d\n", fd);
 
   if (c->fail_ev >= 0) {
@@ -377,7 +374,6 @@ static void fail_connection (struct connection *c) {
 
 //extern FILE *log_net_f;
 static void try_write (struct connection *c) {
-  struct tgl_state *TLS = c->TLS;
   debug ("try write: fd = %d\n", c->fd);
   int x = 0;
   while (c->out_head) {
@@ -447,7 +443,6 @@ static void try_rpc_read (struct connection *c) {
 }
 
 static void try_read (struct connection *c) {
-  struct tgl_state *TLS = c->TLS;
   debug ( "try read: fd = %d\n", c->fd);
   if (!c->in_tail) {
     c->in_head = c->in_tail = new_connection_buffer (1 << 20);
