@@ -140,10 +140,10 @@ void write_dc (struct tgl_dc *DC, void *extra) {
 
   assert (DC->flags & TGLDCF_LOGGED_IN);
 
-  assert (write (auth_file_fd, &DC->port, 4) == 4);
-  int l = strlen (DC->ip);
+  assert (write (auth_file_fd, &DC->options[0]->port, 4) == 4);
+  int l = strlen (DC->options[0]->ip);
   assert (write (auth_file_fd, &l, 4) == 4);
-  assert (write (auth_file_fd, DC->ip, l) == l);
+  assert (write (auth_file_fd, DC->options[0]->ip, l) == l);
   assert (write (auth_file_fd, &DC->auth_key_id, 8) == 8);
   assert (write (auth_file_fd, DC->auth_key, 256) == 256);
 }
@@ -637,7 +637,7 @@ static void telegram_send_sms (struct tgl_state *TLS) {
 static int all_authorized (struct tgl_state *TLS) {
   int i;
   for (i = 0; i <= TLS->max_dc_num; i++) if (TLS->DC_list[i]) {
-    if (!tgl_authorized_dc (TLS, TLS->DC_list[i])) {
+    if (!tgl_signed_dc(TLS, TLS->DC_list[i]) && !tgl_authorized_dc (TLS, TLS->DC_list[i])) {
       return 0;
     }
   }

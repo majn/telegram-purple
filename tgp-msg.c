@@ -162,7 +162,7 @@ static gboolean tgp_msg_send_schedule_cb (gpointer data) {
     g_queue_pop_head (conn->out_messages);
 
     // TODO: option for disable_msg_preview
-    tgl_do_send_message(D->TLS, D->to, D->msg, (int)strlen (D->msg), 0, tgp_msg_send_done, NULL);
+    tgl_do_send_message (D->TLS, D->to, D->msg, (int)strlen (D->msg), 0, NULL, tgp_msg_send_done, NULL);
     tgp_msg_sending_free (D);
   }
   return FALSE;
