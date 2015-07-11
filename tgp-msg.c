@@ -123,17 +123,34 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
   return txt;
 }
 
+static char *format_geo_link_osm (double lat, double lon) {
+  return g_strdup_printf ("https://www.openstreetmap.org/?mlat=%.6lf&mlon=%.6lf#map=17/%.6lf/%.6lf", 
+          lat, lon, lat, lon);
+}
+
 static char *format_message (struct tgl_message *M) {
   switch (M->media.type) {
     case tgl_message_media_contact:
       return g_strdup_printf ("<b>%s %s</b><br>%s", M->media.first_name, M->media.last_name, M->media.phone);
       break;
+    case tgl_message_media_venue: {
+      char *address = NULL;
+      if (M->media.venue.address) {
+        address = g_strdup_printf ("<br><i>%s</i>", M->media.venue.address);
+      }
+      return g_strdup_printf ("<a href=\"%s\">%s</a>%s",
+                             format_geo_link_osm (M->media.venue.geo.latitude, M->media.geo.longitude),
+                             M->media.venue.title ? M->media.venue.title : "",
+                             address ? address : "");
+      if (address) {
+        g_free (address);
+      }
+      break;
+    }
     case tgl_message_media_geo:
-      return g_strdup_printf ("<a href=\"http://openstreetmap.org/?lat=%f&lon=%f&zoom=20\">"
-                             "http://openstreetmap.org/?lat=%f&lon=%f&zoom=20</a>",
-                             M->media.geo.latitude, M->media.geo.longitude,
-                             M->media.geo.latitude, M->media.geo.longitude);
-      return g_strdup_printf ("<b>%s %s</b><br>%s", M->media.first_name, M->media.last_name, M->media.phone);
+      return g_strdup_printf ("<a href=\"%s\">%s</a>",
+                             format_geo_link_osm (M->media.venue.geo.latitude, M->media.geo.longitude),
+                             format_geo_link_osm (M->media.venue.geo.latitude, M->media.geo.longitude));
       break;
     default:
       if (*M->message != 0) {
