@@ -451,12 +451,16 @@ static void code_auth_receive_result (struct tgl_state *TLS, void *extra, int su
 }
 
 void request_code_entered (gpointer data, const gchar *code) {
+  char *stripped = g_strstrip (purple_markup_strip_html (code));
+
   struct tgl_state *TLS = data;
   connection_data *conn = TLS->ev_base;
   char const *username = purple_account_get_username(conn->pa);
+  debug ("sending code: '%s'\n", stripped);
   tgl_do_send_code_result (TLS, username, (int)strlen (username), conn->hash,
-                           (int)strlen (conn->hash), code, (int)strlen (code),
+                           (int)strlen (conn->hash), stripped, (int)strlen (stripped),
                            code_receive_result, 0);
+  g_free (stripped);
 }
 
 static void request_code_canceled (gpointer data) {
@@ -492,18 +496,20 @@ static void request_name_code_entered (PurpleConnection* gc, PurpleRequestFields
   struct tgl_state *TLS = conn->TLS;
   char const *username = purple_account_get_username(conn->pa);
   
-  const char* first = purple_request_fields_get_string(fields, "first_name");
-  const char* last = purple_request_fields_get_string(fields, "last_name");
-  const char* code = purple_request_fields_get_string(fields, "code");
+  char* first = g_strstrip (g_strdup (purple_request_fields_get_string (fields, "first_name")));
+  char* last = g_strstrip (g_strdup (purple_request_fields_get_string (fields, "last_name")));
+  char* code = g_strstrip (g_strdup (purple_request_fields_get_string (fields, "code")));
   if (!first || !last || !code) {
     request_name_and_code (TLS);
     return;
   }
-  
-  tgl_do_send_code_result_auth(TLS, username, (int)strlen(username), conn->hash,
+  tgl_do_send_code_result_auth (TLS, username, (int)strlen(username), conn->hash,
                                (int)strlen (conn->hash), code, (int)strlen (code), first,
                                (int)strlen (first), last, (int)strlen (last),
                                code_auth_receive_result, NULL);
+  g_free (first);
+  g_free (last);
+  g_free (code);
 }
 
 static void request_name_and_code (struct tgl_state *TLS) {

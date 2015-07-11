@@ -142,3 +142,18 @@ const char *tgp_mime_to_filetype (const char *mime) {
   }
   return NULL;
 }
+
+int tgp_startswith (const char *str, const char *with) {
+  if (! str || !with) {
+    return FALSE;
+  }
+  int slen = strlen (str), wlen = strlen (with);
+  if (wlen > slen) {
+    return FALSE;
+  }
+  while (*with) if (*str++ != *with++) {
+    return FALSE;
+  }
+  return TRUE;
+}
+

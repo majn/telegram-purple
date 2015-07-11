@@ -491,6 +491,12 @@ static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *m
   // this is part of a workaround to support clients without
   // the request API (request.h), see telegram-base.c:request_code()
   if (conn->in_fallback_chat) {
+
+    // OTR plugins may try to insert messages that don't contain the code
+    if (tgp_startswith (message, "?OTR")) {
+        info ("Fallback SMS auth, skipping OTR messsage: '%s'", message);
+        return -1;
+    }
     request_code_entered (conn->TLS, message);
     conn->in_fallback_chat = 0;
     return 1;
@@ -780,7 +786,9 @@ static void tgprpl_init (PurplePlugin *plugin) {
                                           TGP_KEY_PASSWORD_TWO_FACTOR, NULL);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_bool_new("Fallback SMS Verification", "compat-verification", 0);
+  opt = purple_account_option_bool_new(
+          "Fallback SMS verification\n(Helps when not using Pidgin and you aren't being prompted for the code)", 
+          "compat-verification", 0);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
  
 
