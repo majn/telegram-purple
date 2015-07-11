@@ -131,12 +131,12 @@ static char *format_geo_link_osm (double lat, double lon) {
 static char *format_message (struct tgl_message *M) {
   switch (M->media.type) {
     case tgl_message_media_contact:
-      return g_strdup_printf ("<b>%s %s</b><br>%s", M->media.first_name, M->media.last_name, M->media.phone);
+      return g_strdup_printf ("<b>%s %s</b> %s", M->media.first_name, M->media.last_name, M->media.phone);
       break;
     case tgl_message_media_venue: {
       char *address = NULL;
-      if (M->media.venue.address) {
-        address = g_strdup_printf ("<br><i>%s</i>", M->media.venue.address);
+      if (M->media.venue.address && strcmp (M->media.venue.title, M->media.venue.address)) {
+        address = g_strdup_printf (" %s", M->media.venue.address);
       }
       return g_strdup_printf ("<a href=\"%s\">%s</a>%s",
                              format_geo_link_osm (M->media.venue.geo.latitude, M->media.geo.longitude),
