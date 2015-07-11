@@ -781,9 +781,9 @@ static void tgprpl_init (PurplePlugin *plugin) {
 }
   
   // Login
-  
-  opt = purple_account_option_string_new ("Password (two factor authentication)",
+  opt = purple_account_option_string_new ("Password (two factor authentication)", 
                                           TGP_KEY_PASSWORD_TWO_FACTOR, NULL);
+  purple_account_option_set_masked (opt, TRUE);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
   
   opt = purple_account_option_bool_new(
