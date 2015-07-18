@@ -620,14 +620,14 @@ static void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
     return;
   }
   
-  subject = g_hash_table_lookup(data, "subject");
+  subject = g_hash_table_lookup (data, "subject");
   if (str_not_empty (subject)) {
     tgl_peer_t *P = tgl_peer_get_by_name (conn->TLS, subject);
     if (P && tgl_get_peer_type (P->id) == TGL_PEER_CHAT) {
       chat_show (conn->gc, tgl_get_peer_id (P->id));
       return;
     }
-    debug ("Peer with name %s not found or not a chat.", subject);
+    request_create_chat (conn->TLS, subject);
   }
 }
 
@@ -704,7 +704,7 @@ static PurplePluginProtocolInfo prpl_info = {
   tgprpl_status_types,
   tgprpl_blist_node_menu,  // blist_node_menu
   tgprpl_chat_join_info,
-  tgprpl_chat_info_deflt,
+  NULL,
   tgprpl_login,
   tgprpl_close,
   tgprpl_send_im,

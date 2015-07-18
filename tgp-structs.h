@@ -79,6 +79,11 @@ struct accept_secret_chat_data {
   struct tgl_secret_chat *U;
 };
 
+struct accept_create_chat_data {
+  struct tgl_state *TLS;
+  char *title;
+};
+
 void pending_reads_send_all (GQueue *queue, struct tgl_state *TLS);
 void pending_reads_add (GQueue *queue, tgl_peer_id_t id);
 struct message_text *message_text_init (struct tgl_message *M, gchar *text);

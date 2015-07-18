@@ -43,6 +43,8 @@ void request_password (struct tgl_state *TLS, void (*callback)(struct tgl_state 
 
 void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *U);
 
+void request_create_chat (struct tgl_state *TLS, const char *subject);
+
 gchar *get_config_dir (struct tgl_state *TLS, char const *username);
 gchar *get_download_dir (struct tgl_state *TLS);
 void assert_file_exists (PurpleConnection *gc, const char *filepath, const char *format);
