@@ -361,7 +361,7 @@ void on_ready (struct tgl_state *TLS) {
   debug ("seq = %d, pts = %d, date = %d", TLS->seq, TLS->pts, TLS->date);
   tgl_do_get_difference (TLS, purple_account_get_bool (conn->pa, "history-sync-all", FALSE),
                          NULL, NULL);
-  tgl_do_get_dialog_list (TLS, 0, 0, NULL, NULL);
+  tgl_do_get_dialog_list (TLS, 200, 0, NULL, NULL);
   tgl_do_update_contact_list (TLS, 0, 0);
 }
 
