@@ -17,10 +17,19 @@
  */
 
 #import "TelegramAccount.h"
+#import "tgp-ft.h"
+
 #import <libpurple/conversation.h>
 #import <Adium/ESFileTransfer.h>
 #import <Adium/AIListContact.h>
-#import "tgp-ft.h"
+#import <Adium/AIToolbarControllerProtocol.h>
+#import <Adium/AIMenuControllerProtocol.h>
+#import <Adium/AIChat.h>
+
+#import <AIUtilities/AIToolbarUtilities.h>
+#import <AIUtilities/AIImageAdditions.h>
+#import <AIUtilities/AIMenuAdditions.h>
+
 
 #include "telegram-purple.h"
 
@@ -45,7 +54,6 @@
 {
 	return 443;
 }
-
 
 - (void)configurePurpleAccount
 {
@@ -87,6 +95,41 @@
                                intValue]);
 }
 
+#pragma mark Action Menu
+-(NSMenu*)actionMenuForChat:(AIChat*)chat
+{
+  NSArray *listObjects = nil;
+  AIListObject *listObject = nil;
+  
+  if (listObjects.count) {
+    listObject = [listObjects objectAtIndex:0];
+  }
+  
+  NSMenu *menu = [adium.menuController
+            contextualMenuWithLocations: [NSArray arrayWithObjects:
+            [NSNumber numberWithInteger: Context_GroupChat_Manage],
+            [NSNumber numberWithInteger: Context_Group_Manage],
+            [NSNumber numberWithInteger: Context_GroupChat_Action],
+            nil] forChat: chat];
+  
+  [menu addItem:[NSMenuItem separatorItem]];
+
+  [menu addItemWithTitle:@"Invite users by link..."
+                  target:self
+                  action:@selector(addUserByLink)
+           keyEquivalent:@""
+                     tag:0];
+  return menu;
+}
+- (void)addUserByLink
+{
+  connection_data *conn = purple_connection_get_protocol_data (purple_account_get_connection(account));
+  AIChat *chat = adium.interfaceController.activeChat;
+  const char *subject = [[[chat chatCreationDictionary] objectForKey:@"subject"] UTF8String];
+  export_chat_link_checked (conn->TLS, subject);
+}
+
+#pragma mark File transfer
 - (BOOL)canSendOfflineMessageToContact:(AIListContact *)inContact
 {
 	return YES;

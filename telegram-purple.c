@@ -423,16 +423,62 @@ static void start_secret_chat (PurpleBlistNode *node, gpointer data) {
   tgl_do_create_secret_chat (conn->TLS, TGL_MK_USER(atoi (name)), 0, 0);
 }
 
+static void create_chat_link_done (struct tgl_state *TLS, void *extra, int success, const char *url) {
+  connection_data *conn = TLS->ev_base;
+  tgl_peer_t *C = extra;
+  
+  if (success) {
+    chat_show (conn->gc, tgl_get_peer_id (C->id));
+    char *msg = g_strdup_printf("Invite link: %s", url);
+    serv_got_chat_in (conn->gc, tgl_get_peer_id(C->id), "WebPage", PURPLE_MESSAGE_SYSTEM,
+                      msg, time(NULL));
+    g_free (msg);
+  } else {
+    purple_notify_error (_telegram_protocol, "Sorry", "Creating Chat Link Failed",
+                         "Check the error log for further information.");
+  }
+}
+
+static void create_chat_link (PurpleBlistNode *node, gpointer data) {
+  PurpleChat *chat = (PurpleChat*)node;
+  connection_data *conn = purple_connection_get_protocol_data (
+                            purple_account_get_connection(purple_chat_get_account(chat)));
+  export_chat_link_checked (conn->TLS, purple_chat_get_name (chat));
+}
+
+void export_chat_link_checked (struct tgl_state *TLS, const char *name) {
+  tgl_peer_t *C = tgl_peer_get_by_name (TLS, name);
+  if (! C) {
+    failure ("Chat \"%s\" not found, not exporting link.", name);
+    return;
+  } else {
+    debug ("Chat \"%s\" found.", name);
+  }
+  if (C->chat.admin_id != TLS->our_id) {
+    purple_notify_error (_telegram_protocol, "Failure", "Creating Chat Link Failed",
+                         "You need to be admin of the group to do that.");
+    return;
+  }
+  tgl_do_export_chat_link (TLS, C->id, create_chat_link_done, C);
+}
+
 static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
   debug ("tgprpl_blist_node_menu()");
-  
+
   GList* menu = NULL;
   if (PURPLE_BLIST_NODE_IS_BUDDY(node)) {
     // Add encrypted chat option to the right click menu of all buddies
     PurpleBuddy* buddy = (PurpleBuddy*)node;
-    PurpleMenuAction* menu_action = purple_menu_action_new("Start Secret Chat",
+    PurpleMenuAction* action = purple_menu_action_new ("Start secret chat",
                                       PURPLE_CALLBACK(start_secret_chat), buddy, NULL);
-    menu = g_list_append(menu, (gpointer)menu_action);
+    
+    menu = g_list_append(menu, (gpointer)action);
+  }
+  if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
+     // Generate Public Link
+    PurpleMenuAction* action = purple_menu_action_new ("Invite users by link",
+                                      PURPLE_CALLBACK(create_chat_link), NULL, NULL);
+    menu = g_list_append(menu, (gpointer)action);
   }
   return menu;
 }
