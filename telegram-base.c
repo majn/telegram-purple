@@ -696,8 +696,11 @@ void request_choose_user (struct accept_create_chat_data *data) {
   struct tgl_state *TLS = data->TLS;
   connection_data *conn = TLS->ev_base;
   
+  // Telegram doesn't allow to create chats with only one user, so we need to force
+  // the user to specify at least one other one.
   PurpleRequestFields* fields = purple_request_fields_new();
-  PurpleRequestFieldGroup* group = purple_request_field_group_new ("Invite at least one other user. You can always add more users later...");
+  PurpleRequestFieldGroup* group = purple_request_field_group_new (
+                                   "Invite at least one other user. You can always add more users later...");
   purple_request_field_group_add_field (group, create_user_list (TLS, "user1", "User 1", 0));
   purple_request_field_group_add_field (group, create_user_list (TLS, "user2", "User 2", 1));
   purple_request_field_group_add_field (group, create_user_list (TLS, "user3", "User 3", 1));
@@ -716,7 +719,8 @@ void request_create_chat (struct tgl_state *TLS, const char *subject) {
 
   char *title = g_strdup_printf ("Chat doesn't exist, create a new group chat named '%s'?", subject);
   purple_request_accept_cancel (conn->gc, "Create New Group Chat", title, NULL, 1,
-                                conn->pa, NULL, NULL, data, G_CALLBACK(request_choose_user),
+                                conn->pa, NULL, NULL, data,
+                                G_CALLBACK(request_choose_user),
                                 G_CALLBACK(cancel_group_chat_cb));
   g_free (title);
 }
