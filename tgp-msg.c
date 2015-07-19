@@ -443,8 +443,12 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
     return;
   }
   if (M->media.type == tgl_message_media_photo) {
-    C->done = FALSE;
-    tgl_do_load_photo (TLS, M->media.photo, tgp_msg_on_loaded_document, C);
+    
+    // there are messages with type media_photo, but without a photo element, buy why?
+    if (M->media.photo) {
+      C->done = FALSE;
+      tgl_do_load_photo (TLS, M->media.photo, tgp_msg_on_loaded_document, C);
+    }
   }
   if (M->media.type == tgl_message_media_document_encr &&
       M->media.encr_document->flags & TGLDF_IMAGE &&
