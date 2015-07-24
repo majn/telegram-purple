@@ -40,6 +40,7 @@
 #include "tgp-2prpl.h"
 #include "tgp-structs.h"
 #include "tgp-utils.h"
+#include "tgp-chat.h"
 #include "lodepng/lodepng.h"
 
 #define _(m) m
@@ -619,6 +620,12 @@ void create_group_chat_done_cb (struct tgl_state *TLS, void *title, int success)
     // alert
     purple_notify_error (_telegram_protocol, "Creating Group Chat Failed",
                          "Creating Group Chat Failed", "Check the error log for further information.");
+  } else {
+    tgl_peer_t *t = tgl_peer_get_by_name(TLS, title);
+    if (t) {
+      connection_data *conn = TLS->ev_base;
+      chat_show (conn->gc, tgl_get_peer_id(t->id));
+    }
   }
   g_free (title);
 }
