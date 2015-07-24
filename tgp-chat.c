@@ -58,7 +58,7 @@ PurpleConversation *chat_show (PurpleConnection *gc, int id) {
 
 int chat_is_member (int who, struct tgl_chat *chat) {
   int i;
-  for (i = 0; i < chat->user_list_size; i++) if ((chat->user_list + i)->user_id) {
+  for (i = 0; i < chat->user_list_size; i++) if ((chat->user_list + i)->user_id == who) {
     return TRUE;
   }
   return FALSE;
