@@ -17,10 +17,13 @@
  */
 
 #include <tgl.h>
-#include "TelegramJoinChatViewController.h"
 #include "telegram-purple.h"
 #include "tgp-structs.h"
 #include "tgp-chat.h"
+#include "telegram-base.h"
+
+#include "TelegramJoinChatViewController.h"
+#include "TelegramAutocompletionDelegate.h"
 
 #import <Adium/AIContactControllerProtocol.h>
 #import <AIUtilities/AICompletingTextField.h>
@@ -67,38 +70,76 @@ static void tgl_peer_iterator_cb (tgl_peer_t *peer, void *extra) {
         [leftChats addObject: name];
       }
     }
-    
+
     NSArray *sortedChats = [chats sortedArrayUsingComparator:^NSComparisonResult(id a, id b) {
       return [(NSString*)a
               compare:b
               options:NSDiacriticInsensitiveSearch | NSCaseInsensitiveSearch];
     }];
     [popupButton_existingChat addItemsWithTitles: sortedChats];
-    
     // TODO: Display left chats with a grey font to indicate that those are no
     // longer, but still allow the user to view the history
     // [popupButton_existingChat addItemsWithTitles: leftChats];
+    
+    // provide the current TLS instance for access by the autocompletion
+    TelegramAutocompletionDelegate *D = [tokenField_createChatUsers delegate];
+    if (D != nil) {
+      [D setTLS:conn->TLS];
+    }
   }
 }
 
 - (void)joinChatWithAccount:(AIAccount *)inAccount
 {
-	NSString *room = [[popupButton_existingChat selectedItem] title];
-
-  NSDictionary *chatCreationInfo = [NSDictionary
-                                    dictionaryWithObjectsAndKeys:room, @"subject", nil];
-  
-  [self doJoinChatWithName:room
-                 onAccount:inAccount
-          chatCreationInfo:chatCreationInfo
-          invitingContacts:@[]
-     withInvitationMessage:@""];
+  PurpleAccount *pa = [(CBPurpleAccount *)inAccount purpleAccount];
+  PurpleConnection *gc = purple_account_get_connection(pa);
+  if (gc && PURPLE_CONNECTION_IS_CONNECTED(gc)) {
+    connection_data *conn = purple_connection_get_protocol_data (gc);
+    NSString *createChatName = [textField_createChatName stringValue];
+    NSArray *tokens = [tokenField_createChatUsers objectValue];
+    if ([createChatName length] && [tokens count]) {
+      int i, cnt = (int)[tokens count];
+      const char **users = g_malloc(cnt * sizeof(char*));
+      for (i = 0; i < cnt; i++) {
+        users[i] = [tokens[i] UTF8String];
+      }
+      tgp_create_group_chat_by_usernames (conn->TLS, [createChatName UTF8String], users, i, TRUE);
+      g_free (users);
+      return;
+    }
+    /*
+      int i = 0;
+      tgl_peer_id_t ids[(int)[tokens count] + 1];
+      ids[i++] = TGL_MK_USER(conn->TLS->our_id);
+      for (NSString *user in tokens) {
+        tgl_peer_t *P = NULL;
+        P = tgl_peer_get_by_name (conn->TLS, [user UTF8String]);
+        if (P) {
+          ids[i++] = P->id;
+        }
+      }
+      const char *subject = [createChatName UTF8String];
+      tgl_do_create_group_chat(conn->TLS, i, ids, subject, (int) strlen(subject),
+                               create_group_chat_done_cb, NULL);
+      // TODO: display new chat
+      return;
+    }
+     */
+    
+    NSString *room = [[popupButton_existingChat selectedItem] title];
+    NSDictionary *chatCreationInfo = [NSDictionary
+                                      dictionaryWithObjectsAndKeys:room, @"subject", nil];
+    [self doJoinChatWithName:room
+                   onAccount:inAccount
+            chatCreationInfo:chatCreationInfo
+            invitingContacts:@[]
+       withInvitationMessage:@""];
+  }
 }
 
 - (NSString *)nibName
 {
   return @"TelegramJoinChatView";
 }
-
 
 @end

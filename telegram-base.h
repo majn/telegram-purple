@@ -50,5 +50,7 @@ gchar *get_download_dir (struct tgl_state *TLS);
 void assert_file_exists (PurpleConnection *gc, const char *filepath, const char *format);
 
 int tgp_visualize_key(struct tgl_state *TLS, unsigned char* sha1_key);
+void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *title,
+                                         const char *users[], int num_users, int print_names);
 
 #endif

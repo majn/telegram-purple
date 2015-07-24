@@ -614,49 +614,53 @@ void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *
   g_free (message);
 }
 
-static void create_group_chat_done_cb (struct tgl_state *TLS, void *_, int success) {
+void create_group_chat_done_cb (struct tgl_state *TLS, void *title, int success) {
   if (! success) {
     // alert
     purple_notify_error (_telegram_protocol, "Creating Group Chat Failed",
                          "Creating Group Chat Failed", "Check the error log for further information.");
   }
+  g_free (title);
 }
 
-static const char* tgp_request_field_get_value_label (PurpleRequestFields *fields, const char *id) {
-  GList *labels = purple_request_field_choice_get_labels (purple_request_fields_get_field (fields, id));
-  const char *value = g_list_nth_data(labels, purple_request_fields_get_choice(fields, id));
-  debug ("Found choice: %s", value);
-  return value;
+void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *title,
+                                         const char *users[], int num_users, int print_names) {
+  tgl_peer_id_t ids[num_users + 1];
+  int i, j = 0;
+  ids[j++] = TGL_MK_USER(TLS->our_id);
+  for (i = 0; i < num_users; i++) if (str_not_empty(users[i])) {
+    tgl_peer_t *P = NULL;
+    if (print_names) {
+      P = tgl_peer_get_by_name (TLS, users[i]);
+    } else {
+      P = tgl_peer_get (TLS, TGL_MK_USER(atoi (users[i])));
+    }
+    if (P && tgl_get_peer_id (P->id) != TLS->our_id) {
+      ids[j++] = P->id;
+    } else {
+      debug("User %s not found in peer list", users[j]);
+    }
+  }
+  if (i > 1) {
+    tgl_do_create_group_chat (TLS, i, ids, title, (int) strlen(title),
+                              create_group_chat_done_cb, g_strdup (title));
+  } else {
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_INFO,
+                           "Group not created", "Not enough users selected",
+                           NULL, NULL, NULL);
+  }
 }
 
 static void create_group_chat_cb (void *_data, PurpleRequestFields* fields) {
   debug ("create_group_chat_cb()");
   struct accept_create_chat_data *data = _data;
   const char *users[3] = {
-    tgp_request_field_get_value_label (fields, "user1"),
-    tgp_request_field_get_value_label (fields, "user2"),
-    tgp_request_field_get_value_label (fields, "user3")
+    purple_request_fields_get_string(fields, "user1"),
+    purple_request_fields_get_string(fields, "user2"),
+    purple_request_fields_get_string(fields, "user3")
   };
-  tgl_peer_id_t ids[4];
-  ids[0] = TGL_MK_USER(data->TLS->our_id);
-  int i = 1;
-  for (int j = 0; j < 3; j++) {
-    tgl_peer_t *P = NULL;
-    if ((P = tgl_peer_get_by_name (data->TLS, users[j])) && tgl_get_peer_id(P->id) != data->TLS->our_id) {
-      ids[i++] = P->id;
-      debug("adding user id: %d", tgl_get_peer_id(P->id));
-    } else {
-      debug("User %s not found in peer list", users[j]);
-    }
-  }
-  if (i > 1) {
-    tgl_do_create_group_chat (data->TLS, i, ids, data->title, (int) strlen(data->title),
-                              create_group_chat_done_cb, NULL);
-  } else {
-    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_INFO,
-                           "Group not created", "Not enough users selected",
-                           NULL, NULL, NULL);
-  }
+  
+  tgp_create_group_chat_by_usernames (data->TLS, data->title, users, 3, FALSE);
   g_free (data->title);
   free (data);
 }
@@ -669,6 +673,7 @@ static void cancel_group_chat_cb (gpointer data) {
   free (d);
 }
 
+/*
 static void create_user_list_entry (tgl_peer_t *P, void *extra) {
   GList **list = extra;
   if (tgl_get_peer_type (P->id) == TGL_PEER_USER) {
@@ -691,6 +696,7 @@ static PurpleRequestField *create_user_list (struct tgl_state *TLS, const char *
   g_list_free(list);
   return field;
 }
+ */
 
 void request_choose_user (struct accept_create_chat_data *data) {
   struct tgl_state *TLS = data->TLS;
@@ -700,14 +706,24 @@ void request_choose_user (struct accept_create_chat_data *data) {
   // the user to specify at least one other one.
   PurpleRequestFields* fields = purple_request_fields_new();
   PurpleRequestFieldGroup* group = purple_request_field_group_new (
-                                   "Invite at least one other user. You can always add more users later...");
-  purple_request_field_group_add_field (group, create_user_list (TLS, "user1", "User 1", 0));
-  purple_request_field_group_add_field (group, create_user_list (TLS, "user2", "User 2", 1));
-  purple_request_field_group_add_field (group, create_user_list (TLS, "user3", "User 3", 1));
+                                   "Use the autocompletion to invite at least one additional user. You can always add more users once the chat was created...");
+
+  PurpleRequestField *field = purple_request_field_string_new("user1", "User Name", NULL, FALSE);
+  purple_request_field_set_type_hint (field, "screenname");
+  purple_request_field_group_add_field (group, field);
+  
+  field = purple_request_field_string_new("user2", "User Name", NULL, FALSE);
+  purple_request_field_set_type_hint (field, "screenname");
+  purple_request_field_group_add_field (group, field);
+  
+  field = purple_request_field_string_new("user3", "User Name", NULL, FALSE);
+  purple_request_field_set_type_hint (field, "screenname");
+  purple_request_field_group_add_field (group, field);
+  
   purple_request_fields_add_group(fields, group);
-  purple_request_fields (conn->gc, "Create Groupe", "Invite Users", NULL, fields,
+  purple_request_fields (conn->gc, "Create Group", "Invite Users", NULL, fields,
                          "Ok", G_CALLBACK(create_group_chat_cb), "Cancel",
-                         G_CALLBACK(cancel_group_chat_cb), NULL, NULL, NULL, data);
+                         G_CALLBACK(cancel_group_chat_cb), conn->pa, NULL, NULL, data);
 }
 
 void request_create_chat (struct tgl_state *TLS, const char *subject) {

@@ -16,14 +16,13 @@
  * Copyright Matthias Jentsch 2014-2015
  */
 
-#import <Adium/DCJoinChatViewController.h>
+#import <Foundation/Foundation.h>
 
-@class AIAccount, AICompletingTextField;
+#include <tgl.h>
 
-@interface TelegramJoinChatViewController : DCJoinChatViewController <NSTokenFieldDelegate> {
-  IBOutlet NSPopUpButton *popupButton_existingChat;
-  IBOutlet NSTextField *textField_createChatName;
-  IBOutlet NSTokenField *tokenField_createChatUsers;
+@interface TelegramAutocompletionDelegate : NSObject<NSTokenFieldDelegate> {
+  @private
+    struct tgl_state *TLS;
 }
-
+- (void)setTLS:(struct tgl_state *)TLS;
 @end
