@@ -95,6 +95,12 @@ static void tgl_peer_iterator_cb (tgl_peer_t *peer, void *extra) {
   PurpleConnection *gc = purple_account_get_connection(pa);
   if (gc && PURPLE_CONNECTION_IS_CONNECTED(gc)) {
     connection_data *conn = purple_connection_get_protocol_data (gc);
+    NSString *link = [textField_joinByLink stringValue];
+    
+    if ([link length]) {
+      import_chat_link_checked (conn->TLS, [link UTF8String]);
+      return;
+    }
     NSString *createChatName = [textField_createChatName stringValue];
     NSArray *tokens = [tokenField_createChatUsers objectValue];
     if ([createChatName length] && [tokens count]) {

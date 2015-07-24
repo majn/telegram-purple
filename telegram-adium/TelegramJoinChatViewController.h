@@ -22,6 +22,7 @@
 
 @interface TelegramJoinChatViewController : DCJoinChatViewController <NSTokenFieldDelegate> {
   IBOutlet NSPopUpButton *popupButton_existingChat;
+  IBOutlet NSTextField *textField_joinByLink;
   IBOutlet NSTextField *textField_createChatName;
   IBOutlet NSTokenField *tokenField_createChatUsers;
 }

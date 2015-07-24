@@ -462,6 +462,19 @@ void export_chat_link_checked (struct tgl_state *TLS, const char *name) {
   tgl_do_export_chat_link (TLS, C->id, create_chat_link_done, C);
 }
 
+static void import_chat_link_done (struct tgl_state *TLS, void *extra, int success) {
+  if (! success) {
+    purple_notify_error (_telegram_protocol, "Failure", "Joining by Link Failed",
+                         "Maybe the link is invalid, or you already joined the chat.");
+    return;
+  }
+  purple_notify_info (_telegram_protocol, "Success", "Chat Joined", "Chat joined.");
+}
+
+void import_chat_link_checked (struct tgl_state *TLS, const char *link) {
+  tgl_do_import_chat_link (TLS, link, (int) strlen(link), import_chat_link_done, NULL);
+}
+
 static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
   debug ("tgprpl_blist_node_menu()");
 
@@ -485,13 +498,19 @@ static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
 
 static GList *tgprpl_chat_join_info (PurpleConnection * gc) {
   debug ("tgprpl_chat_join_info()");
-  struct proto_chat_entry *pce;
   
+  struct proto_chat_entry *pce;
   pce = g_new0(struct proto_chat_entry, 1);
   pce->label = "_Subject:";
   pce->identifier = "subject";
-  pce->required = TRUE;
-  return g_list_append(NULL, pce);
+  pce->required = FALSE;
+  GList *info = g_list_append (NULL, pce);
+  
+  pce = g_new0(struct proto_chat_entry, 1);
+  pce->label = "_Join by Link:";
+  pce->identifier = "link";
+  pce->required = FALSE;
+  return g_list_append (info, pce);
 }
 
 static void tgprpl_login (PurpleAccount * acct) {
@@ -651,18 +670,23 @@ static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Pur
       tgl_do_del_contact (conn->TLS, peer->id, NULL, NULL);
       break;
   }
-  
 }
 
 static void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
   debug ("tgprpl_chat_join()");
-  const char *subject = NULL;
+  const char *subject = NULL, *link = NULL;
   gpointer value;
   connection_data *conn = purple_connection_get_protocol_data (gc);
   
   value = g_hash_table_lookup (data, "id");
   if (value && atoi (value)) {
     chat_show (conn->gc, atoi (value));
+    return;
+  }
+  
+  link = g_hash_table_lookup(data, "link");
+  if (str_not_empty(link)) {
+    tgl_do_import_chat_link (conn->TLS, link, (int)strlen (link), NULL, NULL);
     return;
   }
   
@@ -679,11 +703,6 @@ static void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
 
 static char *tgprpl_get_chat_name (GHashTable * data) {
   return g_strdup(g_hash_table_lookup(data, "subject"));
-}
-
-static GHashTable *tgprpl_chat_info_deflt (PurpleConnection * gc, const char *chat_name) {
-  debug ("tgprpl_chat_info_defaults()");
-  return NULL;
 }
 
 static void tgprpl_chat_invite (PurpleConnection * gc, int id, const char *message, const char *name) {
@@ -732,7 +751,7 @@ PurplePlugin *_telegram_protocol = NULL;
 
 static PurplePluginProtocolInfo prpl_info = {
   OPT_PROTO_NO_PASSWORD | OPT_PROTO_IM_IMAGE,
-  NULL,                    // user_splits, initialized in tgprpl_init()
+  NULL,                    // user_¡splits, initialized in tgprpl_init()
   NULL,                    // protocol_options, initialized in tgprpl_init()
   {
     "png",

@@ -9,6 +9,7 @@
             <connections>
                 <outlet property="popupButton_existingChat" destination="vmH-Cu-psq" id="15U-eW-T0i"/>
                 <outlet property="textField_createChatName" destination="k91-zE-a20" id="AGg-hH-XJg"/>
+                <outlet property="textField_joinByLink" destination="Es2-Po-Hhy" id="zR1-oE-U47"/>
                 <outlet property="tokenField_createChatUsers" destination="ePS-oV-elo" id="gC2-bj-Lfw"/>
                 <outlet property="view" destination="c22-O7-iKe" id="4pN-H1-fp0"/>
             </connections>
