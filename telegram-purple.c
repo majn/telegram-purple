@@ -100,12 +100,9 @@ struct tgl_update_callback tgp_callback = {
   .create_print_name = format_print_name
 };
 
-static void update_message_received (struct tgl_state *TLS, struct tgl_message *M) {
-  write_files_schedule (TLS);
-  tgp_msg_recv (TLS, M);
-}
-
 void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
+void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *C);
+
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, unsigned flags) {
   if (TLS->our_id == tgl_get_peer_id (user->id)) {
     if (flags & TGL_UPDATE_NAME) {
@@ -128,6 +125,17 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
     if (flags & TGL_UPDATE_DELETED && buddy) {
       purple_blist_remove_buddy (buddy);
     }
+  }
+}
+
+static void update_message_received (struct tgl_state *TLS, struct tgl_message *M) {
+  write_files_schedule (TLS);
+  tgp_msg_recv (TLS, M);
+  
+  if (M->flags & TGLMF_SERVICE &&
+     (M->action.type == tgl_message_action_chat_add_user ||
+      M->action.type == tgl_message_action_chat_delete_user)) {
+    tgl_do_get_chat_info (TLS, M->to_id, FALSE, on_chat_get_info, NULL);
   }
 }
 
@@ -178,7 +186,7 @@ static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, u
   PurpleChat *ch = p2tgl_chat_find (TLS, chat->id);
 
   if (flags & TGL_UPDATE_CREATED) {
-    tgl_do_get_chat_info (TLS, chat->id, 0, on_chat_get_info, 0);
+    tgl_do_get_chat_info (TLS, chat->id, FALSE, on_chat_get_info, NULL);
   }
   if (flags & TGL_UPDATE_TITLE && ch) {
     purple_blist_alias_chat (ch, chat->print_title);
@@ -685,7 +693,7 @@ static void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
   }
   
   link = g_hash_table_lookup(data, "link");
-  if (str_not_empty(link)) {
+  if (str_not_empty (link)) {
     tgl_do_import_chat_link (conn->TLS, link, (int)strlen (link), NULL, NULL);
     return;
   }
@@ -705,6 +713,13 @@ static char *tgprpl_get_chat_name (GHashTable * data) {
   return g_strdup(g_hash_table_lookup(data, "subject"));
 }
 
+static void add_user_to_chat_done_cb (struct tgl_state *TLS, void *callback_extra, int success) {
+  tgl_peer_t *C = callback_extra;
+  
+  // use regular chat update function to get new info about the chat 
+  tgl_do_get_chat_info (TLS, C->id, FALSE, on_chat_get_info, NULL);
+}
+
 static void tgprpl_chat_invite (PurpleConnection * gc, int id, const char *message, const char *name) {
   debug ("tgprpl_chat_invite()");
 
@@ -717,7 +732,7 @@ static void tgprpl_chat_invite (PurpleConnection * gc, int id, const char *messa
     return;
   }
   
-  tgl_do_add_user_to_chat (conn->TLS, chat->id, user->id, 0, NULL, NULL);
+  tgl_do_add_user_to_chat (conn->TLS, chat->id, user->id, 0, add_user_to_chat_done_cb, chat);
 }
 
 static int tgprpl_send_chat (PurpleConnection * gc, int id, const char *message, PurpleMessageFlags flags) {

@@ -444,7 +444,7 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
   }
   if (M->media.type == tgl_message_media_photo) {
     
-    // there are messages with type media_photo, but without a photo element, buy why?
+    // there are messages with type media_photo but without a photo element, why?
     if (M->media.photo) {
       C->done = FALSE;
       tgl_do_load_photo (TLS, M->media.photo, tgp_msg_on_loaded_document, C);
