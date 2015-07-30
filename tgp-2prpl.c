@@ -333,7 +333,6 @@ void p2tgl_connection_set_display_name(struct tgl_state *TLS, tgl_peer_t *user) 
   g_free(name);
 }
 
-
 void *p2tgl_notify_userinfo(struct tgl_state *TLS, tgl_peer_id_t user, PurpleNotifyUserInfo *user_info, PurpleNotifyCloseCallback cb, gpointer user_data) {
   char *name = p2tgl_strdup_id(user);
   void *handle = 0;

@@ -149,9 +149,7 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
   if (flags & TGL_UPDATE_WORKING || flags & TGL_UPDATE_DELETED) {
     write_secret_chat_file (TLS);
   }
-
   PurpleBuddy *buddy = p2tgl_buddy_find (TLS, U->id);
-  
   if (! (flags & TGL_UPDATE_DELETED)) {
     if (!buddy) {
       buddy = p2tgl_buddy_new (TLS, (tgl_peer_t *)U);
@@ -160,7 +158,6 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
     }
     p2tgl_prpl_got_set_status_mobile (TLS, U->id);
   }
-  
   if (flags & TGL_UPDATE_REQUESTED && buddy)  {
     connection_data *conn = TLS->ev_base;
     const char* choice = purple_account_get_string (conn->pa, "accept-secret-chats", "ask");
@@ -170,12 +167,10 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
       request_accept_secret_chat(TLS, U);
     }
   }
-  
   if (flags & TGL_UPDATE_CREATED && buddy) {
     purple_buddy_set_protocol_data (buddy, (gpointer)U);
     p2tgl_buddy_update (TLS, (tgl_peer_t *)U, flags);
   }
-  
   if (flags & TGL_UPDATE_DELETED && buddy) {
     p2tgl_got_im (TLS, U->id, "Secret chat terminated.", PURPLE_MESSAGE_SYSTEM | PURPLE_MESSAGE_WHISPER, time(0));
     p2tgl_prpl_got_set_status_offline (TLS, U->id);

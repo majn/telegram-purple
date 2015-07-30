@@ -113,24 +113,6 @@ static void tgl_peer_iterator_cb (tgl_peer_t *peer, void *extra) {
       g_free (users);
       return;
     }
-    /*
-      int i = 0;
-      tgl_peer_id_t ids[(int)[tokens count] + 1];
-      ids[i++] = TGL_MK_USER(conn->TLS->our_id);
-      for (NSString *user in tokens) {
-        tgl_peer_t *P = NULL;
-        P = tgl_peer_get_by_name (conn->TLS, [user UTF8String]);
-        if (P) {
-          ids[i++] = P->id;
-        }
-      }
-      const char *subject = [createChatName UTF8String];
-      tgl_do_create_group_chat(conn->TLS, i, ids, subject, (int) strlen(subject),
-                               create_group_chat_done_cb, NULL);
-      // TODO: display new chat
-      return;
-    }
-     */
     
     NSString *room = [[popupButton_existingChat selectedItem] title];
     NSDictionary *chatCreationInfo = [NSDictionary

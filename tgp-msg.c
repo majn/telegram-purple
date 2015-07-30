@@ -344,11 +344,9 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         if (M->media.document->flags & TGLDF_STICKER) {
           assert (C->data);
           text = tgp_msg_sticker_display (TLS, C->data, &flags);
-
         } else if (M->media.document->flags & TGLDF_IMAGE) {
           assert (C->data);
           text = tgp_msg_photo_display (TLS, C->data, &flags);
-
         } else {
           char *who = p2tgl_strdup_id (M->from_id);
           if (! tgp_our_msg(TLS, M)) {
@@ -362,11 +360,9 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         if (M->media.encr_document->flags & TGLDF_STICKER) {
           assert (C->data);
           text = tgp_msg_sticker_display (TLS, C->data, &flags);
-
         } if (M->media.encr_document->flags & TGLDF_IMAGE) {
           assert (C->data);
           text = tgp_msg_photo_display (TLS, C->data, &flags);
-
         } else {
           char *who = p2tgl_strdup_id (M->to_id);
           if (! tgp_our_msg(TLS, M)) {

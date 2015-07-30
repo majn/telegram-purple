@@ -680,31 +680,6 @@ static void cancel_group_chat_cb (gpointer data) {
   free (d);
 }
 
-/*
-static void create_user_list_entry (tgl_peer_t *P, void *extra) {
-  GList **list = extra;
-  if (tgl_get_peer_type (P->id) == TGL_PEER_USER) {
-    *list = g_list_append(*list, P->print_name);
-  }
-}
-
-static PurpleRequestField *create_user_list (struct tgl_state *TLS, const char *id, const char *txt, int nullable) {
-  PurpleRequestField *field = purple_request_field_new (id, txt, PURPLE_REQUEST_FIELD_CHOICE);
-  GList *list = NULL;
-  if (nullable) {
-    list = g_list_append (list, "");
-  }
-  tgl_peer_iterator_ex (TLS, create_user_list_entry, &list);
-  list = g_list_sort(list,  (GCompareFunc) g_ascii_strcasecmp);
-  while (list) {
-    purple_request_field_choice_add (field, list->data);
-    list = list->next;
-  }
-  g_list_free(list);
-  return field;
-}
- */
-
 void request_choose_user (struct accept_create_chat_data *data) {
   struct tgl_state *TLS = data->TLS;
   connection_data *conn = TLS->ev_base;
