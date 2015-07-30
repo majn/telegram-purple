@@ -35,12 +35,20 @@ static char *tgp_strdup_determine_filename (const char *mime, const char *captio
   if (caption) {
     return g_strdup (caption);
   }
-  
   const char *type = NULL;
   if (mime) {
-    type = tgp_mime_to_filetype (mime);
+    if (flags & TGLDF_VIDEO) {
+      // video message
+      type = "mp4";
+    } else if (flags & TGLDF_AUDIO) {
+      // audio message
+      type = "ogg";
+    } else {
+      // document message
+      type = tgp_mime_to_filetype (mime);
+    }
   }
-  if (!type) {
+  if (! str_not_empty(type)) {
     if (flags & TGLDF_IMAGE) {
       type = "png";
     } else if (flags & TGLDF_AUDIO) {
