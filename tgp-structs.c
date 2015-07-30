@@ -77,6 +77,7 @@ struct tgp_msg_loading *tgp_msg_loading_init (int done, struct tgl_message *M) {
   struct tgp_msg_loading *C = malloc (sizeof (struct tgp_msg_loading));
   C->done = done;
   C->msg = M;
+  C->data = NULL;
   return C;
 }
 

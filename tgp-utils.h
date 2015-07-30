@@ -42,7 +42,7 @@ int tgp_outgoing_msg (struct tgl_state *TLS, struct tgl_message *M);
 int tgp_our_msg (struct tgl_state *TLS, struct tgl_message *M);
 
 const char *format_time (time_t date);
-char *format_img_full (int imgstore);
+char *tgp_format_img (int imgstore);
 char *tgp_format_user_status (struct tgl_user_status *status);
 int str_not_empty (const char *string);
 long tgp_time_n_days_ago (int days);

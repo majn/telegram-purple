@@ -39,7 +39,7 @@ const char *format_time (time_t date) {
   return purple_utf8_strftime ("%d.%m.%Y %H:%M", datetime);
 }
 
-char *format_img_full (int imgstore) {
+char *tgp_format_img (int imgstore) {
   const char *br = "<br>";
   
   // <br>'s look ugly in Adium, but no <br> will look ugly in Pidgin
