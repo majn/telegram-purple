@@ -396,6 +396,13 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
                                 format_geo_link_osm (M->media.venue.geo.latitude, M->media.geo.longitude));
         break;
         
+      case tgl_message_media_webpage: {
+        char *msg = g_strdup (M->message);
+        text = purple_markup_escape_text (msg, strlen (msg));
+        g_free (msg);
+        break;
+      }
+        
       default:
         warning ("received unknown media type: %d", M->media.type);
         break;
