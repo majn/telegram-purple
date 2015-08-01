@@ -27,6 +27,7 @@
 #include <glib.h>
 #include <glib/gstdio.h>
 #include "telegram-purple.h"
+#include "telegram-base.h"
 
 static void tgprpl_xfer_free_data (struct tgp_xfer_send_data *data);
 
@@ -80,6 +81,7 @@ static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, in
     g_rename (filename, purple_xfer_get_local_filename (data->xfer));
 
   } else {
+    tgp_notify_on_error_gw (TLS, NULL, success);
     failure ("ERROR xfer failed");
   }
 
@@ -99,6 +101,7 @@ static void tgprpl_xfer_on_finished (struct tgl_state *TLS, void *_data, int suc
       purple_xfer_end(data->xfer);
     }
   } else {
+    tgp_notify_on_error_gw (TLS, NULL, success);
     failure ("ERROR xfer failed");
   }
   

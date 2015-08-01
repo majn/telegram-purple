@@ -53,4 +53,5 @@ int tgp_visualize_key(struct tgl_state *TLS, unsigned char* sha1_key);
 void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *title,
                                          const char *users[], int num_users, int print_names);
 
+void tgp_notify_on_error_gw (struct tgl_state *TLS, void *extra, int success);
 #endif

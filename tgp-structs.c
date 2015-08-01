@@ -18,6 +18,7 @@
  Copyright Matthias Jentsch 2014-2015
  */
 
+#include "telegram-base.h"
 #include "tgp-structs.h"
 #include "purple.h"
 #include "msglog.h"
@@ -27,12 +28,8 @@
 #include <glib.h>
 #include <tgl.h>
 
-void pending_reads_free_cb (gpointer data) {
+static void pending_reads_free_cb (gpointer data) {
   free (data);
-}
-
-static void pending_reads_cb (struct tgl_state *TLS, void *extra, int success) {
-  debug ("ack state: %d", success);
 }
 
 static gint pending_reads_compare (gconstpointer a, gconstpointer b) {
@@ -45,7 +42,7 @@ void pending_reads_send_all (GQueue *queue, struct tgl_state *TLS) {
   tgl_peer_id_t *pending;
   
   while ((pending = (tgl_peer_id_t*) g_queue_pop_head(queue))) {
-    tgl_do_mark_read (TLS, *pending, pending_reads_cb, queue);
+    tgl_do_mark_read (TLS, *pending, tgp_notify_on_error_gw, NULL);
     debug ("tgl_do_mark_read (%d)", pending->id);
     free (pending);
   }

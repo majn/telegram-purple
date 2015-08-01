@@ -132,10 +132,10 @@ static char *format_geo_link_osm (double lat, double lon) {
 
 static void tgp_msg_send_done (struct tgl_state *TLS, void *callback_extra, int success, struct tgl_message *M) {
   if (! success) {
-    const char *err = "Sending message failed. Maybe you don't have the permission "
-    "to send to this peer, or the peer does no longer exist.";
+    char *err = g_strdup_printf("Sending message failed. %d: %s", TLS->error_code, TLS->error);
     warning (err);
     tgp_msg_err_out (TLS, err, M->to_id);
+    g_free (err);
   }
 }
 
@@ -480,6 +480,7 @@ static void tgp_msg_process_in_ready (struct tgl_state *TLS) {
 }
 
 static void tgp_msg_on_loaded_document (struct tgl_state *TLS, void *extra, int success, const char *filename) {
+  assert (success);
   struct tgp_msg_loading *C = extra;
   C->data = (void *) g_strdup (filename);
   C->done = TRUE;

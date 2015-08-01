@@ -577,8 +577,11 @@ void request_password (struct tgl_state *TLS,
   }
 }
 
-void write_secret_chat_gw (struct tgl_state *TLS, void *extra, int success, struct tgl_secret_chat *E) {
-  if (!success) { return; }
+void write_secret_chat_gw (struct tgl_state *TLS, void *extra, int success, struct tgl_secret_chat *_) {
+  if (!success) {
+    tgp_notify_on_error_gw (TLS, NULL, success);
+    return;
+  }
   write_secret_chat_file (TLS);
 }
 
@@ -616,17 +619,14 @@ void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *
 }
 
 void create_group_chat_done_cb (struct tgl_state *TLS, void *title, int success) {
-  if (! success) {
-    // alert
-    purple_notify_error (_telegram_protocol, "Creating Group Chat Failed",
-                         "Creating Group Chat Failed", "Check the error log for further information.");
-  } else {
+  if (success) {
     tgl_peer_t *t = tgl_peer_get_by_name(TLS, title);
     if (t) {
       connection_data *conn = TLS->ev_base;
       chat_show (conn->gc, tgl_get_peer_id(t->id));
     }
   }
+  tgp_notify_on_error_gw (TLS, NULL, success);
   g_free (title);
 }
 
@@ -836,3 +836,13 @@ int tgp_visualize_key (struct tgl_state *TLS, unsigned char* sha1_key) {
   return imgStoreId;
 }
 
+void tgp_notify_on_error_gw (struct tgl_state *TLS, void *extra, int success) {
+  if (!success) {
+    
+    char *errormsg = g_strdup_printf ("%d: %s", TLS->error_code, TLS->error);
+    failure (errormsg);
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, "Query Failed",
+                           errormsg, NULL, NULL, NULL);
+    return;
+  }
+}

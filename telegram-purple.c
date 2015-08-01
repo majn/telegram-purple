@@ -289,6 +289,7 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
   
   if (!success || !P) {
     warning ("Can not load userpic for user %s %s", U->first_name, U->last_name);
+    tgp_notify_on_error_gw (TLS, NULL, success);
     goto fin;
   }
   
@@ -312,9 +313,8 @@ fin:
 void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U) {
   get_user_info_data *user_info_data = (get_user_info_data *)info_data;
   tgl_peer_t *P = tgl_peer_get (TLS, user_info_data->peer);
-  
   if (! success) {
-    warning ("on_user_get_info not successfull, aborting...");
+    tgp_notify_on_error_gw (TLS, NULL, success);
     return;
   }
 
@@ -335,7 +335,8 @@ void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, stru
 }
 
 void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *C) {
-  if (!success || !chat_is_member (TLS->our_id, C)) {
+  if (!success) {
+    failure ("chat_get_info FAILED");
     return;
   }
   
@@ -362,8 +363,7 @@ void on_ready (struct tgl_state *TLS) {
   }
 
   debug ("seq = %d, pts = %d, date = %d", TLS->seq, TLS->pts, TLS->date);
-  tgl_do_get_difference (TLS, purple_account_get_bool (conn->pa, "history-sync-all", FALSE),
-                         NULL, NULL);
+  tgl_do_get_difference (TLS, purple_account_get_bool (conn->pa, "history-sync-all", FALSE), tgp_notify_on_error_gw, NULL);
   tgl_do_get_dialog_list (TLS, 200, 0, NULL, NULL);
   tgl_do_update_contact_list (TLS, 0, 0);
 }
@@ -418,12 +418,20 @@ static GList *tgprpl_status_types (PurpleAccount * acct) {
   return g_list_reverse (types);
 }
 
+static void create_secret_chat_done (struct tgl_state *TLS, void *callback_extra, int success, struct tgl_secret_chat *E) {
+  if (! success) {
+    tgp_notify_on_error_gw (TLS, NULL, success);
+    return;
+  }
+  write_secret_chat_file (TLS);
+}
+
 static void start_secret_chat (PurpleBlistNode *node, gpointer data) {
   PurpleBuddy *buddy = data;
   
   connection_data *conn = get_conn_from_buddy (buddy);
   const char *name = purple_buddy_get_name (buddy);
-  tgl_do_create_secret_chat (conn->TLS, TGL_MK_USER(atoi (name)), 0, 0);
+  tgl_do_create_secret_chat (conn->TLS, TGL_MK_USER(atoi (name)), create_secret_chat_done, 0);
 }
 
 static void create_chat_link_done (struct tgl_state *TLS, void *extra, int success, const char *url) {
@@ -437,8 +445,7 @@ static void create_chat_link_done (struct tgl_state *TLS, void *extra, int succe
                       msg, time(NULL));
     g_free (msg);
   } else {
-    purple_notify_error (_telegram_protocol, "Sorry", "Creating Chat Link Failed",
-                         "Check the error log for further information.");
+    tgp_notify_on_error_gw (TLS, NULL, success);
   }
 }
 
@@ -467,8 +474,7 @@ void export_chat_link_checked (struct tgl_state *TLS, const char *name) {
 
 static void import_chat_link_done (struct tgl_state *TLS, void *extra, int success) {
   if (! success) {
-    purple_notify_error (_telegram_protocol, "Failure", "Joining by Link Failed",
-                         "Maybe the link is invalid, or you already joined the chat.");
+    tgp_notify_on_error_gw (TLS, NULL, success);
     return;
   }
   purple_notify_info (_telegram_protocol, "Success", "Chat Joined", "Chat joined.");
@@ -670,7 +676,7 @@ static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Pur
       bl_do_encr_chat_delete (conn->TLS, &peer->encr_chat);
       break;
     case TGL_PEER_USER:
-      tgl_do_del_contact (conn->TLS, peer->id, NULL, NULL);
+      tgl_do_del_contact (conn->TLS, peer->id, tgp_notify_on_error_gw, NULL);
       break;
   }
 }
@@ -689,7 +695,7 @@ static void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
   
   link = g_hash_table_lookup(data, "link");
   if (str_not_empty (link)) {
-    tgl_do_import_chat_link (conn->TLS, link, (int)strlen (link), NULL, NULL);
+    tgl_do_import_chat_link (conn->TLS, link, (int)strlen (link), tgp_notify_on_error_gw, NULL);
     return;
   }
   
@@ -711,8 +717,12 @@ static char *tgprpl_get_chat_name (GHashTable * data) {
 static void add_user_to_chat_done_cb (struct tgl_state *TLS, void *callback_extra, int success) {
   tgl_peer_t *C = callback_extra;
   
-  // use regular chat update function to get new info about the chat 
-  tgl_do_get_chat_info (TLS, C->id, FALSE, on_chat_get_info, NULL);
+  if (success) {
+    // update users
+    tgl_do_get_chat_info (TLS, C->id, FALSE, on_chat_get_info, NULL);
+  } else {
+    tgp_notify_on_error_gw (TLS, NULL, success);
+  }
 }
 
 static void tgprpl_chat_invite (PurpleConnection * gc, int id, const char *message, const char *name) {
@@ -747,7 +757,7 @@ static void tgprpl_set_buddy_icon (PurpleConnection * gc, PurpleStoredImage * im
     char* filename = g_strdup_printf ("%s/icons/%s", purple_user_dir(), purple_imgstore_get_filename (img));
     debug (filename);
     
-    tgl_do_set_profile_photo (conn->TLS, filename, NULL, NULL);
+    tgl_do_set_profile_photo (conn->TLS, filename, tgp_notify_on_error_gw, NULL);
     
     g_free (filename);
   }
