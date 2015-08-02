@@ -415,6 +415,10 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     flags |= PURPLE_MESSAGE_RECV;
   }
   
+  if (! (M->flags & TGLMF_UNREAD)) {
+    flags |= PURPLE_MESSAGE_DELAYED;
+  }
+  
   if (! str_not_empty (text)) {
     warning ("No text to display");
     return;
