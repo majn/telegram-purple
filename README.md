@@ -34,7 +34,7 @@ This repository has submodules, so you need to clone recursively.
 
 ##### Fedora
 
-        sudo yum install gcc openssl-devel glib2-devel libpurple-devel libwebp-devel
+        sudo dnf install gcc openssl-devel glib2-devel libpurple-devel libwebp-devel
 
 
 ###### Debian / Ubuntu
