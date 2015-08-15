@@ -544,12 +544,12 @@ static void request_name_and_code (struct tgl_state *TLS) {
 
 static void request_password_entered (struct request_password_data *data, PurpleRequestFields* fields) {
   const char* pass = purple_request_fields_get_string (fields, "password");
-  data->callback (data->TLS, pass, data->arg);
+  data->callback (data->TLS, &pass, data->arg);
   free (data);
 }
 
 void request_password (struct tgl_state *TLS,
-                       void (*callback)(struct tgl_state *TLS, const char *string, void *arg),
+                       void (*callback)(struct tgl_state *TLS, const char *string[], void *arg),
                        void *arg) {
   connection_data *conn = TLS->ev_base;
   
