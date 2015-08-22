@@ -53,8 +53,7 @@ struct tgp_xfer_send_data {
   int done;
   PurpleXfer *xfer;
   connection_data *conn;
-  struct tgl_document *document;
-  struct tgl_encr_document *encr_document;
+  struct tgl_message *msg;
 };
 
 struct download_desc {

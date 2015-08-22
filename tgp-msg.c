@@ -28,6 +28,7 @@
 #include <errno.h>
 
 #include "telegram-purple.h"
+#include "telegram-base.h"
 #include "tgp-structs.h"
 #include "tgp-msg.h"
 #include "tgp-ft.h"
@@ -350,12 +351,21 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         } else {
           char *who = p2tgl_strdup_id (M->from_id);
           if (! tgp_our_msg(TLS, M)) {
-            tgprpl_recv_file (conn->gc, who, M->media.document);
+            tgprpl_recv_file (conn->gc, who, M);
           }
           return;
         }
         break;
-
+        
+      case tgl_message_media_video:
+      case tgl_message_media_audio: {
+        char *who = p2tgl_strdup_id (M->from_id);
+        if (! tgp_our_msg(TLS, M)) {
+          tgprpl_recv_file (conn->gc, who, M);
+        }
+      }
+      break;
+        
       case tgl_message_media_document_encr:
         if (M->media.encr_document->flags & TGLDF_STICKER) {
           assert (C->data);
@@ -366,7 +376,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         } else {
           char *who = p2tgl_strdup_id (M->to_id);
           if (! tgp_our_msg(TLS, M)) {
-            tgprpl_recv_encr_file (conn->gc, who, M->media.encr_document);
+            tgprpl_recv_file (conn->gc, who, M);
           }
           return;
         }
@@ -517,6 +527,8 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
           // documents that are stickers or images will be displayed just like regular photo messages
           // and need to be lodaed beforehand
         case tgl_message_media_document:
+        case tgl_message_media_video:
+        case tgl_message_media_audio:
           if (M->media.document->flags & TGLDF_STICKER || M->media.document->flags & TGLDF_IMAGE) {
             C->done = FALSE;
             tgl_do_load_document (TLS, M->media.document, tgp_msg_on_loaded_document, C);
