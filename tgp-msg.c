@@ -129,8 +129,6 @@ static char *format_geo_link_osm (double lat, double lon) {
           lat, lon, lat, lon);
 }
 
-}
-
 static void tgp_msg_send_done (struct tgl_state *TLS, void *callback_extra, int success, struct tgl_message *M) {
   if (! success) {
     char *err = g_strdup_printf("Sending message failed. %d: %s", TLS->error_code, TLS->error);
