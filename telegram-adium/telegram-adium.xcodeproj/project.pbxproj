@@ -48,16 +48,6 @@
 		C4FFD0DE1B5FC68400939D8A /* TelegramAutocompletionDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = C4FFD0DD1B5FC68400939D8A /* TelegramAutocompletionDelegate.m */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		C4B57BF51B160EA6006997F4 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C410947E19BB2D7D0083BF3F /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = C4B57BF11B160950006997F4;
-			remoteInfo = "telegram-purple";
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXFileReference section */
 		C40564861A7937C600A293B9 /* AdiumLibpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdiumLibpurple.framework; path = Frameworks/Adium/AdiumLibpurple.framework; sourceTree = "<group>"; };
 		C410948619BB2D7D0083BF3F /* telegram-adium.AdiumLibpurplePlugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "telegram-adium.AdiumLibpurplePlugin"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -282,23 +272,6 @@
 		};
 /* End PBXGroup section */
 
-/* Begin PBXLegacyTarget section */
-		C4B57BF11B160950006997F4 /* telegram-purple */ = {
-			isa = PBXLegacyTarget;
-			buildArgumentsString = "$(ACTION)";
-			buildConfigurationList = C4B57BF21B160951006997F4 /* Build configuration list for PBXLegacyTarget "telegram-purple" */;
-			buildPhases = (
-			);
-			buildToolPath = /usr/bin/make;
-			buildWorkingDirectory = "$(PROJECT_DIR)/../";
-			dependencies = (
-			);
-			name = "telegram-purple";
-			passBuildSettingsInEnvironment = 0;
-			productName = "telegram-purple";
-		};
-/* End PBXLegacyTarget section */
-
 /* Begin PBXNativeTarget section */
 		C410948519BB2D7D0083BF3F /* telegram-adium */ = {
 			isa = PBXNativeTarget;
@@ -311,7 +284,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				C4B57BF61B160EA6006997F4 /* PBXTargetDependency */,
 			);
 			name = "telegram-adium";
 			productName = "telegram-adium";
@@ -326,11 +298,6 @@
 			attributes = {
 				LastUpgradeCheck = 0510;
 				ORGANIZATIONNAME = "Matthias Jentsch";
-				TargetAttributes = {
-					C4B57BF11B160950006997F4 = {
-						CreatedOnToolsVersion = 6.3.2;
-					};
-				};
 			};
 			buildConfigurationList = C410948119BB2D7D0083BF3F /* Build configuration list for PBXProject "telegram-adium" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -345,7 +312,6 @@
 			projectRoot = "";
 			targets = (
 				C410948519BB2D7D0083BF3F /* telegram-adium */,
-				C4B57BF11B160950006997F4 /* telegram-purple */,
 			);
 		};
 /* End PBXProject section */
@@ -397,14 +363,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		C4B57BF61B160EA6006997F4 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = C4B57BF11B160950006997F4 /* telegram-purple */;
-			targetProxy = C4B57BF51B160EA6006997F4 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		C410948E19BB2D7D0083BF3F /* InfoPlist.strings */ = {
@@ -575,44 +533,6 @@
 			};
 			name = Release;
 		};
-		C4B57BF31B160951006997F4 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				DEBUGGING_SYMBOLS = YES;
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				MTL_ENABLE_DEBUG_INFO = YES;
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
-			};
-			name = Debug;
-		};
-		C4B57BF41B160951006997F4 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_NO_COMMON_BLOCKS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -630,15 +550,6 @@
 			buildConfigurations = (
 				C410949519BB2D7D0083BF3F /* Debug */,
 				C410949619BB2D7D0083BF3F /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
-		C4B57BF21B160951006997F4 /* Build configuration list for PBXLegacyTarget "telegram-purple" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				C4B57BF31B160951006997F4 /* Debug */,
-				C4B57BF41B160951006997F4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
