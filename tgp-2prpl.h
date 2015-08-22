@@ -53,7 +53,6 @@ void p2tgl_got_typing (struct tgl_state *TLS, tgl_peer_id_t name, int timeout);
 
 PurpleBuddy *p2tgl_buddy_find (struct tgl_state *TLS, tgl_peer_id_t user);
 PurpleBuddy *p2tgl_buddy_new  (struct tgl_state *TLS, tgl_peer_t *user);
-PurpleBuddy *p2tgl_buddy_update (struct tgl_state *TLS, tgl_peer_t *user, unsigned flags);
 void         p2tgl_buddy_add_data (struct tgl_state *TLS, tgl_peer_id_t user, void *data);
 void p2tgl_prpl_got_user_status (struct tgl_state *TLS, tgl_peer_id_t user, struct tgl_user_status *status);
 void p2tgl_prpl_got_set_status_mobile (struct tgl_state *TLS, tgl_peer_id_t user);
