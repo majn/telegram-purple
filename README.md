@@ -73,6 +73,14 @@ Usage
 
 The username is your current phone number, including your full country prefix. For Germany, this would be '+49', resulting in a user name like '+49151123456'. Telegram will verify your phone number by sending you a code via sms. You will be prompted for this code, once that happens.
 
+#### Buddy List 
+
+Like in the official Telegram apps, the displayed buddy list consists of all active conversations.
+
+##### Foreign Users
+
+Foreign users, like for example people you only know through a group chat but never had any conversation with, will not be part of your buddy list by default. You can add those users to the buddy list by clicking on "Add contact..." in the users context menu.
+
 #### Using secret chats
 
 You can use Telegram secret chats with this plugin, they will show up as a new buddy with a '!' in front of the buddy name.
@@ -89,7 +97,7 @@ Click on the buddy in the buddy list and click on "Show Info" to visualize the k
 
 ##### Initiate secret chats
 
-To initiate a secret chat from Pidgin, click on a Buddy in the Buddy List and hit ``Start Secret Chat''
+To initiate a secret chat from Pidgin, click on a Buddy in the Buddy List and hit "Start Secret Chat"
 
 ##### Deleting secret chats
 
@@ -100,20 +108,6 @@ If you delete a secret chat from the buddy list, it will be terminated and no lo
 
 The Telegram phone applications for iOS and Android make use of standardized Unicode smileys (called [Emojis](https://en.wikipedia.org/wiki/Emoji)). Pidgin
 does not display those smileys natively, but you can install a custom smiley theme like (https://github.com/stv0g/unicode-emoji) or (https://github.com/VxJasonxV/emoji-for-pidgin) and activate it under Settings > Themes > Smiley Theme.
-
-
-Troubleshooting
----------------
-
-If you encounter problems running this plugin and you have updated from an older version,
-deleting your old user-data might be helpful. WARNING: This will require you to enter a new authentication
-code and delete all your secret chat keys.
-
-To clean all your user files run:
-
-
-        make purge
-
 
 
 Building the Adium Plugin

@@ -838,7 +838,6 @@ int tgp_visualize_key (struct tgl_state *TLS, unsigned char* sha1_key) {
 
 void tgp_notify_on_error_gw (struct tgl_state *TLS, void *extra, int success) {
   if (!success) {
-    
     char *errormsg = g_strdup_printf ("%d: %s", TLS->error_code, TLS->error);
     failure (errormsg);
     purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, "Query Failed",

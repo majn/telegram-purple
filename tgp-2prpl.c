@@ -133,7 +133,7 @@ void p2tgl_got_alias (struct tgl_state *TLS, tgl_peer_id_t who, const char *alia
 void p2tgl_got_im (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, int flags, time_t when) {
   char *name = p2tgl_strdup_id(who);
   
-  serv_got_im(tg_get_conn(TLS), name, msg,flags, when);
+  serv_got_im(tg_get_conn(TLS), name, msg, flags, when);
   
   g_free (name);
 }
@@ -310,7 +310,7 @@ void p2tgl_conv_add_user (PurpleConversation *conv, struct tgl_chat_user user, c
   PurpleConvChat *cdata = purple_conversation_get_chat_data(conv);
   char *name = g_strdup_printf("%d", user.user_id);
   
-  purple_conv_chat_add_user(cdata, name, message, flags, new_arrival);
+  purple_conv_chat_add_user (cdata, name, message, flags, new_arrival);
   
   g_free(name);
 }
