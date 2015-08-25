@@ -30,9 +30,26 @@ void chat_add_all_users (PurpleConversation *pc, struct tgl_chat *chat) {
   }
 }
 
+int chat_users_changed (struct tgl_chat *chat, PurpleConversation *pc) {
+	int tgl_users_size = chat->user_list_size;
+	int purple_users_size = 0;
+	if (pc != NULL) {
+		PurpleConvChat *purpleChat = purple_conversation_get_chat_data(pc);
+		if (purpleChat != NULL) {
+			GList *purple_users = purple_conv_chat_get_users(purpleChat);
+			while(purple_users != NULL) {
+				purple_users_size++;
+				purple_users = purple_users->next;
+			}
+		}
+	}
+
+	return (tgl_users_size - purple_users_size);
+}
+
 void chat_users_update (struct tgl_state *TLS, struct tgl_chat *chat) {
   PurpleConversation *pc = purple_find_chat(tg_get_conn(TLS), tgl_get_peer_id(chat->id));
-  if (pc) {
+  if (pc && chat_users_changed(chat, pc)) {
     purple_conv_chat_clear_users (purple_conversation_get_chat_data(pc));
     chat_add_all_users (pc, chat);
   }
