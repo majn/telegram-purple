@@ -3,16 +3,33 @@ Telegram-Purple Unofficial (Beta 3)
 
 Telegram-purple is a Libpurple plugin that adds support for the Telegram messenger.
 
+I keep getting many questions about this plugin in my mail, so I've created a telegram group 
+chat for [telegram group chat](https://telegram.me/joinchat/01fb53f301b67d3c7a5532908dfa9a89) 
+telegram-purple related discussions or questions.
 
-Beta 2
+Beta 3
 ------
 
-    - update to libtgl 2
-    - support two-factor authentication
-    - improve sticker support
-    - add option to control message read recipes
-    - many bugfixes
+##### Bugfixes
 
+    - Fix error in incoming message handling that caused segmentation faults
+    - Fix failing audio and video transfers
+    - Mark messages read on other devices as 'deferred' to avoid needless notifications
+    - Improved buddy list handling (should avoid "unknown" contacts popping up)
+    - Many small issues (see commit history)
+    - Fix issues that caused audio and video downloads to not have a proper file ending
+    - Fix issue that caused very old unused chats to not be available
+
+###### Features
+
+    - Allow creation of new group chats
+    - Allow joining chats by invite link
+    - Allow exporting chats by invite link
+    - Support displaying and sending GIFs 
+    - Support joining chats by invite link
+
+
+This version should fix the crashes that seem to occur in many of the older version. Consider this another intermediate Beta version, there will be at least another one until I will consider it a release candidate.
 
 If you migrate from an older version, the Telegram authentication files have been moved to .purple/telegram-purple. If you want to keep your old secret chats, please copy it manually from ~/.telegram-purple, otherwise you will be prompted for a new SMS code.
 
@@ -124,6 +141,15 @@ Compiling with XCode is a little bit problematic, since it requries you to compi
       cp /usr/local/Cellar/webp/0.4.3/lib/libwebp.a ./telegram-adium/Frameworks/ 
 
 5. Build the XCode-Project and execute the created bundle
+
+
+Discussion / Help
+-----------------
+
+Telegram group chat for telegram-purple or libtgl related discussions or questions:
+
+    - https://telegram.me/joinchat/01fb53f301b67d3c7a5532908dfa9a89
+
 
 Authors
 -------
