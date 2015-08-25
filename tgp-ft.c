@@ -100,6 +100,7 @@ static void tgprpl_xfer_on_finished (struct tgl_state *TLS, void *_data, int suc
       purple_xfer_set_completed (data->xfer, TRUE);
       purple_xfer_end(data->xfer);
     }
+    write_secret_chat_file (TLS);
   } else {
     tgp_notify_on_error_gw (TLS, NULL, success);
     failure ("ERROR xfer failed");
