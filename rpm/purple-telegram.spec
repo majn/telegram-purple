@@ -1,14 +1,14 @@
 Name: 		purple-telegram
-Version: 	1.0.1
+Version: 	1.2.0
 Release:	1%{?dist}
-Summary:	Adds support for Telegram to Pidgin, Adium, Finch and other Libpurple based messengers
+Summary:	Adds support for Telegram to Pidgin, Adium, Finch and other Libpurple based messengers.
 Group:		Internet/Messaging
 License:	GPLv2+
 URL:		https://github.com/majn/telegram-purple
 Source0:	https://codeload.github.com/majn/telegram-purple/tar.gz/v%{version}.tar.gz
 
-BuildRequires:	openssl-devel,glib2-devel,libpurple-devel
-Requires:	openssl,glib2,libpurple
+BuildRequires:	openssl-devel,glib2-devel,libpurple-devel,libwebp-devel
+Requires:	openssl,glib2,libpurple,libwebp
 
 %description
 

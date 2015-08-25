@@ -1,5 +1,5 @@
-Telegram-Purple (Beta)
-===============
+Telegram-Purple Unofficial (Beta 3)
+===================================
 
 Telegram-purple is a Libpurple plugin that adds support for the Telegram messenger.
 
