@@ -215,17 +215,16 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
   // search for outgoing embedded image tags and send them
   gchar *img = NULL;
   gchar *stripped = NULL;
+  
   if ((img = g_strrstr (message, "<IMG")) || (img = g_strrstr (message, "<img"))) {
     if (tgl_get_peer_type(to) == TGL_PEER_ENCR_CHAT) {
       tgp_msg_err_out (TLS, "Sorry, sending documents to encrypted chats not yet supported.", to);
       return 0;
     }
-    
     debug ("img found: %s", img);
     gchar *id;
     if ((id = g_strrstr (img, "ID=\"")) || (id = g_strrstr (img, "id=\""))) {
       id += 4;
-      debug ("id found: %s", id);
       int imgid = atoi (id);
       if (imgid > 0) {
         PurpleStoredImage *psi = purple_imgstore_find_by_id (imgid);
@@ -236,19 +235,21 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
         if (! err) {
           stripped = g_strstrip(purple_markup_strip_html (message));
           tgl_do_send_document (TLS, to, tmp, stripped, (int)strlen (stripped),
-                                TGL_SEND_MSG_FLAG_DOCUMENT_PHOTO, send_inline_picture_done, NULL);
-          
+                                TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, send_inline_picture_done, NULL);
           g_free (stripped);
-          return 1;
+          
+          // return 0 to assure that the picture is not echoed, since
+          // it will already be echoed with the outgoing message
+          return 0;
         } else {
           failure ("Storing %s in imagestore failed: %s\n", tmp, err->message);
           g_error_free (err);
-          return 0;
+          return -1;
         }
       }
     }
     // no image id found in image
-    return 0;
+    return -1;
   }
   
 #ifndef __ADIUM_
