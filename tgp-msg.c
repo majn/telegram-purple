@@ -201,6 +201,16 @@ static void tgp_msg_err_out (struct tgl_state *TLS, const char *error, tgl_peer_
   }
 }
 
+void send_inline_picture_done (struct tgl_state *TLS, void *extra, int success, struct tgl_message *msg) {
+  if (!success) {
+    char *errormsg = g_strdup_printf ("%d: %s", TLS->error_code, TLS->error);
+    failure (errormsg);
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, "Sending image failed.",
+                           errormsg, NULL, NULL, NULL);
+    return;
+  }
+}
+
 int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
   // search for outgoing embedded image tags and send them
   gchar *img = NULL;
@@ -219,17 +229,19 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
       int imgid = atoi (id);
       if (imgid > 0) {
         PurpleStoredImage *psi = purple_imgstore_find_by_id (imgid);
-        gchar *tmp = g_build_filename(g_get_tmp_dir(), purple_imgstore_get_filename (psi), NULL) ;
+        gchar *tmp = g_build_filename (g_get_tmp_dir(), purple_imgstore_get_filename (psi), NULL) ;
         GError *err = NULL;
         gconstpointer data = purple_imgstore_get_data (psi);
         g_file_set_contents (tmp, data, purple_imgstore_get_size (psi), &err);
         if (! err) {
-          stripped = purple_markup_strip_html (message);
-          tgl_do_send_document (TLS, to, tmp, stripped, (int)strlen (stripped), TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, tgp_msg_send_done, NULL);
+          stripped = g_strstrip(purple_markup_strip_html (message));
+          tgl_do_send_document (TLS, to, tmp, stripped, (int)strlen (stripped),
+                                TGL_SEND_MSG_FLAG_DOCUMENT_PHOTO, send_inline_picture_done, NULL);
+          
           g_free (stripped);
           return 1;
         } else {
-          failure ("Cannot store image, temp directory not available: %s\n", err->message);
+          failure ("Storing %s in imagestore failed: %s\n", tmp, err->message);
           g_error_free (err);
           return 0;
         }
