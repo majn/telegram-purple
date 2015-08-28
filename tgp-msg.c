@@ -26,6 +26,7 @@
 #include <tgl.h>
 #include <glib.h>
 #include <errno.h>
+#include <locale.h>
 
 #include "telegram-purple.h"
 #include "telegram-base.h"
@@ -125,8 +126,18 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
 }
 
 static char *format_geo_link_osm (double lat, double lon) {
-  return g_strdup_printf ("https://www.openstreetmap.org/?mlat=%.6lf&mlon=%.6lf#map=17/%.6lf/%.6lf", 
+
+  // assure that the floats are formatted with a dot
+  char *loc = setlocale (LC_NUMERIC, NULL);
+  setlocale (LC_NUMERIC, "en_US");
+  debug ("old locale: %s", loc);
+
+  char *link = g_strdup_printf ("https://www.openstreetmap.org/?mlat=%.6lf&mlon=%.6lf#map=17/%.6lf/%.6lf",
           lat, lon, lat, lon);
+
+  // restore old locale
+  setlocale (LC_NUMERIC, loc);
+  return link;
 }
 
 static void tgp_msg_send_done (struct tgl_state *TLS, void *callback_extra, int success, struct tgl_message *M) {
