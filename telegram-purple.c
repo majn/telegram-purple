@@ -788,6 +788,7 @@ static int tgprpl_send_chat (PurpleConnection * gc, int id, const char *message,
   return ret;
 }
 
+/*
 static void tgprpl_set_buddy_icon (PurpleConnection * gc, PurpleStoredImage * img) {
   debug ("tgprpl_set_buddy_icon()");
   
@@ -801,6 +802,7 @@ static void tgprpl_set_buddy_icon (PurpleConnection * gc, PurpleStoredImage * im
     g_free (filename);
   }
 }
+*/
 
 static gboolean tgprpl_can_receive_file (PurpleConnection * gc, const char *who) {
   return TRUE;
@@ -864,7 +866,7 @@ static PurplePluginProtocolInfo prpl_info = {
   NULL,                    // buddy_free
   NULL,                    // convo_closed
   NULL,                    // normalize
-  tgprpl_set_buddy_icon,
+  NULL,                    // tgprpl_set_buddy_icon
   NULL,                    // remove_group
   NULL,
   NULL,                    // set_chat_topic
