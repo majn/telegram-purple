@@ -14,7 +14,6 @@ Beta 3
 
     - Fix error in incoming message handling that caused segmentation faults
     - Fix failing audio and video transfers
-    - Mark messages read on other devices as 'deferred' to avoid needless notifications
     - Improved buddy list handling (should avoid "unknown" contacts popping up)
     - Many small issues (see commit history)
     - Fix issues that caused audio and video downloads to not have a proper file ending
@@ -22,11 +21,11 @@ Beta 3
 
 ###### Features
 
-    - Allow creation of new group chats
-    - Allow joining chats by invite link
-    - Allow exporting chats by invite link
-    - Support displaying and sending GIFs 
+    - Support creation of new group chats
     - Support joining chats by invite link
+    - Support exporting chats by invite link
+    - Support displaying and sending GIFs 
+    - Mark messages read on other devices as 'deferred' to avoid needless notifications
 
 
 This version should fix the crashes that seem to occur in many of the older version. Consider this another intermediate Beta version, there will be at least another one until I will consider it a release candidate.
