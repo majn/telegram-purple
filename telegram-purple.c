@@ -122,17 +122,16 @@ static void _update_buddy (struct tgl_state *TLS, tgl_peer_t *user, unsigned fla
 }
 
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, unsigned flags) {
-  info("update_user_handler (%d)", tgl_get_peer_id (user->id));
+  if (TLS->our_id == tgl_get_peer_id (user->id) && flags & TGL_UPDATE_NAME) {
+    p2tgl_connection_set_display_name (TLS, (tgl_peer_t *)user);
+    return;
+  }
   
   if (! (flags & TGL_UPDATE_CREATED)) {
-    if (TLS->our_id == tgl_get_peer_id (user->id) && flags & TGL_UPDATE_NAME) {
-      p2tgl_connection_set_display_name (TLS, (tgl_peer_t *)user);
-    } else {
+     // buddy was altered, update it
       _update_buddy (TLS, (tgl_peer_t *)user, flags);
-    }
   } else {
-    
-    // update the online status for all known buddies
+    // new buddy was fetched, just update the status for all buddies in the contact list
     if (p2tgl_buddy_find (TLS, user->id)) {
       p2tgl_prpl_got_user_status (TLS, user->id, &user->status);
     }
@@ -335,13 +334,17 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra
       case TGL_PEER_USER: {
         PurpleBuddy *buddy = p2tgl_buddy_find (TLS, peers[i]);
         UC = tgl_peer_get (TLS, peers[i]);
-        if (! buddy && tgl_get_peer_id (peers[i]) != TLS->our_id) {
-          buddy = p2tgl_buddy_new (TLS, UC);
-          purple_blist_add_buddy (buddy, NULL, tggroup, NULL);
-          tgl_do_get_user_info (TLS, UC->id, 0, on_user_get_info, get_user_info_data_new (0, UC->id));
+        if (tgl_get_peer_id (peers[i]) != TLS->our_id) {
+          if (! buddy) {
+            buddy = p2tgl_buddy_new (TLS, UC);
+            purple_blist_add_buddy (buddy, NULL, tggroup, NULL);
+            tgl_do_get_user_info (TLS, UC->id, 0, on_user_get_info, get_user_info_data_new (0, UC->id));
+          }
+          p2tgl_prpl_got_user_status (TLS, UC->id, &UC->user.status);
+          p2tgl_prpl_got_set_status_mobile (TLS, UC->id);
+        } else {
+          p2tgl_connection_set_display_name (TLS, UC);
         }
-        p2tgl_prpl_got_user_status (TLS, UC->id, &UC->user.status);
-        p2tgl_prpl_got_set_status_mobile (TLS, UC->id);
         break;
       }
         
