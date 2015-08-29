@@ -22,7 +22,7 @@
 #import <Adium/AIService.h>
 #import <AIUtilities/AIStringFormatter.h>
 #import <AIUtilities/AIAttributedStringAdditions.h>
-#import <AIUtilities/AIPopUpButtonAdditions.h>DISPLAY
+#import <AIUtilities/AIPopUpButtonAdditions.h>
 
 #include "telegram-purple.h"
 

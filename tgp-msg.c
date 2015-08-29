@@ -26,8 +26,10 @@
 #include <tgl.h>
 #include <glib.h>
 #include <errno.h>
+#include <locale.h>
 
 #include "telegram-purple.h"
+#include "telegram-base.h"
 #include "tgp-structs.h"
 #include "tgp-msg.h"
 #include "tgp-ft.h"
@@ -123,33 +125,30 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
   return txt;
 }
 
-static char *format_message (struct tgl_message *M) {
-  switch (M->media.type) {
-    case tgl_message_media_contact:
-      return g_strdup_printf ("<b>%s %s</b><br>%s", M->media.first_name, M->media.last_name, M->media.phone);
-      break;
-    case tgl_message_media_geo:
-      return g_strdup_printf ("<a href=\"http://openstreetmap.org/?lat=%f&lon=%f&zoom=20\">"
-                             "http://openstreetmap.org/?lat=%f&lon=%f&zoom=20</a>",
-                             M->media.geo.latitude, M->media.geo.longitude,
-                             M->media.geo.latitude, M->media.geo.longitude);
-      return g_strdup_printf ("<b>%s %s</b><br>%s", M->media.first_name, M->media.last_name, M->media.phone);
-      break;
-    default:
-      if (*M->message != 0) {
-        return purple_markup_escape_text (M->message, strlen (M->message));
-      }
-      return NULL;
-      break;
-  }
+static char *format_geo_link_osm (double lat, double lon) {
+
+  // assure that the floats are formatted with a dot
+  char *loc = setlocale (LC_NUMERIC, NULL);
+  setlocale (LC_NUMERIC, "en_US");
+  debug ("old locale: %s", loc);
+
+  char *link = g_strdup_printf ("https://www.openstreetmap.org/?mlat=%.6lf&mlon=%.6lf#map=17/%.6lf/%.6lf",
+          lat, lon, lat, lon);
+
+  // restore old locale
+  setlocale (LC_NUMERIC, loc);
+  return link;
 }
 
 static void tgp_msg_send_done (struct tgl_state *TLS, void *callback_extra, int success, struct tgl_message *M) {
   if (! success) {
-    const char *err = "Sending message failed. Maybe you don't have the permission "
-    "to send to this peer, or the peer does no longer exist.";
+    char *err = g_strdup_printf("Sending message failed. %d: %s", TLS->error_code, TLS->error);
     warning (err);
     tgp_msg_err_out (TLS, err, M->to_id);
+    g_free (err);
+  } else if (tgl_get_peer_type(M->to_id) == TGL_PEER_ENCR_CHAT) {
+    debug ("SUCCESS write_secret_chat_file ...");
+    write_secret_chat_file (TLS);
   }
 }
 
@@ -162,7 +161,7 @@ static gboolean tgp_msg_send_schedule_cb (gpointer data) {
     g_queue_pop_head (conn->out_messages);
 
     // TODO: option for disable_msg_preview
-    tgl_do_send_message(D->TLS, D->to, D->msg, (int)strlen (D->msg), 0, tgp_msg_send_done, NULL);
+    tgl_do_send_message (D->TLS, D->to, D->msg, (int)strlen (D->msg), 0, NULL, tgp_msg_send_done, NULL);
     tgp_msg_sending_free (D);
   }
   return FALSE;
@@ -213,42 +212,55 @@ static void tgp_msg_err_out (struct tgl_state *TLS, const char *error, tgl_peer_
   }
 }
 
+void send_inline_picture_done (struct tgl_state *TLS, void *extra, int success, struct tgl_message *msg) {
+  if (!success) {
+    char *errormsg = g_strdup_printf ("%d: %s", TLS->error_code, TLS->error);
+    failure (errormsg);
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, "Sending image failed.",
+                           errormsg, NULL, NULL, NULL);
+    return;
+  }
+}
+
 int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
   // search for outgoing embedded image tags and send them
   gchar *img = NULL;
   gchar *stripped = NULL;
+  
   if ((img = g_strrstr (message, "<IMG")) || (img = g_strrstr (message, "<img"))) {
     if (tgl_get_peer_type(to) == TGL_PEER_ENCR_CHAT) {
       tgp_msg_err_out (TLS, "Sorry, sending documents to encrypted chats not yet supported.", to);
       return 0;
     }
-    
     debug ("img found: %s", img);
     gchar *id;
     if ((id = g_strrstr (img, "ID=\"")) || (id = g_strrstr (img, "id=\""))) {
       id += 4;
-      debug ("id found: %s", id);
       int imgid = atoi (id);
       if (imgid > 0) {
         PurpleStoredImage *psi = purple_imgstore_find_by_id (imgid);
-        gchar *tmp = g_build_filename(g_get_tmp_dir(), purple_imgstore_get_filename (psi), NULL) ;
+        gchar *tmp = g_build_filename (g_get_tmp_dir(), purple_imgstore_get_filename (psi), NULL) ;
         GError *err = NULL;
         gconstpointer data = purple_imgstore_get_data (psi);
         g_file_set_contents (tmp, data, purple_imgstore_get_size (psi), &err);
         if (! err) {
-          stripped = purple_markup_strip_html (message);
-          tgl_do_send_document (TLS, to, tmp, stripped, (int)strlen (stripped), TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, tgp_msg_send_done, NULL);
+          stripped = g_strstrip(purple_markup_strip_html (message));
+          tgl_do_send_document (TLS, to, tmp, stripped, (int)strlen (stripped),
+                                TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, send_inline_picture_done, NULL);
           g_free (stripped);
-          return 1;
-        } else {
-          failure ("Cannot store image, temp directory not available: %s\n", err->message);
-          g_error_free (err);
+          
+          // return 0 to assure that the picture is not echoed, since
+          // it will already be echoed with the outgoing message
           return 0;
+        } else {
+          failure ("Storing %s in imagestore failed: %s\n", tmp, err->message);
+          g_error_free (err);
+          return -1;
         }
       }
     }
     // no image id found in image
-    return 0;
+    return -1;
   }
   
 #ifndef __ADIUM_
@@ -277,79 +289,177 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
   return tgp_msg_send_split (TLS, message, to);
 }
 
+static char *tgp_msg_photo_display (struct tgl_state *TLS, const char *filename, int *flags) {
+  connection_data *conn = TLS->ev_base;
+  int img = p2tgl_imgstore_add_with_id (filename);
+  if (img <= 0) {
+    failure ("Cannot display picture, adding to imgstore failed.");
+    return NULL;
+  }
+  used_images_add (conn, img);
+  *flags |= PURPLE_MESSAGE_IMAGES;
+  return tgp_format_img (img);
+}
+
+static char *tgp_msg_sticker_display (struct tgl_state *TLS, const char *filename, int *flags) {
+  connection_data *conn = TLS->ev_base;
+  char *text = NULL;
+  
+#ifdef HAVE_LIBWEBP
+  int img = p2tgl_imgstore_add_with_id_webp ((char *) filename);
+  if (img <= 0) {
+    failure ("Cannot display sticker, adding to imgstore failed");
+    return NULL;
+  }
+  used_images_add (conn, img);
+  text = tgp_format_img (img);
+  *flags |= PURPLE_MESSAGE_IMAGES;
+#else
+  char *txt_user = p2tgl_strdup_alias (tgl_peer_get (TLS, M->from_id));
+  text = g_strdup_printf ("%s sent a sticker", txt_user);
+  *flags |= PURPLE_MESSAGE_SYSTEM;
+  g_free (txt_user);
+#endif
+  return text;
+}
+
 static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   connection_data *conn = TLS->ev_base;
   struct tgl_message *M = C->msg;
   char *text = NULL;
   int flags = 0;
-
-  // only display new messages, ignore updates or deletions
-  if ((M->flags & (TGLMF_EMPTY | TGLMF_DELETED)) ||
-      !(M->flags & TGLMF_CREATED) ||
-      !M->message ||
-      tgp_outgoing_msg (TLS, M) ||
-      !tgl_get_peer_type (M->to_id)) {
+  
+  if (M->flags & (TGLMF_EMPTY | TGLMF_DELETED)) {
+    return;
+  }
+  if (!(M->flags & TGLMF_CREATED)) {
+    return;
+  }
+  if (!tgl_get_peer_type (M->to_id)) {
+    warning ("Bad msg\n");
     return;
   }
 
+  // only display new messages, ignore updates or deletions
+  if (!M->message || tgp_outgoing_msg (TLS, M) || !tgl_get_peer_type (M->to_id)) {
+    return;
+  }
+
+  // format the message text
   if (M->flags & TGLMF_SERVICE) {
     text = format_service_msg (TLS, M);
     flags |= PURPLE_MESSAGE_SYSTEM;
-  }
-  else if (M->media.type == tgl_message_media_document && M->media.document->flags & TGLDF_STICKER) {
-#ifdef HAVE_LIBWEBP
-    char *filename = C->data;
-    int img = p2tgl_imgstore_add_with_id_webp (filename);
-    if (img <= 0) { failure ("Cannot display sticker, adding to imgstore failed"); return; }
-    used_images_add (conn, img);
-    text = format_img_full (img);
-    flags |= PURPLE_MESSAGE_IMAGES;
-    g_free (filename);
-#else
-    char *txt_user = p2tgl_strdup_alias (tgl_peer_get (TLS, M->from_id));
-    text = g_strdup_printf ("%s sent a sticker", txt_user);
-    flags |= PURPLE_MESSAGE_SYSTEM;
-    g_free (txt_user);
-#endif
-  }
-  else if (M->media.type == tgl_message_media_photo ||
-          (M->media.type == tgl_message_media_document_encr && M->media.encr_document->flags & TGLDF_IMAGE)) {
-    char *filename = C->data;
-    int img = p2tgl_imgstore_add_with_id (filename);
-    if (img <= 0) {
-      failure ("Cannot display picture message, adding to imgstore failed.");
-      return;
+    
+  } else if (M->media.type != tgl_message_media_none) {
+    switch (M->media.type) {
+  
+      case tgl_message_media_photo: {
+        assert (C->data);
+        text = tgp_msg_photo_display (TLS, C->data, &flags);
+        if (str_not_empty (text)) {
+          if (str_not_empty (M->media.caption)) {
+            char *old = text;
+            text = g_strdup_printf ("%s<br>%s", old, M->media.caption);
+            g_free (old);
+          }
+        }
+        break;
+      }
+        
+      case tgl_message_media_document:
+        if (M->media.document->flags & TGLDF_STICKER) {
+          assert (C->data);
+          text = tgp_msg_sticker_display (TLS, C->data, &flags);
+        } else if (M->media.document->flags & TGLDF_IMAGE) {
+          assert (C->data);
+          text = tgp_msg_photo_display (TLS, C->data, &flags);
+        } else {
+          char *who = p2tgl_strdup_id (M->from_id);
+          if (! tgp_our_msg(TLS, M)) {
+            tgprpl_recv_file (conn->gc, who, M);
+          }
+          return;
+        }
+        break;
+        
+      case tgl_message_media_video:
+      case tgl_message_media_audio: {
+        char *who = p2tgl_strdup_id (M->from_id);
+        if (! tgp_our_msg(TLS, M)) {
+          tgprpl_recv_file (conn->gc, who, M);
+        }
+      }
+      break;
+        
+      case tgl_message_media_document_encr:
+        if (M->media.encr_document->flags & TGLDF_STICKER) {
+          assert (C->data);
+          text = tgp_msg_sticker_display (TLS, C->data, &flags);
+        } if (M->media.encr_document->flags & TGLDF_IMAGE) {
+          assert (C->data);
+          text = tgp_msg_photo_display (TLS, C->data, &flags);
+        } else {
+          char *who = p2tgl_strdup_id (M->to_id);
+          if (! tgp_our_msg(TLS, M)) {
+            tgprpl_recv_file (conn->gc, who, M);
+          }
+          return;
+        }
+        break;
+      
+      case tgl_message_media_contact:
+        text = g_strdup_printf ("<b>%s %s</b> %s", M->media.first_name, M->media.last_name, M->media.phone);
+        break;
+        
+      case tgl_message_media_venue: {
+        char *address = NULL;
+        if (M->media.venue.address && strcmp (M->media.venue.title, M->media.venue.address)) {
+          address = g_strdup_printf (" %s", M->media.venue.address);
+        }
+        text = g_strdup_printf ("<a href=\"%s\">%s</a>%s",
+                                format_geo_link_osm (M->media.venue.geo.latitude, M->media.geo.longitude),
+                                M->media.venue.title ? M->media.venue.title : "", address ? address : "");
+        if (address) {
+          g_free (address);
+        }
+        break;
+      }
+        
+      case tgl_message_media_geo:
+        text = g_strdup_printf ("<a href=\"%s\">%s</a>",
+                                format_geo_link_osm (M->media.venue.geo.latitude, M->media.geo.longitude),
+                                format_geo_link_osm (M->media.venue.geo.latitude, M->media.geo.longitude));
+        break;
+        
+      case tgl_message_media_webpage: {
+        char *msg = g_strdup (M->message);
+        text = purple_markup_escape_text (msg, strlen (msg));
+        g_free (msg);
+        break;
+      }
+        
+      default:
+        warning ("received unknown media type: %d", M->media.type);
+        break;
     }
-    used_images_add (conn, img);
-    text = format_img_full (img);
-    flags |= PURPLE_MESSAGE_IMAGES;
-    g_free (filename);
-  }
-  else if (M->media.type == tgl_message_media_document) {
-    char *who = p2tgl_strdup_id (M->from_id);
-    if (! tgp_our_msg(TLS, M)) {
-      tgprpl_recv_file (conn->gc, who, M->media.document);
+    
+  } else {
+    if (str_not_empty (M->message)) {
+      text = purple_markup_escape_text (M->message, strlen (M->message));
     }
-    g_free (who);
-    return;
-  }
-  else if (M->media.type == tgl_message_media_document_encr) {
-    char *who = p2tgl_strdup_id (M->to_id);
-    if (! tgp_our_msg(TLS, M)) {
-      tgprpl_recv_encr_file (conn->gc, who, M->media.encr_document);
-    }
-    g_free (who);
-    return;
-  }
-  else {
-    text = format_message (M);
     flags |= PURPLE_MESSAGE_RECV;
   }
   
-  if (! text || ! *text) {
+  if (! (M->flags & TGLMF_UNREAD)) {
+    flags |= PURPLE_MESSAGE_DELAYED;
+  }
+  
+  if (! str_not_empty (text)) {
     warning ("No text to display");
     return;
   }
+  
+  // display the message to the user
   switch (tgl_get_peer_type (M->to_id)) {
     case TGL_PEER_CHAT: {
       if (chat_show (conn->gc, tgl_get_peer_id (M->to_id))) {
@@ -400,11 +510,16 @@ static void tgp_msg_process_in_ready (struct tgl_state *TLS) {
     }
     g_queue_pop_head (conn->new_messages);
     tgp_msg_display (TLS, C);
+    if (C->data) {
+      // must al
+      g_free (C->data);
+    }
     tgp_msg_loading_free (C);
   }
 }
 
 static void tgp_msg_on_loaded_document (struct tgl_state *TLS, void *extra, int success, const char *filename) {
+  assert (success);
   struct tgp_msg_loading *C = extra;
   C->data = (void *) g_strdup (filename);
   C->done = TRUE;
@@ -413,32 +528,54 @@ static void tgp_msg_on_loaded_document (struct tgl_state *TLS, void *extra, int 
 
 void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
   connection_data *conn = TLS->ev_base;
-  struct tgp_msg_loading *C = tgp_msg_loading_init (TRUE, M);
-
+  if (M->flags & (TGLMF_EMPTY | TGLMF_DELETED)) {
+    return;
+  }
+  if (!(M->flags & TGLMF_CREATED)) {
+    return;
+  }
   if (M->date != 0 && M->date < tgp_msg_oldest_relevant_ts (TLS)) {
     debug ("Message from %d on %d too old, ignored.", tgl_get_peer_id (M->from_id), M->date);
     return;
   }
-  if (M->media.type == tgl_message_media_photo) {
-    C->done = FALSE;
-    tgl_do_load_photo (TLS, M->media.photo, tgp_msg_on_loaded_document, C);
+  
+  struct tgp_msg_loading *C = tgp_msg_loading_init (TRUE, M);
+  if (! (M->flags & TGLMF_SERVICE)) {
+    // handle all messages that need to load content before they can be displayed
+    if (M->media.type != tgl_message_media_none) {
+      switch (M->media.type) {
+        case tgl_message_media_photo:
+          C->done = FALSE;
+          tgl_do_load_photo (TLS, M->media.photo, tgp_msg_on_loaded_document, C);
+          break;
+          
+          // documents that are stickers or images will be displayed just like regular photo messages
+          // and need to be lodaed beforehand
+        case tgl_message_media_document:
+        case tgl_message_media_video:
+        case tgl_message_media_audio:
+          if (M->media.document->flags & TGLDF_STICKER || M->media.document->flags & TGLDF_IMAGE) {
+            C->done = FALSE;
+            tgl_do_load_document (TLS, M->media.document, tgp_msg_on_loaded_document, C);
+          }
+          break;
+        case tgl_message_media_document_encr:
+          if (M->media.encr_document->flags & TGLDF_STICKER || M->media.encr_document->flags & TGLDF_IMAGE) {
+            C->done = FALSE;
+            tgl_do_load_encr_document (TLS, M->media.encr_document, tgp_msg_on_loaded_document, C);
+          }
+          break;
+          
+        case tgl_message_media_geo:
+          // TODO: load geo thumbnail
+          break;
+          
+        default:
+          break;
+      }
+    }
   }
-  if (M->media.type == tgl_message_media_document_encr &&
-      M->media.encr_document->flags & TGLDF_IMAGE &&
-    !(M->media.encr_document->flags & TGLDF_STICKER)) {
-    C->done = FALSE;
-    tgl_do_load_encr_document (TLS, M->media.encr_document, tgp_msg_on_loaded_document, C);
-  }
-  #ifdef HAVE_LIBWEBP
-  if (M->media.type == tgl_message_media_document && M->media.document->flags & TGLDF_STICKER) {
-    C->done = FALSE;
-    tgl_do_load_document (TLS, M->media.document, tgp_msg_on_loaded_document, C);
-  }
-  #endif
-
-  if (M->media.type == tgl_message_media_geo) {
-    // TODO: load geo thumbnail
-  }
+  
   g_queue_push_tail (conn->new_messages, C);
   tgp_msg_process_in_ready (TLS);
 }

@@ -66,11 +66,10 @@ static void try_write (struct connection *c);
 
 static int ping_alarm (gpointer arg) {
   struct connection *c = arg;
-  struct tgl_state *TLS = c->TLS;
-  vlogprintf (E_DEBUG + 2,"ping alarm");
+  debug ("ping alarm");
   assert (c->state == conn_failed || c->state == conn_ready || c->state == conn_connecting);
   if (tglt_get_double_time () - c->last_receive_time > 6 * PING_TIMEOUT) {
-    vlogprintf (E_WARNING, "fail connection: reason: ping timeout");
+    warning ("fail connection: reason: ping timeout");
     c->state = conn_failed;
     fail_connection (c);
     return FALSE;
@@ -119,8 +118,7 @@ static void delete_connection_buffer (struct connection_buffer *b) {
 }
 
 int tgln_write_out (struct connection *c, const void *_data, int len) {
-  struct tgl_state *TLS = c->TLS;
-  vlogprintf (E_DEBUG, "write_out: %d bytes\n", len);
+  // debug ( "write_out: %d bytes\n", len);
   const unsigned char *data = _data;
   if (!len) { return 0; }
   assert (len > 0);
@@ -232,8 +230,7 @@ static void rotate_port (struct connection *c) {
 
 static void conn_try_read (gpointer arg, gint source, PurpleInputCondition cond) {
   struct connection *c = arg;
-  struct tgl_state *TLS = c->TLS;
-  vlogprintf (E_DEBUG + 1, "Try read. Fd = %d\n", c->fd);
+  // debug ("Try read. Fd = %d\n", c->fd);
   try_read (c);
 }
 
@@ -253,8 +250,7 @@ static void conn_try_write (gpointer arg, gint source, PurpleInputCondition cond
 
 static void net_on_connected (gpointer arg, gint fd, const gchar *error_message) {
   struct connection *c = arg;
-  struct tgl_state *TLS = c->TLS;
-  vlogprintf (E_DEBUG - 2, "connect result: %d\n", fd);
+  // debug ("connect result: %d\n", fd);
 
   if (c->fail_ev >= 0) {
     purple_timeout_remove (c->fail_ev);
@@ -314,6 +310,7 @@ static void restart_connection (struct connection *c) {
   struct tgl_state *TLS = c->TLS;
   connection_data *conn = TLS->ev_base;
 
+  /*
   if (strcmp (c->ip, c->dc->ip) != 0 || c->port != c->dc->port) {
     info ("DC%d address changed from %s:%d to %s:%d, updating settings.\n",
           c->dc->id, c->ip, c->port, c->dc->ip, c->dc->port);
@@ -323,6 +320,7 @@ static void restart_connection (struct connection *c) {
     c->ip = strdup (c->dc->ip);
     c->port = c->dc->port;
   }
+   */
   
   if (tglt_get_double_time () - c->last_receive_time > 6 * PING_TIMEOUT) {
     purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
@@ -369,15 +367,14 @@ static void fail_connection (struct connection *c) {
   
   c->prpl_data = NULL;
 
-  vlogprintf (E_NOTICE, "Lost connection to server... %s:%d\n", c->ip, c->port);
+  info ("Lost connection to server... %s:%d\n", c->ip, c->port);
   purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
                                   "Lost connection to server...");
 }
 
 //extern FILE *log_net_f;
 static void try_write (struct connection *c) {
-  struct tgl_state *TLS = c->TLS;
-  vlogprintf (E_DEBUG, "try write: fd = %d\n", c->fd);
+  // debug ("try write: fd = %d\n", c->fd);
   int x = 0;
   while (c->out_head) {
     int r = write (c->fd, c->out_head->rptr, c->out_head->wptr - c->out_head->rptr);
@@ -395,7 +392,7 @@ static void try_write (struct connection *c) {
       delete_connection_buffer (b);
     } else {
       if (errno != EAGAIN && errno != EWOULDBLOCK) {
-        vlogprintf (E_NOTICE, "fail_connection: write_error %m\n");
+        info ("fail_connection: write_error %m\n");
         fail_connection (c);
         return;
       } else {
@@ -403,7 +400,7 @@ static void try_write (struct connection *c) {
       }
     }
   }
-  vlogprintf (E_DEBUG, "Sent %d bytes to %d\n", x, c->fd);
+  // debug ("Sent %d bytes to %d\n", x, c->fd);
   c->out_bytes -= x;
 }
 
@@ -446,8 +443,7 @@ static void try_rpc_read (struct connection *c) {
 }
 
 static void try_read (struct connection *c) {
-  struct tgl_state *TLS = c->TLS;
-  vlogprintf (E_DEBUG, "try read: fd = %d\n", c->fd);
+  // debug ( "try read: fd = %d\n", c->fd);
   if (!c->in_tail) {
     c->in_head = c->in_tail = new_connection_buffer (1 << 20);
   }
@@ -474,7 +470,7 @@ static void try_read (struct connection *c) {
       c->in_tail = b;
     } else {
       if (errno != EAGAIN && errno != EWOULDBLOCK) {
-        vlogprintf (E_NOTICE, "fail_connection: read_error %m\n");
+        debug ("fail_connection: read_error %m\n");
         fail_connection (c);
         return;
       } else {
@@ -482,7 +478,7 @@ static void try_read (struct connection *c) {
       }
     }
   }
-  vlogprintf (E_DEBUG, "Received %d bytes from %d\n", x, c->fd);
+  // debug ("Received %d bytes from %d\n", x, c->fd);
   c->in_bytes += x;
   if (x) {
     try_rpc_read (c);

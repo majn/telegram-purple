@@ -1,6 +1,25 @@
 Changelog
 ---------
 
+#### Version 1.2.0 (Beta 3)
+
+##### Bugfixes
+
+    - Fix error in incoming message handling that caused segmentation faults
+    - Fix failing audio and video transfers
+    - Mark messages read on other devices as 'deferred' to avoid needless notifications
+    - Improved buddy list handling (should avoid "unknown" contacts popping up)
+    - Many small issues (see commit history)
+    - Fix issues that caused audio and video downloads to not have a proper file ending
+    - Fix issue that caused very old unused chats to not be available
+
+###### Features
+
+    - Allow creation of new group chats
+    - Allow joining chats by invite link
+    - Allow exporting chats by invite link
+    - Support displaying and sending GIFs 
+    - Support joining chats by invite link
 
 ##### Version 1.1.0 (Beta 2)
 

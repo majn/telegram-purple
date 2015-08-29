@@ -1,18 +1,34 @@
-Telegram-Purple (Beta)
-===============
+Telegram-Purple Unofficial (Beta 3)
+===================================
 
 Telegram-purple is a Libpurple plugin that adds support for the Telegram messenger.
 
+I keep getting many questions about this plugin in my mail, so I've created a telegram group 
+chat for [telegram group chat](https://telegram.me/joinchat/01fb53f301b67d3c7a5532908dfa9a89) 
+telegram-purple related discussions or questions.
 
-Beta 2
+Beta 3
 ------
 
-    - update to libtgl 2
-    - support two-factor authentication
-    - improve sticker support
-    - add option to control message read recipes
-    - many bugfixes
+##### Bugfixes
 
+    - Fix error in incoming message handling that caused segmentation faults
+    - Fix failing audio and video transfers
+    - Improved buddy list handling (should avoid "unknown" contacts popping up)
+    - Many small issues (see commit history)
+    - Fix issues that caused audio and video downloads to not have a proper file ending
+    - Fix issue that caused very old unused chats to not be available
+
+###### Features
+
+    - Support creation of new group chats
+    - Support joining chats by invite link
+    - Support exporting chats by invite link
+    - Support displaying and sending GIFs 
+    - Mark messages read on other devices as 'deferred' to avoid needless notifications
+
+
+This version should fix the crashes that seem to occur in many of the older version. Consider this another intermediate Beta version, there will be at least another one until I will consider it a release candidate.
 
 If you migrate from an older version, the Telegram authentication files have been moved to .purple/telegram-purple. If you want to keep your old secret chats, please copy it manually from ~/.telegram-purple, otherwise you will be prompted for a new SMS code.
 
@@ -73,6 +89,14 @@ Usage
 
 The username is your current phone number, including your full country prefix. For Germany, this would be '+49', resulting in a user name like '+49151123456'. Telegram will verify your phone number by sending you a code via sms. You will be prompted for this code, once that happens.
 
+#### Buddy List 
+
+Like in the official Telegram apps, the displayed buddy list consists of all active conversations.
+
+##### Foreign Users
+
+Foreign users, like for example people you only know through a group chat but never had any conversation with, will not be part of your buddy list by default. You can add those users to the buddy list by clicking on "Add contact..." in the users context menu.
+
 #### Using secret chats
 
 You can use Telegram secret chats with this plugin, they will show up as a new buddy with a '!' in front of the buddy name.
@@ -89,7 +113,7 @@ Click on the buddy in the buddy list and click on "Show Info" to visualize the k
 
 ##### Initiate secret chats
 
-To initiate a secret chat from Pidgin, click on a Buddy in the Buddy List and hit ``Start Secret Chat''
+To initiate a secret chat from Pidgin, click on a Buddy in the Buddy List and hit "Start Secret Chat"
 
 ##### Deleting secret chats
 
@@ -100,20 +124,6 @@ If you delete a secret chat from the buddy list, it will be terminated and no lo
 
 The Telegram phone applications for iOS and Android make use of standardized Unicode smileys (called [Emojis](https://en.wikipedia.org/wiki/Emoji)). Pidgin
 does not display those smileys natively, but you can install a custom smiley theme like (https://github.com/stv0g/unicode-emoji) or (https://github.com/VxJasonxV/emoji-for-pidgin) and activate it under Settings > Themes > Smiley Theme.
-
-
-Troubleshooting
----------------
-
-If you encounter problems running this plugin and you have updated from an older version,
-deleting your old user-data might be helpful. WARNING: This will require you to enter a new authentication
-code and delete all your secret chat keys.
-
-To clean all your user files run:
-
-
-        make purge
-
 
 
 Building the Adium Plugin
@@ -130,6 +140,15 @@ Compiling with XCode is a little bit problematic, since it requries you to compi
       cp /usr/local/Cellar/webp/0.4.3/lib/libwebp.a ./telegram-adium/Frameworks/ 
 
 5. Build the XCode-Project and execute the created bundle
+
+
+Discussion / Help
+-----------------
+
+Telegram group chat for telegram-purple or libtgl related discussions or questions:
+
+    - https://telegram.me/joinchat/01fb53f301b67d3c7a5532908dfa9a89
+
 
 Authors
 -------

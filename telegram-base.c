@@ -40,6 +40,7 @@
 #include "tgp-2prpl.h"
 #include "tgp-structs.h"
 #include "tgp-utils.h"
+#include "tgp-chat.h"
 #include "lodepng/lodepng.h"
 
 #define _(m) m
@@ -140,10 +141,10 @@ void write_dc (struct tgl_dc *DC, void *extra) {
 
   assert (DC->flags & TGLDCF_LOGGED_IN);
 
-  assert (write (auth_file_fd, &DC->port, 4) == 4);
-  int l = strlen (DC->ip);
+  assert (write (auth_file_fd, &DC->options[0]->port, 4) == 4);
+  int l = strlen (DC->options[0]->ip);
   assert (write (auth_file_fd, &l, 4) == 4);
-  assert (write (auth_file_fd, DC->ip, l) == l);
+  assert (write (auth_file_fd, DC->options[0]->ip, l) == l);
   assert (write (auth_file_fd, &DC->auth_key_id, 8) == 8);
   assert (write (auth_file_fd, DC->auth_key, 256) == 256);
 }
@@ -451,12 +452,16 @@ static void code_auth_receive_result (struct tgl_state *TLS, void *extra, int su
 }
 
 void request_code_entered (gpointer data, const gchar *code) {
+  char *stripped = g_strstrip (purple_markup_strip_html (code));
+
   struct tgl_state *TLS = data;
   connection_data *conn = TLS->ev_base;
   char const *username = purple_account_get_username(conn->pa);
+  debug ("sending code: '%s'\n", stripped);
   tgl_do_send_code_result (TLS, username, (int)strlen (username), conn->hash,
-                           (int)strlen (conn->hash), code, (int)strlen (code),
+                           (int)strlen (conn->hash), stripped, (int)strlen (stripped),
                            code_receive_result, 0);
+  g_free (stripped);
 }
 
 static void request_code_canceled (gpointer data) {
@@ -479,7 +484,6 @@ static void request_code (struct tgl_state *TLS) {
 
     // purple request API is not available, so we create a new conversation (the Telegram system
     // account "7770000") to prompt the user for the code
-          
     conn->in_fallback_chat = 1;
     purple_connection_set_state (conn->gc, PURPLE_CONNECTED);
     PurpleConversation *conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, conn->pa, "777000");
@@ -493,18 +497,20 @@ static void request_name_code_entered (PurpleConnection* gc, PurpleRequestFields
   struct tgl_state *TLS = conn->TLS;
   char const *username = purple_account_get_username(conn->pa);
   
-  const char* first = purple_request_fields_get_string(fields, "first_name");
-  const char* last = purple_request_fields_get_string(fields, "last_name");
-  const char* code = purple_request_fields_get_string(fields, "code");
+  char* first = g_strstrip (g_strdup (purple_request_fields_get_string (fields, "first_name")));
+  char* last = g_strstrip (g_strdup (purple_request_fields_get_string (fields, "last_name")));
+  char* code = g_strstrip (g_strdup (purple_request_fields_get_string (fields, "code")));
   if (!first || !last || !code) {
     request_name_and_code (TLS);
     return;
   }
-  
-  tgl_do_send_code_result_auth(TLS, username, (int)strlen(username), conn->hash,
+  tgl_do_send_code_result_auth (TLS, username, (int)strlen(username), conn->hash,
                                (int)strlen (conn->hash), code, (int)strlen (code), first,
                                (int)strlen (first), last, (int)strlen (last),
                                code_auth_receive_result, NULL);
+  g_free (first);
+  g_free (last);
+  g_free (code);
 }
 
 static void request_name_and_code (struct tgl_state *TLS) {
@@ -538,12 +544,12 @@ static void request_name_and_code (struct tgl_state *TLS) {
 
 static void request_password_entered (struct request_password_data *data, PurpleRequestFields* fields) {
   const char* pass = purple_request_fields_get_string (fields, "password");
-  data->callback (data->TLS, pass, data->arg);
+  data->callback (data->TLS, &pass, data->arg);
   free (data);
 }
 
 void request_password (struct tgl_state *TLS,
-                       void (*callback)(struct tgl_state *TLS, const char *string, void *arg),
+                       void (*callback)(struct tgl_state *TLS, const char *string[], void *arg),
                        void *arg) {
   connection_data *conn = TLS->ev_base;
   
@@ -571,8 +577,11 @@ void request_password (struct tgl_state *TLS,
   }
 }
 
-void write_secret_chat_gw (struct tgl_state *TLS, void *extra, int success, struct tgl_secret_chat *E) {
-  if (!success) { return; }
+void write_secret_chat_gw (struct tgl_state *TLS, void *extra, int success, struct tgl_secret_chat *_) {
+  if (!success) {
+    tgp_notify_on_error_gw (TLS, NULL, success);
+    return;
+  }
   write_secret_chat_file (TLS);
 }
 
@@ -607,6 +616,111 @@ void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *
                                 " the chat on other devices.", 0, conn->pa, who->name, NULL, data,
                                 G_CALLBACK(accept_secret_chat_cb), G_CALLBACK(decline_secret_chat_cb));
   g_free (message);
+}
+
+void create_group_chat_done_cb (struct tgl_state *TLS, void *title, int success) {
+  if (success) {
+    tgl_peer_t *t = tgl_peer_get_by_name(TLS, title);
+    if (t) {
+      connection_data *conn = TLS->ev_base;
+      chat_show (conn->gc, tgl_get_peer_id(t->id));
+    }
+  }
+  tgp_notify_on_error_gw (TLS, NULL, success);
+  g_free (title);
+}
+
+void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *title,
+                                         const char *users[], int num_users, int print_names) {
+  tgl_peer_id_t ids[num_users + 1];
+  int i, j = 0;
+  ids[j++] = TGL_MK_USER(TLS->our_id);
+  for (i = 0; i < num_users; i++) if (str_not_empty(users[i])) {
+    tgl_peer_t *P = NULL;
+    if (print_names) {
+      P = tgl_peer_get_by_name (TLS, users[i]);
+    } else {
+      P = tgl_peer_get (TLS, TGL_MK_USER(atoi (users[i])));
+    }
+    if (P && tgl_get_peer_id (P->id) != TLS->our_id) {
+      ids[j++] = P->id;
+    } else {
+      debug("User %s not found in peer list", users[j]);
+    }
+  }
+  if (i > 0) {
+    tgl_do_create_group_chat (TLS, i + 1, ids, title, (int) strlen(title),
+                              create_group_chat_done_cb, g_strdup (title));
+  } else {
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_INFO,
+                           "Group not created", "Not enough users selected",
+                           NULL, NULL, NULL);
+  }
+}
+
+static void create_group_chat_cb (void *_data, PurpleRequestFields* fields) {
+  debug ("create_group_chat_cb()");
+  struct accept_create_chat_data *data = _data;
+  const char *users[3] = {
+    purple_request_fields_get_string(fields, "user1"),
+    purple_request_fields_get_string(fields, "user2"),
+    purple_request_fields_get_string(fields, "user3")
+  };
+  
+  tgp_create_group_chat_by_usernames (data->TLS, data->title, users, 3, FALSE);
+  g_free (data->title);
+  free (data);
+}
+
+static void cancel_group_chat_cb (gpointer data) {
+  debug ("cancel_group_chat_cb()");
+  
+  struct accept_create_chat_data *d = data;
+  g_free (d->title);
+  free (d);
+}
+
+void request_choose_user (struct accept_create_chat_data *data) {
+  struct tgl_state *TLS = data->TLS;
+  connection_data *conn = TLS->ev_base;
+  
+  // Telegram doesn't allow to create chats with only one user, so we need to force
+  // the user to specify at least one other one.
+  PurpleRequestFields* fields = purple_request_fields_new();
+  PurpleRequestFieldGroup* group = purple_request_field_group_new (
+                                   "Use the autocompletion to invite at least one additional user. You can always add more users once the chat was created...");
+
+  PurpleRequestField *field = purple_request_field_string_new("user1", "User Name", NULL, FALSE);
+  purple_request_field_set_type_hint (field, "screenname");
+  purple_request_field_group_add_field (group, field);
+  
+  field = purple_request_field_string_new("user2", "User Name", NULL, FALSE);
+  purple_request_field_set_type_hint (field, "screenname");
+  purple_request_field_group_add_field (group, field);
+  
+  field = purple_request_field_string_new("user3", "User Name", NULL, FALSE);
+  purple_request_field_set_type_hint (field, "screenname");
+  purple_request_field_group_add_field (group, field);
+  
+  purple_request_fields_add_group(fields, group);
+  purple_request_fields (conn->gc, "Create Group", "Invite Users", NULL, fields,
+                         "Ok", G_CALLBACK(create_group_chat_cb), "Cancel",
+                         G_CALLBACK(cancel_group_chat_cb), conn->pa, NULL, NULL, data);
+}
+
+void request_create_chat (struct tgl_state *TLS, const char *subject) {
+  connection_data *conn = TLS->ev_base;
+  
+  struct accept_create_chat_data *data = malloc(sizeof(struct accept_create_chat_data));
+  data->title = g_strdup(subject);
+  data->TLS = TLS;
+
+  char *title = g_strdup_printf ("Chat doesn't exist, create a new group chat named '%s'?", subject);
+  purple_request_accept_cancel (conn->gc, "Create New Group Chat", title, NULL, 1,
+                                conn->pa, NULL, NULL, data,
+                                G_CALLBACK(request_choose_user),
+                                G_CALLBACK(cancel_group_chat_cb));
+  g_free (title);
 }
 
 static void sign_in_callback (struct tgl_state *TLS, void *extra, int success, int registered, const char *mhash) {
@@ -720,4 +834,14 @@ int tgp_visualize_key (struct tgl_state *TLS, unsigned char* sha1_key) {
   }
   g_free(image);
   return imgStoreId;
+}
+
+void tgp_notify_on_error_gw (struct tgl_state *TLS, void *extra, int success) {
+  if (!success) {
+    char *errormsg = g_strdup_printf ("%d: %s", TLS->error_code, TLS->error);
+    failure (errormsg);
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, "Query Failed",
+                           errormsg, NULL, NULL, NULL);
+    return;
+  }
 }

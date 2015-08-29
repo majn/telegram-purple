@@ -53,8 +53,7 @@ struct tgp_xfer_send_data {
   int done;
   PurpleXfer *xfer;
   connection_data *conn;
-  struct tgl_document *document;
-  struct tgl_encr_document *encr_document;
+  struct tgl_message *msg;
 };
 
 struct download_desc {
@@ -77,6 +76,11 @@ struct tgp_msg_sending {
 struct accept_secret_chat_data {
   struct tgl_state *TLS;
   struct tgl_secret_chat *U;
+};
+
+struct accept_create_chat_data {
+  struct tgl_state *TLS;
+  char *title;
 };
 
 void pending_reads_send_all (GQueue *queue, struct tgl_state *TLS);

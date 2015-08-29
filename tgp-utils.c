@@ -39,7 +39,7 @@ const char *format_time (time_t date) {
   return purple_utf8_strftime ("%d.%m.%Y %H:%M", datetime);
 }
 
-char *format_img_full (int imgstore) {
+char *tgp_format_img (int imgstore) {
   const char *br = "<br>";
   
   // <br>'s look ugly in Adium, but no <br> will look ugly in Pidgin
@@ -142,3 +142,18 @@ const char *tgp_mime_to_filetype (const char *mime) {
   }
   return NULL;
 }
+
+int tgp_startswith (const char *str, const char *with) {
+  if (! str || !with) {
+    return FALSE;
+  }
+  int slen = strlen (str), wlen = strlen (with);
+  if (wlen > slen) {
+    return FALSE;
+  }
+  while (*with) if (*str++ != *with++) {
+    return FALSE;
+  }
+  return TRUE;
+}
+

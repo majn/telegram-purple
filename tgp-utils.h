@@ -42,7 +42,7 @@ int tgp_outgoing_msg (struct tgl_state *TLS, struct tgl_message *M);
 int tgp_our_msg (struct tgl_state *TLS, struct tgl_message *M);
 
 const char *format_time (time_t date);
-char *format_img_full (int imgstore);
+char *tgp_format_img (int imgstore);
 char *tgp_format_user_status (struct tgl_user_status *status);
 int str_not_empty (const char *string);
 long tgp_time_n_days_ago (int days);
@@ -50,5 +50,6 @@ char *tgp_g_format_size (gint64 size);
 void tgp_g_queue_free_full (GQueue *queue, GDestroyNotify free_func);
 void tgp_g_list_free_full (GList *list, GDestroyNotify free_func);
 const char *tgp_mime_to_filetype (const char *mime);
+int tgp_startswith (const char *str, const char *with);
 
 #endif

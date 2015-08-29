@@ -133,7 +133,7 @@ void p2tgl_got_alias (struct tgl_state *TLS, tgl_peer_id_t who, const char *alia
 void p2tgl_got_im (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, int flags, time_t when) {
   char *name = p2tgl_strdup_id(who);
   
-  serv_got_im(tg_get_conn(TLS), name, msg,flags, when);
+  serv_got_im(tg_get_conn(TLS), name, msg, flags, when);
   
   g_free (name);
 }
@@ -232,19 +232,7 @@ PurpleBuddy *p2tgl_buddy_new  (struct tgl_state *TLS, tgl_peer_t *user) {
   return b;
 }
 
-PurpleBuddy *p2tgl_buddy_update (struct tgl_state *TLS, tgl_peer_t *user, unsigned flags) {
-  PurpleBuddy *b = p2tgl_buddy_find (TLS, user->id);
-  if (!b) {
-    b = p2tgl_buddy_new (TLS, user);
-  }
-  if (flags & (TGL_UPDATE_NAME | TGL_UPDATE_REAL_NAME | TGL_UPDATE_USERNAME)) {
-    debug ("Update username for id%d (name %s %s)", tgl_get_peer_id (user->id), user->user.first_name, user->user.last_name);
-    char *alias = p2tgl_strdup_alias (user);
-    purple_blist_alias_buddy(b, alias);
-    g_free (alias);
-  }
-  return b;
-}
+
 
 void p2tgl_prpl_got_set_status_mobile (struct tgl_state *TLS, tgl_peer_id_t user) {
   char *name = p2tgl_strdup_id (user);
@@ -322,7 +310,7 @@ void p2tgl_conv_add_user (PurpleConversation *conv, struct tgl_chat_user user, c
   PurpleConvChat *cdata = purple_conversation_get_chat_data(conv);
   char *name = g_strdup_printf("%d", user.user_id);
   
-  purple_conv_chat_add_user(cdata, name, message, flags, new_arrival);
+  purple_conv_chat_add_user (cdata, name, message, flags, new_arrival);
   
   g_free(name);
 }
@@ -332,7 +320,6 @@ void p2tgl_connection_set_display_name(struct tgl_state *TLS, tgl_peer_t *user) 
   purple_connection_set_display_name(tg_get_conn(TLS), name);
   g_free(name);
 }
-
 
 void *p2tgl_notify_userinfo(struct tgl_state *TLS, tgl_peer_id_t user, PurpleNotifyUserInfo *user_info, PurpleNotifyCloseCallback cb, gpointer user_data) {
   char *name = p2tgl_strdup_id(user);
@@ -402,7 +389,7 @@ PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TL
   if (secret->first_key_sha[0]) {
     int sha1key_store_id = tgp_visualize_key (TLS, secret->first_key_sha);
     if (sha1key_store_id != -1) {
-      char *ident_icon = format_img_full (sha1key_store_id);
+      char *ident_icon = tgp_format_img (sha1key_store_id);
       purple_notify_user_info_add_pair (info, "Secret key", ident_icon);
       g_free(ident_icon);
     }

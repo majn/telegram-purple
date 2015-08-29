@@ -27,6 +27,7 @@
 #include <glib.h>
 #include <glib/gstdio.h>
 #include "telegram-purple.h"
+#include "telegram-base.h"
 
 static void tgprpl_xfer_free_data (struct tgp_xfer_send_data *data);
 
@@ -35,12 +36,20 @@ static char *tgp_strdup_determine_filename (const char *mime, const char *captio
   if (caption) {
     return g_strdup (caption);
   }
-  
   const char *type = NULL;
   if (mime) {
-    type = tgp_mime_to_filetype (mime);
+    if (flags & TGLDF_VIDEO) {
+      // video message
+      type = "mp4";
+    } else if (flags & TGLDF_AUDIO) {
+      // audio message
+      type = "ogg";
+    } else {
+      // document message
+      type = tgp_mime_to_filetype (mime);
+    }
   }
-  if (!type) {
+  if (! str_not_empty(type)) {
     if (flags & TGLDF_IMAGE) {
       type = "png";
     } else if (flags & TGLDF_AUDIO) {
@@ -72,6 +81,7 @@ static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, in
     g_rename (filename, purple_xfer_get_local_filename (data->xfer));
 
   } else {
+    tgp_notify_on_error_gw (TLS, NULL, success);
     failure ("ERROR xfer failed");
   }
 
@@ -90,7 +100,9 @@ static void tgprpl_xfer_on_finished (struct tgl_state *TLS, void *_data, int suc
       purple_xfer_set_completed (data->xfer, TRUE);
       purple_xfer_end(data->xfer);
     }
+    write_secret_chat_file (TLS);
   } else {
+    tgp_notify_on_error_gw (TLS, NULL, success);
     failure ("ERROR xfer failed");
   }
   
@@ -146,16 +158,36 @@ static gboolean tgprpl_xfer_upload_progress (gpointer _data) {
 static void tgprpl_xfer_recv_init (PurpleXfer *X) {
   debug ("tgprpl_xfer_recv_init");
   struct tgp_xfer_send_data *data = X->data;
+  struct tgl_state *TLS = data->conn->TLS;
+  struct tgl_message *M = data->msg;
+  struct tgl_document *D = M->media.document;
+  tgl_peer_t *P = NULL;
+  
   purple_xfer_start (X, -1, NULL, 0);
   const char *who = purple_xfer_get_remote_user (X);
-  tgl_peer_t *P = find_peer_by_name (data->conn->TLS, who);
+  P = find_peer_by_name (TLS, who);
   if (P) {
-    if (data->document) {
-      tgl_do_load_document (data->conn->TLS, data->document, tgprpl_xfer_recv_on_finished, data);
-    }
-    else if (data->encr_document) {
-      tgl_do_load_encr_document (data->conn->TLS, data->encr_document,
-                                 tgprpl_xfer_recv_on_finished, data);
+    switch (M->media.type) {
+      case tgl_message_media_document:
+        tgl_do_load_document (TLS, D, tgprpl_xfer_recv_on_finished, data);
+        break;
+        
+      case tgl_message_media_document_encr:
+        tgl_do_load_encr_document (TLS, M->media.encr_document,
+                                   tgprpl_xfer_recv_on_finished, data);
+        break;
+      
+      case tgl_message_media_audio:
+        tgl_do_load_audio (TLS, D, tgprpl_xfer_recv_on_finished, data);
+        break;
+        
+      case tgl_message_media_video:
+        tgl_do_load_video (TLS, D, tgprpl_xfer_recv_on_finished, data);
+        break;
+
+      default:
+        failure ("Unknown message media type: %d, XFER not possible.", M->media.type);
+        break;
     }
   } else {
     warning ("User not found, not downloading...");
@@ -175,27 +207,19 @@ static void tgprpl_xfer_send_init (PurpleXfer *X) {
   
   tgl_peer_t *P = find_peer_by_name (data->conn->TLS, who);
   if (P) {
-    if (tgl_get_peer_type (P->id) != TGL_PEER_ENCR_CHAT) {
       tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL,
                             0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, tgprpl_xfer_on_finished, data);
-    }
-    else {
-      purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, "Not supported",
-                             "Sorry, sending documents to encrypted chats not yet supported.",
-                             NULL, NULL, NULL);
-    }
   }
   
   data->timer = purple_timeout_add (100, tgprpl_xfer_upload_progress, X);
 }
 
-static void tgprpl_xfer_init_data (PurpleXfer *X, connection_data *conn, struct tgl_document *D, struct tgl_encr_document *ED) {
+static void tgprpl_xfer_init_data (PurpleXfer *X, connection_data *conn, struct tgl_message *msg) {
   if (!X->data) {
     struct tgp_xfer_send_data *data = g_malloc0 (sizeof (struct tgp_xfer_send_data));
     data->xfer = X;
     data->conn = conn;
-    data->document = D;
-    data->encr_document = ED;
+    data->msg = msg;
     X->data = data;
   }
 }
@@ -228,7 +252,7 @@ PurpleXfer *tgprpl_new_xfer (PurpleConnection * gc, const char *who) {
   if (X) {
     purple_xfer_set_init_fnc (X, tgprpl_xfer_send_init);
     purple_xfer_set_cancel_send_fnc (X, tgprpl_xfer_canceled);
-    tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), NULL, NULL);
+    tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), NULL);
   }
   
   return (PurpleXfer *)X;
@@ -244,33 +268,34 @@ static PurpleXfer *tgprpl_new_xfer_recv (PurpleConnection * gc, const char *who)
   return X;
 }
 
-void tgprpl_recv_file (PurpleConnection * gc, const char *who, struct tgl_document *D) {
+void tgprpl_recv_file (PurpleConnection * gc, const char *who, struct tgl_message *M) {
   debug ("tgprpl_recv_file()");
   PurpleXfer *X = tgprpl_new_xfer_recv (gc, who);
+  const char *mime_type, *caption;
+  long long access_hash;
+  int flags, size;
+  
+  if (M->media.type == tgl_message_media_document_encr) {
+    mime_type = M->media.encr_document->mime_type;
+    caption = M->media.encr_document->caption;
+    access_hash = M->media.encr_document->access_hash;
+    flags = M->media.encr_document->flags;
+    size = M->media.encr_document->size;
+  } else {
+    mime_type = M->media.document->mime_type;
+    caption = M->media.document->caption;
+    access_hash = M->media.document->access_hash;
+    flags = M->media.document->flags;
+    size = M->media.document->size;
+  }
 
-  char *filename = tgp_strdup_determine_filename (D->mime_type, D->caption, D->flags,
-                                                  D->access_hash);
+  char *filename = tgp_strdup_determine_filename (mime_type, caption, flags, access_hash);
   purple_xfer_set_filename (X, filename);
   g_free (filename);
   
-  purple_xfer_set_size (X, D->size);
+  purple_xfer_set_size (X, size);
   
-  tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), D, NULL);
-  purple_xfer_request (X);
-}
-
-void tgprpl_recv_encr_file (PurpleConnection * gc, const char *who, struct tgl_encr_document *D) {
-  debug ("tgprpl_recv_encr_file()");
-  PurpleXfer *X = tgprpl_new_xfer_recv (gc, who);
-  
-  char *filename = tgp_strdup_determine_filename (D->mime_type, D->caption, D->flags,
-                                                  D->access_hash);
-  purple_xfer_set_filename (X, filename);
-  g_free (filename);
-  
-  purple_xfer_set_size (X, D->size);
-  
-  tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), NULL, D);
+  tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), M);
   purple_xfer_request (X);
 }
 
