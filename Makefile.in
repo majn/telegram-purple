@@ -9,6 +9,7 @@ DIR_PERM=0755
 FILE_PERM=0644
 
 CC=@CC@
+PKG_CONFIG=@PKG_CONFIG@
 
 DEP=dep
 AUTO=auto
@@ -28,8 +29,8 @@ PRPL_NAME=telegram-purple.so
 PRPL_LIBNAME=${EXE}/${PRPL_NAME}
 all: ${PRPL_LIBNAME}
 
-PLUGIN_DIR_PURPLE=$(shell pkg-config --variable=plugindir purple)
-DATA_ROOT_DIR_PURPLE=$(shell pkg-config --variable=datarootdir purple)
+PLUGIN_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=plugindir purple)
+DATA_ROOT_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=datarootdir purple)
 
 include ${srcdir}/Makefile.tl-parser
 include ${srcdir}/Makefile.tgl
