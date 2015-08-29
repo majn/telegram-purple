@@ -155,12 +155,23 @@ static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *
 }
 
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *U, unsigned flags) {
-  debug ("secret-chat-state: %d", U->state);
+  PurpleBuddy *buddy = p2tgl_buddy_find (TLS, U->id);
+  debug ("update_secret_chat_handler: state=%d", U->state);
+  
+  if (!(flags & TGL_UPDATE_DELETED)) {
+    if (! buddy) {
+      buddy = p2tgl_buddy_new (TLS, (tgl_peer_t *)U);
+      purple_blist_add_buddy (buddy, NULL, tggroup, NULL);
+      purple_blist_alias_buddy (buddy, U->print_name);
+    }
+    p2tgl_prpl_got_set_status_mobile (TLS, U->id);
+  }
   
   if (flags & TGL_UPDATE_WORKING || flags & TGL_UPDATE_DELETED) {
     write_secret_chat_file (TLS);
   }
-  if (flags & TGL_UPDATE_REQUESTED)  {
+  
+  if (flags & TGL_UPDATE_REQUESTED) {
     connection_data *conn = TLS->ev_base;
     const char* choice = purple_account_get_string (conn->pa, "accept-secret-chats", "ask");
     if (! strcmp (choice, "always")) {
@@ -169,7 +180,7 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
       request_accept_secret_chat (TLS, U);
     }
   }
-  PurpleBuddy *buddy = p2tgl_buddy_find (TLS, U->id);
+  
   if (!(flags & TGL_UPDATE_CREATED) && buddy) {
     if (flags & TGL_UPDATE_DELETED) {
       p2tgl_got_im (TLS, U->id, "Secret chat terminated.", PURPLE_MESSAGE_SYSTEM | PURPLE_MESSAGE_WHISPER, time(0));
@@ -487,8 +498,6 @@ void export_chat_link_checked (struct tgl_state *TLS, const char *name) {
   if (! C) {
     failure ("Chat \"%s\" not found, not exporting link.", name);
     return;
-  } else {
-    debug ("Chat \"%s\" found.", name);
   }
   if (C->chat.admin_id != TLS->our_id) {
     purple_notify_error (_telegram_protocol, "Failure", "Creating Chat Link Failed",
