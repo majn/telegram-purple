@@ -49,7 +49,7 @@
   [radio_Encryption selectCellAtRow:row column:0];
   
   NSString *passwordTwoFactor = [account preferenceForKey:@"Telegram:"TGP_KEY_PASSWORD_TWO_FACTOR
-                                 group:GROUP_ACCOUNT_STATUS] ?: nil;
+                                 group:GROUP_ACCOUNT_STATUS] ?: @"";
   [textField_password setStringValue:passwordTwoFactor];
   
   id s = [account preferenceForKey:@"Telegram:"TGP_KEY_HISTORY_SYNC_ALL group:GROUP_ACCOUNT_STATUS];
