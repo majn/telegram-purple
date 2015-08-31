@@ -1,6 +1,6 @@
 Name: 		purple-telegram
 Version: 	1.2.0
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Adds support for Telegram to Pidgin, Adium, Finch and other Libpurple based messengers.
 Group:		Internet/Messaging
 License:	GPLv2+
@@ -21,6 +21,7 @@ make %{?_smp_mflags}
 
 %install
 %make_install
+chmod 755 %{buildroot}/%{_libdir}/purple-2/telegram-purple.so
 
 %files
 %doc
@@ -31,3 +32,5 @@ make %{?_smp_mflags}
 %{_datadir}/pixmaps/pidgin/protocols/48/telegram.png
 
 %changelog
++* Mon Aug 31 2015 Frank 1.2.0-2
+
