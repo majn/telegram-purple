@@ -61,7 +61,7 @@ void p2tgl_prpl_got_set_status_offline (struct tgl_state *TLS, tgl_peer_id_t use
 void p2tgl_connection_set_display_name(struct tgl_state *TLS, tgl_peer_t *user);
 void p2tgl_conv_del_user (PurpleConversation *conv, tgl_peer_id_t user);
 void p2tgl_conv_add_users (PurpleConversation *conv, struct tgl_chat_user *list);
-void p2tgl_conv_add_user (PurpleConversation *conv, struct tgl_chat_user user, char *message, int flags, int new_arrival);
+void p2tgl_conv_add_user (struct tgl_state *TLS, PurpleConversation *conv, struct tgl_chat_user user, char *message, int flags, int new_arrival);
 PurpleConversation *p2tgl_find_conversation_with_account (struct tgl_state *TLS, tgl_peer_id_t peer);
 void p2tgl_conversation_write (PurpleConversation *conv, tgl_peer_id_t who, const char *message, int flags, int date);
 PurpleConversation *p2tgl_conversation_new (struct tgl_state *TLS, tgl_peer_id_t who);

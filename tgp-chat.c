@@ -21,12 +21,12 @@
 #include "tgp-chat.h"
 #include "msglog.h"
 
-void chat_add_all_users (PurpleConversation *pc, struct tgl_chat *chat) {
+void chat_add_all_users (struct tgl_state *TLS, PurpleConversation *pc, struct tgl_chat *chat) {
   int i;
   for (i = 0; i < chat->user_list_size; i++) {
     struct tgl_chat_user *uid = (chat->user_list + i);
     int flags = (chat->admin_id == uid->user_id ? PURPLE_CBFLAGS_FOUNDER : PURPLE_CBFLAGS_NONE);
-    p2tgl_conv_add_user (pc, *uid, NULL, flags, 0);
+    p2tgl_conv_add_user (TLS, pc, *uid, NULL, flags, FALSE);
   }
 }
 
@@ -34,7 +34,7 @@ void chat_users_update (struct tgl_state *TLS, struct tgl_chat *chat) {
   PurpleConversation *pc = purple_find_chat(tg_get_conn(TLS), tgl_get_peer_id(chat->id));
   if (pc) {
     purple_conv_chat_clear_users (purple_conversation_get_chat_data(pc));
-    chat_add_all_users (pc, chat);
+    chat_add_all_users (TLS, pc, chat);
   }
 }
 
@@ -50,9 +50,8 @@ PurpleConversation *chat_show (PurpleConnection *gc, int id) {
   }
   if (! convo || (chat && purple_conv_chat_has_left (chat))) {
     convo = p2tgl_got_joined_chat (conn->TLS, &P->chat);
+    chat_users_update (conn->TLS, &P->chat);
   }
-  chat_users_update (conn->TLS, &P->chat);
-
   return convo;
 }
 
