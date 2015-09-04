@@ -55,6 +55,20 @@
 	return 443;
 }
 
+- (void)didConnect
+{
+  [super didConnect];
+  [self purpleAccount];
+  purple_signal_connect (purple_conversations_get_handle(), "chat-buddy-joined",
+                         [self purpleAccount], PURPLE_CALLBACK(chat_buddy_joined), (__bridge void *)(self));
+}
+
+- (void)didDisconnect
+{
+  purple_signal_disconnect(purple_conversations_get_handle(), "chat-buddy-joined",
+                           [self purpleAccount], PURPLE_CALLBACK(chat_buddy_joined));
+}
+
 - (void)configurePurpleAccount
 {
   [super configurePurpleAccount];
@@ -121,6 +135,7 @@
                      tag:0];
   return menu;
 }
+
 - (void)addUserByLink
 {
   connection_data *conn = purple_connection_get_protocol_data (purple_account_get_connection(account));
@@ -153,6 +168,32 @@
 - (void)cancelFileTransfer:(ESFileTransfer *)fileTransfer
 {
   [super cancelFileTransfer:fileTransfer];
+}
+
+#pragma mark Group Chats
+
+void chat_buddy_joined (PurpleConversation *conv, const char *name,
+                        PurpleConvChatBuddyFlags flags,
+                        gboolean new_arrival, void *data) {
+  TelegramAccount *_self = (__bridge TelegramAccount *)(data);
+  connection_data *conn = purple_connection_get_protocol_data(
+                            purple_account_get_connection(purple_conversation_get_account(conv)));
+  assert (conn);
+  
+  tgl_peer_t *P = tgl_peer_get (conn->TLS, TGL_MK_USER(atoi(name)));
+  AIChat *chat = [_self chatWithName:[NSString stringWithUTF8String:conv->name] identifier:nil];
+  if (P && chat) {
+    AIListObject *dummy = [[AIListObject alloc]
+                           initWithUID:[NSString stringWithUTF8String:name]
+                           service:nil];
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10 * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
+      NSLog(@"Injecting chat participant alias: %s -> %s", name, P->print_name);
+      [chat setAlias:[NSString stringWithUTF8String:P->print_name]
+          forContact:dummy];
+      [chat resortParticipants];
+    });
+  }
 }
 
 @end
