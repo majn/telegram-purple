@@ -188,7 +188,7 @@ void chat_buddy_joined (PurpleConversation *conv, const char *name,
                            service:nil];
     
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10 * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
-      NSLog(@"Injecting chat participant alias: %s -> %s", name, P->print_name);
+      NSLog(@"Injecting chat participant alias: %s", P->print_name);
       [chat setAlias:[NSString stringWithUTF8String:P->print_name]
           forContact:dummy];
       [chat resortParticipants];
