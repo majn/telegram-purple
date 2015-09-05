@@ -125,7 +125,6 @@
             [NSNumber numberWithInteger: Context_Group_Manage],
             [NSNumber numberWithInteger: Context_GroupChat_Action],
             nil] forChat: chat];
-  
   [menu addItem:[NSMenuItem separatorItem]];
 
   [menu addItemWithTitle:@"Invite users by link..."
@@ -140,8 +139,9 @@
 {
   connection_data *conn = purple_connection_get_protocol_data (purple_account_get_connection(account));
   AIChat *chat = adium.interfaceController.activeChat;
-  const char *subject = [[[chat chatCreationDictionary] objectForKey:@"subject"] UTF8String];
-  export_chat_link_checked (conn->TLS, subject);
+  if (chat) {
+    export_chat_link_checked (conn->TLS, [chat.name UTF8String]);
+  }
 }
 
 #pragma mark File transfer
