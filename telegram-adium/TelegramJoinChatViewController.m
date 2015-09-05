@@ -95,12 +95,15 @@ static void tgl_peer_iterator_cb (tgl_peer_t *peer, void *extra) {
   PurpleConnection *gc = purple_account_get_connection(pa);
   if (gc && PURPLE_CONNECTION_IS_CONNECTED(gc)) {
     connection_data *conn = purple_connection_get_protocol_data (gc);
-    NSString *link = [textField_joinByLink stringValue];
     
+    // Join by link
+    NSString *link = [textField_joinByLink stringValue];
     if ([link length]) {
       import_chat_link_checked (conn->TLS, [link UTF8String]);
       return;
     }
+    
+    // Create a new chat with provided participants
     NSString *createChatName = [textField_createChatName stringValue];
     NSArray *tokens = [tokenField_createChatUsers objectValue];
     if ([createChatName length] && [tokens count]) {
@@ -114,14 +117,17 @@ static void tgl_peer_iterator_cb (tgl_peer_t *peer, void *extra) {
       return;
     }
     
-    NSString *room = [[popupButton_existingChat selectedItem] title];
-    NSDictionary *chatCreationInfo = [NSDictionary
-                                      dictionaryWithObjectsAndKeys:room, @"subject", nil];
-    [self doJoinChatWithName:room
-                   onAccount:inAccount
-            chatCreationInfo:chatCreationInfo
-            invitingContacts:@[]
-       withInvitationMessage:@""];
+    // Pass the joining to the prpl
+    const char *name = [[[popupButton_existingChat selectedItem] title] UTF8String];
+    PurpleChat *purpleChat = purple_blist_find_chat (conn->pa, name);
+    if (purpleChat) {
+      serv_join_chat (conn->gc, purple_chat_get_components (purpleChat));
+    } else {
+      GHashTable *chatCreationInfo = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
+      g_hash_table_insert (chatCreationInfo, "subject", g_strdup (name));
+      serv_join_chat (conn->gc, chatCreationInfo);
+      g_hash_table_destroy (chatCreationInfo);
+    }
   }
 }
 
