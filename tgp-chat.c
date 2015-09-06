@@ -98,7 +98,7 @@ GList *tgprpl_chat_join_info (PurpleConnection * gc) {
   return g_list_append (info, pce);
 }
 
-void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
+void tgprpl_chat_join (PurpleConnection * gc, GHashTable *data) {
   debug ("tgprpl_chat_join()");
   connection_data *conn = purple_connection_get_protocol_data (gc);
   
@@ -112,6 +112,7 @@ void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
       tgl_do_get_chat_info (conn->TLS, cid, FALSE, tgp_chat_on_loaded_chat_full_joining, NULL);
     } else {
       warning ("Cannot join chat %d, peer not found...", tgl_get_peer_id (cid));
+      purple_serv_got_join_chat_failed (gc, data);
     }
     return;
   }
@@ -133,8 +134,6 @@ void tgprpl_chat_join (PurpleConnection * gc, GHashTable * data) {
       debug ("joining chat by subject %s ...", subject);
       tgl_do_get_chat_info (conn->TLS, P->id, FALSE, tgp_chat_on_loaded_chat_full_joining, NULL);
       return;
-    } else {
-      warning ("Cannot join chat %s, peer not found...", subject);
     }
     
     // user creates a new chat by providing its subject the chat join window

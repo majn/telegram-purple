@@ -679,15 +679,16 @@ static void tgprpl_add_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Purple
 
 static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, PurpleGroup * group) {
   debug ("tgprpl_remove_buddy()");
-  if (!buddy) { return; }
-
-  connection_data *conn = purple_connection_get_protocol_data (gc);
-  
-  tgl_peer_t *peer = find_peer_by_name (conn->TLS, buddy->name);
-  if (!peer) {
-    // telegram peer not existing, orphaned buddy
+  if (!buddy) {
     return;
   }
+
+  connection_data *conn = purple_connection_get_protocol_data (gc);
+  tgl_peer_t *peer = find_peer_by_name (conn->TLS, buddy->name);
+  if (!peer) {
+    return;
+  }
+  
   switch (tgl_get_peer_type(peer->id)) {
     case TGL_PEER_ENCR_CHAT:
       /* TODO: implement the api call cancel secret chats. Currently the chat will only be marked as 

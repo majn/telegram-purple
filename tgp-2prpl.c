@@ -103,7 +103,7 @@ PurpleConversation *p2tgl_got_joined_chat (struct tgl_state *TLS, struct tgl_cha
   connection_data *conn = TLS->ev_base;
   gchar *alias = p2tgl_strdup_alias ((tgl_peer_t *)chat);
   
-  PurpleConversation *conv = serv_got_joined_chat (conn->gc, tgl_get_peer_id(chat->id), alias);
+  PurpleConversation *conv = serv_got_joined_chat (conn->gc, tgl_get_peer_id (chat->id), alias);
   
   g_free(alias);
   return conv;
