@@ -48,7 +48,7 @@ PurpleConnection *tg_get_conn (struct tgl_state *TLS) {
 }
 
 char *p2tgl_strdup_id (tgl_peer_id_t user) {
-  return g_strdup_printf("%d", tgl_get_peer_id(user));
+  return g_strdup_printf ("%d", tgl_get_peer_id(user));
 }
 
 gchar *p2tgl_strdup_alias (tgl_peer_t *user) {

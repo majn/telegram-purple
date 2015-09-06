@@ -618,17 +618,6 @@ void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *
   g_free (message);
 }
 
-void create_group_chat_done_cb (struct tgl_state *TLS, void *title, int success) {
-  if (success) {
-    tgl_peer_t *P = tgl_peer_get_by_name (TLS, title);
-    if (P && tgl_get_peer_type (P->id) == TGL_PEER_CHAT) {
-      tgp_chat_show (TLS, &P->chat);
-    }
-  }
-  tgp_notify_on_error_gw (TLS, NULL, success);
-  g_free (title);
-}
-
 void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *title,
                                          const char *users[], int num_users, int print_names) {
   tgl_peer_id_t ids[num_users + 1];
@@ -642,14 +631,15 @@ void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *titl
       P = tgl_peer_get (TLS, TGL_MK_USER(atoi (users[i])));
     }
     if (P && tgl_get_peer_id (P->id) != TLS->our_id) {
+      debug ("Adding %s: %d", P->print_name, tgl_get_peer_id (P->id));
       ids[j++] = P->id;
     } else {
       debug ("User %s not found in peer list", users[j]);
     }
   }
   if (i > 0) {
-    tgl_do_create_group_chat (TLS, i + 1, ids, title, (int) strlen(title),
-                              create_group_chat_done_cb, g_strdup (title));
+    tgl_do_create_group_chat (TLS, j, ids, title, (int) strlen(title),
+                              tgp_notify_on_error_gw, g_strdup (title));
   } else {
     purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_INFO,
                            "Group not created", "Not enough users selected",
@@ -687,7 +677,8 @@ void request_choose_user (struct accept_create_chat_data *data) {
   // the user to specify at least one other one.
   PurpleRequestFields* fields = purple_request_fields_new();
   PurpleRequestFieldGroup* group = purple_request_field_group_new (
-                                   "Use the autocompletion to invite at least one additional user. You can always add more users once the chat was created...");
+                                   "Use the autocompletion to invite at least one additional user.\n"
+                                   "You can always add more users once the chat was created...");
 
   PurpleRequestField *field = purple_request_field_string_new("user1", "User Name", NULL, FALSE);
   purple_request_field_set_type_hint (field, "screenname");
