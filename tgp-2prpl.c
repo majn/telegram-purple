@@ -304,8 +304,9 @@ void p2tgl_chat_update (PurpleChat *chat, tgl_peer_id_t id, int admin_id, const 
 
 tgl_chat_id_t p2tgl_chat_get_id (PurpleChat *PC) {
   char *name = g_hash_table_lookup (purple_chat_get_components (PC), "id");
-  if (! atoi (name)) {
+  if (! name || ! atoi (name)) {
     warning ("p2tgl_chat_id_get: no id found in chat %s", PC->alias);
+    return TGL_MK_CHAT(0);
   }
   return TGL_MK_CHAT(atoi (name));
 }
