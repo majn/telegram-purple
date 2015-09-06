@@ -299,6 +299,14 @@ PurpleChat *p2tgl_chat_new (struct tgl_state *TLS, struct tgl_chat *chat) {
   return C;
 }
 
+tgl_chat_id_t p2tgl_chat_get_id (PurpleChat *PC) {
+  char *name = g_hash_table_lookup (purple_chat_get_components (PC), "id");
+  if (! atoi (name)) {
+    warning ("p2tgl_chat_id_get: no id found in chat %s", PC->alias);
+  }
+  return TGL_MK_CHAT(atoi (name));
+}
+
 PurpleChat *p2tgl_chat_find (struct tgl_state *TLS, tgl_peer_id_t id) {
   char *name = p2tgl_strdup_id(id);
   PurpleChat *c = blist_find_chat_by_hasht_cond(tg_get_conn(TLS), hasht_cmp_id, name);

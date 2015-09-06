@@ -132,6 +132,13 @@
                   action:@selector(addUserByLink)
            keyEquivalent:@""
                      tag:0];
+  
+  [menu addItemWithTitle:@"Delete and exit..."
+                  target:self
+                  action:@selector(deleteAndExitChat)
+           keyEquivalent:@""
+                     tag:0];
+  
   return menu;
 }
 
@@ -141,6 +148,18 @@
   AIChat *chat = adium.interfaceController.activeChat;
   if (chat) {
     export_chat_link_checked (conn->TLS, [chat.name UTF8String]);
+  }
+}
+
+- (void)deleteAndExitChat
+{
+  connection_data *conn = purple_connection_get_protocol_data (purple_account_get_connection(account));
+  AIChat *chat = adium.interfaceController.activeChat;
+  if (chat) {
+    PurpleChat *purpleChat = purple_blist_find_chat (conn->pa, [chat.name UTF8String]);
+    if (purpleChat) {
+      leave_and_delete_chat ((PurpleBlistNode *)purpleChat, NULL);
+    }
   }
 }
 

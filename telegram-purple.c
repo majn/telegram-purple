@@ -510,6 +510,19 @@ void export_chat_link_checked (struct tgl_state *TLS, const char *name) {
   tgl_do_export_chat_link (TLS, C->id, create_chat_link_done, C);
 }
 
+void leave_and_delete_chat (PurpleBlistNode *node, gpointer data) {
+  PurpleChat *PC = (PurpleChat*)node;
+  connection_data *conn = purple_connection_get_protocol_data (
+                            purple_account_get_connection (purple_chat_get_account (PC)));
+  
+  tgl_peer_t *P = tgl_peer_get (conn->TLS, p2tgl_chat_get_id (PC));
+  if (P && P->chat.users_num) {
+    tgl_do_del_user_from_chat (conn->TLS, P->id, TGL_MK_USER(conn->TLS->our_id),
+                               tgp_notify_on_error_gw, NULL);
+  }
+  purple_blist_remove_chat (PC);
+}
+
 static void import_chat_link_done (struct tgl_state *TLS, void *extra, int success) {
   if (! success) {
     tgp_notify_on_error_gw (TLS, NULL, success);
@@ -529,16 +542,21 @@ static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
   if (PURPLE_BLIST_NODE_IS_BUDDY(node)) {
     // Add encrypted chat option to the right click menu of all buddies
     PurpleBuddy* buddy = (PurpleBuddy*)node;
-    PurpleMenuAction* action = purple_menu_action_new ("Start secret chat",
-                                      PURPLE_CALLBACK(start_secret_chat), buddy, NULL);
-    
-    menu = g_list_append(menu, (gpointer)action);
+    PurpleMenuAction* action = purple_menu_action_new ("Start secret chat ...",
+                                 PURPLE_CALLBACK(start_secret_chat), buddy, NULL);
+    menu = g_list_append (menu, (gpointer)action);
   }
   if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
      // Generate Public Link
-    PurpleMenuAction* action = purple_menu_action_new ("Invite users by link",
-                                      PURPLE_CALLBACK(create_chat_link), NULL, NULL);
-    menu = g_list_append(menu, (gpointer)action);
+    PurpleMenuAction* action = purple_menu_action_new ("Invite users by link ...",
+                                 PURPLE_CALLBACK(create_chat_link), NULL, NULL);
+    menu = g_list_append (menu, (gpointer)action);
+  }
+  if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
+    // Delete self from chat
+    PurpleMenuAction* action = purple_menu_action_new ("Delete and exit ...",
+                                 PURPLE_CALLBACK(leave_and_delete_chat), NULL, NULL);
+    menu = g_list_append (menu, (gpointer)action);
   }
   return menu;
 }
