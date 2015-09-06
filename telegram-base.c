@@ -620,10 +620,9 @@ void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *
 
 void create_group_chat_done_cb (struct tgl_state *TLS, void *title, int success) {
   if (success) {
-    tgl_peer_t *t = tgl_peer_get_by_name(TLS, title);
-    if (t) {
-      connection_data *conn = TLS->ev_base;
-      chat_show (conn->gc, tgl_get_peer_id(t->id));
+    tgl_peer_t *P = tgl_peer_get_by_name (TLS, title);
+    if (P && tgl_get_peer_type (P->id) == TGL_PEER_CHAT) {
+      tgp_chat_show (TLS, &P->chat);
     }
   }
   tgp_notify_on_error_gw (TLS, NULL, success);
@@ -645,7 +644,7 @@ void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *titl
     if (P && tgl_get_peer_id (P->id) != TLS->our_id) {
       ids[j++] = P->id;
     } else {
-      debug("User %s not found in peer list", users[j]);
+      debug ("User %s not found in peer list", users[j]);
     }
   }
   if (i > 0) {
@@ -662,9 +661,9 @@ static void create_group_chat_cb (void *_data, PurpleRequestFields* fields) {
   debug ("create_group_chat_cb()");
   struct accept_create_chat_data *data = _data;
   const char *users[3] = {
-    purple_request_fields_get_string(fields, "user1"),
-    purple_request_fields_get_string(fields, "user2"),
-    purple_request_fields_get_string(fields, "user3")
+    purple_request_fields_get_string (fields, "user1"),
+    purple_request_fields_get_string (fields, "user2"),
+    purple_request_fields_get_string (fields, "user3")
   };
   
   tgp_create_group_chat_by_usernames (data->TLS, data->title, users, 3, FALSE);

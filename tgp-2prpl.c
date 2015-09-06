@@ -294,6 +294,14 @@ PurpleChat *p2tgl_chat_new (struct tgl_state *TLS, struct tgl_chat *chat) {
   return C;
 }
 
+void p2tgl_chat_update (PurpleChat *chat, tgl_peer_id_t id, int admin_id, const char *subject) {
+  GHashTable *ht = purple_chat_get_components (chat);
+  
+  g_hash_table_replace (ht, g_strdup ("id"), g_strdup_printf ("%d", tgl_get_peer_id (id)));
+  g_hash_table_replace (ht, g_strdup ("owner"), g_strdup_printf ("%d", admin_id));
+  g_hash_table_replace (ht, g_strdup ("subject"), g_strdup (subject));
+}
+
 tgl_chat_id_t p2tgl_chat_get_id (PurpleChat *PC) {
   char *name = g_hash_table_lookup (purple_chat_get_components (PC), "id");
   if (! atoi (name)) {
@@ -310,17 +318,17 @@ PurpleChat *p2tgl_chat_find (struct tgl_state *TLS, tgl_peer_id_t id) {
 }
 
 void p2tgl_conv_add_user (struct tgl_state *TLS, PurpleConversation *conv,
-                          struct tgl_chat_user user, char *message, int flags, int new_arrival) {
+                          int user, char *message, int flags, int new_arrival) {
   PurpleConvChat *cdata = purple_conversation_get_chat_data(conv);
-  char *name = g_strdup_printf("%d", user.user_id);
+  char *name = g_strdup_printf ("%d", user);
   purple_conv_chat_add_user (cdata, name, message, flags, new_arrival);
   
   // inject print_name into chat buddies to display a human-readable name
   // for buddies not in the buddy list instead of the user id
-  tgl_peer_t *U = tgl_peer_get (TLS, TGL_MK_USER(user.user_id));
+  tgl_peer_t *U = tgl_peer_get (TLS, TGL_MK_USER(user));
   if (U) {
     PurpleConvChatBuddy *cbuddy = purple_conv_chat_cb_find (PURPLE_CONV_CHAT(conv), name);
-    PurpleConversationUiOps *uiops = purple_conversation_get_ui_ops (conv);;
+    PurpleConversationUiOps *uiops = purple_conversation_get_ui_ops (conv);
     if (cbuddy && cbuddy->alias) {
       g_free (cbuddy->alias);
       cbuddy->alias = g_strdup (U->print_name);
@@ -335,6 +343,14 @@ void p2tgl_conv_add_user (struct tgl_state *TLS, PurpleConversation *conv,
   }
   
   g_free(name);
+}
+
+void p2tgl_conv_del_user (struct tgl_state *TLS, PurpleConversation *conv, const char *message, int userid) {
+  char *name = g_strdup_printf("%d", userid);
+  
+  purple_conv_chat_remove_user (purple_conversation_get_chat_data (conv), name, message);
+  
+  g_free (name);
 }
 
 void p2tgl_connection_set_display_name(struct tgl_state *TLS, tgl_peer_t *user) {

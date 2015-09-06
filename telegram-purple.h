@@ -59,7 +59,6 @@
 #define TGP_DEFAULT_SEND_READ_NOTIFICATIONS TRUE
 #define TGP_KEY_SEND_READ_NOTIFICATIONS "send-read-notifications"
 
-void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *C);
 void on_ready (struct tgl_state *TLS);
 extern const char *pk_path;
 extern const char *config_dir;

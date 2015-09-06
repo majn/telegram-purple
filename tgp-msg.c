@@ -43,6 +43,7 @@ static void tgp_msg_err_out (struct tgl_state *TLS, const char *error, tgl_peer_
 
 static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
   assert (M && M->flags & TGLMF_SERVICE);
+  connection_data *conn = TLS->ev_base;
   char *txt_user = NULL;
   char *txt_action = NULL;
   char *txt = NULL;
@@ -52,6 +53,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
     return NULL;
   }
   txt_user = p2tgl_strdup_alias (peer);
+
   switch (M->action.type) {
     case tgl_message_action_chat_create:
       txt_action = g_strdup_printf ("created chat %s", M->action.title);
@@ -65,20 +67,65 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
     case tgl_message_action_chat_delete_photo:
       txt_action = g_strdup ("deleted photo");
       break;
-    case tgl_message_action_chat_add_user:
-    {
+    case tgl_message_action_chat_add_user_by_link: {
+      tgl_peer_t *actionPeer = tgl_peer_get (TLS, TGL_MK_USER (M->action.user));
+      if (actionPeer) {
+        char *alias = p2tgl_strdup_alias (actionPeer);
+        
+        PurpleConversation *conv = purple_find_chat (conn->gc, tgl_get_peer_id (M->to_id));
+        txt_action = g_strdup_printf ("%s added user %s by link.", alias, txt_user);
+        if (conv) {
+          p2tgl_conv_add_user (TLS, conv, tgl_get_peer_id (peer->id), NULL, 0, FALSE);
+        }
+        
+        g_free (alias);
+        g_free (txt_user);
+        return txt_action;
+      }
+      break;
+    }
+    case tgl_message_action_chat_add_user: {
       tgl_peer_t *peer = tgl_peer_get (TLS, TGL_MK_USER (M->action.user));
       if (peer) {
         char *alias = p2tgl_strdup_alias (peer);
         txt_action = g_strdup_printf ("added user %s", alias);
+        
+        PurpleConversation *conv = purple_find_chat (conn->gc, tgl_get_peer_id (M->to_id));
+        if (conv) {
+          p2tgl_conv_add_user (TLS, conv, M->action.user, NULL, 0, FALSE);
+        }
         g_free (alias);
       }
       break;
     }
-    case tgl_message_action_chat_delete_user:
-    {
+    case tgl_message_action_chat_delete_user: {
       tgl_peer_t *peer = tgl_peer_get (TLS, TGL_MK_USER (M->action.user));
       if (peer) {
+
+        tgl_peer_t *chatPeer = tgl_peer_get (TLS, M->to_id);
+        assert (tgl_get_peer_type(chatPeer->id) == TGL_PEER_CHAT);
+        
+        // make sure that the chat is showing before deleting the user, otherwise the
+        // chat will be initialised after removing the chat and the chat will still contain
+        // the deleted user
+        PurpleConversation *conv = tgp_chat_show (TLS, &chatPeer->chat);
+        if (conv) {
+          char *alias = p2tgl_strdup_alias (peer);
+          txt_action = g_strdup_printf ("%s deleted user %s.", txt_user, alias);
+          g_free (alias);
+          
+          p2tgl_conv_del_user (TLS, conv, txt_action, M->action.user);
+          if (M->action.user == TLS->our_id) {
+            purple_conv_chat_left (purple_conversation_get_chat_data (conv));
+          }
+          
+          // conv_del_user already printed a message, prevent a redundant message
+          // from being printed by returning NULL
+          g_free (txt_user);
+          g_free (txt_action);
+          return NULL;
+        }
+        
         char *alias = p2tgl_strdup_alias (peer);
         txt_action = g_strdup_printf ("deleted user %s", alias);
         g_free (alias);
@@ -117,7 +164,6 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
       break;
   }
   if (txt_action) {
-    debug ("SERVICE MESSAGE: %s", txt_action);
     txt = g_strdup_printf ("%s %s.", txt_user, txt_action);
     g_free (txt_action);
   }
@@ -454,15 +500,17 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     flags |= PURPLE_MESSAGE_DELAYED;
   }
   
+  // some service messages (like removing/adding users from chats) might print the message 
+  // text through other means and leave the text empty
   if (! str_not_empty (text)) {
-    warning ("No text to display");
     return;
   }
   
   // display the message to the user
   switch (tgl_get_peer_type (M->to_id)) {
     case TGL_PEER_CHAT: {
-      if (chat_show (conn->gc, tgl_get_peer_id (M->to_id))) {
+      tgl_peer_t *P = tgl_peer_get (TLS, M->to_id);
+      if (tgp_chat_show (TLS, &P->chat)) {
         p2tgl_got_chat_in (TLS, M->to_id, M->from_id, text, flags, M->date);
       }
       pending_reads_add (conn->pending_reads, M->to_id);
@@ -505,7 +553,7 @@ static void tgp_msg_process_in_ready (struct tgl_state *TLS) {
   struct tgp_msg_loading *C;
   
   while ((C = g_queue_peek_head (conn->new_messages))) {
-    if (! C->done) {
+    if (C->pending) {
       break;
     }
     g_queue_pop_head (conn->new_messages);
@@ -518,10 +566,23 @@ static void tgp_msg_process_in_ready (struct tgl_state *TLS) {
 }
 
 static void tgp_msg_on_loaded_document (struct tgl_state *TLS, void *extra, int success, const char *filename) {
+  debug ("tgp_msg_on_loaded_document()");
   assert (success);
+  
   struct tgp_msg_loading *C = extra;
   C->data = (void *) g_strdup (filename);
-  C->done = TRUE;
+  -- C->pending;
+  tgp_msg_process_in_ready (TLS);
+}
+
+static void tgp_msg_on_loaded_chat_full (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *chat) {
+  debug ("tgp_msg_on_loaded_chat()");
+  assert (success);
+  
+  tgp_chat_on_loaded_chat_full (TLS, chat);
+  
+  struct tgp_msg_loading *C = extra;
+  -- C->pending;
   tgp_msg_process_in_ready (TLS);
 }
 
@@ -538,29 +599,31 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
     return;
   }
   
-  struct tgp_msg_loading *C = tgp_msg_loading_init (TRUE, M);
+  struct tgp_msg_loading *C = tgp_msg_loading_init (M);
+  
   if (! (M->flags & TGLMF_SERVICE)) {
+    
     // handle all messages that need to load content before they can be displayed
     if (M->media.type != tgl_message_media_none) {
       switch (M->media.type) {
         case tgl_message_media_photo:
-          C->done = FALSE;
+          ++ C->pending;
           tgl_do_load_photo (TLS, M->media.photo, tgp_msg_on_loaded_document, C);
           break;
           
-          // documents that are stickers or images will be displayed just like regular photo messages
-          // and need to be lodaed beforehand
+        // documents that are stickers or images will be displayed just like regular photo messages
+        // and need to be lodaed beforehand
         case tgl_message_media_document:
         case tgl_message_media_video:
         case tgl_message_media_audio:
           if (M->media.document->flags & TGLDF_STICKER || M->media.document->flags & TGLDF_IMAGE) {
-            C->done = FALSE;
+            ++ C->pending;
             tgl_do_load_document (TLS, M->media.document, tgp_msg_on_loaded_document, C);
           }
           break;
         case tgl_message_media_document_encr:
           if (M->media.encr_document->flags & TGLDF_STICKER || M->media.encr_document->flags & TGLDF_IMAGE) {
-            C->done = FALSE;
+            ++ C->pending;
             tgl_do_load_encr_document (TLS, M->media.encr_document, tgp_msg_on_loaded_document, C);
           }
           break;
@@ -569,9 +632,22 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
           // TODO: load geo thumbnail
           break;
           
-        default:
+        default: // prevent Clang warnings ...
           break;
       }
+    }
+  }
+  
+  if (tgl_get_peer_type (M->to_id) == TGL_PEER_CHAT) {
+      
+    tgl_peer_t *peer = tgl_peer_get (TLS, M->to_id);
+    assert (peer);
+      
+    if (! peer->chat.user_list_size) {
+      // we receive messages even though the user list is empty, this means that we still
+      // haven't fetched the full chat information
+      ++ C->pending;
+      tgl_do_get_chat_info (TLS, M->to_id, FALSE, tgp_msg_on_loaded_chat_full, C);
     }
   }
   
