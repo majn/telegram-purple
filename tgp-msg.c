@@ -576,7 +576,7 @@ static void tgp_msg_on_loaded_document (struct tgl_state *TLS, void *extra, int 
 }
 
 static void tgp_msg_on_loaded_chat_full (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *chat) {
-  debug ("tgp_msg_on_loaded_chat()");
+  debug ("tgp_msg_on_loaded_chat_full()");
   assert (success);
   
   tgp_chat_on_loaded_chat_full (TLS, chat);

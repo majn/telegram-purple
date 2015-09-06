@@ -41,6 +41,7 @@ typedef struct {
   guint out_timer;
   int in_fallback_chat;
   int password_retries;
+  PurpleRoomlist *roomlist;
 } connection_data;
 
 typedef struct { 

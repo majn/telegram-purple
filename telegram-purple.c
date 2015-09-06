@@ -806,8 +806,8 @@ static PurplePluginProtocolInfo prpl_info = {
   NULL,
   NULL,                    // set_chat_topic
   NULL,                    // find_blist_chat
-  NULL,                    // roomlist_get_list
-  NULL,                    // roomlist_cancel
+  tgprpl_roomlist_get_list,
+  tgprpl_roomlist_cancel,
   NULL,                    // roomlist_expand_category
   tgprpl_can_receive_file,
   tgprpl_send_file,       

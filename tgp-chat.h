@@ -34,5 +34,7 @@ int chat_add_message (struct tgl_state *TLS, struct tgl_message *M, char *text);
 char *tgprpl_get_chat_name (GHashTable *data);
 void tgprpl_chat_join (PurpleConnection *gc, GHashTable *data);
 GList *tgprpl_chat_join_info (PurpleConnection *gc);
+PurpleRoomlist *tgprpl_roomlist_get_list (PurpleConnection *gc);
+void tgprpl_roomlist_cancel (PurpleRoomlist *list);
 
 #endif
