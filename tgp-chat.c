@@ -53,13 +53,25 @@ static void tgp_chat_on_loaded_chat_full_joining (struct tgl_state *TLS, void *_
   }
 }
 
-static void tgp_chat_add_all_users (struct tgl_state *TLS, PurpleConversation *pc, struct tgl_chat *C) {
+static void tgp_chat_add_all_users (struct tgl_state *TLS, PurpleConversation *conv, struct tgl_chat *C) {
+  GList *users = NULL,
+        *flags = NULL;
+  
   int i = 0;
   for (; i < C->user_list_size; i++) {
     struct tgl_chat_user *uid = (C->user_list + i);
-    int flags = (C->admin_id == uid->user_id ? PURPLE_CBFLAGS_FOUNDER : PURPLE_CBFLAGS_NONE);
-    p2tgl_conv_add_user (TLS, pc, uid->user_id, NULL, flags, FALSE);
+    users = g_list_append (users, g_strdup_printf ("%d", uid->user_id));
+    flags = g_list_append (flags, GINT_TO_POINTER(C->admin_id == uid->user_id ? PURPLE_CBFLAGS_FOUNDER : PURPLE_CBFLAGS_NONE));
   }
+  
+  purple_conv_chat_add_users (PURPLE_CONV_CHAT(conv), users, NULL, flags, FALSE);
+  while (users) {
+    p2tgl_conv_add_user_rename (tgl_peer_get (TLS, TGL_MK_USER(atoi (users->data))), conv);
+    users = g_list_next (users);
+  }
+  
+  g_list_free_full (users, g_free);
+  g_list_free (flags);
 }
 
 void tgp_chat_users_update (struct tgl_state *TLS, struct tgl_chat *C) {

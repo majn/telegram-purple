@@ -318,22 +318,20 @@ PurpleChat *p2tgl_chat_find (struct tgl_state *TLS, tgl_peer_id_t id) {
   return c;
 }
 
-void p2tgl_conv_add_user (struct tgl_state *TLS, PurpleConversation *conv,
-                          int user, char *message, int flags, int new_arrival) {
-  PurpleConvChat *cdata = purple_conversation_get_chat_data(conv);
-  char *name = g_strdup_printf ("%d", user);
-  purple_conv_chat_add_user (cdata, name, message, flags, new_arrival);
-  
+void p2tgl_conv_add_user_rename (tgl_peer_t *U, PurpleConversation *conv) {
+
   // inject print_name into chat buddies to display a human-readable name
   // for buddies not in the buddy list instead of the user id
-  tgl_peer_t *U = tgl_peer_get (TLS, TGL_MK_USER(user));
   if (U) {
+    char *name = g_strdup_printf("%d", tgl_get_peer_id (U->id));
+    
     PurpleConvChatBuddy *cbuddy = purple_conv_chat_cb_find (PURPLE_CONV_CHAT(conv), name);
     PurpleConversationUiOps *uiops = purple_conversation_get_ui_ops (conv);
     if (cbuddy && cbuddy->alias) {
       g_free (cbuddy->alias);
       cbuddy->alias = g_strdup (U->print_name);
     }
+    
     if (uiops && uiops->chat_rename_user) {
       debug ("try rename user %s to %s\n", name, U->print_name);
       uiops->chat_rename_user (conv, name, name, U->print_name);
@@ -341,8 +339,19 @@ void p2tgl_conv_add_user (struct tgl_state *TLS, PurpleConversation *conv,
       debug ("try update user %s\n", name);
       uiops->chat_update_user (conv, name);
     }
+    
+    g_free (name);
   }
+}
+
+void p2tgl_conv_add_user (struct tgl_state *TLS, PurpleConversation *conv,
+                          int user, char *message, int flags, int new_arrival) {
+  PurpleConvChat *cdata = purple_conversation_get_chat_data(conv);
+  char *name = g_strdup_printf ("%d", user);
+  purple_conv_chat_add_user (cdata, name, message, flags, new_arrival);
   
+  p2tgl_conv_add_user_rename (tgl_peer_get (TLS, TGL_MK_USER(user)), conv);
+ 
   g_free(name);
 }
 
