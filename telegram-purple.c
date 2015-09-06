@@ -494,7 +494,9 @@ void leave_and_delete_chat (PurpleBlistNode *node, gpointer data) {
   if (P && P->chat.users_num) {
     tgl_do_del_user_from_chat (conn->TLS, P->id, TGL_MK_USER(conn->TLS->our_id),
                                tgp_notify_on_error_gw, NULL);
+    serv_got_chat_left (conn->gc, tgl_get_peer_id (P->id));
   }
+  
   purple_blist_remove_chat (PC);
 }
 
