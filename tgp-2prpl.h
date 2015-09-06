@@ -70,7 +70,6 @@ PurpleConversation *p2tgl_conversation_new (struct tgl_state *TLS, tgl_peer_id_t
 PurpleChat *p2tgl_chat_new (struct tgl_state *TLS, struct tgl_chat *chat);
 PurpleChat *p2tgl_chat_find (struct tgl_state *TLS, tgl_peer_id_t chat);
 
-
 void *p2tgl_notify_userinfo(struct tgl_state *TLS, tgl_peer_id_t user, PurpleNotifyUserInfo *user_info, PurpleNotifyCloseCallback cb, gpointer user_data);
 
 PurpleNotifyUserInfo *p2tgl_notify_peer_info_new (struct tgl_state *TLS, tgl_peer_t *P);

@@ -511,7 +511,6 @@ static void tgp_msg_process_in_ready (struct tgl_state *TLS) {
     g_queue_pop_head (conn->new_messages);
     tgp_msg_display (TLS, C);
     if (C->data) {
-      // must al
       g_free (C->data);
     }
     tgp_msg_loading_free (C);
