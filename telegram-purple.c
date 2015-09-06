@@ -696,9 +696,12 @@ static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Pur
               (when the secret chat file is loaded) */
       bl_do_encr_chat_delete (conn->TLS, &peer->encr_chat);
       break;
+    
+      /*
     case TGL_PEER_USER:
       tgl_do_del_contact (conn->TLS, peer->id, tgp_notify_on_error_gw, NULL);
       break;
+       */
   }
 }
 
