@@ -190,12 +190,16 @@ static void tgp_msg_send_done (struct tgl_state *TLS, void *callback_extra, int 
   if (! success) {
     char *err = g_strdup_printf("Sending message failed. %d: %s", TLS->error_code, TLS->error);
     warning (err);
-    tgp_msg_err_out (TLS, err, M->to_id);
+    if (M) {
+      tgp_msg_err_out (TLS, err, M->to_id);
+    } else {
+      fatal (err);
+    }
     g_free (err);
-  } else if (tgl_get_peer_type(M->to_id) == TGL_PEER_ENCR_CHAT) {
-    debug ("SUCCESS write_secret_chat_file ...");
-    write_secret_chat_file (TLS);
+    return;
   }
+  
+  write_files_schedule (TLS);
 }
 
 static gboolean tgp_msg_send_schedule_cb (gpointer data) {
