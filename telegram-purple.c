@@ -279,6 +279,7 @@ static void get_password (struct tgl_state *TLS, enum tgl_value_type type, const
   }
 }
 
+/*
 static void on_contact_added (struct tgl_state *TLS,void *callback_extra, int success, int size, struct tgl_user *users[]) {
   if (!success || !size) {
     PurpleBuddy *buddy = callback_extra;
@@ -289,6 +290,7 @@ static void on_contact_added (struct tgl_state *TLS,void *callback_extra, int su
     _update_buddy (TLS, (tgl_peer_t *)users[0], TGL_UPDATE_PHOTO | TGL_UPDATE_NAME);
   }
 }
+*/
 
 static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, const char *filename) {
   connection_data *conn = TLS->ev_base;
@@ -682,13 +684,9 @@ static void tgprpl_set_status (PurpleAccount * acct, PurpleStatus * status) {
 
 static void tgprpl_add_buddy (PurpleConnection * gc, PurpleBuddy * buddy, PurpleGroup * group) {
   connection_data *conn = purple_connection_get_protocol_data(gc);
-  const char* first = buddy->alias ? buddy->alias : "";
-  tgl_peer_t *peer = tgl_peer_get (conn->TLS, TGL_MK_USER (atoi (buddy->name)));
   
-  if (! peer) {
-    tgl_do_add_contact (conn->TLS, buddy->name, (int)strlen (buddy->name),
-                        first, (int)strlen (first), "", 0, 0, on_contact_added, buddy);
-  } else {
+  tgl_peer_t *peer = tgl_peer_get (conn->TLS, TGL_MK_USER (atoi (buddy->name)));
+  if (peer) {
     _update_buddy (conn->TLS, peer, TGL_UPDATE_NAME | TGL_UPDATE_PHOTO);
   }
 }
