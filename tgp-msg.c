@@ -650,8 +650,17 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
     if (! peer->chat.user_list_size) {
       // we receive messages even though the user list is empty, this means that we still
       // haven't fetched the full chat information
-      ++ C->pending;
-      tgl_do_get_chat_info (TLS, M->to_id, FALSE, tgp_msg_on_loaded_chat_full, C);
+      
+      // assure that there is only one chat info request for every
+      // chat to avoid causing FLOOD_WAIT_X errors that will lead to delays or dropped messages
+      gpointer to_ptr = GINT_TO_POINTER(tgl_get_peer_id (M->to_id));
+      
+      if (! g_hash_table_lookup (conn->pending_chat_info, to_ptr)) {
+        ++ C->pending;
+        
+        tgl_do_get_chat_info (TLS, M->to_id, FALSE, tgp_msg_on_loaded_chat_full, C);
+        g_hash_table_add (conn->pending_chat_info, to_ptr);
+      }
     }
   }
   

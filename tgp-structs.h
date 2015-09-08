@@ -42,6 +42,7 @@ typedef struct {
   int in_fallback_chat;
   int password_retries;
   PurpleRoomlist *roomlist;
+  GHashTable *pending_chat_info;
 } connection_data;
 
 typedef struct { 
