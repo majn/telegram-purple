@@ -331,6 +331,8 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra
       if (! buddy) {
         buddy = p2tgl_buddy_new (TLS, UC);
         purple_blist_add_buddy (buddy, NULL, tggroup, NULL);
+      }
+      if (UC->user.photo_id) {
         tgl_do_get_user_info (TLS, UC->id, 0, on_user_get_info, get_user_info_data_new (0, UC->id));
       }
       
