@@ -347,6 +347,7 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra
 void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U) {
   get_user_info_data *user_info_data = (get_user_info_data *)info_data;
   tgl_peer_t *P = tgl_peer_get (TLS, user_info_data->peer);
+  
   if (! success) {
     tgp_notify_on_error_gw (TLS, NULL, success);
     return;
@@ -359,7 +360,6 @@ void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, stru
       p2tgl_notify_userinfo (TLS, P->id, info, NULL, NULL);
     }
     g_free (user_info_data);
-  
   } else {
     struct download_desc *dld = malloc (sizeof(struct download_desc));
     dld->data = U;
@@ -375,6 +375,7 @@ void on_ready (struct tgl_state *TLS) {
   purple_connection_set_state (conn->gc, PURPLE_CONNECTED);
   purple_connection_set_display_name (conn->gc, purple_account_get_username (conn->pa));
   purple_blist_add_account (conn->pa);
+  
   tggroup = purple_find_group ("Telegram");
   if (tggroup == NULL) {
     tggroup = purple_group_new ("Telegram");
@@ -690,7 +691,7 @@ static void tgprpl_add_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Purple
   }
 }
 
-static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, PurpleGroup * group) {
+static void tgprpl_remove_buddy (PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group) {
   debug ("tgprpl_remove_buddy()");
   if (!buddy) {
     return;
@@ -702,19 +703,11 @@ static void tgprpl_remove_buddy (PurpleConnection * gc, PurpleBuddy * buddy, Pur
     return;
   }
   
-  switch (tgl_get_peer_type(peer->id)) {
-    case TGL_PEER_ENCR_CHAT:
-      /* TODO: implement the api call cancel secret chats. Currently the chat will only be marked as 
-               deleted on our side so that it won't be added on startup 
-              (when the secret chat file is loaded) */
-      bl_do_encr_chat_delete (conn->TLS, &peer->encr_chat);
-      break;
-    
-      /*
-    case TGL_PEER_USER:
-      tgl_do_del_contact (conn->TLS, peer->id, tgp_notify_on_error_gw, NULL);
-      break;
-       */
+  if (tgl_get_peer_type(peer->id) == TGL_PEER_ENCR_CHAT) {
+    /* TODO: implement the api call cancel secret chats. Currently the chat will only be marked as
+     deleted on our side so that it won't be added on startup
+     (when the secret chat file is loaded) */
+    bl_do_encr_chat_delete (conn->TLS, &peer->encr_chat);
   }
 }
 
