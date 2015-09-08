@@ -659,7 +659,7 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
         ++ C->pending;
         
         tgl_do_get_chat_info (TLS, M->to_id, FALSE, tgp_msg_on_loaded_chat_full, C);
-        g_hash_table_add (conn->pending_chat_info, to_ptr);
+        g_hash_table_replace (conn->pending_chat_info, to_ptr, to_ptr);
       }
     }
   }
