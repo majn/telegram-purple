@@ -396,7 +396,7 @@ static const char *tgprpl_list_icon (PurpleAccount * acct, PurpleBuddy * buddy) 
   return "telegram";
 }
 
-static void tgprpl_tooltip_text (PurpleBuddy * buddy, PurpleNotifyUserInfo * info, gboolean full) {
+static void tgprpl_tooltip_text (PurpleBuddy *buddy, PurpleNotifyUserInfo *info, gboolean full) {
   debug ("tgprpl_tooltip_text()");
   assert (buddy->name);
   
