@@ -193,6 +193,11 @@
 void chat_buddy_joined (PurpleConversation *conv, const char *name,
                         PurpleConvChatBuddyFlags flags,
                         gboolean new_arrival, void *data) {
+  const char *proto = purple_conversation_get_account (conv)->protocol_id;
+  if (! proto || 0 != strcmp ("prpl-telegram", proto)) {
+    return;
+  }
+  
   TelegramAccount *_self = (__bridge TelegramAccount *)(data);
   connection_data *conn = purple_connection_get_protocol_data(
                             purple_account_get_connection(purple_conversation_get_account(conv)));
