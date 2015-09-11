@@ -116,6 +116,22 @@ void p2tgl_got_chat_left (struct tgl_state *TLS, tgl_peer_id_t chat) {
 void p2tgl_got_chat_in (struct tgl_state *TLS, tgl_peer_id_t chat, tgl_peer_id_t who,
                         const char *message, int flags, time_t when) {
   char *name = p2tgl_strdup_id (who);
+
+  // Make sure that the participant exists in the blist, so that the correct print name of
+  // the chat is being displayed by libpurple
+  connection_data *conn = TLS->ev_base;
+  PurpleBuddy *buddy = buddy = purple_find_buddy (conn->pa, name);
+  if (! buddy) {
+    buddy = purple_buddy_new (conn->pa, name, tgl_peer_get(TLS, who)->print_name);
+    PurpleGroup *group = purple_find_group ("Telegram Foreign");
+    if (!group) {
+      group = purple_group_new ("Telegram Foreign");
+      purple_blist_add_group (group, NULL);
+      purple_blist_node_set_flags (&group->node, PURPLE_BLIST_NODE_FLAG_NO_SAVE);
+    }
+    purple_blist_add_buddy (buddy, NULL, group, NULL);
+    purple_blist_node_set_flags (&buddy->node, PURPLE_BLIST_NODE_FLAG_NO_SAVE);
+  }
   
   serv_got_chat_in (tg_get_conn(TLS), tgl_get_peer_id (chat), name, flags, message, when);
   
