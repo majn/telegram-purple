@@ -68,8 +68,6 @@ PurpleConversation *p2tgl_find_conversation_with_account (struct tgl_state *TLS,
 void p2tgl_conversation_write (PurpleConversation *conv, tgl_peer_id_t who, const char *message, int flags, int date);
 PurpleConversation *p2tgl_conversation_new (struct tgl_state *TLS, tgl_peer_id_t who);
 
-PurpleChat *p2tgl_chat_new (struct tgl_state *TLS, struct tgl_chat *chat);
-void p2tgl_chat_update (PurpleChat *chat, tgl_peer_id_t id, int admin_id, const char *subject);
 PurpleChat *p2tgl_chat_find (struct tgl_state *TLS, tgl_peer_id_t chat);
 
 void *p2tgl_notify_userinfo(struct tgl_state *TLS, tgl_peer_id_t user, PurpleNotifyUserInfo *user_info, PurpleNotifyCloseCallback cb, gpointer user_data);

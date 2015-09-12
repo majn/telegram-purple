@@ -53,10 +53,14 @@ void p2tgl_chat_update (PurpleChat *chat, tgl_peer_id_t id, int admin_id, const 
 }
 
 void tgp_chat_on_loaded_chat_full (struct tgl_state *TLS, struct tgl_chat *C) {
+  connection_data *conn = TLS->ev_base;
+  
   PurpleChat *PC = p2tgl_chat_find (TLS, C->id);
   if (!PC) {
     PC = p2tgl_chat_new (TLS, C);
-    purple_blist_add_chat (PC, NULL, NULL);
+    if (purple_account_get_bool (conn->pa, TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS)) {
+      purple_blist_add_chat (PC, NULL, NULL);
+    }
   }
   p2tgl_chat_update (PC, C->id, C->admin_id, C->print_title);
 }

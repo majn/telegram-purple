@@ -324,26 +324,45 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
 
 static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra, int success, int size,
                                      tgl_peer_id_t peers[], int last_msg_id[], int unread_count[]) {
+  
+  connection_data *conn = TLS->ev_base;
+  
   int i = size - 1;
-  for (; i >= 0; i--) if (tgl_get_peer_type (peers[i]) == TGL_PEER_USER) {
+  for (; i >= 0; i--) {
     tgl_peer_t *UC = tgl_peer_get (TLS, peers[i]);
     
-    if (tgl_get_peer_id (peers[i]) != TLS->our_id) {
-      PurpleBuddy *buddy = p2tgl_buddy_find (TLS, peers[i]);
-      if (! buddy) {
-        buddy = p2tgl_buddy_new (TLS, UC);
-        purple_blist_add_buddy (buddy, NULL, tggroup, NULL);
-        
-        if (UC->user.photo_id) {
-          debug ("tgl_do_get_user_info(%s)", UC->print_name);
-          tgl_do_get_user_info (TLS, UC->id, 0, on_user_get_info, get_user_info_data_new (0, UC->id));
+    switch (tgl_get_peer_type (peers[i])) {
+      case TGL_PEER_USER:
+        assert (UC);
+        if (tgl_get_peer_id (UC->id) != TLS->our_id) {
+          PurpleBuddy *buddy = p2tgl_buddy_find (TLS, UC->id);
+          if (! buddy) {
+            buddy = p2tgl_buddy_new (TLS, UC);
+            purple_blist_add_buddy (buddy, NULL, tggroup, NULL);
+            
+            if (UC->user.photo_id) {
+              debug ("tgl_do_get_user_info(%s)", UC->print_name);
+              tgl_do_get_user_info (TLS, UC->id, 0, on_user_get_info, get_user_info_data_new (0, UC->id));
+            }
+          }
+          
+          p2tgl_prpl_got_user_status (TLS, UC->id, &UC->user.status);
+          p2tgl_prpl_got_set_status_mobile (TLS, UC->id);
+        } else {
+          p2tgl_connection_set_display_name (TLS, UC);
         }
-      }
-      
-      p2tgl_prpl_got_user_status (TLS, UC->id, &UC->user.status);
-      p2tgl_prpl_got_set_status_mobile (TLS, UC->id);
-    } else {
-      p2tgl_connection_set_display_name (TLS, UC);
+        break;
+        
+      case TGL_PEER_CHAT:
+        assert (UC);
+        if (UC->chat.users_num > 0 && purple_account_get_bool (conn->pa, TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS)) {
+          PurpleChat *PC = p2tgl_chat_find (TLS, UC->id);
+          if (!PC) {
+            PC = p2tgl_chat_new (TLS, &UC->chat);
+            purple_blist_add_chat (PC, NULL, NULL);
+          }
+        }
+        break;
     }
   }
 }
@@ -891,6 +910,13 @@ static void tgprpl_init (PurplePlugin *plugin) {
                                        "(0 for unlimited)",
                                        TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD,
                                        TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
+  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
+  
+  // Chats
+
+  opt = purple_account_option_bool_new ("Add group chats to buddy list",
+                                        TGP_KEY_JOIN_GROUP_CHATS,
+                                        TGP_DEFAULT_JOIN_GROUP_CHATS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
 
 

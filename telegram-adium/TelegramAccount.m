@@ -30,7 +30,6 @@
 #import <AIUtilities/AIImageAdditions.h>
 #import <AIUtilities/AIMenuAdditions.h>
 
-
 #include "telegram-purple.h"
 
 @implementation TelegramAccount
@@ -61,6 +60,20 @@
   [self purpleAccount];
   purple_signal_connect (purple_conversations_get_handle(), "chat-buddy-joined",
                          [self purpleAccount], PURPLE_CALLBACK(chat_buddy_joined), (__bridge void *)(self));
+  
+  // Storing chats in the blist breaks Adium bookmarks. Adium doesn't
+  // show those chats anyway, so we can just safely delete those.
+  PurpleBlistNode *node = purple_blist_get_root();
+  while (node) {
+    if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
+      PurpleChat *ch = PURPLE_CHAT(node);
+      if (purple_chat_get_account(ch) == account) {
+        NSLog (@"Removing chat from blist: %s", ch->alias);
+        purple_blist_remove_chat (ch);
+      }
+    }
+    node = purple_blist_node_next (node, 0);
+  }
 }
 
 - (void)didDisconnect
@@ -216,6 +229,25 @@ void chat_buddy_joined (PurpleConversation *conv, const char *name,
       [chat resortParticipants];
     });
   }
+}
+
+/*!
+ * @brief Re-create the chat's join options.
+ */
+- (NSDictionary *)extractChatCreationDictionaryFromConversation:(PurpleConversation *)conv
+{
+  connection_data *conn = purple_connection_get_protocol_data (purple_conversation_get_gc (conv));
+  
+  const char *name = purple_conversation_get_name (conv);
+  tgl_peer_t *P = tgl_peer_get_by_name (conn->TLS, purple_conversation_get_title (conv));
+  if (P) {
+    return [NSMutableDictionary dictionaryWithObjectsAndKeys:
+            [NSString stringWithFormat:@"%d", tgl_get_peer_id(P->id)], @"id",
+            [NSString stringWithUTF8String: name], @"subject",
+            [NSString stringWithFormat:@"%d", P->chat.admin_id], @"owner",
+            nil];
+  }
+  return nil;
 }
 
 @end

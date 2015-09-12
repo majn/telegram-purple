@@ -50,6 +50,9 @@
 #define TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD 14
 #define TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD  "history-retrieve-days"
 
+#define TGP_DEFAULT_JOIN_GROUP_CHATS FALSE
+#define TGP_KEY_JOIN_GROUP_CHATS "auto-join-group-chats"
+
 #define TGP_KEY_HISTORY_SYNC_ALL "history-sync-all"
 #define TGP_DEFAULT_HISTORY_SYNC_ALL FALSE
 
