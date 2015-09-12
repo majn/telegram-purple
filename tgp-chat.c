@@ -202,12 +202,16 @@ char *tgprpl_get_chat_name (GHashTable * data) {
 
 static void tgp_chat_roomlist_it (tgl_peer_t *P, void *extra) {
   connection_data *conn = extra;
-  PurpleRoomlistRoom *room;
   
   if (tgl_get_peer_type (P->id) == TGL_PEER_CHAT && P->chat.users_num) {
-    room = purple_roomlist_room_new (PURPLE_ROOMLIST_ROOMTYPE_ROOM, P->chat.print_title, NULL);
+    char *name = g_strdup_printf ("%d", tgl_get_peer_id (P->id));
+    
+    PurpleRoomlistRoom *room = purple_roomlist_room_new (PURPLE_ROOMLIST_ROOMTYPE_ROOM, P->chat.print_title, NULL);
+    purple_roomlist_room_add_field (conn->roomlist, room, name);
     purple_roomlist_room_add_field (conn->roomlist, room, GINT_TO_POINTER(P->chat.users_num));
     purple_roomlist_room_add (conn->roomlist, room);
+    
+    g_free (name);
   }
 }
 
@@ -222,9 +226,12 @@ PurpleRoomlist *tgprpl_roomlist_get_list (PurpleConnection *gc) {
   
   conn->roomlist = purple_roomlist_new (purple_connection_get_account (gc));
   
-  PurpleRoomlistField *f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_INT, "Users", "users", FALSE);
-  
+  PurpleRoomlistField *f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_STRING, "", "id", TRUE);
   fields = g_list_append (fields, f);
+  
+  f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_INT, "Users", "users", FALSE);
+  fields = g_list_append (fields, f);
+  
   purple_roomlist_set_fields (conn->roomlist, fields);
   
   tgl_peer_iterator_ex (conn->TLS, tgp_chat_roomlist_it, conn);
