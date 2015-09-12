@@ -79,13 +79,13 @@ static PurpleChat *blist_find_chat_by_hasht_cond (PurpleConnection *gc,
   while (node) {
     if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
       PurpleChat *ch = PURPLE_CHAT(node);
-      if (purple_chat_get_account(ch) == account) {
-        hasht = purple_chat_get_components(ch);
-        if (fn(hasht, data))
+      if (purple_chat_get_account (ch) == account) {
+        hasht = purple_chat_get_components (ch);
+        if (fn (hasht, data))
           return ch;
       }
     }
-    node = purple_blist_node_next(node, 0);
+    node = purple_blist_node_next (node, 0);
   }
   return NULL;
 }

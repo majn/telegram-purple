@@ -190,11 +190,6 @@ static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, u
     if (flags & TGL_UPDATE_TITLE && ch) {
       purple_blist_alias_chat (ch, chat->print_title);
     }
-    /*
-    if (flags & (TGL_UPDATE_MEMBERS | TGL_UPDATE_ADMIN) && ch) {
-      tgp_chat_users_update (TLS, chat);
-    }
-     */
     if (flags & TGL_UPDATE_DELETED && ch) {
       purple_blist_remove_chat (ch);
     }
@@ -434,13 +429,13 @@ static GList *tgprpl_status_types (PurpleAccount * acct) {
   GList *types = NULL;
   PurpleStatusType *type;
   
-  type = purple_status_type_new_full(PURPLE_STATUS_AVAILABLE, NULL, NULL, FALSE, TRUE, FALSE);
+  type = purple_status_type_new_full (PURPLE_STATUS_AVAILABLE, NULL, NULL, FALSE, TRUE, FALSE);
   types = g_list_prepend (types, type);
   
-  type = purple_status_type_new_full(PURPLE_STATUS_MOBILE, NULL, NULL, FALSE, TRUE, FALSE);
+  type = purple_status_type_new_full (PURPLE_STATUS_MOBILE, NULL, NULL, FALSE, TRUE, FALSE);
   types = g_list_prepend (types, type);
 
-  type = purple_status_type_new_full(PURPLE_STATUS_OFFLINE, NULL, NULL, FALSE, TRUE, FALSE);
+  type = purple_status_type_new_full (PURPLE_STATUS_OFFLINE, NULL, NULL, FALSE, TRUE, FALSE);
   types = g_list_prepend (types, type);
   
   /*
@@ -448,9 +443,10 @@ static GList *tgprpl_status_types (PurpleAccount * acct) {
     state changes to away and unavailable. This is useful for deciding when to send 
     No other peer should ever have those states.
    */
-  type = purple_status_type_new_full(PURPLE_STATUS_AWAY, NULL, NULL, FALSE, TRUE, FALSE);
+  type = purple_status_type_new_full (PURPLE_STATUS_AWAY, NULL, NULL, FALSE, TRUE, FALSE);
   types = g_list_prepend (types, type);
-  type = purple_status_type_new_full(PURPLE_STATUS_UNAVAILABLE, NULL, NULL, FALSE, TRUE, FALSE);
+  
+  type = purple_status_type_new_full (PURPLE_STATUS_UNAVAILABLE, NULL, NULL, FALSE, TRUE, FALSE);
   types = g_list_prepend (types, type);
   
   return g_list_reverse (types);
