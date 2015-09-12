@@ -1,7 +1,7 @@
 Telegram-Purple Unofficial (Beta 3)
 ===================================
 
-Telegram-purple is a Libpurple plugin that adds support for the Telegram messenger.
+Telegram-purple is a Libpurple protocol plugin that adds support for the Telegram messenger.
 
 I keep getting many questions about this plugin in my mail, so I've created a telegram group 
 chat for [telegram group chat](https://telegram.me/joinchat/01fb53f301b67d3c7a5532908dfa9a89) 
@@ -9,6 +9,26 @@ telegram-purple related discussions or questions.
 
 Beta 3
 ------
+
+#### 1.2.1
+
+##### Bugfixes 
+
+    - Fix buggy group chat handling
+      * Assure that foreign users are always listed by their full name instead of the user ID
+      * Don't automatically add group chats to buddy list to prevent incompatibillities with some libpurple clients
+      * Fix issue that caused the buddy list to not be correctly updated on joining / leaving participants
+      * Fix an issue that caused the user list to be printed on every group chat message in Finch
+    
+    - Fetch chat information lazily to reduce traffic and prevent flood errors
+    - Improve input validation for phone numbers
+
+###### Features
+
+    - Support leaving chats
+    - Implement the roomlist-API to allow listing of all active chats
+
+#### 1.2.0
 
 ##### Bugfixes
 
@@ -108,8 +128,6 @@ Self destructive messages will be ignored, since I don't know any way to delete 
 ##### Confirming the key authenticity
 
 Click on the buddy in the buddy list and click on "Show Info" to visualize the key fingerprint.  
-
-![Confirm key authenticity](http://h2079792.stratoserver.net/telegram-purple/res/key.png)
 
 ##### Initiate secret chats
 
