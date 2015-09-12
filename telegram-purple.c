@@ -360,6 +360,7 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra
         break;
     }
   }
+  purple_connection_set_state (conn->gc, PURPLE_CONNECTED);
 }
 
 void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U) {
@@ -390,7 +391,6 @@ void on_ready (struct tgl_state *TLS) {
   debug ("on_ready().");
   connection_data *conn = TLS->ev_base;
   
-  purple_connection_set_state (conn->gc, PURPLE_CONNECTED);
   purple_connection_set_display_name (conn->gc, purple_account_get_username (conn->pa));
   purple_blist_add_account (conn->pa);
   
