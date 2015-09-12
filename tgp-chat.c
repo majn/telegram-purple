@@ -26,6 +26,32 @@
 #include <tgl.h>
 #include <assert.h>
 
+
+GHashTable *tgp_chat_info_new (struct tgl_state *TLS, struct tgl_chat *chat) {
+  gchar *admin = g_strdup_printf ("%d", chat->admin_id);
+  gchar *title = g_strdup (chat->print_title);
+  gchar *name  = p2tgl_strdup_id (chat->id);
+  
+  GHashTable *ht = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
+  g_hash_table_insert (ht, "subject", title);
+  g_hash_table_insert (ht, "id", name);
+  g_hash_table_insert (ht, "owner", admin);
+  
+  return ht;
+}
+
+PurpleChat *p2tgl_chat_new (struct tgl_state *TLS, struct tgl_chat *chat) {
+  return purple_chat_new (tg_get_acc(TLS), chat->title, tgp_chat_info_new (TLS, chat));
+}
+
+void p2tgl_chat_update (PurpleChat *chat, tgl_peer_id_t id, int admin_id, const char *subject) {
+  GHashTable *ht = purple_chat_get_components (chat);
+  
+  g_hash_table_replace (ht, g_strdup ("id"), g_strdup_printf ("%d", tgl_get_peer_id (id)));
+  g_hash_table_replace (ht, g_strdup ("owner"), g_strdup_printf ("%d", admin_id));
+  g_hash_table_replace (ht, g_strdup ("subject"), g_strdup (subject));
+}
+
 void tgp_chat_on_loaded_chat_full (struct tgl_state *TLS, struct tgl_chat *C) {
   PurpleChat *PC = p2tgl_chat_find (TLS, C->id);
   if (!PC) {
@@ -110,6 +136,19 @@ GList *tgprpl_chat_join_info (PurpleConnection * gc) {
   return g_list_append (info, pce);
 }
 
+GHashTable *tgprpl_chat_info_defaults (PurpleConnection *gc, const char *chat_name) {
+  debug ("tgprpl_chat_info_defaults(%s)", chat_name);
+  
+  connection_data *conn = purple_connection_get_protocol_data (gc);
+  
+  tgl_peer_t *P = tgl_peer_get_by_name (conn->TLS, chat_name);
+  if (P) {
+    return tgp_chat_info_new (conn->TLS, &P->chat);
+  }
+  warning ("Chat not found, returning empty defaults...");
+  return g_hash_table_new_full(g_str_hash, *g_str_equal, NULL, g_free);
+}
+
 void tgprpl_chat_join (PurpleConnection * gc, GHashTable *data) {
   debug ("tgprpl_chat_join()");
   connection_data *conn = purple_connection_get_protocol_data (gc);
@@ -162,14 +201,9 @@ static void tgp_chat_roomlist_it (tgl_peer_t *P, void *extra) {
   PurpleRoomlistRoom *room;
   
   if (tgl_get_peer_type (P->id) == TGL_PEER_CHAT && P->chat.users_num) {
-    char *name = g_strdup_printf ("%d", tgl_get_peer_id (P->id));
-    
     room = purple_roomlist_room_new (PURPLE_ROOMLIST_ROOMTYPE_ROOM, P->chat.print_title, NULL);
-    purple_roomlist_room_add_field (conn->roomlist, room, name);
     purple_roomlist_room_add_field (conn->roomlist, room, GINT_TO_POINTER(P->chat.users_num));
     purple_roomlist_room_add (conn->roomlist, room);
-    
-    g_free (name);
   }
 }
 
@@ -177,16 +211,15 @@ PurpleRoomlist *tgprpl_roomlist_get_list (PurpleConnection *gc) {
   debug ("tgprpl_roomlist_get_list()");
   connection_data *conn = purple_connection_get_protocol_data (gc);
   GList *fields = NULL;
-  PurpleRoomlistField *f;
   
   if (conn->roomlist) {
     purple_roomlist_unref (conn->roomlist);
   }
   
   conn->roomlist = purple_roomlist_new (purple_connection_get_account (gc));
-  f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_STRING, "", "id", TRUE);
-  fields = g_list_append (fields, f);
-  f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_INT, "Users", "users", FALSE);
+  
+  PurpleRoomlistField *f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_INT, "Users", "users", FALSE);
+  
   fields = g_list_append (fields, f);
   purple_roomlist_set_fields (conn->roomlist, fields);
   
@@ -208,4 +241,3 @@ void tgprpl_roomlist_cancel (PurpleRoomlist *list) {
     purple_roomlist_unref (list);
   }
 }
-

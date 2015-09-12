@@ -775,9 +775,9 @@ static PurplePluginProtocolInfo prpl_info = {
   NULL,
   tgprpl_tooltip_text,
   tgprpl_status_types,
-  tgprpl_blist_node_menu,  // blist_node_menu
+  tgprpl_blist_node_menu,
   tgprpl_chat_join_info,
-  NULL,
+  tgprpl_chat_info_defaults,
   tgprpl_login,
   tgprpl_close,
   tgprpl_send_im,

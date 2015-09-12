@@ -36,5 +36,5 @@ void tgprpl_chat_join (PurpleConnection *gc, GHashTable *data);
 GList *tgprpl_chat_join_info (PurpleConnection *gc);
 PurpleRoomlist *tgprpl_roomlist_get_list (PurpleConnection *gc);
 void tgprpl_roomlist_cancel (PurpleRoomlist *list);
-
+GHashTable *tgprpl_chat_info_defaults (PurpleConnection *gc, const char *chat_name);
 #endif

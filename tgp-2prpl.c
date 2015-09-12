@@ -296,28 +296,6 @@ PurpleChat *p2tgl_blist_find_chat(struct tgl_state *TLS, tgl_peer_id_t chat) {
   return c;
 }
 
-PurpleChat *p2tgl_chat_new (struct tgl_state *TLS, struct tgl_chat *chat) {
-  gchar *admin = g_strdup_printf("%d", chat->admin_id);
-  gchar *title = g_strdup(chat->print_title);
-  gchar *name  = p2tgl_strdup_id (chat->id);
-  
-  GHashTable *ht = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-  g_hash_table_insert(ht, g_strdup("subject"), title);
-  g_hash_table_insert(ht, g_strdup("id"), name);
-  g_hash_table_insert(ht, g_strdup("owner"), admin);
-  
-  PurpleChat *C = purple_chat_new (tg_get_acc(TLS), chat->title, ht);
-  return C;
-}
-
-void p2tgl_chat_update (PurpleChat *chat, tgl_peer_id_t id, int admin_id, const char *subject) {
-  GHashTable *ht = purple_chat_get_components (chat);
-  
-  g_hash_table_replace (ht, g_strdup ("id"), g_strdup_printf ("%d", tgl_get_peer_id (id)));
-  g_hash_table_replace (ht, g_strdup ("owner"), g_strdup_printf ("%d", admin_id));
-  g_hash_table_replace (ht, g_strdup ("subject"), g_strdup (subject));
-}
-
 tgl_chat_id_t p2tgl_chat_get_id (PurpleChat *PC) {
   char *name = g_hash_table_lookup (purple_chat_get_components (PC), "id");
   if (! name || ! atoi (name)) {
