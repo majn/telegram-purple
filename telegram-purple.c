@@ -329,7 +329,12 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra
     switch (tgl_get_peer_type (peers[i])) {
       case TGL_PEER_USER:
         assert (UC);
-        if (tgl_get_peer_id (UC->id) != TLS->our_id) {
+        if (tgl_get_peer_id (UC->id) == TLS->our_id) {
+          p2tgl_connection_set_display_name (TLS, UC);
+          continue;
+        }
+        
+        if (! (UC->user.flags & TGLUF_DELETED)) {
           PurpleBuddy *buddy = p2tgl_buddy_find (TLS, UC->id);
           if (! buddy) {
             buddy = p2tgl_buddy_new (TLS, UC);
@@ -342,9 +347,6 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra
           }
           
           p2tgl_prpl_got_user_status (TLS, UC->id, &UC->user.status);
-          p2tgl_prpl_got_set_status_mobile (TLS, UC->id);
-        } else {
-          p2tgl_connection_set_display_name (TLS, UC);
         }
         break;
         
@@ -488,7 +490,7 @@ static void create_chat_link_done (struct tgl_state *TLS, void *extra, int succe
 static void create_chat_link (PurpleBlistNode *node, gpointer data) {
   PurpleChat *chat = (PurpleChat*)node;
   connection_data *conn = purple_connection_get_protocol_data (
-                            purple_account_get_connection(purple_chat_get_account(chat)));
+                            purple_account_get_connection (purple_chat_get_account (chat)));
   export_chat_link_checked (conn->TLS, purple_chat_get_name (chat));
 }
 
