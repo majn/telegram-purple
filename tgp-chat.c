@@ -132,16 +132,23 @@ GList *tgprpl_chat_join_info (PurpleConnection * gc) {
   pce->identifier = "subject";
   pce->required = FALSE;
   GList *info = g_list_append (NULL, pce);
-  
+
   pce = g_new0 (struct proto_chat_entry, 1);
-  pce->label = "_Join by Link:";
+  pce->label = "_Invite Link:";
   pce->identifier = "link";
   pce->required = FALSE;
+  info = g_list_append (info, pce);
+
+  pce = g_new0 (struct proto_chat_entry, 1);
+  pce->label = "_Chat Id:";
+  pce->identifier = "id";
+  pce->required = FALSE;
+
   return g_list_append (info, pce);
 }
 
 GHashTable *tgprpl_chat_info_defaults (PurpleConnection *gc, const char *chat_name) {
-  debug ("tgprpl_chat_info_defaults(%s)", chat_name);
+  debug ("tgprpl_chat_info_defaults()");
   
   connection_data *conn = purple_connection_get_protocol_data (gc);
   
@@ -150,7 +157,7 @@ GHashTable *tgprpl_chat_info_defaults (PurpleConnection *gc, const char *chat_na
     return tgp_chat_info_new (conn->TLS, &P->chat);
   }
   warning ("Chat not found, returning empty defaults...");
-  return g_hash_table_new_full(g_str_hash, *g_str_equal, NULL, g_free);
+  return g_hash_table_new_full (g_str_hash, *g_str_equal, NULL, g_free);
 }
 
 void tgprpl_chat_join (PurpleConnection * gc, GHashTable *data) {
