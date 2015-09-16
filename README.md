@@ -28,7 +28,7 @@ Beta 3
     - Mark messages read on other devices as 'deferred' to avoid needless notifications
 
 
-This version should fix the crashes that seem to occur in many of the older version. Consider this another intermediate Beta version, there will be at least another one until I will consider it a release candidate.
+This version should fix the crashes that seem to have occured in many of the older versions. Consider this another intermediate Beta version, as there will be at least another one until I consider issuing a release candidate.
 
 If you migrate from an older version, the Telegram authentication files have been moved to .purple/telegram-purple. If you want to keep your old secret chats, please copy it manually from ~/.telegram-purple, otherwise you will be prompted for a new SMS code.
 
