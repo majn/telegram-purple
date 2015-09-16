@@ -215,6 +215,9 @@ void chat_buddy_joined (PurpleConversation *conv, const char *name,
   connection_data *conn = purple_connection_get_protocol_data(
                             purple_account_get_connection(purple_conversation_get_account(conv)));
   assert (conn);
+  if (!name || !conv->name) {
+    return;
+  }
   
   tgl_peer_t *P = tgl_peer_get (conn->TLS, TGL_MK_USER(atoi(name)));
   AIChat *chat = [_self chatWithName:[NSString stringWithUTF8String:conv->name] identifier:nil];
@@ -224,9 +227,11 @@ void chat_buddy_joined (PurpleConversation *conv, const char *name,
                            service:nil];
     
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10 * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
-      [chat setAlias:[NSString stringWithUTF8String:P->print_name]
-          forContact:dummy];
-      [chat resortParticipants];
+      if (P->print_name) {
+        [chat setAlias:[NSString stringWithUTF8String:P->print_name]
+            forContact:dummy];
+        [chat resortParticipants];
+      }
     });
   }
 }
