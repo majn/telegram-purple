@@ -152,11 +152,14 @@ GHashTable *tgprpl_chat_info_defaults (PurpleConnection *gc, const char *chat_na
   
   connection_data *conn = purple_connection_get_protocol_data (gc);
   
-  tgl_peer_t *P = tgl_peer_get_by_name (conn->TLS, chat_name);
-  if (P) {
-    return tgp_chat_info_new (conn->TLS, &P->chat);
+  if (chat_name) {
+    tgl_peer_t *P = tgl_peer_get_by_name (conn->TLS, chat_name);
+    if (P) {
+      debug ("found chat...");
+      return tgp_chat_info_new (conn->TLS, &P->chat);
+    }
+    warning ("Chat not found, returning empty defaults...");
   }
-  warning ("Chat not found, returning empty defaults...");
   return g_hash_table_new_full (g_str_hash, *g_str_equal, NULL, g_free);
 }
 
