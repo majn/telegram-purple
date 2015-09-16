@@ -3,8 +3,8 @@ Telegram-Purple Unofficial (Beta 3)
 
 Telegram-purple is a Libpurple plugin that adds support for the Telegram messenger.
 
-I keep getting many questions about this plugin in my mail, so I've created a telegram group 
-chat for [telegram group chat](https://telegram.me/joinchat/01fb53f301b67d3c7a5532908dfa9a89) 
+I keep getting many questions about this plugin in my E-mail, so I've created a
+[telegram group chat](https://telegram.me/joinchat/01fb53f301b67d3c7a5532908dfa9a89) for
 telegram-purple related discussions or questions.
 
 Beta 3
@@ -28,14 +28,14 @@ Beta 3
     - Mark messages read on other devices as 'deferred' to avoid needless notifications
 
 
-This version should fix the crashes that seem to occur in many of the older version. Consider this another intermediate Beta version, there will be at least another one until I will consider it a release candidate.
+This version should fix the crashes that seem to have occured in many of the older versions. Consider this another intermediate Beta version, as there will be at least another one until I consider issuing a release candidate.
 
-If you migrate from an older version, the Telegram authentication files have been moved to .purple/telegram-purple. If you want to keep your old secret chats, please copy it manually from ~/.telegram-purple, otherwise you will be prompted for a new SMS code.
+If you migrate from an older version, the Telegram authentication files have been moved to .purple/telegram-purple. If you want to keep your old secret chats, please copy them manually from ~/.telegram-purple, or otherwise you will be prompted for a new SMS code.
 
 Build
 -----
 
-Below, you will find instructions on how to build the libpurple protocol plugin. If you just want to use the plugin in Adium, [download precompiled packages here.](https://github.com/majn/telegram-purple/releases). 
+Below, you will find the instructions for how to build the libpurple protocol plugin. If you just want to use the plugin in Adium, [download the precompiled packages here.](https://github.com/majn/telegram-purple/releases).
 
 #### 1. Clone
 
@@ -75,7 +75,7 @@ If libwebp is not available, you can disable sticker support by calling ./config
 Pulling Updates
 ---------------
 
-This repository contains submodules and just a simple pull won't be enough to update all submodule files. Pull new changes with:
+This repository contains submodules, and a simple pull just won't be enough to update all the submodules’ files. Pull new changes with:
 
 
         git pull
@@ -101,7 +101,7 @@ Foreign users, like for example people you only know through a group chat but ne
 
 You can use Telegram secret chats with this plugin, they will show up as a new buddy with a '!' in front of the buddy name.
 
-One caveat of secret chats in Telegram is that they can only have one endpoint, this is a limitation of the protocol. This means that if you create a secret chat in Pidgin you will not be able to use that chat on your phone. You will be asked whether to accept each secret chat, so you can always choose to accept the chat on a different device if you want. You can set a default behavior for dealing with secret chats (Accept or Decline) in the account settings if you don't want that prompt to appear every time.
+One caveat of secret chats in Telegram is that they can only have one endpoint, this is a limitation of the protocol. This means that if you create a secret chat in Pidgin you will not be able to use that chat on your phone. You will be asked whether to accept each secret chat, so you can always choose to accept the chat on a different device if you want. You can set a default behavior for dealing with secret chats (Accept or Decline) in the account settings, if you don't want that prompt to appear every time.
 
 Self destructive messages will be ignored, since I don't know any way to delete them from the conversation and the history.
 
@@ -129,15 +129,15 @@ does not display those smileys natively, but you can install a custom smiley the
 Building the Adium Plugin
 -------------------------
 
-Compiling with XCode is a little bit problematic, since it requries you to compile Adium first to get the necessary framework files. My advice is to just use the [prebuild bundle](https://github.com/majn/telegram-purple/releases), but if you really want to do it, follow those steps.
+Compiling with XCode is a little bit problematic, since it requires you to compile Adium first to get the necessary framework files. My advice is to just use the [prebuilt bundle](https://github.com/majn/telegram-purple/releases), but if you really want to do it, follow these steps:
 
 1. Get the Adium source, compile it with XCode and copy the build output into telegram-adium/Frameworks/Adium. It should contain at least Adium.framework, AdiumLibpurple.framework and AIUitilies.framework
 2. Open the Adium source code, go to ./Frameworks and copy libglib.framework and libpurple.framework into telegram-adium/Frameworks/Adium
 3. Build the tgl submodule and delete libtgl.so from libs/ (it should only contain libtgl.a)
-4. Install libwebp with homebrew, move into  copy it into your project 
+4. Install libwebp with homebrew, and copy it into your project:
 
       brew install webp
-      cp /usr/local/Cellar/webp/0.4.3/lib/libwebp.a ./telegram-adium/Frameworks/ 
+      cp /usr/local/Cellar/webp/0.4.3/lib/libwebp.a ./telegram-adium/Frameworks/
 
 5. Build the XCode-Project and execute the created bundle
 
