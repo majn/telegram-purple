@@ -35,7 +35,7 @@ If you migrate from an older version, the Telegram authentication files have bee
 Build
 -----
 
-Below, you will find instructions on how to build the libpurple protocol plugin. If you just want to use the plugin in Adium, [download the precompiled packages here.](https://github.com/majn/telegram-purple/releases).
+Below, you will find the instructions for how to build the libpurple protocol plugin. If you just want to use the plugin in Adium, [download the precompiled packages here.](https://github.com/majn/telegram-purple/releases).
 
 #### 1. Clone
 
