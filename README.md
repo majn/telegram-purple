@@ -30,7 +30,7 @@ Beta 3
 
 This version should fix the crashes that seem to have occured in many of the older versions. Consider this another intermediate Beta version, as there will be at least another one until I consider issuing a release candidate.
 
-If you migrate from an older version, the Telegram authentication files have been moved to .purple/telegram-purple. If you want to keep your old secret chats, please copy it manually from ~/.telegram-purple, otherwise you will be prompted for a new SMS code.
+If you migrate from an older version, the Telegram authentication files have been moved to .purple/telegram-purple. If you want to keep your old secret chats, please copy them manually from ~/.telegram-purple, or otherwise you will be prompted for a new SMS code.
 
 Build
 -----
