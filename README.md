@@ -75,7 +75,7 @@ If libwebp is not available, you can disable sticker support by calling ./config
 Pulling Updates
 ---------------
 
-This repository contains submodules and just a simple pull won't be enough to update all submodule files. Pull new changes with:
+This repository contains submodules, and a simple pull just won't be enough to update all the submodules’ files. Pull new changes with:
 
 
         git pull
