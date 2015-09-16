@@ -101,7 +101,7 @@ Foreign users, like for example people you only know through a group chat but ne
 
 You can use Telegram secret chats with this plugin, they will show up as a new buddy with a '!' in front of the buddy name.
 
-One caveat of secret chats in Telegram is that they can only have one endpoint, this is a limitation of the protocol. This means that if you create a secret chat in Pidgin you will not be able to use that chat on your phone. You will be asked whether to accept each secret chat, so you can always choose to accept the chat on a different device if you want. You can set a default behavior for dealing with secret chats (Accept or Decline) in the account settings if you don't want that prompt to appear every time.
+One caveat of secret chats in Telegram is that they can only have one endpoint, this is a limitation of the protocol. This means that if you create a secret chat in Pidgin you will not be able to use that chat on your phone. You will be asked whether to accept each secret chat, so you can always choose to accept the chat on a different device if you want. You can set a default behavior for dealing with secret chats (Accept or Decline) in the account settings, if you don't want that prompt to appear every time.
 
 Self destructive messages will be ignored, since I don't know any way to delete them from the conversation and the history.
 
