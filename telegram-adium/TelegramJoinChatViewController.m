@@ -37,10 +37,12 @@
 
 @implementation TelegramJoinChatViewController
 
-static void tgl_peer_iterator_cb (tgl_peer_t *peer, void *extra) {
+static void tgl_chat_iterator_cb (tgl_peer_t *peer, void *extra) {
   NSMutableArray *A = (__bridge NSMutableArray *)(extra);
-  if (tgl_get_peer_type (peer->id) == TGL_PEER_CHAT) {
-    [A addObject: [NSValue valueWithPointer: peer]];
+  
+  // chats with 0 participants were deleted or left by the user
+  if (tgl_get_peer_type (peer->id) == TGL_PEER_CHAT && peer->chat.users_num > 0) {
+    [A addObject: [NSString stringWithUTF8String: peer->print_name]];
   }
 }
 
@@ -53,33 +55,12 @@ static void tgl_peer_iterator_cb (tgl_peer_t *peer, void *extra) {
   if (gc && PURPLE_CONNECTION_IS_CONNECTED(gc)) {
     connection_data *conn = purple_connection_get_protocol_data (gc);
     
+    // fetch all active chats and put them into the select box
     [popupButton_existingChat removeAllItems];
-    
-    NSMutableArray *a = [NSMutableArray new];
-    tgl_peer_iterator_ex (conn->TLS, tgl_peer_iterator_cb, (__bridge void *)(a));
-    
     NSMutableArray *chats = [NSMutableArray new];
-    NSMutableArray *leftChats = [NSMutableArray new];
-    for (NSValue *V in a) {
-      tgl_peer_t *P = [V pointerValue];
-      NSString *name = [[NSString alloc] initWithUTF8String:P->print_name];
-      if (chat_is_member (conn->TLS->our_id, &P->chat)) {
-        [chats addObject: name];
-      }
-      else {
-        [leftChats addObject: name];
-      }
-    }
-
-    NSArray *sortedChats = [chats sortedArrayUsingComparator:^NSComparisonResult(id a, id b) {
-      return [(NSString*)a
-              compare:b
-              options:NSDiacriticInsensitiveSearch | NSCaseInsensitiveSearch];
-    }];
-    [popupButton_existingChat addItemsWithTitles: sortedChats];
-    // TODO: Display left chats with a grey font to indicate that those are no
-    // longer, but still allow the user to view the history
-    // [popupButton_existingChat addItemsWithTitles: leftChats];
+    tgl_peer_iterator_ex (conn->TLS, tgl_chat_iterator_cb, (__bridge void *)(chats));
+    [popupButton_existingChat
+        addItemsWithTitles: [chats sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)]];
     
     // provide the current TLS instance for access by the autocompletion
     TelegramAutocompletionDelegate *D = [tokenField_createChatUsers delegate];
@@ -95,12 +76,15 @@ static void tgl_peer_iterator_cb (tgl_peer_t *peer, void *extra) {
   PurpleConnection *gc = purple_account_get_connection(pa);
   if (gc && PURPLE_CONNECTION_IS_CONNECTED(gc)) {
     connection_data *conn = purple_connection_get_protocol_data (gc);
-    NSString *link = [textField_joinByLink stringValue];
     
+    // Join by link
+    NSString *link = [textField_joinByLink stringValue];
     if ([link length]) {
       import_chat_link_checked (conn->TLS, [link UTF8String]);
       return;
     }
+    
+    // Create a new chat with provided participants
     NSString *createChatName = [textField_createChatName stringValue];
     NSArray *tokens = [tokenField_createChatUsers objectValue];
     if ([createChatName length] && [tokens count]) {
@@ -114,14 +98,17 @@ static void tgl_peer_iterator_cb (tgl_peer_t *peer, void *extra) {
       return;
     }
     
-    NSString *room = [[popupButton_existingChat selectedItem] title];
-    NSDictionary *chatCreationInfo = [NSDictionary
-                                      dictionaryWithObjectsAndKeys:room, @"subject", nil];
-    [self doJoinChatWithName:room
-                   onAccount:inAccount
-            chatCreationInfo:chatCreationInfo
-            invitingContacts:@[]
-       withInvitationMessage:@""];
+    // Pass the joining to the prpl
+    const char *name = [[[popupButton_existingChat selectedItem] title] UTF8String];
+    PurpleChat *purpleChat = purple_blist_find_chat (conn->pa, name);
+    if (purpleChat) {
+      serv_join_chat (conn->gc, purple_chat_get_components (purpleChat));
+    } else {
+      GHashTable *chatCreationInfo = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
+      g_hash_table_insert (chatCreationInfo, "subject", g_strdup (name));
+      serv_join_chat (conn->gc, chatCreationInfo);
+      g_hash_table_destroy (chatCreationInfo);
+    }
   }
 }
 

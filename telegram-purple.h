@@ -50,6 +50,9 @@
 #define TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD 14
 #define TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD  "history-retrieve-days"
 
+#define TGP_DEFAULT_JOIN_GROUP_CHATS FALSE
+#define TGP_KEY_JOIN_GROUP_CHATS "auto-join-group-chats"
+
 #define TGP_KEY_HISTORY_SYNC_ALL "history-sync-all"
 #define TGP_DEFAULT_HISTORY_SYNC_ALL FALSE
 
@@ -59,12 +62,12 @@
 #define TGP_DEFAULT_SEND_READ_NOTIFICATIONS TRUE
 #define TGP_KEY_SEND_READ_NOTIFICATIONS "send-read-notifications"
 
-void on_chat_get_info (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *C);
 void on_ready (struct tgl_state *TLS);
 extern const char *pk_path;
 extern const char *config_dir;
 extern PurplePlugin *_telegram_protocol;
 void export_chat_link_checked (struct tgl_state *TLS, const char *name);
 void import_chat_link_checked (struct tgl_state *TLS, const char *link);
+void leave_and_delete_chat (PurpleBlistNode *node, gpointer data);
 
 #endif

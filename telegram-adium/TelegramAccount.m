@@ -30,7 +30,6 @@
 #import <AIUtilities/AIImageAdditions.h>
 #import <AIUtilities/AIMenuAdditions.h>
 
-
 #include "telegram-purple.h"
 
 @implementation TelegramAccount
@@ -53,6 +52,34 @@
 - (int)port
 {
 	return 443;
+}
+
+- (void)didConnect
+{
+  [super didConnect];
+  [self purpleAccount];
+  purple_signal_connect (purple_conversations_get_handle(), "chat-buddy-joined",
+                         [self purpleAccount], PURPLE_CALLBACK(chat_buddy_joined), (__bridge void *)(self));
+  
+  // Storing chats in the blist breaks Adium bookmarks. Adium doesn't
+  // show those chats anyway, so we can just safely delete those.
+  PurpleBlistNode *node = purple_blist_get_root();
+  while (node) {
+    if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
+      PurpleChat *ch = PURPLE_CHAT(node);
+      if (purple_chat_get_account(ch) == account) {
+        NSLog (@"Removing chat from blist: %s", ch->alias);
+        purple_blist_remove_chat (ch);
+      }
+    }
+    node = purple_blist_node_next (node, 0);
+  }
+}
+
+- (void)didDisconnect
+{
+  purple_signal_disconnect(purple_conversations_get_handle(), "chat-buddy-joined",
+                           [self purpleAccount], PURPLE_CALLBACK(chat_buddy_joined));
 }
 
 - (void)configurePurpleAccount
@@ -111,7 +138,6 @@
             [NSNumber numberWithInteger: Context_Group_Manage],
             [NSNumber numberWithInteger: Context_GroupChat_Action],
             nil] forChat: chat];
-  
   [menu addItem:[NSMenuItem separatorItem]];
 
   [menu addItemWithTitle:@"Invite users by link..."
@@ -119,14 +145,35 @@
                   action:@selector(addUserByLink)
            keyEquivalent:@""
                      tag:0];
+  
+  [menu addItemWithTitle:@"Delete and exit..."
+                  target:self
+                  action:@selector(deleteAndExitChat)
+           keyEquivalent:@""
+                     tag:0];
+  
   return menu;
 }
+
 - (void)addUserByLink
 {
   connection_data *conn = purple_connection_get_protocol_data (purple_account_get_connection(account));
   AIChat *chat = adium.interfaceController.activeChat;
-  const char *subject = [[[chat chatCreationDictionary] objectForKey:@"subject"] UTF8String];
-  export_chat_link_checked (conn->TLS, subject);
+  if (chat) {
+    export_chat_link_checked (conn->TLS, [chat.name UTF8String]);
+  }
+}
+
+- (void)deleteAndExitChat
+{
+  connection_data *conn = purple_connection_get_protocol_data (purple_account_get_connection(account));
+  AIChat *chat = adium.interfaceController.activeChat;
+  if (chat) {
+    PurpleChat *purpleChat = purple_blist_find_chat (conn->pa, [chat.name UTF8String]);
+    if (purpleChat) {
+      leave_and_delete_chat ((PurpleBlistNode *)purpleChat, NULL);
+    }
+  }
 }
 
 #pragma mark File transfer
@@ -153,6 +200,59 @@
 - (void)cancelFileTransfer:(ESFileTransfer *)fileTransfer
 {
   [super cancelFileTransfer:fileTransfer];
+}
+
+#pragma mark Group Chats
+void chat_buddy_joined (PurpleConversation *conv, const char *name,
+                        PurpleConvChatBuddyFlags flags,
+                        gboolean new_arrival, void *data) {
+  const char *proto = purple_conversation_get_account (conv)->protocol_id;
+  if (! proto || 0 != strcmp ("prpl-telegram", proto)) {
+    return;
+  }
+  
+  TelegramAccount *_self = (__bridge TelegramAccount *)(data);
+  connection_data *conn = purple_connection_get_protocol_data(
+                            purple_account_get_connection(purple_conversation_get_account(conv)));
+  assert (conn);
+  if (!name || !conv->name) {
+    return;
+  }
+  
+  tgl_peer_t *P = tgl_peer_get (conn->TLS, TGL_MK_USER(atoi(name)));
+  AIChat *chat = [_self chatWithName:[NSString stringWithUTF8String:conv->name] identifier:nil];
+  if (P && chat) {
+    AIListObject *dummy = [[AIListObject alloc]
+                           initWithUID:[NSString stringWithUTF8String:name]
+                           service:nil];
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10 * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
+      if (P->print_name) {
+        [chat setAlias:[NSString stringWithUTF8String:P->print_name]
+            forContact:dummy];
+        [chat resortParticipants];
+      }
+    });
+  }
+}
+
+/*!
+ * @brief Re-create the chat's join options.
+ */
+- (NSDictionary *)extractChatCreationDictionaryFromConversation:(PurpleConversation *)conv
+{
+  connection_data *conn = purple_connection_get_protocol_data (purple_conversation_get_gc (conv));
+  
+  const char *name = purple_conversation_get_name (conv);
+  tgl_peer_t *P = tgl_peer_get_by_name (conn->TLS, purple_conversation_get_title (conv));
+  if (P) {
+    return [NSMutableDictionary dictionaryWithObjectsAndKeys:
+            [NSString stringWithFormat:@"%d", tgl_get_peer_id(P->id)], @"id",
+            [NSString stringWithUTF8String: name], @"subject",
+            [NSString stringWithFormat:@"%d", P->chat.admin_id], @"owner",
+            nil];
+  }
+  return nil;
 }
 
 @end

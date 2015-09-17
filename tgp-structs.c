@@ -70,9 +70,9 @@ void tgp_msg_loading_free (gpointer data) {
   free (C);
 }
 
-struct tgp_msg_loading *tgp_msg_loading_init (int done, struct tgl_message *M) {
+struct tgp_msg_loading *tgp_msg_loading_init (struct tgl_message *M) {
   struct tgp_msg_loading *C = malloc (sizeof (struct tgp_msg_loading));
-  C->done = done;
+  C->pending = 0;
   C->msg = M;
   C->data = NULL;
   return C;
@@ -100,6 +100,7 @@ connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *
   conn->new_messages = g_queue_new ();
   conn->out_messages = g_queue_new ();
   conn->pending_reads = g_queue_new ();
+  conn->pending_chat_info = g_hash_table_new (g_direct_hash, g_direct_equal);
   return conn;
 }
 
@@ -112,6 +113,7 @@ void *connection_data_free (connection_data *conn) {
   tgp_g_queue_free_full (conn->new_messages, tgp_msg_loading_free);
   tgp_g_queue_free_full (conn->out_messages, tgp_msg_sending_free);
   tgp_g_list_free_full (conn->used_images, used_image_free);
+  g_hash_table_destroy (conn->pending_chat_info);
   tgprpl_xfer_free_all (conn);
   tgl_free_all (conn->TLS);
   g_free(conn->TLS->base_path);

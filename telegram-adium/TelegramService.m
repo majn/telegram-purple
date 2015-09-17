@@ -93,16 +93,18 @@
 	return NO;
 }
 
-- (AIServiceImportance)serviceImportance{
-    return AIServiceSecondary;
+- (AIServiceImportance)serviceImportance
+{
+  return AIServiceSecondary;
 }
 
 - (NSCharacterSet *)allowedCharacters{
 	return [[NSCharacterSet illegalCharacterSet] invertedSet];
 }
+
 - (NSCharacterSet *)allowedCharactersForAccountName
 {
-    return ([NSCharacterSet characterSetWithCharactersInString: @"+1234567890"]);
+   return ([NSCharacterSet characterSetWithCharactersInString: @"+1234567890"]);
 }
 
 - (NSUInteger)allowedLengthForAccountName
@@ -131,7 +133,8 @@
     return [[NSBundle bundleForClass:[self class]] pathForImageResource:@"telegram"];
 }
 
-- (void)registerStatuses {
+- (void)registerStatuses
+{
 #define ADDSTATUS(name, type) \
 [adium.statusController registerStatus:name \
 withDescription:[adium.statusController localizedDescriptionForCoreStatusName:name] \
@@ -142,6 +145,12 @@ ofType:type forService:self]
     ADDSTATUS(STATUS_NAME_AVAILABLE, AIAvailableStatusType);
     ADDSTATUS(STATUS_NAME_NOT_AVAILABLE, AIAvailableStatusType);
     ADDSTATUS(STATUS_NAME_OFFLINE, AIOfflineStatusType);
+}
+
+- (NSString *)normalizeChatName:(NSString *)inChatName
+{
+  // prevent Adium from normalizing chat names, which would break searching chats by user names
+  return inChatName;
 }
 
 @end
