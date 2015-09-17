@@ -1,6 +1,6 @@
 Name:		purple-telegram
-Version:	1.2.0
-Release:	3%{?dist}
+Version:	1.2.1
+Release:	1%{?dist}
 Summary:	Adds support for Libpurple based messengers
 Group:		Applications/Internet
 License:	GPLv2+
@@ -36,6 +36,9 @@ chmod 755 %{buildroot}/%{_libdir}/purple-2/telegram-purple.so
 %{_datadir}/pixmaps/pidgin/protocols/48/telegram.png
 
 %changelog
+* Thu Sep 17 2015 mjentsch 1.2.1-1
+- update version to 1.2.1
+
 * Wed Sep 02 2015 tuxmaster 1.2.0-3
 - fix rpmlint errors
 
