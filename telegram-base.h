@@ -22,12 +22,6 @@
 
 #include "telegram-purple.h"
 
-struct request_password_data {
-  struct tgl_state *TLS;
-  void (*callback)(struct tgl_state *TLS, const char *string[], void *arg);
-  void *arg;
-};
-
 void read_state_file (struct tgl_state *TLS);
 void read_auth_file (struct tgl_state *TLS);
 void write_auth_file (struct tgl_state *TLS);
@@ -38,18 +32,14 @@ void write_secret_chat_file (struct tgl_state *TLS);
 void write_secret_chat_gw (struct tgl_state *TLS, void *extra, int success, struct tgl_secret_chat *E);
 
 void telegram_login (struct tgl_state *TLS);
-void request_code_entered (gpointer data, const gchar *code);
-void request_password (struct tgl_state *TLS, void (*callback)(struct tgl_state *TLS, const char *string[], void *arg),
-                       void *arg);
-void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *U);
-
-void request_create_chat (struct tgl_state *TLS, const char *subject);
+void telegram_export_authorization (struct tgl_state *TLS);
 
 gchar *get_config_dir (struct tgl_state *TLS, char const *username);
 gchar *get_download_dir (struct tgl_state *TLS);
+
 void assert_file_exists (PurpleConnection *gc, const char *filepath, const char *format);
 
-int tgp_visualize_key(struct tgl_state *TLS, unsigned char* sha1_key);
+int tgp_visualize_key (struct tgl_state *TLS, unsigned char* sha1_key);
 void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *title,
                                          const char *users[], int num_users, int print_names);
 

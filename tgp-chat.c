@@ -18,14 +18,14 @@
  Copyright Matthias Jentsch 2014-2015
  */
 
-#include "tgp-chat.h"
 #include "msglog.h"
+#include "tgp-chat.h"
 #include "tgp-utils.h"
+#include "tgp-request.h"
 #include "telegram-base.h"
 
 #include <tgl.h>
 #include <assert.h>
-
 
 GHashTable *tgp_chat_info_new (struct tgl_state *TLS, struct tgl_chat *chat) {
   gchar *admin = g_strdup_printf ("%d", chat->admin_id);

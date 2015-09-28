@@ -60,17 +60,19 @@
 #include <tgl-binlog.h>
 #include <tools.h>
 #include <tgl-methods-in.h>
+
+#include "msglog.h"
+#include "telegram-base.h"
+#include "telegram-purple.h"
 #include "tgp-structs.h"
 #include "tgp-2prpl.h"
 #include "tgp-net.h"
 #include "tgp-timers.h"
-#include "telegram-base.h"
-#include "telegram-purple.h"
-#include "msglog.h"
 #include "tgp-utils.h"
 #include "tgp-chat.h"
 #include "tgp-ft.h"
 #include "tgp-msg.h"
+#include "tgp-request.h"
 
 static void get_password (struct tgl_state *TLS, enum tgl_value_type type, const char *prompt, int num_values,
                           void (*callback)(struct tgl_state *TLS, const char *string[], void *arg), void *arg);
