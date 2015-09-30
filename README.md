@@ -75,7 +75,7 @@ This repository has submodules, so you need to clone recursively.
 
 ###### Debian / Ubuntu
 
-        sudo apt-get install libssl-dev libglib2.0-dev libpurple-dev libwebp-dev
+        sudo apt-get install libgcrypt20-dev libssl-dev libpurple-dev libwebp-dev
 
 
 ###### OpenSUSE
@@ -216,8 +216,3 @@ Acknowledgements
 This software is based on the library [Libtgl](https://github.com/vysheng/tgl), which was written by Vitaly Valtman <mail@vysheng.ru> and others, see (http://github.com/vysheng/tgl)
 
 For PNG rendering, it includes the [lodepng library](http://lodev.org/lodepng/).
-
-This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit. (http://www.openssl.org/)
-
-This product includes cryptographic software written by Eric Young (eay@cryptsoft.com)
-

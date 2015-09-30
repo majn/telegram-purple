@@ -34,7 +34,7 @@
 
 #include <glib.h>
 #include <request.h>
-#include <openssl/sha.h>
+#include <gcrypt.h>
 
 #include "telegram-base.h"
 #include "telegram-purple.h"
@@ -338,7 +338,7 @@ void read_secret_chat (struct tgl_state *TLS, int fd, int v) {
   if (v >= 2) {
     assert (read (fd, sha, 20) == 20);
   } else {
-    SHA1 ((void *)key, 256, sha);
+    gcry_md_hash_buffer (GCRY_MD_SHA1, sha, (void *)key, 256);
   }
   int in_seq_no = 0, out_seq_no = 0, last_in_seq_no = 0;
   if (v >= 1) {

@@ -32,7 +32,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <poll.h>
-#include <openssl/rand.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <time.h>

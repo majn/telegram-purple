@@ -1,7 +1,7 @@
 srcdir=@srcdir@
 
 CFLAGS=@CFLAGS@ @PURPLE_CFLAGS@ @DEFS@ -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing -fPIC
-LDFLAGS=@LDFLAGS@ @OPENSSL_LDFLAGS@ @PURPLE_LIBS@ @LIBS@ -lcrypto -rdynamic -ggdb
+LDFLAGS=@LDFLAGS@ @PURPLE_LIBS@ @LIBS@ -rdynamic -ggdb
 DIR_PERM=0755
 FILE_PERM=0644
 
@@ -47,7 +47,7 @@ tgl/Makefile.in:
 	@echo "tgl/Makefile.in not found. Maybe you need to 'git submodule update --init --recursive' ?" && exit 1
 
 tgl/Makefile: tgl/Makefile.in
-	cd tgl && ./configure -q
+	cd tgl && ./configure -q --disable-openssl
 
 tgl/libs/libtgl.a: tgl/Makefile
 	+make -C tgl
