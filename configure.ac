@@ -6,8 +6,8 @@ AC_INIT([telegram-purple], [1.2.1])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
 
-m4_include([m4_ax_check_openssl.m4])
 m4_include([m4_ax_check_zlib.m4])
+m4_include([m4_ax_pkg_config.m4])
 
 # Checks for programs.
 AC_PROG_CC
@@ -15,10 +15,10 @@ AC_PROG_INSTALL
 
 AC_CHECK_LIB([m], [sqrt])
 AC_CHECK_LIB([rt], [clock_gettime])
-AX_CHECK_OPENSSL(,[AC_MSG_ERROR([No openssl found])])
+AC_CHECK_LIB([gcrypt], [gcry_md_open])
 AX_CHECK_ZLIB(, [AC_MSG_ERROR([No zlib found])])
 
-PKG_CHECK_MODULES([PURPLE], [purple], )
+PKG_CHECK_MODULES([PURPLE], [purple])
 
 AC_MSG_CHECKING([for libwebp])
 AC_ARG_ENABLE([libwebp],

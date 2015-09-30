@@ -1,7 +1,7 @@
 srcdir=@srcdir@
 
 CFLAGS=@CFLAGS@ @PURPLE_CFLAGS@ @DEFS@ -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing -fPIC
-LDFLAGS=@LDFLAGS@ @OPENSSL_LDFLAGS@ @PURPLE_LIBS@ @LIBS@ -lcrypto -rdynamic -ggdb
+LDFLAGS=@LDFLAGS@ @PURPLE_LIBS@ @LIBS@ -rdynamic -ggdb
 CPPFLAGS=@CPPFLAGS@ -DFLAGS
 COMPILE_FLAGS=${CFLAGS} ${CPPFLAGS}
 LINK_FLAGS=${LDFLAGS}
