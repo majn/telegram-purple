@@ -1,0 +1,11 @@
+#!/bin/bash
+Orginalname="Orginal"
+
+git remote -v|grep majn >/dev/null
+if [ $? != 0 ]; then
+	echo "muss remote einbauen"
+	git remote add $Orginalname https://github.com/majn/telegram-purple.git
+fi
+git fetch $Orginalname
+git checkout master
+git merge $Orginalname/master
