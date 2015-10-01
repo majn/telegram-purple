@@ -22,6 +22,14 @@
 
 #include "telegram-purple.h"
 
+struct rsa_pubkey {
+  unsigned int e;
+  unsigned int n_len;
+  unsigned char *n_raw;
+};
+
+gboolean read_pubkey_file (const char *name, struct rsa_pubkey *dst);
+
 void read_state_file (struct tgl_state *TLS);
 void read_auth_file (struct tgl_state *TLS);
 void write_auth_file (struct tgl_state *TLS);
@@ -37,7 +45,7 @@ void telegram_export_authorization (struct tgl_state *TLS);
 gchar *get_config_dir (struct tgl_state *TLS, char const *username);
 gchar *get_download_dir (struct tgl_state *TLS);
 
-void assert_file_exists (PurpleConnection *gc, const char *filepath, const char *format);
+gboolean assert_file_exists (PurpleConnection *gc, const char *filepath, const char *format);
 
 int tgp_visualize_key (struct tgl_state *TLS, unsigned char* sha1_key);
 void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *title,

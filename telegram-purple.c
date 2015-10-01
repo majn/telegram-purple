@@ -89,7 +89,7 @@ void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, stru
 
 PurpleGroup *tggroup;
 const char *config_dir = "telegram-purple";
-const char *pk_path = "/etc/telegram-purple/server.pub";
+const char *pk_path = "/etc/telegram-purple/server.tglpub";
 
 struct tgl_update_callback tgp_callback = {
   .logprintf = debug,
@@ -575,12 +575,28 @@ static void tgprpl_login (PurpleAccount * acct) {
 
   TLS->base_path = get_config_dir(TLS, purple_account_get_username (acct));
   tgl_set_download_directory (TLS, get_download_dir(TLS));
-  assert_file_exists (gc, pk_path, "Error, server public key not found at %s."
-                      " Make sure that Telegram-Purple is installed properly.");
+  if (!assert_file_exists (gc, pk_path, "Error, server public key not found at %s."
+                      " Make sure that Telegram-Purple is installed properly.")) {
+    /* Already reported. */
+    return;
+  }
+
   debug ("base configuration path: '%s'", TLS->base_path);
   
+  struct rsa_pubkey the_pubkey;
+  if (!read_pubkey_file (pk_path, &the_pubkey)) {
+    char *cause = g_strdup_printf ("Unable to sign on as %s: Missing file %s.",
+                    purple_account_get_username (acct), pk_path);
+    purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_INVALID_SETTINGS, cause);
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, cause,
+                            "Make sure telegram-purple is installed properly,\n"
+                            "including the .tglpub file.", NULL, NULL, NULL);
+    g_free (cause);
+    return;
+  }
+
   tgl_set_verbosity (TLS, 4);
-  tgl_set_rsa_key (TLS, pk_path);
+  tgl_set_rsa_key_direct (TLS, the_pubkey.e, the_pubkey.n_len, the_pubkey.n_raw);
   
   tgl_set_ev_base (TLS, conn);
   tgl_set_net_methods (TLS, &tgp_conn_methods);

@@ -72,15 +72,18 @@ This repository has submodules, so you need to clone recursively.
 
         sudo dnf install gcc openssl-devel glib2-devel libpurple-devel libwebp-devel
 
+And the development files for gcrypt, probably `gcrypt-devel` or something.
+
 
 ###### Debian / Ubuntu
 
         sudo apt-get install libgcrypt20-dev libssl-dev libpurple-dev libwebp-dev
 
-
 ###### OpenSUSE
 
         sudo zypper install gcc glib glib-devel libpurple libpurple-devel zlib-devel openssl libopenssl-devel libwebp-devel
+
+And the development files for gcrypt, probably `gcrypt-devel` or something.
 
 
 #### 3. Compile and install
@@ -187,6 +190,22 @@ Compiling with XCode is a little bit problematic, since it requires you to compi
 
 Discussion / Help
 -----------------
+
+#### Custom pubkeys
+
+As we want to avoid OpenSSL, it has become necessary to replace the PEM file format. This means that if you use a custom pubkey (which you really REALLY shouldn't be doing), you have to adapt, sorry.
+
+We no longer ship `tg-server.pub` (old format), but instead `tg-server.tlgpub` (new format). If you have a `.pub` and want to continue using telegram-purple, please use this (hopefully highly portable) tool: [pem2bignum](https://github.com/BenWiederhake/pem2bignum)
+
+You can also write your own conversion tool if you prefer. The format is really simple:
+
+1. `e`, the public exponent, encoded as big endian 32 bit fixed length (e.g. `0x00 01 00 01` for 65537)
+2. `n_len`, the length of `n` in bytes, encoded as big endian 32 bit fixed length (e.g. `0x00 00 01 00` for a 2048-bit = 256-byte key)
+3. `n_raw`, the raw modulus, encoded as big endian, using the previously indicated length (e.g. `0xC1 50 02 3E [248 bytes omitted] 21 79 25 1F` in the case of telegram's public RSA key.)
+
+If you are interested in developing a non-OpenSSL-licensed converter, look into [insane-triangle-banana](https://github.com/BenWiederhake/insane-triangle-banana).
+
+#### Group chat
 
 Telegram group chat for telegram-purple or libtgl related discussions or questions:
 

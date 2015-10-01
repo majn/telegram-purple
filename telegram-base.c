@@ -51,6 +51,64 @@
 #define STATE_FILE_MAGIC 0x28949a93
 #define SECRET_CHAT_FILE_MAGIC 0x37a1988a
 
+static gboolean read_ui32 (int fd, unsigned int *ret) {
+  typedef char check_int_size[(sizeof (int) >= 4) ? 1 : -1];
+  (void) sizeof (check_int_size);
+
+  unsigned char buf[4];
+  if (4 != read (fd, buf, 4)) {
+    return 0;
+  }
+  /* Ugly but works. */
+  *ret = 0;
+  *ret |= buf[0];
+  *ret <<= 8;
+  *ret |= buf[1];
+  *ret <<= 8;
+  *ret |= buf[2];
+  *ret <<= 8;
+  *ret |= buf[3];
+  return 1;
+}
+
+int read_pubkey_file (const char *name, struct rsa_pubkey *dst) {
+  /* Just to make sure nobody reads garbage. */
+  dst->e = 0;
+  dst->n_len = 0;
+  dst->n_raw = NULL;
+
+  int pubkey_fd = open (name, O_RDONLY);
+  if (pubkey_fd < 0) {
+    return 0;
+  }
+
+  unsigned int e;
+  unsigned int n_len;
+  if (!read_ui32 (pubkey_fd, &e) || !read_ui32 (pubkey_fd, &n_len) // Ensure successful reads
+      || n_len < 128 || n_len > 1024 || e < 5) { // Ensure (at least remotely) sane parameters.
+    close (pubkey_fd);
+    return 0;
+  }
+
+  unsigned char *n_raw = malloc (n_len);
+  if (!n_raw) {
+    close (pubkey_fd);
+    return 0;
+  }
+
+  if (n_len != read (pubkey_fd, n_raw, n_len)) {
+    free (n_raw);
+    close (pubkey_fd);
+    return 0;
+  }
+  close (pubkey_fd);
+
+  dst->e = e;
+  dst->n_len = n_len;
+  dst->n_raw = n_raw;
+  return 1;
+}
+
 void read_state_file (struct tgl_state *TLS) {
   char *name = 0;
   if (asprintf (&name, "%s/%s", TLS->base_path, "state") < 0) {
@@ -406,13 +464,14 @@ gchar *get_download_dir (struct tgl_state *TLS) {
   return dir;
 }
 
-void assert_file_exists (PurpleConnection *gc, const char *filepath, const char *format) {
+gboolean assert_file_exists (PurpleConnection *gc, const char *filepath, const char *format) {
   if (!g_file_test (filepath, G_FILE_TEST_EXISTS)) {
     gchar *msg = g_strdup_printf (format, filepath);
     purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_CERT_OTHER_ERROR, msg);
     g_free (msg);
-    return;
+    return 0;
   }
+  return 1;
 }
 
 void export_auth_callback (struct tgl_state *TLS, void *extra, int success) {
