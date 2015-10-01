@@ -1,0 +1,12 @@
+telegram-purple (1.2.2~bw1-1) UNRELEASED; urgency=medium
+
+  [ Hugues Morisset ]
+  * Initial Release (Closes: #800771)
+
+  [ Ben Wiederhake ]
+  * Please note that due to the format-switch, the file
+    /etc/telegram-purple/server.pub is obsolete for this version.
+    It is only tolerated to allow for smooth transition from old, manual
+    installations, and will be removed in future versions.
+
+ -- Hugues Morisset <morisset.hugues@gmail.com>  Tue, 13 Oct 2015 14:12:44 +0200
