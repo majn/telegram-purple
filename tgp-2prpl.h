@@ -59,7 +59,7 @@ void p2tgl_prpl_got_user_status (struct tgl_state *TLS, tgl_peer_id_t user, stru
 void p2tgl_prpl_got_set_status_mobile (struct tgl_state *TLS, tgl_peer_id_t user);
 void p2tgl_prpl_got_set_status_offline (struct tgl_state *TLS, tgl_peer_id_t user);
 
-void p2tgl_connection_set_display_name(struct tgl_state *TLS, tgl_peer_t *user);
+void p2tgl_connection_set_display_name (struct tgl_state *TLS, tgl_peer_t *user);
 void p2tgl_conv_del_user (struct tgl_state *TLS, PurpleConversation *conv, const char *message, int userid);
 void p2tgl_conv_add_user_rename (tgl_peer_t *U, PurpleConversation *conv);
 void p2tgl_conv_add_users (PurpleConversation *conv, struct tgl_chat_user *list);
@@ -70,7 +70,8 @@ PurpleConversation *p2tgl_conversation_new (struct tgl_state *TLS, tgl_peer_id_t
 
 PurpleChat *p2tgl_chat_find (struct tgl_state *TLS, tgl_peer_id_t chat);
 
-void *p2tgl_notify_userinfo(struct tgl_state *TLS, tgl_peer_id_t user, PurpleNotifyUserInfo *user_info, PurpleNotifyCloseCallback cb, gpointer user_data);
+void *p2tgl_notify_userinfo (struct tgl_state *TLS, tgl_peer_id_t user, PurpleNotifyUserInfo *user_info,
+                            PurpleNotifyCloseCallback cb, gpointer user_data);
 
 PurpleNotifyUserInfo *p2tgl_notify_peer_info_new (struct tgl_state *TLS, tgl_peer_t *P);
 PurpleNotifyUserInfo *p2tgl_notify_user_info_new (struct tgl_user *U);

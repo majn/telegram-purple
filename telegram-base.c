@@ -17,6 +17,7 @@
 
     Copyright Matthias Jentsch, Vitaly Valtman, Christopher Althaus, Markus Endres 2014-2015
 */
+
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <unistd.h>
@@ -48,7 +49,6 @@
 #define DC_SERIALIZED_MAGIC 0x868aa81d
 #define STATE_FILE_MAGIC 0x28949a93
 #define SECRET_CHAT_FILE_MAGIC 0x37a1988a
-
 
 void read_state_file (struct tgl_state *TLS) {
   char *name = 0;
@@ -414,9 +414,8 @@ void assert_file_exists (PurpleConnection *gc, const char *filepath, const char 
   }
 }
 
-void telegram_export_authorization (struct tgl_state *TLS);
 void export_auth_callback (struct tgl_state *TLS, void *extra, int success) {
-  if (!error_if_val_false(TLS, success, "Login Canceled", "Authentication export failed.")) {
+  if (!error_if_val_false (TLS, success, "Login Canceled", "Authentication export failed.")) {
     telegram_export_authorization (TLS);
   }
 }
@@ -463,16 +462,15 @@ void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *titl
     tgl_do_create_group_chat (TLS, j, ids, title, (int) strlen(title),
                               tgp_notify_on_error_gw, g_strdup (title));
   } else {
-    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_INFO,
-                           "Group not created", "Not enough users selected",
-                           NULL, NULL, NULL);
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Group not created", "Not enough users selected", NULL,
+                           NULL, NULL);
   }
 }
 
 
 static void sign_in_callback (struct tgl_state *TLS, void *extra, int success, int registered, const char *mhash) {
   connection_data *conn = TLS->ev_base;
-  if (!error_if_val_false (TLS, success, "Invalid phone number",
+  if (! error_if_val_false (TLS, success, "Invalid phone number",
           "Please enter only numbers in the international phone number format, "
           "a leading + following by the country prefix and the phone number.\n"
           "Do not use any other special chars.")) {
@@ -498,7 +496,7 @@ static void telegram_send_sms (struct tgl_state *TLS) {
 static int all_authorized (struct tgl_state *TLS) {
   int i;
   for (i = 0; i <= TLS->max_dc_num; i++) if (TLS->DC_list[i]) {
-    if (!tgl_signed_dc(TLS, TLS->DC_list[i]) && !tgl_authorized_dc (TLS, TLS->DC_list[i])) {
+    if (!tgl_signed_dc (TLS, TLS->DC_list[i]) && !tgl_authorized_dc (TLS, TLS->DC_list[i])) {
       return 0;
     }
   }
@@ -553,7 +551,7 @@ int tgp_visualize_key (struct tgl_state *TLS, unsigned char* sha1_key) {
       int offset = bitpointer / 8;
       int shiftOffset = bitpointer % 8;
       int val = sha1_key[offset + 3] << 24 | sha1_key[offset + 2] << 16 | sha1_key[offset + 1] << 8 | sha1_key[offset];
-      idx = abs((val >> shiftOffset) & 3) % 4;
+      idx = abs ((val >> shiftOffset) & 3) % 4;
       bitpointer += 2;
       unsigned offset_x = x * 4 * (img_size / 8);
       for (i = 0; i < img_size / 8; i++)
@@ -572,7 +570,7 @@ int tgp_visualize_key (struct tgl_state *TLS, unsigned char* sha1_key) {
   }
   unsigned char* png;
   size_t pngsize;
-  unsigned error = lodepng_encode32(&png, &pngsize, image, img_size, img_size);
+  unsigned error = lodepng_encode32 (&png, &pngsize, image, img_size, img_size);
   int imgStoreId = -1;
   if(!error)
   {
