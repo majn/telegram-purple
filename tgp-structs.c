@@ -27,6 +27,7 @@
 
 #include <glib.h>
 #include <tgl.h>
+#include <tgl-queries.h>
 
 static void pending_reads_free_cb (gpointer data) {
   free (data);
@@ -42,7 +43,7 @@ void pending_reads_send_all (GQueue *queue, struct tgl_state *TLS) {
   tgl_peer_id_t *pending;
   while ((pending = (tgl_peer_id_t*) g_queue_pop_head(queue))) {
     tgl_do_mark_read (TLS, *pending, tgp_notify_on_error_gw, NULL);
-    debug ("tgl_do_mark_read (%d)", pending->id);
+    debug ("tgl_do_mark_read (%d)", tgl_get_peer_id (*pending));
     free (pending);
   }
 }

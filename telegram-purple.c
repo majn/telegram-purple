@@ -58,6 +58,7 @@
 
 #include <tgl.h>
 #include <tgl-binlog.h>
+#include <tgl-queries.h>
 #include <tools.h>
 #include <tgl-methods-in.h>
 
@@ -123,7 +124,7 @@ static void _update_buddy (struct tgl_state *TLS, tgl_peer_t *user, unsigned fla
 }
 
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, unsigned flags) {
-  if (TLS->our_id == tgl_get_peer_id (user->id) && flags & TGL_UPDATE_NAME) {
+  if (tgl_get_peer_id (TLS->our_id) == tgl_get_peer_id (user->id) && flags & TGL_UPDATE_NAME) {
     p2tgl_connection_set_display_name (TLS, (tgl_peer_t *)user);
     return;
   }
@@ -213,7 +214,7 @@ static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_messa
   int i;
   for (i = 0; i < num; i++) if (list[i]) {
     tgl_peer_id_t to_id;
-    if (tgl_get_peer_type (list[i]->to_id) == TGL_PEER_USER && tgl_get_peer_id (list[i]->to_id) == TLS->our_id) {
+    if (tgl_get_peer_type (list[i]->to_id) == TGL_PEER_USER && tgl_get_peer_id (list[i]->to_id) == tgl_get_peer_id (TLS->our_id)) {
       to_id = list[i]->from_id;
     } else {
       to_id = list[i]->to_id;
@@ -320,7 +321,7 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
 }
 
 static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra, int success, int size,
-                                     tgl_peer_id_t peers[], int last_msg_id[], int unread_count[]) {
+                                     tgl_peer_id_t peers[], tgl_message_id_t *last_msg_id[], int unread_count[]) {
   
   connection_data *conn = TLS->ev_base;
   
@@ -331,7 +332,7 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra
     switch (tgl_get_peer_type (peers[i])) {
       case TGL_PEER_USER:
         assert (UC);
-        if (tgl_get_peer_id (UC->id) == TLS->our_id) {
+        if (tgl_get_peer_id (UC->id) == tgl_get_peer_id (TLS->our_id)) {
           p2tgl_connection_set_display_name (TLS, UC);
           continue;
         }
@@ -502,7 +503,7 @@ void export_chat_link_checked (struct tgl_state *TLS, const char *name) {
     failure ("Chat \"%s\" not found, not exporting link.", name);
     return;
   }
-  if (C->chat.admin_id != TLS->our_id) {
+  if (C->chat.admin_id != tgl_get_peer_id (TLS->our_id)) {
     purple_notify_error (_telegram_protocol, "Failure", "Creating Chat Link Failed",
                          "You need to be admin of the group to do that.");
     return;
@@ -517,7 +518,7 @@ void leave_and_delete_chat (PurpleBlistNode *node, gpointer data) {
   
   tgl_peer_t *P = tgl_peer_get (conn->TLS, p2tgl_chat_get_id (PC));
   if (P && P->chat.users_num) {
-    tgl_do_del_user_from_chat (conn->TLS, P->id, TGL_MK_USER(conn->TLS->our_id),
+    tgl_do_del_user_from_chat (conn->TLS, P->id, conn->TLS->our_id,
                                tgp_notify_on_error_gw, NULL);
     serv_got_chat_left (conn->gc, tgl_get_peer_id (P->id));
   }
@@ -726,7 +727,7 @@ static void tgprpl_remove_buddy (PurpleConnection *gc, PurpleBuddy *buddy, Purpl
     /* TODO: implement the api call cancel secret chats. Currently the chat will only be marked as
      deleted on our side so that it won't be added on startup
      (when the secret chat file is loaded) */
-    bl_do_encr_chat_delete (conn->TLS, &peer->encr_chat);
+    bl_do_peer_delete (conn->TLS, peer->encr_chat.id);
   }
 }
 
@@ -750,7 +751,7 @@ static int tgprpl_send_chat (PurpleConnection * gc, int id, const char *message,
   connection_data *conn = purple_connection_get_protocol_data (gc);
   int ret = tgp_msg_send (conn->TLS, message, TGL_MK_CHAT(id));
   if (ret != 0) {
-    p2tgl_got_chat_in (conn->TLS, TGL_MK_CHAT(id), TGL_MK_USER(conn->TLS->our_id), message,
+    p2tgl_got_chat_in (conn->TLS, TGL_MK_CHAT(id), conn->TLS->our_id, message,
                        PURPLE_MESSAGE_RECV, time(NULL));
   }
   return ret;

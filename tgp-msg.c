@@ -28,6 +28,8 @@
 #include <errno.h>
 #include <locale.h>
 
+#include <tgl-queries.h>
+
 #include "telegram-purple.h"
 #include "telegram-base.h"
 #include "tgp-structs.h"
@@ -115,7 +117,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
           g_free (alias);
           
           p2tgl_conv_del_user (TLS, conv, txt_action, M->action.user);
-          if (M->action.user == TLS->our_id) {
+          if (M->action.user == tgl_get_peer_id (TLS->our_id)) {
             purple_conv_chat_left (purple_conversation_get_chat_data (conv));
           }
           

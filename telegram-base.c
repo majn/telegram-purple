@@ -30,6 +30,7 @@
 #include <tgl.h>
 #include <tgl-binlog.h>
 #include <tgl-methods-in.h>
+#include <tgl-queries.h>
 
 #include <glib.h>
 #include <request.h>
@@ -184,7 +185,7 @@ void read_dc (struct tgl_state *TLS, int auth_file_fd, int id, unsigned ver) {
   assert (read (auth_file_fd, &auth_key_id, 8) == 8);
   assert (read (auth_file_fd, auth_key, 256) == 256);
 
-  bl_do_dc_option (TLS, id, "DC", 2, ip, l, port);
+  bl_do_dc_option (TLS, 0, id, "DC", 2, ip, l, port);
   bl_do_set_auth_key (TLS, id, auth_key);
   bl_do_dc_signed (TLS, id);
 }
@@ -203,16 +204,16 @@ int error_if_val_false (struct tgl_state *TLS, int val, const char *cause, const
 
 void empty_auth_file (struct tgl_state *TLS) {
   if (TLS->test_mode) {
-    bl_do_dc_option (TLS, 1, "", 0, TG_SERVER_TEST_1, strlen (TG_SERVER_TEST_1), 443);
-    bl_do_dc_option (TLS, 2, "", 0, TG_SERVER_TEST_2, strlen (TG_SERVER_TEST_2), 443);
-    bl_do_dc_option (TLS, 3, "", 0, TG_SERVER_TEST_3, strlen (TG_SERVER_TEST_3), 443);
+    bl_do_dc_option (TLS, 0, 1, "", 0, TG_SERVER_TEST_1, strlen (TG_SERVER_TEST_1), 443);
+    bl_do_dc_option (TLS, 0, 2, "", 0, TG_SERVER_TEST_2, strlen (TG_SERVER_TEST_2), 443);
+    bl_do_dc_option (TLS, 0, 3, "", 0, TG_SERVER_TEST_3, strlen (TG_SERVER_TEST_3), 443);
     bl_do_set_working_dc (TLS, TG_SERVER_TEST_DEFAULT);
   } else {
-    bl_do_dc_option (TLS, 1, "", 0, TG_SERVER_1, strlen (TG_SERVER_1), 443);
-    bl_do_dc_option (TLS, 2, "", 0, TG_SERVER_2, strlen (TG_SERVER_2), 443);
-    bl_do_dc_option (TLS, 3, "", 0, TG_SERVER_3, strlen (TG_SERVER_3), 443);
-    bl_do_dc_option (TLS, 4, "", 0, TG_SERVER_4, strlen (TG_SERVER_4), 443);
-    bl_do_dc_option (TLS, 5, "", 0, TG_SERVER_5, strlen (TG_SERVER_5), 443);
+    bl_do_dc_option (TLS, 0, 1, "", 0, TG_SERVER_1, strlen (TG_SERVER_1), 443);
+    bl_do_dc_option (TLS, 0, 2, "", 0, TG_SERVER_2, strlen (TG_SERVER_2), 443);
+    bl_do_dc_option (TLS, 0, 3, "", 0, TG_SERVER_3, strlen (TG_SERVER_3), 443);
+    bl_do_dc_option (TLS, 0, 4, "", 0, TG_SERVER_4, strlen (TG_SERVER_4), 443);
+    bl_do_dc_option (TLS, 0, 5, "", 0, TG_SERVER_5, strlen (TG_SERVER_5), 443);
     bl_do_set_working_dc (TLS, TG_SERVER_DEFAULT);
   }
 }
@@ -256,7 +257,7 @@ void read_auth_file (struct tgl_state *TLS) {
     assert (!l);
   }
   if (our_id) {
-    bl_do_set_our_id (TLS, our_id);
+    bl_do_set_our_id (TLS, TGL_MK_USER (our_id));
   }
   close (auth_file_fd);
 }
@@ -346,7 +347,7 @@ void read_secret_chat (struct tgl_state *TLS, int fd, int v) {
     assert (read (fd, &out_seq_no, 4) == 4);
   }
 
-  bl_do_encr_chat_new (TLS, id,
+  bl_do_encr_chat (TLS, id,
     &access_hash, &date, &admin_id, &user_id,
     key, NULL, sha, &state, &ttl, &layer,
     &in_seq_no, &last_in_seq_no, &out_seq_no,
@@ -443,7 +444,7 @@ void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *titl
                                          int use_print_names) {
   tgl_peer_id_t ids[num_users + 1];
   int i, j = 0;
-  ids[j++] = TGL_MK_USER(TLS->our_id);
+  ids[j++] = TLS->our_id;
   for (i = 0; i < num_users; i++) if (str_not_empty (users[i])) {
     tgl_peer_t *P = NULL;
     if (use_print_names) {
@@ -451,7 +452,7 @@ void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *titl
     } else {
       P = tgl_peer_get (TLS, TGL_MK_USER(atoi (users[i])));
     }
-    if (P && tgl_get_peer_id (P->id) != TLS->our_id) {
+    if (P && tgl_get_peer_id (P->id) != tgl_get_peer_id (TLS->our_id)) {
       debug ("Adding %s: %d", P->print_name, tgl_get_peer_id (P->id));
       ids[j++] = P->id;
     } else {

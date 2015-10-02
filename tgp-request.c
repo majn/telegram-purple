@@ -22,6 +22,7 @@
 #include <tgl.h>
 #include <tgl-binlog.h>
 #include <tgl-methods-in.h>
+#include <tgl-queries.h>
 
 #define _(m) m
 
@@ -191,7 +192,7 @@ static void accept_secret_chat_cb (gpointer _data, const gchar *code) {
 static void decline_secret_chat_cb (gpointer _data, const gchar *code) {
   struct accept_secret_chat_data *data = _data;
   
-  bl_do_encr_chat_delete (data->TLS, data->U);
+  bl_do_peer_delete (data->TLS, data->U->id);
   purple_blist_remove_buddy (p2tgl_buddy_find(data->TLS, data->U->id));
   
   g_free (data);

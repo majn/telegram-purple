@@ -18,6 +18,7 @@
  Copyright Matthias Jentsch 2014-2015
  */
 
+#include <tgl-queries.h>
 #include "tgp-utils.h"
 #include "tgp-ft.h"
 #include "tgp-structs.h"

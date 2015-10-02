@@ -275,7 +275,7 @@ void p2tgl_prpl_got_user_status (struct tgl_state *TLS, tgl_peer_id_t user, stru
   if (status->online == 1) {
     p2tgl_prpl_got_set_status_online (TLS, user);
   } else {
-    debug ("%d: when=%d", user.id, status->when);
+    debug ("%d: when=%d", tgl_get_peer_id (user), status->when);
     if (tgp_time_n_days_ago (purple_account_get_int (data->pa, "inactive-days-offline", TGP_DEFAULT_INACTIVE_DAYS_OFFLINE)) > status->when && status->when) {
       debug ("offline");
       p2tgl_prpl_got_set_status_offline (TLS, user);

@@ -25,6 +25,7 @@
 #include "telegram-base.h"
 
 #include <tgl.h>
+#include <tgl-queries.h>
 #include <assert.h>
 
 GHashTable *tgp_chat_info_new (struct tgl_state *TLS, struct tgl_chat *chat) {

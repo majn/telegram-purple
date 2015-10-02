@@ -2,9 +2,6 @@ srcdir=@srcdir@
 
 CFLAGS=@CFLAGS@ @PURPLE_CFLAGS@ @DEFS@ -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing -fPIC
 LDFLAGS=@LDFLAGS@ @OPENSSL_LDFLAGS@ @PURPLE_LIBS@ @LIBS@ -lcrypto -rdynamic -ggdb
-CPPFLAGS=@CPPFLAGS@ -DFLAGS
-COMPILE_FLAGS=${CFLAGS} ${CPPFLAGS}
-LINK_FLAGS=${LDFLAGS}
 DIR_PERM=0755
 FILE_PERM=0644
 
@@ -12,11 +9,10 @@ CC=@CC@
 PKG_CONFIG=@PKG_CONFIG@
 
 DEP=dep
-AUTO=auto
 EXE=bin
 OBJ=objs
 LIB=libs
-DIR_LIST=${DEP} ${AUTO} ${EXE} ${OBJ} ${LIB} ${DEP}/auto ${OBJ}/auto ${DEP}/lodepng ${OBJ}/lodepng
+DIR_LIST=${DEP} ${EXE} ${OBJ} ${LIB} ${DEP}/lodepng ${OBJ}/lodepng
 
 PLUGIN_OBJECTS=${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/telegram-base.o ${OBJ}/telegram-purple.o ${OBJ}/tgp-2prpl.o ${OBJ}/tgp-structs.o ${OBJ}/tgp-utils.o ${OBJ}/tgp-chat.o ${OBJ}/tgp-ft.o ${OBJ}/tgp-msg.o ${OBJ}/tgp-request.o ${OBJ}/lodepng/lodepng.o
 ALL_OBJS=${PLUGIN_OBJECTS}
@@ -32,11 +28,7 @@ all: ${PRPL_LIBNAME}
 PLUGIN_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=plugindir purple)
 DATA_ROOT_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=datarootdir purple)
 
-include ${srcdir}/Makefile.tl-parser
-include ${srcdir}/Makefile.tgl
-
 create_dirs: ${DIR_LIST}
-create_dirs_and_headers: ${DIR_LIST} ${AUTO}/auto-skip.h ${AUTO}/auto-fetch.h ${AUTO}/auto-store.h ${AUTO}/auto-types.h
 
 ${DIR_LIST}:
 	@test -d $@ || mkdir -p $@
@@ -46,8 +38,22 @@ DEPENDENCE_LIST=${DEPENDENCE}
 -include ${DEPENDENCE_LIST}
 
 
-${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c | create_dirs_and_headers
+# The dependency on tgl/libs/libtgl.a ensures that "make -C tgl" was called,
+# and most importantly: It ensures that all automatic headers exist.
+${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c ${LIB}/libtgl.a | create_dirs
 	echo $@ && ${CC} ${CFLAGS} ${CPPFLAGS} -I ${srcdir}/tgl -I ${srcdir}/lodepng -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
+
+tgl/Makefile.in:
+	@echo "tgl/Makefile.in not found. Maybe you need to 'git submodule update --init --recursive' ?" && exit 1
+
+tgl/Makefile: tgl/Makefile.in
+	cd tgl && ./configure -q
+
+tgl/libs/libtgl.a: tgl/Makefile
+	+make -C tgl
+
+${LIB}/libtgl.a: tgl/libs/libtgl.a | create_dirs
+	cp $< $@
 
 ${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} ${LIB}/libtgl.a | create_dirs
 	${CC} -shared -o $@ $^ ${LDFLAGS}
@@ -98,4 +104,3 @@ debug: install
 
 clean:
 	rm -rf ${DIR_LIST}  *.so *.a *.o telegram config.log config.status $(PRPL_C_OBJS) $(PRPL_LIBNAME) > /dev/null || echo "all clean"
-

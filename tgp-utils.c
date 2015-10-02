@@ -80,7 +80,7 @@ int tgp_outgoing_msg (struct tgl_state *TLS, struct tgl_message *M) {
 }
 
 int tgp_our_msg (struct tgl_state *TLS, struct tgl_message *M) {
-  return TLS->our_id == tgl_get_peer_id(M->from_id);
+  return tgl_get_peer_id (TLS->our_id) == tgl_get_peer_id (M->from_id);
 }
 
 tgl_peer_t *find_peer_by_name (struct tgl_state *TLS, const char *who) {
@@ -94,7 +94,7 @@ tgl_peer_t *find_peer_by_name (struct tgl_state *TLS, const char *who) {
 }
 
 tgl_peer_t *tgp_encr_chat_get_partner (struct tgl_state *TLS, struct tgl_secret_chat *chat) {
-  return tgl_peer_get (TLS, TGL_MK_USER(chat->admin_id == TLS->our_id ? chat->user_id : chat->admin_id));
+  return tgl_peer_get (TLS, TGL_MK_USER(chat->admin_id == tgl_get_peer_id (TLS->our_id) ? chat->user_id : chat->admin_id));
 }
 
 long tgp_time_n_days_ago (int days) {
