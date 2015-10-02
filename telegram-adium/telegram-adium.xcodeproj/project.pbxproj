@@ -26,9 +26,10 @@
 		C438CE3D1A12C15100E1DA0F /* tg-server.pub in Resources */ = {isa = PBXBuildFile; fileRef = C438CE3C1A12C15100E1DA0F /* tg-server.pub */; };
 		C448ADA71AB0789A001B7ECD /* tgp-msg.c in Sources */ = {isa = PBXBuildFile; fileRef = C448ADA61AB0789A001B7ECD /* tgp-msg.c */; };
 		C466937819E703370036A108 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C466937719E703370036A108 /* AppKit.framework */; };
+		C479A7FF1BB1C95300C153DF /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C479A7FE1BB1C95300C153DF /* libcrypto.a */; };
+		C479A8021BB69C2100C153DF /* tgp-request.c in Sources */ = {isa = PBXBuildFile; fileRef = C479A8001BB69C2100C153DF /* tgp-request.c */; settings = {ASSET_TAGS = (); }; };
 		C4877C1819BB37EA006FA91F /* TelegramService.m in Sources */ = {isa = PBXBuildFile; fileRef = C4877C1719BB37EA006FA91F /* TelegramService.m */; };
 		C4877C1E19BB676B006FA91F /* TelegramAccount.m in Sources */ = {isa = PBXBuildFile; fileRef = C4877C1D19BB676B006FA91F /* TelegramAccount.m */; };
-		C487A17B1A792CF00044F135 /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C487A17A1A792CF00044F135 /* libcrypto.dylib */; };
 		C487A18C1A792E9B0044F135 /* Adium.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C487A1891A792E9B0044F135 /* Adium.framework */; };
 		C487A18E1A792E9B0044F135 /* AIUtilities.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C487A18B1A792E9B0044F135 /* AIUtilities.framework */; };
 		C487A1911A792EA50044F135 /* libglib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C487A18F1A792EA50044F135 /* libglib.framework */; };
@@ -82,6 +83,9 @@
 		C448ADA61AB0789A001B7ECD /* tgp-msg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "tgp-msg.c"; path = "../tgp-msg.c"; sourceTree = "<group>"; };
 		C448ADA81AB078BB001B7ECD /* tgp-msg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "tgp-msg.h"; path = "../tgp-msg.h"; sourceTree = "<group>"; };
 		C466937719E703370036A108 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/System/Library/Frameworks/AppKit.framework; sourceTree = DEVELOPER_DIR; };
+		C479A7FE1BB1C95300C153DF /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = Frameworks/libcrypto.a; sourceTree = "<group>"; };
+		C479A8001BB69C2100C153DF /* tgp-request.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "tgp-request.c"; path = "../tgp-request.c"; sourceTree = "<group>"; };
+		C479A8011BB69C2100C153DF /* tgp-request.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "tgp-request.h"; path = "../tgp-request.h"; sourceTree = "<group>"; };
 		C4877C1619BB37EA006FA91F /* TelegramService.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TelegramService.h; sourceTree = "<group>"; };
 		C4877C1719BB37EA006FA91F /* TelegramService.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TelegramService.m; sourceTree = "<group>"; };
 		C4877C1C19BB676B006FA91F /* TelegramAccount.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TelegramAccount.h; sourceTree = "<group>"; };
@@ -125,14 +129,14 @@
 			files = (
 				C4B57BF01B1598D4006997F4 /* libtgl.a in Frameworks */,
 				C4EA965A1B204C67006CBAD0 /* libwebp.a in Frameworks */,
+				C479A7FF1BB1C95300C153DF /* libcrypto.a in Frameworks */,
+				C49A915819BBC5C5001B3DC0 /* libz.dylib in Frameworks */,
 				C40564871A7937C600A293B9 /* AdiumLibpurple.framework in Frameworks */,
 				C487A18C1A792E9B0044F135 /* Adium.framework in Frameworks */,
 				C487A18E1A792E9B0044F135 /* AIUtilities.framework in Frameworks */,
 				C487A1911A792EA50044F135 /* libglib.framework in Frameworks */,
 				C487A1921A792EA50044F135 /* libpurple.framework in Frameworks */,
-				C487A17B1A792CF00044F135 /* libcrypto.dylib in Frameworks */,
 				C466937819E703370036A108 /* AppKit.framework in Frameworks */,
-				C49A915819BBC5C5001B3DC0 /* libz.dylib in Frameworks */,
 				C410948A19BB2D7D0083BF3F /* CoreFoundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -182,6 +186,7 @@
 		C410948819BB2D7D0083BF3F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				C479A7FE1BB1C95300C153DF /* libcrypto.a */,
 				C4B57BEF1B1598D4006997F4 /* libtgl.a */,
 				C4EA96591B204C67006CBAD0 /* libwebp.a */,
 				C4B57BED1B1598BE006997F4 /* telegram-purple */,
@@ -256,6 +261,8 @@
 				C4E5280F1A8A907200C4B915 /* tgp-ft.c */,
 				C4B57BEC1B13B2C4006997F4 /* auto-types.h */,
 				C4E528101A8A907200C4B915 /* tgp-ft.h */,
+				C479A8001BB69C2100C153DF /* tgp-request.c */,
+				C479A8011BB69C2100C153DF /* tgp-request.h */,
 			);
 			name = "telegram-purple";
 			sourceTree = "<group>";
@@ -355,6 +362,7 @@
 				C4B4BE311AB393800064AC17 /* TelegramAccountViewController.m in Sources */,
 				C4877C1E19BB676B006FA91F /* TelegramAccount.m in Sources */,
 				C41D58411A16D88E00B22448 /* tgp-2prpl.c in Sources */,
+				C479A8021BB69C2100C153DF /* tgp-request.c in Sources */,
 				C425F9181A7069C300361AFC /* tgp-utils.c in Sources */,
 				C4D819031A5C85FE0044CBA9 /* lodepng.c in Sources */,
 				C4D819061A5C862E0044CBA9 /* tgp-structs.c in Sources */,
@@ -411,9 +419,9 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = macosx10.8;
+				SDKROOT = macosx10.11;
 			};
 			name = Debug;
 		};
@@ -450,8 +458,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
-				SDKROOT = macosx10.8;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				SDKROOT = macosx10.11;
 			};
 			name = Release;
 		};
@@ -489,7 +497,7 @@
 				);
 				OTHER_CFLAGS = "-DPURPLE_STATIC_PRPL";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx10.8;
+				SDKROOT = macosx10.11;
 				WRAPPER_EXTENSION = AdiumLibpurplePlugin;
 			};
 			name = Debug;
@@ -528,7 +536,7 @@
 				);
 				OTHER_CFLAGS = "-DPURPLE_STATIC_PRPL";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx10.8;
+				SDKROOT = macosx10.11;
 				WRAPPER_EXTENSION = AdiumLibpurplePlugin;
 			};
 			name = Release;
