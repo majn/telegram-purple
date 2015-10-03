@@ -92,6 +92,26 @@ If libwebp is not available, you can disable sticker support by calling ./config
         sudo make install
 
 
+
+Unofficial Packages
+-------------------
+
+##### Fedora 21, 22, 23 / CentOS7
+
+https://copr.fedoraproject.org/coprs/eischmann/purple-telegram/
+
+
+##### Arch AUR
+
+https://aur.archlinux.org/packages/telegram-purple/
+
+
+##### Ubuntu PPA (webupd8)
+
+https://launchpad.net/~nilarimogard/+archive/ubuntu/webupd8
+
+
+
 Pulling Updates
 ---------------
 
@@ -157,7 +177,12 @@ Compiling with XCode is a little bit problematic, since it requires you to compi
       brew install webp
       cp /usr/local/Cellar/webp/0.4.3/lib/libwebp.a ./telegram-adium/Frameworks/
 
-5. Build the XCode-Project and execute the created bundle
+5. If you already downloaded libwebp in previous builds make sure that the binaries are up-to-date
+
+      brew update
+      brew upgrade webp
+
+6. Build the XCode-Project and execute the created bundle
 
 
 Discussion / Help
@@ -167,6 +192,12 @@ Telegram group chat for telegram-purple or libtgl related discussions or questio
 
     - https://telegram.me/joinchat/01fb53f301b67d3c7a5532908dfa9a89
 
+
+Empathy / libtelepathy
+----------------------
+
+Empathy doesn't natively support libpurple plugins since its based on libtelepathy, but there is a compatibillity layer called telepathy-haze that can be used to execute libpurple
+plugins. This means that you can basically run this plugin thanks to telepathy-haze but you will usually get less features and worse usabillity compared to real libpurple clients. If you use Empathy (or anything else based on libtelepathy) I recommend [telepathy-morse](https://projects.kde.org/projects/playground/network/telepathy/telepathy-morse/repository) which is a connection manager written specifically for your messenger.
 
 Authors
 -------
