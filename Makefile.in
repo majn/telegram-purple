@@ -104,4 +104,4 @@ debug: install
 	ddd pidgin
 
 clean:
-	rm -rf ${DIR_LIST}  *.so *.a *.o telegram config.log config.status $(PRPL_C_OBJS) $(PRPL_LIBNAME) > /dev/null || echo "all clean"
+	rm -rf ${DIR_LIST} config.log config.status $(PRPL_C_OBJS) $(PRPL_LIBNAME)
