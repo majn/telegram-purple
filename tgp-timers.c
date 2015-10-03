@@ -44,7 +44,10 @@ static struct tgl_timer *tgl_timer_alloc (struct tgl_state *TLS, void (*cb)(stru
   return t;
 }
 
+static void tgl_timer_delete (struct tgl_timer *t);
+
 static void tgl_timer_insert (struct tgl_timer *t, double p) {
+  tgl_timer_delete (t);
   if (p < 0) { p = 0; }
   if (p < 1) {
     t->fd = purple_timeout_add (1000 * p, timer_alarm, t);
