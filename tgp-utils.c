@@ -18,9 +18,7 @@
  Copyright Matthias Jentsch 2014-2015
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "telegram-purple.h"
 
 #include "tgp-utils.h"
 #include "msglog.h"
@@ -56,16 +54,16 @@ char *tgp_format_user_status (struct tgl_user_status *status) {
       when = g_strdup_printf("%s", format_time (status->when));
       break;
     case -2:
-      when = g_strdup_printf("recently");
+      when = g_strdup_printf (_("Recently"));
       break;
     case -3:
-      when = g_strdup_printf("last week");
+      when = g_strdup_printf (_("Last week"));
       break;
     case -4:
-      when = g_strdup_printf("last month");
+      when = g_strdup_printf (_("Last month"));
       break;
     default:
-      when = g_strdup ("unknown");
+      when = g_strdup (_("Unknown"));
       break;
   }
   return when;

@@ -383,23 +383,23 @@ PurpleNotifyUserInfo *p2tgl_notify_user_info_new (struct tgl_user *U) {
   PurpleNotifyUserInfo *info = purple_notify_user_info_new();
   
   if (str_not_empty(U->first_name) && str_not_empty(U->last_name)) {
-    purple_notify_user_info_add_pair (info, "First name", U->first_name);
-    purple_notify_user_info_add_pair (info, "Last name", U->last_name);
+    purple_notify_user_info_add_pair (info, _("First name"), U->first_name);
+    purple_notify_user_info_add_pair (info, _("Last name"), U->last_name);
   } else {
-    purple_notify_user_info_add_pair (info, "Name", U->print_name);
+    purple_notify_user_info_add_pair (info, _("Name"), U->print_name);
   }
   
   if (str_not_empty (U->username)) {
-    purple_notify_user_info_add_pair (info, "Username", U->username);
+    purple_notify_user_info_add_pair (info, _("Username"), U->username);
   }
   
   char *status = tgp_format_user_status (&U->status);
-  purple_notify_user_info_add_pair (info, "Last seen", status);
+  purple_notify_user_info_add_pair (info, _("Last seen"), status);
   g_free (status);
 
   if (str_not_empty (U->phone)) {
     char *phone = g_strdup_printf("+%s", U->phone);
-    purple_notify_user_info_add_pair (info, "Phone", phone);
+    purple_notify_user_info_add_pair (info, _("Phone"), phone);
     g_free (phone);
   }
  
@@ -412,24 +412,24 @@ PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TL
   PurpleNotifyUserInfo *info = p2tgl_notify_user_info_new (U);
   
   if (secret->state == sc_waiting) {
-    purple_notify_user_info_add_pair (info, "", "Waiting for user to get online ...");
+    purple_notify_user_info_add_pair (info, "", _("Waiting for user to get online ..."));
     return info;
   }
   
-  const char *ttl_key = "Self destructiom timer";
+  const char *ttl_key = _("Self destructiom timer");
   if (secret->ttl) {
     char *ttl = g_strdup_printf ("%d", secret->ttl);
     purple_notify_user_info_add_pair (info, ttl_key, ttl);
     g_free (ttl);
   } else {
-    purple_notify_user_info_add_pair (info, ttl_key, "Off");
+    purple_notify_user_info_add_pair (info, ttl_key, _("Off"));
   }
   
   if (secret->first_key_sha[0]) {
     int sha1key_store_id = tgp_visualize_key (TLS, secret->first_key_sha);
     if (sha1key_store_id != -1) {
       char *ident_icon = tgp_format_img (sha1key_store_id);
-      purple_notify_user_info_add_pair (info, "Secret key", ident_icon);
+      purple_notify_user_info_add_pair (info, _("Secret key"), ident_icon);
       g_free(ident_icon);
     }
   }

@@ -54,16 +54,16 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
 
   switch (M->action.type) {
     case tgl_message_action_chat_create:
-      txt_action = g_strdup_printf ("created chat %s", M->action.title);
+      txt_action = g_strdup_printf (_("created chat %s"), M->action.title);
       break;
     case tgl_message_action_chat_edit_title:
-      txt_action = g_strdup_printf ("changed title to %s", M->action.new_title);
+      txt_action = g_strdup_printf (_("changed title to %s"), M->action.new_title);
       break;
     case tgl_message_action_chat_edit_photo:
-      txt_action = g_strdup ("changed photo");
+      txt_action = g_strdup (_("changed photo"));
       break;
     case tgl_message_action_chat_delete_photo:
-      txt_action = g_strdup ("deleted photo");
+      txt_action = g_strdup (_("deleted photo"));
       break;
     case tgl_message_action_chat_add_user_by_link: {
       tgl_peer_t *actionPeer = tgl_peer_get (TLS, TGL_MK_USER (M->action.user));
@@ -71,7 +71,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
         char *alias = p2tgl_strdup_alias (actionPeer);
         
         PurpleConversation *conv = purple_find_chat (conn->gc, tgl_get_peer_id (M->to_id));
-        txt_action = g_strdup_printf ("%s added user %s by link.", alias, txt_user);
+        txt_action = g_strdup_printf (_("%s added user %s by link."), alias, txt_user);
         if (conv) {
           p2tgl_conv_add_user (TLS, conv, tgl_get_peer_id (peer->id), NULL, 0, FALSE);
         }
@@ -86,7 +86,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
       tgl_peer_t *peer = tgl_peer_get (TLS, TGL_MK_USER (M->action.user));
       if (peer) {
         char *alias = p2tgl_strdup_alias (peer);
-        txt_action = g_strdup_printf ("added user %s", alias);
+        txt_action = g_strdup_printf (_("added user %s"), alias);
         
         PurpleConversation *conv = purple_find_chat (conn->gc, tgl_get_peer_id (M->to_id));
         if (conv) {
@@ -109,7 +109,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
         PurpleConversation *conv = tgp_chat_show (TLS, &chatPeer->chat);
         if (conv) {
           char *alias = p2tgl_strdup_alias (peer);
-          txt_action = g_strdup_printf ("%s deleted user %s.", txt_user, alias);
+          txt_action = g_strdup_printf (_("%s deleted user %s."), txt_user, alias);
           g_free (alias);
           
           p2tgl_conv_del_user (TLS, conv, txt_action, M->action.user);
@@ -125,37 +125,37 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
         }
         
         char *alias = p2tgl_strdup_alias (peer);
-        txt_action = g_strdup_printf ("deleted user %s", alias);
+        txt_action = g_strdup_printf (_("deleted user %s"), alias);
         g_free (alias);
       }
       break;
     }
     case tgl_message_action_set_message_ttl:
-      txt_action = g_strdup_printf ("set ttl to %d seconds", M->action.ttl);
+      txt_action = g_strdup_printf (_("set ttl to %d seconds"), M->action.ttl);
       break;
     case tgl_message_action_read_messages:
-      txt_action = g_strdup_printf ("%d messages marked read", M->action.read_cnt);
+      txt_action = g_strdup_printf (_("%d messages marked read"), M->action.read_cnt);
       break;
     case tgl_message_action_delete_messages:
-      txt_action = g_strdup_printf ("%d messages deleted", M->action.delete_cnt);
+      txt_action = g_strdup_printf (_("%d messages deleted"), M->action.delete_cnt);
       break;
     case tgl_message_action_screenshot_messages:
-      txt_action = g_strdup_printf ("%d messages screenshoted", M->action.screenshot_cnt);
+      txt_action = g_strdup_printf (_("%d messages screenshoted"), M->action.screenshot_cnt);
       break;
     case tgl_message_action_notify_layer:
-      txt_action = g_strdup_printf ("updated layer to %d", M->action.layer);
+      txt_action = g_strdup_printf (_("updated layer to %d"), M->action.layer);
       break;
     case tgl_message_action_request_key:
-      txt_action = g_strdup_printf ("Request rekey #%016llx", M->action.exchange_id);
+      txt_action = g_strdup_printf (_("Request rekey #%016llx"), M->action.exchange_id);
       break;
     case tgl_message_action_accept_key:
-      txt_action = g_strdup_printf ("Accept rekey #%016llx", M->action.exchange_id);
+      txt_action = g_strdup_printf (_("Accept rekey #%016llx"), M->action.exchange_id);
       break;
     case tgl_message_action_commit_key:
-      txt_action = g_strdup_printf ("Commit rekey #%016llx", M->action.exchange_id);
+      txt_action = g_strdup_printf (_("Commit rekey #%016llx"), M->action.exchange_id);
       break;
     case tgl_message_action_abort_key:
-      txt_action = g_strdup_printf ("Abort rekey #%016llx", M->action.exchange_id);
+      txt_action = g_strdup_printf (_("Abort rekey #%016llx"), M->action.exchange_id);
       break;
     default:
       txt_action = NULL;
@@ -186,7 +186,7 @@ static char *format_geo_link_osm (double lat, double lon) {
 
 static void tgp_msg_send_done (struct tgl_state *TLS, void *callback_extra, int success, struct tgl_message *M) {
   if (! success) {
-    char *err = g_strdup_printf("Sending message failed. %d: %s", TLS->error_code, TLS->error);
+    char *err = g_strdup_printf(_("Sending message failed. %d: %s"), TLS->error_code, TLS->error);
     warning (err);
     if (M) {
       tgp_msg_err_out (TLS, err, M->to_id);
@@ -264,7 +264,7 @@ void send_inline_picture_done (struct tgl_state *TLS, void *extra, int success, 
   if (!success) {
     char *errormsg = g_strdup_printf ("%d: %s", TLS->error_code, TLS->error);
     failure (errormsg);
-    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, "Sending image failed.",
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, _("Sending image failed."),
                            errormsg, NULL, NULL, NULL);
     return;
   }
@@ -277,7 +277,7 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
   
   if ((img = g_strrstr (message, "<IMG")) || (img = g_strrstr (message, "<img"))) {
     if (tgl_get_peer_type(to) == TGL_PEER_ENCR_CHAT) {
-      tgp_msg_err_out (TLS, "Sorry, sending documents to encrypted chats not yet supported.", to);
+      tgp_msg_err_out (TLS, _("Sorry, sending documents to encrypted chats not yet supported."), to);
       return 0;
     }
     debug ("img found: %s", img);
@@ -364,7 +364,7 @@ static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from,
   *flags |= PURPLE_MESSAGE_IMAGES;
 #else
   char *txt_user = p2tgl_strdup_alias (tgl_peer_get (TLS, from));
-  text = g_strdup_printf ("%s sent a sticker", txt_user);
+  text = g_strdup_printf (_("%s sent a sticker"), txt_user);
   *flags |= PURPLE_MESSAGE_SYSTEM;
   g_free (txt_user);
 #endif

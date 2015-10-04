@@ -474,7 +474,7 @@ gboolean assert_file_exists (PurpleConnection *gc, const char *filepath, const c
 }
 
 void export_auth_callback (struct tgl_state *TLS, void *extra, int success) {
-  if (!error_if_val_false (TLS, success, "Login Canceled", "Authentication export failed.")) {
+  if (!error_if_val_false (TLS, success, _("Login Canceled"), _("Authentication export failed."))) {
     telegram_export_authorization (TLS);
   }
 }
@@ -521,7 +521,7 @@ void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *titl
     tgl_do_create_group_chat (TLS, j, ids, title, (int) strlen(title),
                               tgp_notify_on_error_gw, g_strdup (title));
   } else {
-    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, "Group not created", "Not enough users selected", NULL,
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, _("Group not created"), _("Select at least one other user"), NULL,
                            NULL, NULL);
   }
 }
@@ -529,10 +529,10 @@ void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *titl
 
 static void sign_in_callback (struct tgl_state *TLS, void *extra, int success, int registered, const char *mhash) {
   connection_data *conn = TLS->ev_base;
-  if (! error_if_val_false (TLS, success, "Invalid phone number",
-          "Please enter only numbers in the international phone number format, "
+  if (! error_if_val_false (TLS, success, _("Invalid phone number"),
+          _("Please enter only numbers in the international phone number format, "
           "a leading + following by the country prefix and the phone number.\n"
-          "Do not use any other special chars.")) {
+          "Do not use any other special chars."))) {
     conn->hash = strdup (mhash);
     if (registered) {
       request_code (TLS, telegram_export_authorization);
@@ -644,7 +644,7 @@ void tgp_notify_on_error_gw (struct tgl_state *TLS, void *extra, int success) {
   if (!success) {
     char *errormsg = g_strdup_printf ("%d: %s", TLS->error_code, TLS->error);
     failure (errormsg);
-    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, "Query Failed",
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, _("Query Failed"),
                            errormsg, NULL, NULL, NULL);
     return;
   }

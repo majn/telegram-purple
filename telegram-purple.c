@@ -175,7 +175,7 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
   
   if (!(flags & TGL_UPDATE_CREATED) && buddy) {
     if (flags & TGL_UPDATE_DELETED) {
-      p2tgl_got_im (TLS, U->id, "Secret chat terminated.", PURPLE_MESSAGE_SYSTEM | PURPLE_MESSAGE_WHISPER, time(0));
+      p2tgl_got_im (TLS, U->id, _("Secret chat terminated."), PURPLE_MESSAGE_SYSTEM | PURPLE_MESSAGE_WHISPER, time(0));
       p2tgl_prpl_got_set_status_offline (TLS, U->id);
     } else {
       _update_buddy (TLS, (tgl_peer_t *)U, flags);
@@ -218,7 +218,7 @@ static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_messa
     }
     PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, to_id);
     if (conv) {
-      p2tgl_conversation_write (conv, to_id, "Message marked as read.",
+      p2tgl_conversation_write (conv, to_id, _("Message marked as read."),
                                  PURPLE_MESSAGE_NO_LOG | PURPLE_MESSAGE_SYSTEM, (int)time (NULL));
     }
   }
@@ -478,7 +478,7 @@ static void create_chat_link_done (struct tgl_state *TLS, void *extra, int succe
     assert (tgl_get_peer_type (C->id) == TGL_PEER_CHAT);
     tgp_chat_show (TLS, &C->chat);
     
-    char *msg = g_strdup_printf ("Invite link: %s", url);
+    char *msg = g_strdup_printf (_("Invite link: %s"), url);
     serv_got_chat_in (conn->gc, tgl_get_peer_id(C->id), "WebPage", PURPLE_MESSAGE_SYSTEM,
                       msg, time(NULL));
     g_free (msg);
@@ -501,8 +501,8 @@ void export_chat_link_checked (struct tgl_state *TLS, const char *name) {
     return;
   }
   if (C->chat.admin_id != tgl_get_peer_id (TLS->our_id)) {
-    purple_notify_error (_telegram_protocol, "Failure", "Creating Chat Link Failed",
-                         "You need to be admin of the group to do that.");
+    purple_notify_error (_telegram_protocol, _("Failure"), _("Creating Chat Link Failed"),
+                         _("You need to be admin of the group to do that."));
     return;
   }
   tgl_do_export_chat_link (TLS, C->id, create_chat_link_done, C);
@@ -528,7 +528,7 @@ static void import_chat_link_done (struct tgl_state *TLS, void *extra, int succe
     tgp_notify_on_error_gw (TLS, NULL, success);
     return;
   }
-  purple_notify_info (_telegram_protocol, "Success", "Chat Joined", "Chat joined.");
+  purple_notify_info (_telegram_protocol, _("Success"), _("Chat joined"), _("Chat added to roomlist"));
 }
 
 void import_chat_link_checked (struct tgl_state *TLS, const char *link) {
@@ -570,24 +570,23 @@ static void tgprpl_login (PurpleAccount * acct) {
   connection_data *conn = connection_data_init (TLS, gc, acct);
   purple_connection_set_protocol_data (gc, conn);
 
-  TLS->base_path = get_config_dir(TLS, purple_account_get_username (acct));
+  TLS->base_path = get_config_dir (TLS, purple_account_get_username (acct));
   tgl_set_download_directory (TLS, get_download_dir(TLS));
-  if (!assert_file_exists (gc, pk_path, "Error, server public key not found at %s."
-                      " Make sure that Telegram-Purple is installed properly.")) {
+  if (!assert_file_exists (gc, pk_path, _("Error, server public key not found at %s."
+                      " Make sure that Telegram-Purple is installed properly."))) {
     /* Already reported. */
     return;
   }
-
   debug ("base configuration path: '%s'", TLS->base_path);
   
   struct rsa_pubkey the_pubkey;
-  if (!read_pubkey_file (pk_path, &the_pubkey)) {
-    char *cause = g_strdup_printf ("Unable to sign on as %s: Missing file %s.",
+  if (! read_pubkey_file (pk_path, &the_pubkey)) {
+    char *cause = g_strdup_printf (_("Unable to sign on as %s: Missing file %s."),
                     purple_account_get_username (acct), pk_path);
     purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_INVALID_SETTINGS, cause);
     purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, cause,
-                            "Make sure telegram-purple is installed properly,\n"
-                            "including the .tglpub file.", NULL, NULL, NULL);
+                           _("Make sure telegram-purple is installed properly,\n"
+                            "including the .tglpub file."), NULL, NULL, NULL);
     g_free (cause);
     return;
   }
@@ -603,13 +602,13 @@ static void tgprpl_login (PurpleAccount * acct) {
   
   tgl_init (TLS);
 
-  if (! tgp_startswith (purple_account_get_username(acct), "+")) {
-        char *cause = g_strdup_printf ("Unable to sign on as %s, phone number lacks country prefix.",
+  if (! tgp_startswith (purple_account_get_username (acct), "+")) {
+        char *cause = g_strdup_printf (_("Unable to sign on as %s, phone number lacks country prefix."),
                         purple_account_get_username (acct));
         purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_INVALID_SETTINGS, cause);
         purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, cause,
-                                "Numbers must start with the full international\n"
-                                "prefix code, e.g. +49 for Germany.", NULL, NULL, NULL);
+                                _("Numbers must start with the full international\n"
+                                "prefix code, e.g. +49 for Germany."), NULL, NULL, NULL);
         g_free (cause);
         return;
   }
@@ -752,7 +751,7 @@ static void tgprpl_chat_invite (PurpleConnection * gc, int id, const char *messa
   tgl_peer_t *user = tgl_peer_get(conn->TLS, TGL_MK_USER (atoi(name)));
   
   if (! chat || ! user) {
-    purple_notify_error (_telegram_protocol, "Not found", "Cannot invite buddy to chat.", "Specified user is not existing.");
+    purple_notify_error (_telegram_protocol, _("Not found"), _("Cannot invite buddy to chat."), _("Specified user is not existing."));
     return;
   }
   
@@ -881,6 +880,12 @@ static void tgprpl_init (PurplePlugin *plugin) {
   
   PurpleAccountOption *opt;
   
+  // set domain name that is used for translation
+#if ENABLE_NLS
+  bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+  bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+#endif
+  
 #define ADD_VALUE(list, desc, v) { \
   PurpleKeyValuePair *kvp = g_new0(PurpleKeyValuePair, 1); \
   kvp->key = g_strdup((desc)); \
@@ -889,13 +894,13 @@ static void tgprpl_init (PurplePlugin *plugin) {
 }
   
   // Login
-  opt = purple_account_option_string_new ("Password (two factor authentication)", 
+  opt = purple_account_option_string_new (_("Password (two factor authentication)"),
                                           TGP_KEY_PASSWORD_TWO_FACTOR, NULL);
   purple_account_option_set_masked (opt, TRUE);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_bool_new(
-          "Fallback SMS verification\n(Helps when not using Pidgin and you aren't being prompted for the code)", 
+  opt = purple_account_option_bool_new (
+          _("Fallback SMS verification\n(Helps when not using Pidgin and you aren't being prompted for the code)"),
           "compat-verification", 0);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
  
@@ -907,30 +912,30 @@ static void tgprpl_init (PurplePlugin *plugin) {
   ADD_VALUE(verification_values, "Always", "always");
   ADD_VALUE(verification_values, "Never", "never");
   
-  opt = purple_account_option_list_new ("Accept Secret Chats",
+  opt = purple_account_option_list_new (_("Accept Secret Chats"),
                                         TGP_KEY_ACCEPT_SECRET_CHATS,
                                         verification_values);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_int_new ("Display peers offline after (days)",
+  opt = purple_account_option_int_new (_("Display peers offline after (days)"),
                                       TGP_KEY_INACTIVE_DAYS_OFFLINE,
                                       TGP_DEFAULT_INACTIVE_DAYS_OFFLINE);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_bool_new ("Fetch past history on first login",
+  opt = purple_account_option_bool_new (_("Fetch past history on first login"),
                                         TGP_KEY_HISTORY_SYNC_ALL,
                                         TGP_DEFAULT_HISTORY_SYNC_ALL);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_int_new ("Don't fetch messages older than (days)\n"
-                                       "(0 for unlimited)",
+  opt = purple_account_option_int_new (_("Don't fetch messages older than (days)\n"
+                                       "(0 for unlimited)"),
                                        TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD,
                                        TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
   // Chats
 
-  opt = purple_account_option_bool_new ("Add group chats to buddy list",
+  opt = purple_account_option_bool_new (_("Add group chats to buddy list"),
                                         TGP_KEY_JOIN_GROUP_CHATS,
                                         TGP_DEFAULT_JOIN_GROUP_CHATS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
@@ -938,12 +943,12 @@ static void tgprpl_init (PurplePlugin *plugin) {
 
   // Read notifications
   
-  opt = purple_account_option_bool_new ("Display read notifications",
+  opt = purple_account_option_bool_new (_("Display read notifications"),
                                         TGP_KEY_DISPLAY_READ_NOTIFICATIONS,
                                         TGP_DEFAULT_DISPLAY_READ_NOTIFICATIONS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_bool_new ("Send read notifications when present.",
+  opt = purple_account_option_bool_new (_("Send read notifications when present."),
                                         TGP_KEY_SEND_READ_NOTIFICATIONS,
                                         TGP_DEFAULT_SEND_READ_NOTIFICATIONS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
