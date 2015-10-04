@@ -1,6 +1,6 @@
 Name:		purple-telegram
 Version:	1.2.1
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Adds support for Libpurple based messengers
 Group:		Applications/Internet
 License:	GPLv2+
@@ -8,7 +8,6 @@ URL:		https://github.com/majn/telegram-purple
 Source0:	https://codeload.github.com/majn/telegram-purple/tar.gz/v%{version}.tar.gz
 
 BuildRequires:	openssl-devel,glib2-devel,libpurple-devel,libwebp-devel
-Requires:	openssl
 
 %description
 Adds support for Telegram to Pidgin, Adium, Finch 
@@ -16,8 +15,6 @@ and other Libpurple based messengers.
 
 %prep
 %autosetup
-#Remove executable perm from soure files.
-find . -type  f \( -name "*.c" -or -name "*.h" \)|xargs chmod -x 2>/dev/null
 
 %build
 %configure
@@ -36,6 +33,10 @@ chmod 755 %{buildroot}/%{_libdir}/purple-2/telegram-purple.so
 %{_datadir}/pixmaps/pidgin/protocols/48/telegram.png
 
 %changelog
+* Wed Sep 30  2015 tuxmaster 1.2.1-2
+- fix unneeded hard requirements
+- source code fix not required anymore (better to fix the code)
+
 * Thu Sep 17 2015 mjentsch 1.2.1-1
 - update version to 1.2.1
 
