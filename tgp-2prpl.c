@@ -18,16 +18,13 @@
     Copyright Matthias Jentsch 2014
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "telegram-purple.h"
 
 #ifdef HAVE_LIBWEBP
 #include <webp/decode.h>
 #include "lodepng/lodepng.h"
 #endif
 
-#include "telegram-purple.h"
 #include "tgp-2prpl.h"
 #include "tgp-structs.h"
 #include "telegram-purple.h"

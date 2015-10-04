@@ -18,19 +18,15 @@
  Copyright Matthias Jentsch 2014-2015
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "telegram-purple.h"
 
 #include <assert.h>
 #include <tgl.h>
 #include <glib.h>
 #include <errno.h>
 #include <locale.h>
-
 #include <tgl-queries.h>
 
-#include "telegram-purple.h"
 #include "telegram-base.h"
 #include "tgp-structs.h"
 #include "tgp-msg.h"

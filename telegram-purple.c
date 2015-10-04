@@ -18,9 +18,7 @@
     Copyright Matthias Jentsch, Vitaly Valtman, Christopher Althaus, Markus Endres 2014-2015
 */
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "telegram-purple.h"
 
 #include <glib.h>
 #include <string.h>
@@ -64,7 +62,6 @@
 
 #include "msglog.h"
 #include "telegram-base.h"
-#include "telegram-purple.h"
 #include "tgp-structs.h"
 #include "tgp-2prpl.h"
 #include "tgp-net.h"

@@ -18,18 +18,17 @@
  Copyright Matthias Jentsch 2014-2015
  */
 
+#include "telegram-purple.h"
+
 #include <glib.h>
 #include <tgl.h>
 #include <tgl-binlog.h>
 #include <tgl-methods-in.h>
 #include <tgl-queries.h>
 
-#define _(m) m
-
 #include "msglog.h"
 #include "tgp-request.h"
 #include "telegram-base.h"
-#include "telegram-purple.h"
 #include "tgp-2prpl.h"
 #include "tgp-utils.h"
 

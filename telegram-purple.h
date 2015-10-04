@@ -20,18 +20,29 @@
 #ifndef __TG_PURPLE_H__
 #define __TG_PURPLE_H__
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+// Define macros for gettext translation, ENABLE_NLS should be set if configure has detected
+// libintl.h. If this is not the case a dummy macro is defined to bypass the translation functions
+#ifdef ENABLE_NLS
+#  include <glib/gi18n-lib.h>
+#elseif
+#  define _(String) String
+#endif
+
 #include <tgl.h>
-
-#define PLUGIN_ID "prpl-telegram"
-#define TG_AUTHOR "Matthias Jentsch <mtthsjntsch@gmail.com>, Vitaly Valtman, Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>. Based on libtgl by Vitaly Valtman."
-#define TG_DESCRIPTION "Telegram protocol."
-#define TG_BUILD "12"
-
 #include <notify.h>
 #include <plugin.h>
 #include <version.h>
 #include <account.h>
 #include <connection.h>
+
+#define PLUGIN_ID "prpl-telegram"
+#define TG_AUTHOR "Matthias Jentsch <mtthsjntsch@gmail.com>, Vitaly Valtman, Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>. Based on libtgl by Vitaly Valtman."
+#define TG_DESCRIPTION "Telegram protocol."
+#define TG_BUILD "13"
   
 #define TGP_APP_HASH "99428c722d0ed59b9cd844e4577cb4bb"
 #define TGP_APP_ID 16154

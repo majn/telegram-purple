@@ -46,7 +46,6 @@
 #include "tgp-request.h"
 #include "lodepng/lodepng.h"
 
-#define _(m) m
 #define DC_SERIALIZED_MAGIC 0x868aa81d
 #define STATE_FILE_MAGIC 0x28949a93
 #define SECRET_CHAT_FILE_MAGIC 0x37a1988a
