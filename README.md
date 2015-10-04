@@ -36,6 +36,12 @@ This repository has submodules, so you need to clone recursively.
 
 ###### Debian / Ubuntu
 
+We are working on a Debian package! Please first check if it's already available to you: `sudo apt-get install telegram-purple`
+
+If the above works, then you should stop here: It is now installed.
+
+If the above fails: Don't worry, just continue building it by yourself. Next you need to install these dependencies:
+
         sudo apt-get install libgcrypt20-dev libpurple-dev libwebp-dev
 
 ###### OpenSUSE
@@ -48,6 +54,7 @@ And the development files for gcrypt, probably `gcrypt-devel` or something.
 #### 3. Compile and install
 
 If libwebp is not available, you can disable sticker support by calling ./configure --disable-libweb instead.
+Please note that this is usually not necessary.
 
         ./configure
         make
