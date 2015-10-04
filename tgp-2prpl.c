@@ -36,7 +36,7 @@
 
 #include <server.h>
 #include <tgl.h>
-#include <msglog.h>
+#include "msglog.h"
 #include <assert.h>
 
 PurpleAccount *tg_get_acc (struct tgl_state *TLS) {

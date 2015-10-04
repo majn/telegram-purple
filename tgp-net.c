@@ -46,8 +46,8 @@
 
 #include <glib.h>
 #include <eventloop.h>
-#include <telegram-purple.h>
-#include <msglog.h>
+#include "telegram-purple.h"
+#include "msglog.h"
 
 #ifndef POLLRDHUP
 #define POLLRDHUP 0
