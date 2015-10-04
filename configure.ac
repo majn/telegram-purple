@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([telegram-purple], [1.2.1])
+AC_INIT([telegram-purple], [1.3.0])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
 
@@ -41,6 +41,15 @@ AC_CHECK_FUNCS([memset strdup])
 AC_SUBST(PURPLE_CFLAGS)
 AC_SUBST(PURPLE_CPPFLAGS)
 AC_SUBST(PURPLE_LIBS)
+
+# Translation, for documentation see I18N-HOWTO in intltool tarball
+# Just the version used during development needed version may be much lower
+IT_PROG_INTLTOOL([0.50.2], [no-xml]) 
+
+# Define the domain name for the translated words 
+GETTEXT_PACKAGE="telegram-purple"
+AC_SUBST(GETTEXT_PACKAGE)  
+AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, ["$GETTEXT_PACKAGE"], [Define the gettext package to be used])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
