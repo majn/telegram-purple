@@ -14,6 +14,12 @@ Copyright: 2015 Hugues Morisset <morisset.hugues@gmail.com>
            2015 Ben Wiederhake <BenWiederhake.GitHub@gmail.com>
 License: GPL-2+
 
+Files: debian/rawtar
+Copyright: 2008, 2009, 2013, 2014 Meitar Moscovitz <meitarm+github@gmail.com>
+           2011, 2013 Marius Ghita <mhitza@gmail.com>
+           2012 C.D. Clark III <https://github.com/meitar/git-archive-all.sh.git>
+License: GPL-3+
+
 Files: lodepng/*
 Copyright: 2005-2014 Lode Vandevenne
 License: Zlib
@@ -64,6 +70,23 @@ License: GPL-2+
  .
  On Debian systems, the complete text of the GNU General
  Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
+
+License: GPL-3+
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 3 of the License, or
+ (at your option) any later version.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <https://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
 
 License: Zlib
  This software is provided 'as-is', without any express or implied
