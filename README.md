@@ -134,17 +134,21 @@ Compiling with XCode is a little bit problematic, since it requires you to compi
 1. Get the Adium source, compile it with XCode and copy the build output into telegram-adium/Frameworks/Adium. It should contain at least Adium.framework, AdiumLibpurple.framework and AIUitilies.framework
 2. Open the Adium source code, go to ./Frameworks and copy libglib.framework and libpurple.framework into telegram-adium/Frameworks/Adium
 3. Build the tgl submodule and delete libtgl.so from libs/ (it should only contain libtgl.a)
-4. Install libwebp with homebrew, and copy it into your project:
+4. Install libwebp with homebrew and copy it into your project:
 
       brew install webp
       cp /usr/local/Cellar/webp/0.4.3/lib/libwebp.a ./telegram-adium/Frameworks/
 
-5. If you already downloaded libwebp in previous builds make sure that the binaries are up-to-date
+5. Install libgcrypt with homebrew and make sure that libgcrypt.dylib is present in /usr/local/lib
+
+      brew install libgcrypt
+
+6. If you already downloaded libwebp/libgcrypt in previous builds make sure that the binaries are up-to-date
 
       brew update
-      brew upgrade webp
+      brew upgrade webp libgcrypt
 
-6. Build the XCode-Project and execute the created bundle
+7. Build the XCode-Project and execute the created bundle
 
 
 Discussion / Help

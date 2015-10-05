@@ -65,7 +65,7 @@ extern void purple_init_telegram_plugin();
 
 -(char*)getPkName
 {
-    const char* utf8String = (char *)[[[NSBundle bundleForClass: [self class]] pathForResource: @"tg-server" ofType: @"pub"] UTF8String];
+    const char* utf8String = (char *)[[[NSBundle bundleForClass: [self class]] pathForResource: @"tg-server" ofType: @"tglpub"] UTF8String];
     size_t len = strlen(utf8String) + 1;
     char *buf = malloc(len);
     memcpy(buf, utf8String, len);
