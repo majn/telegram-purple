@@ -1,7 +1,33 @@
 Changelog
 ---------
 
-#### Version 1.2.0 (Beta 3)
+
+##### 1.3.0 (Beta4)
+
+    - no longer depend on OpenSSL to fix some licensing issues
+    - translation
+
+
+##### 1.2.1
+
+##### Bugfixes
+
+    - Fix buggy group chat handling
+      * Assure that foreign users are always listed by their full name instead of the user ID
+      * Don't automatically add group chats to buddy list to prevent incompatibillities with some libpurple clients
+      * Fix issue that caused the buddy list to not be correctly updated on joining / leaving participants
+      * Fix an issue that caused the user list to be printed on every group chat message in Finch
+
+    - Fetch chat information lazily to reduce traffic and prevent flood errors
+    - Improve input validation for phone numbers
+
+###### Features
+
+    - Support leaving chats
+    - Implement the roomlist-API to allow listing of all active chats
+
+
+##### Version 1.2.0 (Beta 3)
 
 ##### Bugfixes
 

@@ -7,50 +7,11 @@ I keep getting many questions about this plugin in my E-mail, so I've created a
 [telegram group chat](https://telegram.me/joinchat/01fb53f301b67d3c7a5532908dfa9a89) for
 telegram-purple related discussions or questions.
 
-Beta 3
+Beta 4
 ------
 
-#### 1.2.1
-
-##### Bugfixes 
-
-    - Fix buggy group chat handling
-      * Assure that foreign users are always listed by their full name instead of the user ID
-      * Don't automatically add group chats to buddy list to prevent incompatibillities with some libpurple clients
-      * Fix issue that caused the buddy list to not be correctly updated on joining / leaving participants
-      * Fix an issue that caused the user list to be printed on every group chat message in Finch
-    
-    - Fetch chat information lazily to reduce traffic and prevent flood errors
-    - Improve input validation for phone numbers
-
-###### Features
-
-    - Support leaving chats
-    - Implement the roomlist-API to allow listing of all active chats
-
-#### 1.2.0
-
-##### Bugfixes
-
-    - Fix error in incoming message handling that caused segmentation faults
-    - Fix failing audio and video transfers
-    - Improved buddy list handling (should avoid "unknown" contacts popping up)
-    - Many small issues (see commit history)
-    - Fix issues that caused audio and video downloads to not have a proper file ending
-    - Fix issue that caused very old unused chats to not be available
-
-###### Features
-
-    - Support creation of new group chats
-    - Support joining chats by invite link
-    - Support exporting chats by invite link
-    - Support displaying and sending GIFs 
-    - Mark messages read on other devices as 'deferred' to avoid needless notifications
-
-
-This version should fix the crashes that seem to have occured in many of the older versions. Consider this another intermediate Beta version, as there will be at least another one until I consider issuing a release candidate.
-
-If you migrate from an older version, the Telegram authentication files have been moved to .purple/telegram-purple. If you want to keep your old secret chats, please copy them manually from ~/.telegram-purple, or otherwise you will be prompted for a new SMS code.
+    - fix some licensing issues by not depending on OpenSSL any longer
+    - translation
 
 Build
 -----
@@ -70,18 +31,16 @@ This repository has submodules, so you need to clone recursively.
 
 ##### Fedora
 
-        sudo dnf install gcc openssl-devel glib2-devel libpurple-devel libwebp-devel
-
-And the development files for gcrypt, probably `gcrypt-devel` or something.
+        sudo dnf install gcc libgcrypt-devel glib2-devel libpurple-devel libwebp-devel
 
 
 ###### Debian / Ubuntu
 
-        sudo apt-get install libgcrypt20-dev libssl-dev libpurple-dev libwebp-dev
+        sudo apt-get install libgcrypt20-dev libpurple-dev libwebp-dev
 
 ###### OpenSUSE
 
-        sudo zypper install gcc glib glib-devel libpurple libpurple-devel zlib-devel openssl libopenssl-devel libwebp-devel
+        sudo zypper install gcc glib glib-devel libpurple libpurple-devel zlib-devel libwebp-devel
 
 And the development files for gcrypt, probably `gcrypt-devel` or something.
 
@@ -225,6 +184,7 @@ Telegram-Purple was written by:
 
     - Matthias Jentsch <mtthsjntsch@gmail.com>
     - Vitaly Valtman
+    - Ben Wiederhake
     - Christopher Althaus <althaus.christopher@gmail.com>
     - Markus Endres <endresma45241@th-nuernberg.de>
 
