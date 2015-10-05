@@ -353,11 +353,11 @@ static char *tgp_msg_photo_display (struct tgl_state *TLS, const char *filename,
   return tgp_format_img (img);
 }
 
-static char *tgp_msg_sticker_display (struct tgl_state *TLS, const char *filename, int *flags) {
-  connection_data *conn = TLS->ev_base;
+static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from, const char *filename, int *flags) {
   char *text = NULL;
   
 #ifdef HAVE_LIBWEBP
+  connection_data *conn = TLS->ev_base;
   int img = p2tgl_imgstore_add_with_id_webp ((char *) filename);
   if (img <= 0) {
     failure ("Cannot display sticker, adding to imgstore failed");
@@ -367,7 +367,7 @@ static char *tgp_msg_sticker_display (struct tgl_state *TLS, const char *filenam
   text = tgp_format_img (img);
   *flags |= PURPLE_MESSAGE_IMAGES;
 #else
-  char *txt_user = p2tgl_strdup_alias (tgl_peer_get (TLS, M->from_id));
+  char *txt_user = p2tgl_strdup_alias (tgl_peer_get (TLS, from));
   text = g_strdup_printf ("%s sent a sticker", txt_user);
   *flags |= PURPLE_MESSAGE_SYSTEM;
   g_free (txt_user);
@@ -421,7 +421,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
       case tgl_message_media_document:
         if (M->media.document->flags & TGLDF_STICKER) {
           assert (C->data);
-          text = tgp_msg_sticker_display (TLS, C->data, &flags);
+          text = tgp_msg_sticker_display (TLS, M->from_id, C->data, &flags);
         } else if (M->media.document->flags & TGLDF_IMAGE) {
           assert (C->data);
           text = tgp_msg_photo_display (TLS, C->data, &flags);
@@ -446,7 +446,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
       case tgl_message_media_document_encr:
         if (M->media.encr_document->flags & TGLDF_STICKER) {
           assert (C->data);
-          text = tgp_msg_sticker_display (TLS, C->data, &flags);
+          text = tgp_msg_sticker_display (TLS, M->from_id, C->data, &flags);
         } if (M->media.encr_document->flags & TGLDF_IMAGE) {
           assert (C->data);
           text = tgp_msg_photo_display (TLS, C->data, &flags);
