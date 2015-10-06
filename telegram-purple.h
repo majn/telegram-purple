@@ -33,6 +33,7 @@
 #endif
 
 #include <tgl.h>
+#include <purple.h>
 #include <notify.h>
 #include <plugin.h>
 #include <version.h>

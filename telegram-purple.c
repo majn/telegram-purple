@@ -32,16 +32,10 @@
 #include <pwd.h>
 #include <regex.h>
 
-#include "purple.h"
-#include "notify.h"
-#include "plugin.h"
-#include "version.h"
-#include "account.h"
 #include "accountopt.h"
 #include "blist.h"
 #include "cmds.h"
 #include "conversation.h"
-#include "connection.h"
 #include "debug.h"
 #include "privacy.h"
 #include "prpl.h"
