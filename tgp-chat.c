@@ -23,6 +23,7 @@
 #include "tgp-utils.h"
 #include "tgp-request.h"
 #include "telegram-base.h"
+#include "telegram-purple.h"
 
 #include <tgl.h>
 #include <tgl-queries.h>
@@ -79,7 +80,7 @@ static void tgp_chat_on_loaded_chat_full_joining (struct tgl_state *TLS, void *_
   
   // Check if the users attempts to join an empty chat
   if (! C->user_list_size) {
-    p2tgl_got_chat_in (TLS, C->id, C->id, "You have already left this chat.",
+    p2tgl_got_chat_in (TLS, C->id, C->id, _("You have already left this chat."),
                        PURPLE_MESSAGE_SYSTEM, time (NULL));
   }
 }
@@ -129,19 +130,19 @@ PurpleConversation *tgp_chat_show (struct tgl_state *TLS, struct tgl_chat *C) {
 GList *tgprpl_chat_join_info (PurpleConnection * gc) {
   struct proto_chat_entry *pce;
   pce = g_new0 (struct proto_chat_entry, 1);
-  pce->label = "_Subject:";
+  pce->label = _("_Subject:");
   pce->identifier = "subject";
   pce->required = FALSE;
   GList *info = g_list_append (NULL, pce);
 
   pce = g_new0 (struct proto_chat_entry, 1);
-  pce->label = "_Invite Link:";
+  pce->label = _("_Invite Link:");
   pce->identifier = "link";
   pce->required = FALSE;
   info = g_list_append (info, pce);
 
   pce = g_new0 (struct proto_chat_entry, 1);
-  pce->label = "_Chat Id:";
+  pce->label = _("_Chat Id:");
   pce->identifier = "id";
   pce->required = FALSE;
 
@@ -240,7 +241,7 @@ PurpleRoomlist *tgprpl_roomlist_get_list (PurpleConnection *gc) {
   PurpleRoomlistField *f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_STRING, "", "id", TRUE);
   fields = g_list_append (fields, f);
   
-  f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_INT, "Users", "users", FALSE);
+  f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_INT, _("Users"), "users", FALSE);
   fields = g_list_append (fields, f);
   
   purple_roomlist_set_fields (conn->roomlist, fields);

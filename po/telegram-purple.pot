@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-10-04 17:17+0200\n"
+"POT-Creation-Date: 2015-10-06 14:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,34 +17,34 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../telegram-base.c:427
+#: ../telegram-base.c:417
 msgid "Login Canceled"
 msgstr ""
 
-#: ../telegram-base.c:427
+#: ../telegram-base.c:417
 msgid "Authentication export failed."
 msgstr ""
 
-#: ../telegram-base.c:474
+#: ../telegram-base.c:464
 msgid "Group not created"
 msgstr ""
 
-#: ../telegram-base.c:474
+#: ../telegram-base.c:464
 msgid "Select at least one other user"
 msgstr ""
 
-#: ../telegram-base.c:482
+#: ../telegram-base.c:472
 msgid "Invalid phone number"
 msgstr ""
 
-#: ../telegram-base.c:483
+#: ../telegram-base.c:473
 msgid ""
 "Please enter only numbers in the international phone number format, a "
 "leading + following by the country prefix and the phone number.\n"
 "Do not use any other special chars."
 msgstr ""
 
-#: ../telegram-base.c:597
+#: ../telegram-base.c:587
 msgid "Query Failed"
 msgstr ""
 
@@ -299,6 +299,10 @@ msgstr ""
 msgid "%s sent a sticker"
 msgstr ""
 
+#: ../tgp-net.c:327
+msgid "Cannot connect to server"
+msgstr ""
+
 #: ../tgp-net.c:372
 msgid "Lost connection to the server..."
 msgstr ""
@@ -438,4 +442,24 @@ msgstr ""
 
 #: ../tgp-utils.c:66
 msgid "Unknown"
+msgstr ""
+
+#: ../tgp-chat.c:82
+msgid "You have already left this chat."
+msgstr ""
+
+#: ../tgp-chat.c:132
+msgid "_Subject:"
+msgstr ""
+
+#: ../tgp-chat.c:138
+msgid "_Invite Link:"
+msgstr ""
+
+#: ../tgp-chat.c:144
+msgid "_Chat Id:"
+msgstr ""
+
+#: ../tgp-chat.c:243
+msgid "Users"
 msgstr ""

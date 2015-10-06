@@ -323,7 +323,7 @@ static void restart_connection (struct connection *c) {
   
   if (tglt_get_double_time () - c->last_receive_time > 6 * PING_TIMEOUT) {
     purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
-                                    "Cannot connect to server");
+                                    _("Cannot connect to server"));
     return;
   }
   purple_proxy_connect_cancel (c->prpl_data);

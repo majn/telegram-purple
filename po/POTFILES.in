@@ -7,4 +7,5 @@ tgp-msg.c
 tgp-net.c
 tgp-request.c
 tgp-utils.c
+tgp-chat.c
 
