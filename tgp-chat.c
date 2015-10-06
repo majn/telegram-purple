@@ -130,19 +130,19 @@ PurpleConversation *tgp_chat_show (struct tgl_state *TLS, struct tgl_chat *C) {
 GList *tgprpl_chat_join_info (PurpleConnection * gc) {
   struct proto_chat_entry *pce;
   pce = g_new0 (struct proto_chat_entry, 1);
-  pce->label = _("_Subject:");
+  pce->label = _("Subject:");
   pce->identifier = "subject";
   pce->required = FALSE;
   GList *info = g_list_append (NULL, pce);
 
   pce = g_new0 (struct proto_chat_entry, 1);
-  pce->label = _("_Invite Link:");
+  pce->label = _("Invite Link:");
   pce->identifier = "link";
   pce->required = FALSE;
   info = g_list_append (info, pce);
 
   pce = g_new0 (struct proto_chat_entry, 1);
-  pce->label = _("_Chat Id:");
+  pce->label = _("Chat Id:");
   pce->identifier = "id";
   pce->required = FALSE;
 

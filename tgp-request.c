@@ -73,7 +73,7 @@ void request_code (struct tgl_state *TLS, void (*callback) (struct tgl_state *TL
   data->callback = callback;
 
   if (purple_account_get_bool (tg_get_acc (TLS), "compat-verification", 0) ||
-      ! purple_request_input (conn->gc, _("Telegram Code"), _("Enter Telegram Code"), _("Telegram wants to verify your "
+      ! purple_request_input (conn->gc, _("Login Code"), _("Enter Login Code"), _("Telegram wants to verify your "
         "identity, please enter the code, that you have received via SMS."), NULL, 0, 0, "code", "OK",
         G_CALLBACK(request_code_entered), "Cancel", G_CALLBACK(request_code_canceled), conn->pa, NULL, NULL, data)) {
     
@@ -134,7 +134,7 @@ void request_name_and_code (struct tgl_state *TLS) {
   purple_request_fields_add_group (fields, group);
   
   group = purple_request_field_group_new (_("Authorization"));
-  field = purple_request_field_string_new ("code", _("Telegram Code"), "", 0);
+  field = purple_request_field_string_new ("code", _("Login Code"), "", 0);
   purple_request_field_group_add_field (group, field);
   purple_request_fields_add_group (fields, group);
   
@@ -255,7 +255,7 @@ void request_choose_user (struct accept_create_chat_data *data) {
   purple_request_field_group_add_field (group, field);
   
   purple_request_fields_add_group (fields, group);
-  purple_request_fields (conn->gc, _("Create Group"), _("Invite Users"), NULL, fields, _("Ok"),
+  purple_request_fields (conn->gc, _("Create Group Chat"), _("Invite Users"), NULL, fields, _("Ok"),
       G_CALLBACK(create_group_chat_cb), _("Cancel"), G_CALLBACK(cancel_group_chat_cb), conn->pa, NULL, NULL, data);
 }
 
@@ -267,7 +267,7 @@ void request_create_chat (struct tgl_state *TLS, const char *subject) {
   data->TLS = TLS;
   char *title = g_strdup_printf (_("Chat doesn't exist, create a new group chat named '%s'?"), subject);
   
-  purple_request_accept_cancel (conn->gc, _("Create New Group Chat"), title, NULL, 1, conn->pa, NULL,
+  purple_request_accept_cancel (conn->gc, _("Create Group Chat"), title, NULL, 1, conn->pa, NULL,
       NULL, data, G_CALLBACK(request_choose_user), G_CALLBACK(cancel_group_chat_cb));
   g_free (title);
 }

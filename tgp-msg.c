@@ -71,7 +71,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
         char *alias = p2tgl_strdup_alias (actionPeer);
         
         PurpleConversation *conv = purple_find_chat (conn->gc, tgl_get_peer_id (M->to_id));
-        txt_action = g_strdup_printf (_("%s added user %s by link."), alias, txt_user);
+        txt_action = g_strdup_printf (_("%s added user %s by link"), alias, txt_user);
         if (conv) {
           p2tgl_conv_add_user (TLS, conv, tgl_get_peer_id (peer->id), NULL, 0, FALSE);
         }
@@ -86,7 +86,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
       tgl_peer_t *peer = tgl_peer_get (TLS, TGL_MK_USER (M->action.user));
       if (peer) {
         char *alias = p2tgl_strdup_alias (peer);
-        txt_action = g_strdup_printf (_("added user %s"), alias);
+        txt_action = g_strdup_printf (_("added user %s."), alias);
         
         PurpleConversation *conv = purple_find_chat (conn->gc, tgl_get_peer_id (M->to_id));
         if (conv) {
@@ -131,7 +131,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
       break;
     }
     case tgl_message_action_set_message_ttl:
-      txt_action = g_strdup_printf (_("set ttl to %d seconds"), M->action.ttl);
+      txt_action = g_strdup_printf (_("set TTL to %d seconds"), M->action.ttl);
       break;
     case tgl_message_action_read_messages:
       txt_action = g_strdup_printf (_("%d messages marked read"), M->action.read_cnt);

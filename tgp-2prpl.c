@@ -383,14 +383,16 @@ PurpleNotifyUserInfo *p2tgl_notify_user_info_new (struct tgl_user *U) {
   PurpleNotifyUserInfo *info = purple_notify_user_info_new();
   
   if (str_not_empty(U->first_name) && str_not_empty(U->last_name)) {
-    purple_notify_user_info_add_pair (info, _("First name"), U->first_name);
-    purple_notify_user_info_add_pair (info, _("Last name"), U->last_name);
+    purple_notify_user_info_add_pair (info, _("First Name"), U->first_name);
+    purple_notify_user_info_add_pair (info, _("Last Name"), U->last_name);
   } else {
     purple_notify_user_info_add_pair (info, _("Name"), U->print_name);
   }
   
   if (str_not_empty (U->username)) {
-    purple_notify_user_info_add_pair (info, _("Username"), U->username);
+    char *username = g_strdup_printf ("@%s", U->username);
+    purple_notify_user_info_add_pair (info, _("User Name"), username);
+    g_free (username);
   }
   
   char *status = tgp_format_user_status (&U->status);
@@ -412,7 +414,7 @@ PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TL
   PurpleNotifyUserInfo *info = p2tgl_notify_user_info_new (U);
   
   if (secret->state == sc_waiting) {
-    purple_notify_user_info_add_pair (info, "", _("Waiting for user to get online ..."));
+    purple_notify_user_info_add_pair (info, "", _("Waiting for the user to get online ..."));
     return info;
   }
   

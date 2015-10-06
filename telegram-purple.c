@@ -528,7 +528,7 @@ static void import_chat_link_done (struct tgl_state *TLS, void *extra, int succe
     tgp_notify_on_error_gw (TLS, NULL, success);
     return;
   }
-  purple_notify_info (_telegram_protocol, _("Success"), _("Chat joined"), _("Chat added to roomlist"));
+  purple_notify_info (_telegram_protocol, _("Success"), _("Chat joined"), _("Chat added to list of chat rooms"));
 }
 
 void import_chat_link_checked (struct tgl_state *TLS, const char *link) {
@@ -917,7 +917,7 @@ static void tgprpl_init (PurplePlugin *plugin) {
                                         verification_values);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_int_new (_("Display peers offline after (days)"),
+  opt = purple_account_option_int_new (_("Display buddies offline after (days)"),
                                       TGP_KEY_INACTIVE_DAYS_OFFLINE,
                                       TGP_DEFAULT_INACTIVE_DAYS_OFFLINE);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
@@ -927,7 +927,7 @@ static void tgprpl_init (PurplePlugin *plugin) {
                                         TGP_DEFAULT_HISTORY_SYNC_ALL);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_int_new (_("Don't fetch messages older than (days)\n"
+  opt = purple_account_option_int_new (_("Don't fetch history older than (days)\n"
                                        "(0 for unlimited)"),
                                        TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD,
                                        TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
@@ -935,7 +935,7 @@ static void tgprpl_init (PurplePlugin *plugin) {
   
   // Chats
 
-  opt = purple_account_option_bool_new (_("Add group chats to buddy list"),
+  opt = purple_account_option_bool_new (_("Add all group chats to buddy list"),
                                         TGP_KEY_JOIN_GROUP_CHATS,
                                         TGP_DEFAULT_JOIN_GROUP_CHATS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
@@ -943,12 +943,12 @@ static void tgprpl_init (PurplePlugin *plugin) {
 
   // Read notifications
   
-  opt = purple_account_option_bool_new (_("Display read notifications"),
+  opt = purple_account_option_bool_new (_("Display notices of receipt"),
                                         TGP_KEY_DISPLAY_READ_NOTIFICATIONS,
                                         TGP_DEFAULT_DISPLAY_READ_NOTIFICATIONS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
-  opt = purple_account_option_bool_new (_("Send read notifications when present."),
+  opt = purple_account_option_bool_new (_("Send notices of receipt when present"),
                                         TGP_KEY_SEND_READ_NOTIFICATIONS,
                                         TGP_DEFAULT_SEND_READ_NOTIFICATIONS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
