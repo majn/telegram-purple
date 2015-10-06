@@ -396,6 +396,11 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   if (!M->message || tgp_outgoing_msg (TLS, M) || !tgl_get_peer_type (M->to_id)) {
     return;
   }
+  
+  // Mark messages that contain a mention like if they contained our current nick name
+  if (M->flags & TGLMF_MENTION) {
+    flags |= PURPLE_MESSAGE_NICK;
+  }
 
   // format the message text
   if (M->flags & TGLMF_SERVICE) {
