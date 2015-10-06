@@ -28,7 +28,7 @@
 // libintl.h. If this is not the case a dummy macro is defined to bypass the translation functions
 #ifdef ENABLE_NLS
 #  include <glib/gi18n-lib.h>
-#elseif
+#else
 #  define _(String) String
 #endif
 
