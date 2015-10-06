@@ -47,7 +47,7 @@ AC_SUBST(PURPLE_LIBS)
 IT_PROG_INTLTOOL([0.50.2], [no-xml]) 
 
 # Define the domain name for the translated words 
-GETTEXT_PACKAGE="telegram-purple"
+GETTEXT_PACKAGE=$PACKAGE_NAME
 AC_SUBST(GETTEXT_PACKAGE)  
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, ["$GETTEXT_PACKAGE"], [Define the gettext package to be used])
 
