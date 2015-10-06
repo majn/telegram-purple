@@ -984,3 +984,4 @@ static PurplePluginInfo plugin_info = {
 };
 
 PURPLE_INIT_PLUGIN (telegram, tgprpl_init, plugin_info)
+
