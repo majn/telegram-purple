@@ -1,5 +1,5 @@
 srcdir=@srcdir@
-prefix = @prefix@
+prefix=@prefix@
 datarootdir=@datarootdir@
 localedir=@localedir@
 gettext_package=@GETTEXT_PACKAGE@
