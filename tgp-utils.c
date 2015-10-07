@@ -105,23 +105,6 @@ long tgp_time_n_days_ago (int days) {
   return time(NULL) - 24 * 3600 * days;
 };
 
-char *tgp_g_format_size (gint64 size) {
-  char *sizes[] = {
-    "B",
-    "KiB",
-    "MiB",
-    "GiB",
-    "PiB"
-  };
-  int base = 0;
-  double s = (double) size;
-  while (s > 1024 && base < 4) {
-    s /= 1024;
-    ++ base;
-  }
-  return g_strdup_printf ("%.1f %s, ", s, sizes[base]);
-}
-
 void tgp_g_queue_free_full (GQueue *queue, GDestroyNotify free_func) {
   void *entry;
   
