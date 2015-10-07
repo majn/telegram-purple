@@ -636,7 +636,7 @@ int tgp_visualize_key (struct tgl_state *TLS, unsigned char* sha1_key) {
     imgStoreId = purple_imgstore_add_with_id (png, pngsize, NULL);
     used_images_add ((connection_data*)TLS->ev_base, imgStoreId);
   }
-  g_free(image);
+  g_free (image);
   return imgStoreId;
 }
 
@@ -646,6 +646,7 @@ void tgp_notify_on_error_gw (struct tgl_state *TLS, void *extra, int success) {
     failure (errormsg);
     purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, _("Query Failed"),
                            errormsg, NULL, NULL, NULL);
+    g_free (errormsg);
     return;
   }
 }

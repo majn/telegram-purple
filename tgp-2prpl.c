@@ -196,7 +196,7 @@ void p2tgl_got_typing (struct tgl_state *TLS, tgl_peer_id_t user, int timeout) {
   
   serv_got_typing(tg_get_conn(TLS), who, timeout, PURPLE_TYPING);
   
-  g_free(who);
+  g_free (who);
 }
 
 PurpleBuddy *p2tgl_buddy_find (struct tgl_state *TLS, tgl_peer_id_t user) {
@@ -522,7 +522,7 @@ int p2tgl_imgstore_add_with_id_webp (const char *filename) {
 #endif
 
 void p2tgl_buddy_icons_set_for_user (PurpleAccount *pa, tgl_peer_id_t *id, const char* filename) {
-  char *who = g_strdup_printf("%d", tgl_get_peer_id(*id));
+  char *who = g_strdup_printf ("%d", tgl_get_peer_id(*id));
 
   gchar *data = NULL;
   size_t len;

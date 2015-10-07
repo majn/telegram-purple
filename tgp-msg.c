@@ -282,6 +282,7 @@ void send_inline_picture_done (struct tgl_state *TLS, void *extra, int success, 
     failure (errormsg);
     purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, _("Sending image failed."),
                            errormsg, NULL, NULL, NULL);
+    g_free (errormsg);
     return;
   }
 }
@@ -485,20 +486,23 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         if (M->media.venue.address && strcmp (M->media.venue.title, M->media.venue.address)) {
           address = g_strdup_printf (" %s", M->media.venue.address);
         }
+        char *pos = format_geo_link_osm (M->media.venue.geo.latitude, M->media.geo.longitude);
         text = g_strdup_printf ("<a href=\"%s\">%s</a>%s",
-                                format_geo_link_osm (M->media.venue.geo.latitude, M->media.geo.longitude),
+                                pos,
                                 M->media.venue.title ? M->media.venue.title : "", address ? address : "");
         if (address) {
           g_free (address);
         }
+        g_free (pos);
         break;
       }
         
-      case tgl_message_media_geo:
-        text = g_strdup_printf ("<a href=\"%s\">%s</a>",
-                                format_geo_link_osm (M->media.venue.geo.latitude, M->media.geo.longitude),
-                                format_geo_link_osm (M->media.venue.geo.latitude, M->media.geo.longitude));
+      case tgl_message_media_geo: {
+        char *pos = format_geo_link_osm (M->media.venue.geo.latitude, M->media.geo.longitude);
+        text = g_strdup_printf ("<a href=\"%s\">%s</a>", pos, pos);
+        g_free (pos);
         break;
+      }
         
       case tgl_message_media_webpage: {
         char *msg = g_strdup (M->message);
