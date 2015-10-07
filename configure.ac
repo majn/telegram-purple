@@ -42,9 +42,10 @@ AC_SUBST(PURPLE_CFLAGS)
 AC_SUBST(PURPLE_CPPFLAGS)
 AC_SUBST(PURPLE_LIBS)
 
-# Translation, for documentation see I18N-HOWTO in intltool tarball
-# Just the version used during development needed version may be much lower
-IT_PROG_INTLTOOL([0.50.2], [no-xml]) 
+AC_CHECK_PROG(GETTEXT_CHECK,msgfmt,yes)
+if test x"$GETTEXT_CHECK" != x"yes" ; then
+    AC_MSG_ERROR([msgfmt not found please install gettext])
+fi
 
 # Define the domain name for the translated words 
 GETTEXT_PACKAGE=$PACKAGE_NAME
