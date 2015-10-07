@@ -1,5 +1,5 @@
-autoconf
 autoheader
+autoconf
 
 echo bootstrapping translation files ...
 cd po
@@ -15,4 +15,3 @@ for lang in $(cat LINGUAS); do
     fi
 done
 cd ..
-
