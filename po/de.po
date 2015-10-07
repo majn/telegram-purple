@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: telegram-purple 1.3.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-10-06 16:08+0200\n"
+"POT-Creation-Date: 2015-10-07 03:00+0200\n"
 "PO-Revision-Date: 2015-10-04 16:03+0200\n"
 "Last-Translator: Matthias Jentsch <mtthsjntsch@gmail.com>\n"
 "Language-Team: German\n"
@@ -55,90 +55,106 @@ msgstr ""
 msgid "Query Failed"
 msgstr "Anfrage Fehlgeschlagen"
 
-#: ../telegram-purple.c:178
+#: ../telegram-purple.c:172
 msgid "Secret chat terminated."
 msgstr "Geheimer chat ist beendet."
 
-#: ../telegram-purple.c:221
+#: ../telegram-purple.c:215
 msgid "Message marked as read."
 msgstr "Nachricht als gelesen markiert."
 
-#: ../telegram-purple.c:481
+#: ../telegram-purple.c:475
 #, c-format
 msgid "Invite link: %s"
 msgstr "Einladungslink: %s"
 
-#: ../telegram-purple.c:504
+#: ../telegram-purple.c:498
 msgid "Failure"
 msgstr "Fehler"
 
-#: ../telegram-purple.c:504
+#: ../telegram-purple.c:498
 msgid "Creating Chat Link Failed"
 msgstr "Erstellen des Einladungslinks fehlgeschlagen"
 
-#: ../telegram-purple.c:505
+#: ../telegram-purple.c:499
 msgid "You need to be admin of the group to do that."
 msgstr "Du musst Gruppenadmin sein um das zu tun."
 
-#: ../telegram-purple.c:531
+#: ../telegram-purple.c:525
 msgid "Success"
 msgstr "Erfolg"
 
-#: ../telegram-purple.c:531
+#: ../telegram-purple.c:525
 msgid "Chat joined"
 msgstr "Chat beigetreten"
 
-#: ../telegram-purple.c:531
+#: ../telegram-purple.c:525
 msgid "Chat added to list of chat rooms"
 msgstr "Chat wurde in die Liste der Chaträume eingefügt."
 
-#: ../telegram-purple.c:575
+#: ../telegram-purple.c:539
+msgid "Start secret chat ..."
+msgstr "Starte geheimen Chat ..."
+
+#. Generate Public Link
+#: ../telegram-purple.c:545
+msgid "Invite users by link ..."
+msgstr "Nutzer per Link einladen ..."
+
+#. Delete self from chat
+#: ../telegram-purple.c:551
+msgid "Delete and exit ..."
+msgstr "Löschen und verlassen ..."
+
+#: ../telegram-purple.c:569
 #, c-format
 msgid ""
 "Error, server public key not found at %s. Make sure that Telegram-Purple is "
 "installed properly."
 msgstr ""
+"Fehler, öffentlicher schlüssel nicht in %s gefunden. Stelle sicher dass "
+"Telegram-Purple korrekt installiert ist"
 
-#: ../telegram-purple.c:584
+#: ../telegram-purple.c:578
 #, c-format
 msgid "Unable to sign on as %s: Missing file %s."
 msgstr ""
 
-#: ../telegram-purple.c:588
+#: ../telegram-purple.c:582
 msgid ""
 "Make sure telegram-purple is installed properly,\n"
 "including the .tglpub file."
 msgstr ""
 
-#: ../telegram-purple.c:606
+#: ../telegram-purple.c:600
 #, c-format
 msgid "Unable to sign on as %s, phone number lacks country prefix."
 msgstr ""
 
-#: ../telegram-purple.c:610
+#: ../telegram-purple.c:604
 msgid ""
 "Numbers must start with the full international\n"
 "prefix code, e.g. +49 for Germany."
 msgstr ""
 
-#: ../telegram-purple.c:754
+#: ../telegram-purple.c:748
 msgid "Not found"
 msgstr "Nicht gefunden"
 
-#: ../telegram-purple.c:754
+#: ../telegram-purple.c:748
 msgid "Cannot invite buddy to chat."
 msgstr "Kann den Freund nicht zum Chat einladen"
 
-#: ../telegram-purple.c:754
+#: ../telegram-purple.c:748
 msgid "Specified user is not existing."
 msgstr "Angegebener Nutzer existiert nicht"
 
 #. Login
-#: ../telegram-purple.c:897
+#: ../telegram-purple.c:891
 msgid "Password (two factor authentication)"
 msgstr "Passwort (Zwei-Faktor-Authentifizierung)"
 
-#: ../telegram-purple.c:903
+#: ../telegram-purple.c:897
 msgid ""
 "Fallback SMS verification\n"
 "(Helps when not using Pidgin and you aren't being prompted for the code)"
@@ -147,19 +163,31 @@ msgstr ""
 "(Hilfreich wenn du kein Pidgin verwendest und du nicht nach dem SMS-Code "
 "gefragt wirst)"
 
-#: ../telegram-purple.c:915
+#: ../telegram-purple.c:905
+msgid "Ask"
+msgstr "Nachfragen"
+
+#: ../telegram-purple.c:906
+msgid "Always"
+msgstr "Immer"
+
+#: ../telegram-purple.c:907
+msgid "Never"
+msgstr "Nie"
+
+#: ../telegram-purple.c:909
 msgid "Accept Secret Chats"
 msgstr "Geheime Chats Akzeptieren"
 
-#: ../telegram-purple.c:920
+#: ../telegram-purple.c:914
 msgid "Display buddies offline after (days)"
 msgstr "Freunde als Offline anzeigen nach (tage)"
 
-#: ../telegram-purple.c:925
+#: ../telegram-purple.c:919
 msgid "Fetch past history on first login"
 msgstr "Abrufen der verganenen Historie beim ersten Login"
 
-#: ../telegram-purple.c:930
+#: ../telegram-purple.c:924
 msgid ""
 "Don't fetch history older than (days)\n"
 "(0 for unlimited)"
@@ -168,16 +196,16 @@ msgstr ""
 "(0 für unbegrenzt)"
 
 #. Chats
-#: ../telegram-purple.c:938
+#: ../telegram-purple.c:932
 msgid "Add all group chats to buddy list"
 msgstr "Alle Gruppenchats in die Freundesliste einfügen"
 
 #. Read notifications
-#: ../telegram-purple.c:946
+#: ../telegram-purple.c:940
 msgid "Display notices of receipt"
 msgstr "Empfangsbestätigungen anzeigen"
 
-#: ../telegram-purple.c:951
+#: ../telegram-purple.c:945
 msgid "Send notices of receipt when present"
 msgstr "Empfangsbestätigungen senden wenn anwesend"
 
@@ -246,7 +274,7 @@ msgid "%s added user %s by link"
 msgstr "%s hat den Nutzer %s per link hinzugefügt"
 
 #: ../tgp-msg.c:89
-#, fuzzy, c-format
+#, c-format
 msgid "added user %s."
 msgstr "hat den Nutzer %s hinzufügt."
 

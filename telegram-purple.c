@@ -162,14 +162,14 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
     const char* choice = purple_account_get_string (conn->pa, "accept-secret-chats", "ask");
     if (! strcmp (choice, "always")) {
       tgl_do_accept_encr_chat_request (TLS, U, write_secret_chat_gw, 0);
-    } else if (! strcmp(choice, "ask")) {
+    } else if (! strcmp (choice, "ask")) {
       request_accept_secret_chat (TLS, U);
     }
   }
   
   if (!(flags & TGL_UPDATE_CREATED) && buddy) {
     if (flags & TGL_UPDATE_DELETED) {
-      p2tgl_got_im (TLS, U->id, _("Secret chat terminated."), PURPLE_MESSAGE_SYSTEM | PURPLE_MESSAGE_WHISPER, time(0));
+      p2tgl_got_im (TLS, U->id, _("Secret chat terminated."), PURPLE_MESSAGE_SYSTEM | PURPLE_MESSAGE_WHISPER, time (0));
       p2tgl_prpl_got_set_status_offline (TLS, U->id);
     } else {
       _update_buddy (TLS, (tgl_peer_t *)U, flags);
@@ -536,19 +536,19 @@ static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
   if (PURPLE_BLIST_NODE_IS_BUDDY(node)) {
     // Add encrypted chat option to the right click menu of all buddies
     PurpleBuddy* buddy = (PurpleBuddy*)node;
-    PurpleMenuAction* action = purple_menu_action_new ("Start secret chat ...",
+    PurpleMenuAction* action = purple_menu_action_new (_("Start secret chat ..."),
                                  PURPLE_CALLBACK(start_secret_chat), buddy, NULL);
     menu = g_list_append (menu, (gpointer)action);
   }
   if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
      // Generate Public Link
-    PurpleMenuAction* action = purple_menu_action_new ("Invite users by link ...",
+    PurpleMenuAction* action = purple_menu_action_new (_("Invite users by link ..."),
                                  PURPLE_CALLBACK(create_chat_link), NULL, NULL);
     menu = g_list_append (menu, (gpointer)action);
   }
   if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
     // Delete self from chat
-    PurpleMenuAction* action = purple_menu_action_new ("Delete and exit ...",
+    PurpleMenuAction* action = purple_menu_action_new (_("Delete and exit ..."),
                                  PURPLE_CALLBACK(leave_and_delete_chat), NULL, NULL);
     menu = g_list_append (menu, (gpointer)action);
   }
@@ -902,9 +902,9 @@ static void tgprpl_init (PurplePlugin *plugin) {
   // Messaging
   
   GList *verification_values = NULL;
-  ADD_VALUE(verification_values, "Ask", "ask");
-  ADD_VALUE(verification_values, "Always", "always");
-  ADD_VALUE(verification_values, "Never", "never");
+  ADD_VALUE(verification_values, _("Ask"), "ask");
+  ADD_VALUE(verification_values, _("Always"), "always");
+  ADD_VALUE(verification_values, _("Never"), "never");
   
   opt = purple_account_option_list_new (_("Accept Secret Chats"),
                                         TGP_KEY_ACCEPT_SECRET_CHATS,
