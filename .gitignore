@@ -1,5 +1,6 @@
 *.o
 *.so
+*.mo
 tg/
 auto/
 autom4te.cache/
