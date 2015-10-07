@@ -13,7 +13,6 @@ m4_include([m4_ax_pkg_config.m4])
 AC_PROG_CC
 AC_PROG_INSTALL
 
-AC_CHECK_LIB([m], [sqrt])
 AC_CHECK_LIB([rt], [clock_gettime])
 AC_CHECK_LIB([gcrypt], [gcry_md_open])
 AX_CHECK_ZLIB(, [AC_MSG_ERROR([No zlib found])])

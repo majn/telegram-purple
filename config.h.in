@@ -15,9 +15,6 @@
 /* Define to 1 if you have the `gcrypt' library (-lgcrypt). */
 #undef HAVE_LIBGCRYPT
 
-/* Define to 1 if you have the `m' library (-lm). */
-#undef HAVE_LIBM
-
 /* Define to 1 if you have the `rt' library (-lrt). */
 #undef HAVE_LIBRT
 
