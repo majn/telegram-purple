@@ -88,9 +88,9 @@ install: $(PRPL_LIBNAME)
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48
 	install -m $(FILE_PERM) imgs/telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
 	for lang in $(shell cat po/LINGUAS); do \
-		mkdir -p $(localedir)/$$lang/LC_MESSAGES; \
-		echo "installing po/$$lang.mo to $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
-		install -m $(FILE_PERM) po/$$lang.mo $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
+		mkdir -p $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES; \
+		echo "installing po/$$lang.mo to $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
+		install -m $(FILE_PERM) po/$$lang.mo $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
 	done
 
 .PHONY: local_install
