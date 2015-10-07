@@ -120,5 +120,10 @@ run:
 debug: install
 	ddd pidgin
 
-clean:
+.PHONY: clean-here
+clean-here:
 	rm -rf ${DIR_LIST} config.log config.status $(PRPL_C_OBJS) $(PRPL_LIBNAME) po/*.mo
+
+.PHONY: clean
+clean: clean-here tgl/Makefile
+	+make -C tgl clean
