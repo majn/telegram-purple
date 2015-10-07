@@ -630,7 +630,7 @@ static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *m
 
     // OTR plugins may try to insert messages that don't contain the code
     if (tgp_startswith (message, "?OTR")) {
-        info ("Fallback SMS auth, skipping OTR messsage: '%s'", message);
+        info ("Fallback SMS auth, skipping OTR message: '%s'", message);
         return -1;
     }
     request_code_entered (conn->TLS, message);
