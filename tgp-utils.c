@@ -34,7 +34,9 @@ connection_data *get_conn_from_buddy (PurpleBuddy *buddy) {
 
 const char *format_time (time_t date) {
   struct tm *datetime = localtime(&date);
-  return purple_utf8_strftime ("%d.%m.%Y %H:%M", datetime);
+  /* This should be the language's timestamp format.
+   * This is preceded by a colon. */
+  return purple_utf8_strftime (_("%d.%m.%Y %H:%M"), datetime);
 }
 
 char *tgp_format_img (int imgstore) {
@@ -54,16 +56,20 @@ char *tgp_format_user_status (struct tgl_user_status *status) {
       when = g_strdup_printf("%s", format_time (status->when));
       break;
     case -2:
-      when = g_strdup_printf (_("Recently"));
+      /* This is preceded by a colon. */
+      when = g_strdup_printf (_("recently"));
       break;
     case -3:
-      when = g_strdup_printf (_("Last week"));
+      /* This is preceded by a colon. */
+      when = g_strdup_printf (_("last week"));
       break;
     case -4:
-      when = g_strdup_printf (_("Last month"));
+      /* This is preceded by a colon. */
+      when = g_strdup_printf (_("last month"));
       break;
     default:
-      when = g_strdup (_("Unknown"));
+      /* This is preceded by a colon. */
+      when = g_strdup (_("unknown"));
       break;
   }
   return when;
@@ -102,10 +108,10 @@ long tgp_time_n_days_ago (int days) {
 char *tgp_g_format_size (gint64 size) {
   char *sizes[] = {
     "B",
-    "KB",
-    "MB",
-    "GB",
-    "PB"
+    "KiB",
+    "MiB",
+    "GiB",
+    "PiB"
   };
   int base = 0;
   double s = (double) size;

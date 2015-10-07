@@ -54,15 +54,19 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
 
   switch (M->action.type) {
     case tgl_message_action_chat_create:
+      /* This is preceded by a username. */
       txt_action = g_strdup_printf (_("created chat %s"), M->action.title);
       break;
     case tgl_message_action_chat_edit_title:
+      /* This is preceded by a username. */
       txt_action = g_strdup_printf (_("changed title to %s"), M->action.new_title);
       break;
     case tgl_message_action_chat_edit_photo:
+      /* This is preceded by a username. */
       txt_action = g_strdup (_("changed photo"));
       break;
     case tgl_message_action_chat_delete_photo:
+      /* This is preceded by a username. */
       txt_action = g_strdup (_("deleted photo"));
       break;
     case tgl_message_action_chat_add_user_by_link: {
@@ -71,7 +75,8 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
         char *alias = p2tgl_strdup_alias (actionPeer);
         
         PurpleConversation *conv = purple_find_chat (conn->gc, tgl_get_peer_id (M->to_id));
-        txt_action = g_strdup_printf (_("%s added user %s by link"), alias, txt_user);
+        /* This is (maybe?) preceded by a username. */
+        txt_action = g_strdup_printf (_("%1$s added user %2$s by link"), alias, txt_user);
         if (conv) {
           p2tgl_conv_add_user (TLS, conv, tgl_get_peer_id (peer->id), NULL, 0, FALSE);
         }
@@ -86,6 +91,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
       tgl_peer_t *peer = tgl_peer_get (TLS, TGL_MK_USER (M->action.user));
       if (peer) {
         char *alias = p2tgl_strdup_alias (peer);
+        /* This is preceded by a username. */
         txt_action = g_strdup_printf (_("added user %s."), alias);
         
         PurpleConversation *conv = purple_find_chat (conn->gc, tgl_get_peer_id (M->to_id));
@@ -109,7 +115,8 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
         PurpleConversation *conv = tgp_chat_show (TLS, &chatPeer->chat);
         if (conv) {
           char *alias = p2tgl_strdup_alias (peer);
-          txt_action = g_strdup_printf (_("%s deleted user %s."), txt_user, alias);
+          /* This is preceded by a username. */
+          txt_action = g_strdup_printf (_("%1$s deleted user %2$s."), txt_user, alias);
           g_free (alias);
           
           p2tgl_conv_del_user (TLS, conv, txt_action, M->action.user);
@@ -125,37 +132,47 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
         }
         
         char *alias = p2tgl_strdup_alias (peer);
+        /* This is preceded by a username. */
         txt_action = g_strdup_printf (_("deleted user %s"), alias);
         g_free (alias);
       }
       break;
     }
     case tgl_message_action_set_message_ttl:
-      txt_action = g_strdup_printf (_("set TTL to %d seconds"), M->action.ttl);
+      /* This is preceded by a username. */
+      txt_action = g_strdup_printf (_("set self destruction timer to %d seconds"), M->action.ttl);
       break;
     case tgl_message_action_read_messages:
+      /* This is (maybe?) preceded by a username. */
       txt_action = g_strdup_printf (_("%d messages marked read"), M->action.read_cnt);
       break;
     case tgl_message_action_delete_messages:
+      /* This is (maybe?) preceded by a username. */
       txt_action = g_strdup_printf (_("%d messages deleted"), M->action.delete_cnt);
       break;
     case tgl_message_action_screenshot_messages:
-      txt_action = g_strdup_printf (_("%d messages screenshoted"), M->action.screenshot_cnt);
+      /* This is (maybe?) preceded by a username. */
+      txt_action = g_strdup_printf (_("%d messages screenshot'ed"), M->action.screenshot_cnt);
       break;
     case tgl_message_action_notify_layer:
+      /* This is (maybe?) preceded by a username. */
       txt_action = g_strdup_printf (_("updated layer to %d"), M->action.layer);
       break;
     case tgl_message_action_request_key:
-      txt_action = g_strdup_printf (_("Request rekey #%016llx"), M->action.exchange_id);
+      /* This is (maybe?) preceded by a username. */
+      txt_action = g_strdup_printf (_("request rekey #%016llx"), M->action.exchange_id);
       break;
     case tgl_message_action_accept_key:
-      txt_action = g_strdup_printf (_("Accept rekey #%016llx"), M->action.exchange_id);
+      /* This is (maybe?) preceded by a username. */
+      txt_action = g_strdup_printf (_("accept rekey #%016llx"), M->action.exchange_id);
       break;
     case tgl_message_action_commit_key:
-      txt_action = g_strdup_printf (_("Commit rekey #%016llx"), M->action.exchange_id);
+      /* This is (maybe?) preceded by a username. */
+      txt_action = g_strdup_printf (_("commit rekey #%016llx"), M->action.exchange_id);
       break;
     case tgl_message_action_abort_key:
-      txt_action = g_strdup_printf (_("Abort rekey #%016llx"), M->action.exchange_id);
+      /* This is (maybe?) preceded by a username. */
+      txt_action = g_strdup_printf (_("abort rekey #%016llx"), M->action.exchange_id);
       break;
     default:
       txt_action = NULL;
@@ -170,7 +187,6 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
 }
 
 static char *format_geo_link_osm (double lat, double lon) {
-
   // assure that the floats are formatted with a dot
   char *loc = setlocale (LC_NUMERIC, NULL);
   setlocale (LC_NUMERIC, "en_US");
@@ -364,7 +380,7 @@ static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from,
   *flags |= PURPLE_MESSAGE_IMAGES;
 #else
   char *txt_user = p2tgl_strdup_alias (tgl_peer_get (TLS, from));
-  text = g_strdup_printf (_("%s sent a sticker"), txt_user);
+  text = g_strdup_printf (_("%s sent a sticker."), txt_user);
   *flags |= PURPLE_MESSAGE_SYSTEM;
   g_free (txt_user);
 #endif

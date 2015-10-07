@@ -495,7 +495,8 @@ void export_chat_link_checked (struct tgl_state *TLS, const char *name) {
     return;
   }
   if (C->chat.admin_id != tgl_get_peer_id (TLS->our_id)) {
-    purple_notify_error (_telegram_protocol, _("Failure"), _("Creating Chat Link Failed"),
+    purple_notify_error (_telegram_protocol, _("Creating chat link failed"),
+                         _("Creating chat link failed"),
                          _("You need to be admin of the group to do that."));
     return;
   }
@@ -522,7 +523,8 @@ static void import_chat_link_done (struct tgl_state *TLS, void *extra, int succe
     tgp_notify_on_error_gw (TLS, NULL, success);
     return;
   }
-  purple_notify_info (_telegram_protocol, _("Success"), _("Chat joined"), _("Chat added to list of chat rooms"));
+  purple_notify_info (_telegram_protocol, _("Chat joined"), _("Chat joined"),
+                      _("Chat added to list of chat rooms."));
 }
 
 void import_chat_link_checked (struct tgl_state *TLS, const char *link) {
@@ -567,7 +569,7 @@ static void tgprpl_login (PurpleAccount * acct) {
   TLS->base_path = get_config_dir (TLS, purple_account_get_username (acct));
   tgl_set_download_directory (TLS, get_download_dir(TLS));
   if (!assert_file_exists (gc, pk_path, _("Error, server public key not found at %s."
-                      " Make sure that Telegram-Purple is installed properly."))) {
+                      " Make sure that telegram-purple is installed properly."))) {
     /* Already reported. */
     return;
   }
@@ -575,7 +577,7 @@ static void tgprpl_login (PurpleAccount * acct) {
   
   struct rsa_pubkey the_pubkey;
   if (! read_pubkey_file (pk_path, &the_pubkey)) {
-    char *cause = g_strdup_printf (_("Unable to sign on as %s: Missing file %s."),
+    char *cause = g_strdup_printf (_("Unable to sign on as %s: missing file %s."),
                     purple_account_get_username (acct), pk_path);
     purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_INVALID_SETTINGS, cause);
     purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, cause,
@@ -597,7 +599,7 @@ static void tgprpl_login (PurpleAccount * acct) {
   tgl_init (TLS);
 
   if (! tgp_startswith (purple_account_get_username (acct), "+")) {
-        char *cause = g_strdup_printf (_("Unable to sign on as %s, phone number lacks country prefix."),
+        char *cause = g_strdup_printf (_("Unable to sign on as %s: phone number lacks country prefix."),
                         purple_account_get_username (acct));
         purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_INVALID_SETTINGS, cause);
         purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, cause,
@@ -745,7 +747,9 @@ static void tgprpl_chat_invite (PurpleConnection * gc, int id, const char *messa
   tgl_peer_t *user = tgl_peer_get(conn->TLS, TGL_MK_USER (atoi(name)));
   
   if (! chat || ! user) {
-    purple_notify_error (_telegram_protocol, _("Not found"), _("Cannot invite buddy to chat."), _("Specified user is not existing."));
+    purple_notify_error (_telegram_protocol, _("Cannot invite buddy to chat"),
+                         _("Cannot invite buddy to chat"),
+                         _("Specified user does not exist."));
     return;
   }
   
@@ -902,11 +906,11 @@ static void tgprpl_init (PurplePlugin *plugin) {
   // Messaging
   
   GList *verification_values = NULL;
-  ADD_VALUE(verification_values, _("Ask"), "ask");
-  ADD_VALUE(verification_values, _("Always"), "always");
-  ADD_VALUE(verification_values, _("Never"), "never");
+  ADD_VALUE(verification_values, _("ask"), "ask");
+  ADD_VALUE(verification_values, _("always"), "always");
+  ADD_VALUE(verification_values, _("never"), "never");
   
-  opt = purple_account_option_list_new (_("Accept Secret Chats"),
+  opt = purple_account_option_list_new (_("Accept secret chats"),
                                         TGP_KEY_ACCEPT_SECRET_CHATS,
                                         verification_values);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);

@@ -366,9 +366,9 @@ static void fail_connection (struct connection *c) {
   
   c->prpl_data = NULL;
 
-  info ("Lost connection to server... %s:%d\n", c->ip, c->port);
+  info ("Lost connection to server ... %s:%d\n", c->ip, c->port);
   purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
-                                  _("Lost connection to the server..."));
+                                  _("Lost connection to the server ..."));
 }
 
 //extern FILE *log_net_f;

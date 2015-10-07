@@ -136,13 +136,13 @@ GList *tgprpl_chat_join_info (PurpleConnection * gc) {
   GList *info = g_list_append (NULL, pce);
 
   pce = g_new0 (struct proto_chat_entry, 1);
-  pce->label = _("Invite Link:");
+  pce->label = _("Invite link:");
   pce->identifier = "link";
   pce->required = FALSE;
   info = g_list_append (info, pce);
 
   pce = g_new0 (struct proto_chat_entry, 1);
-  pce->label = _("Chat Id:");
+  pce->label = _("Chat ID:");
   pce->identifier = "id";
   pce->required = FALSE;
 

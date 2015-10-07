@@ -73,9 +73,9 @@ void request_code (struct tgl_state *TLS, void (*callback) (struct tgl_state *TL
   data->callback = callback;
 
   if (purple_account_get_bool (tg_get_acc (TLS), "compat-verification", 0) ||
-      ! purple_request_input (conn->gc, _("Login Code"), _("Enter Login Code"), _("Telegram wants to verify your "
-        "identity, please enter the code, that you have received via SMS."), NULL, 0, 0, "code", "OK",
-        G_CALLBACK(request_code_entered), "Cancel", G_CALLBACK(request_code_canceled), conn->pa, NULL, NULL, data)) {
+      ! purple_request_input (conn->gc, _("Login code"), _("Enter login code"), _("Telegram wants to verify your "
+        "identity. Please enter the code that you have received via SMS."), NULL, 0, 0, _("the code"), _("OK"),
+        G_CALLBACK(request_code_entered), _("Cancel"), G_CALLBACK(request_code_canceled), conn->pa, NULL, NULL, data)) {
     
     // purple request API is not available, so we create a new conversation (the Telegram system
     // account "7770000") to prompt the user for the code
@@ -127,21 +127,21 @@ void request_name_and_code (struct tgl_state *TLS) {
   PurpleRequestField* field = 0;
   
   PurpleRequestFieldGroup* group = purple_request_field_group_new (_("Registration"));
-  field = purple_request_field_string_new ("first_name", _("First Name"), "", 0);
+  field = purple_request_field_string_new ("first_name", _("First name"), "", 0);
   purple_request_field_group_add_field (group, field);
-  field = purple_request_field_string_new ("last_name", _("Last Name"), "", 0);
+  field = purple_request_field_string_new ("last_name", _("Last name"), "", 0);
   purple_request_field_group_add_field (group, field);
   purple_request_fields_add_group (fields, group);
   
   group = purple_request_field_group_new (_("Authorization"));
-  field = purple_request_field_string_new ("code", _("Login Code"), "", 0);
+  field = purple_request_field_string_new ("code", _("Login code"), "", 0);
   purple_request_field_group_add_field (group, field);
   purple_request_fields_add_group (fields, group);
   
-  if (!purple_request_fields (conn->gc, _("Register"), _("Please register your phone number."), NULL, fields, "Ok",
-        G_CALLBACK(request_name_code_entered), "Cancel", NULL, conn->pa, NULL, NULL, conn->gc)) {
+  if (!purple_request_fields (conn->gc, _("Register"), _("Please register your phone number."), NULL, fields, _("OK"),
+        G_CALLBACK(request_name_code_entered), _("Cancel"), NULL, conn->pa, NULL, NULL, conn->gc)) {
     // purple_request API not available
-    const char *error = "Phone number is not registered, please register your phone on a different client.";
+    const char *error = _("Phone number is not registered. Please register your phone on a different client.");
     purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, error);
     purple_notify_error (_telegram_protocol, _("Not Registered"), _("Not Registered"), error);
   }
@@ -174,7 +174,7 @@ void request_password (struct tgl_state *TLS, void (*callback) (struct tgl_state
   if (! purple_request_fields (conn->gc, _("Password needed"), _("Enter password for two factor authentication"),
       NULL, fields, "Ok", G_CALLBACK(request_password_entered), "Cancel", NULL, conn->pa,
       NULL, NULL, data)) {
-    const char *error = _("No password for two factor authentication, enter it in extended settings.");
+    const char *error = _("No password set for two factor authentication. Please enter it in the extended settings.");
     purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, error);
     purple_notify_error (_telegram_protocol, _("Password invalid"), _("Password invalid"), error);
   }
@@ -214,6 +214,7 @@ void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *
 
 static void create_group_chat_cb (void *_data, PurpleRequestFields* fields) {
   struct accept_create_chat_data *data = _data;
+  // FIXME: Oh god.
   const char *users[3] = {
     purple_request_fields_get_string (fields, "user1"),
     purple_request_fields_get_string (fields, "user2"),
@@ -239,23 +240,23 @@ void request_choose_user (struct accept_create_chat_data *data) {
   // the user to specify at least one other one.
   PurpleRequestFields* fields = purple_request_fields_new();
   PurpleRequestFieldGroup* group = purple_request_field_group_new (
-      _("Use the autocompletion to invite at least one additional user.\n You can always add more users once"
-      " the chat was created..."));
+      _("Invite at least one additional user (Autocompletion available).\n You can add more users once"
+      " the chat was created."));
   
-  PurpleRequestField *field = purple_request_field_string_new ("user1", _("User Name"), NULL, FALSE);
+  PurpleRequestField *field = purple_request_field_string_new ("user1", _("Username"), NULL, FALSE);
   purple_request_field_set_type_hint (field, "screenname");
   purple_request_field_group_add_field (group, field);
   
-  field = purple_request_field_string_new ("user2", _("User Name"), NULL, FALSE);
+  field = purple_request_field_string_new ("user2", _("Username"), NULL, FALSE);
   purple_request_field_set_type_hint (field, "screenname");
   purple_request_field_group_add_field (group, field);
   
-  field = purple_request_field_string_new ("user3", _("User Name"), NULL, FALSE);
+  field = purple_request_field_string_new ("user3", _("Username"), NULL, FALSE);
   purple_request_field_set_type_hint (field, "screenname");
   purple_request_field_group_add_field (group, field);
   
   purple_request_fields_add_group (fields, group);
-  purple_request_fields (conn->gc, _("Create Group Chat"), _("Invite Users"), NULL, fields, _("Ok"),
+  purple_request_fields (conn->gc, _("Create group chat"), _("Invite users"), NULL, fields, _("OK"),
       G_CALLBACK(create_group_chat_cb), _("Cancel"), G_CALLBACK(cancel_group_chat_cb), conn->pa, NULL, NULL, data);
 }
 
@@ -265,9 +266,13 @@ void request_create_chat (struct tgl_state *TLS, const char *subject) {
   struct accept_create_chat_data *data = malloc (sizeof (struct accept_create_chat_data));
   data->title = g_strdup (subject);
   data->TLS = TLS;
-  char *title = g_strdup_printf (_("Chat doesn't exist, create a new group chat named '%s'?"), subject);
+  char *title = _("Chat doesn't exist (yet)");
+  char *secondary = g_strdup_printf (_("Do you want to create a new group chat named '%s'?"), subject);
   
-  purple_request_accept_cancel (conn->gc, _("Create Group Chat"), title, NULL, 1, conn->pa, NULL,
+  // FIXME: This dialog is pointless. It only asks whether the user wants to create a new chat.
+  // This should be merged with the next dialog.
+  // TODO: This still displays "Cancel" and "Accept", no matter $LANG
+  purple_request_accept_cancel (conn->gc, _("Create group chat"), title, secondary, 1, conn->pa, NULL,
       NULL, data, G_CALLBACK(request_choose_user), G_CALLBACK(cancel_group_chat_cb));
-  g_free (title);
+  g_free (secondary);
 }
