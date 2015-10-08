@@ -22,7 +22,6 @@
 
 #include "tgp-utils.h"
 #include "msglog.h"
-#include "lodepng/lodepng.h"
 
 #include <purple.h>
 
@@ -143,4 +142,3 @@ int tgp_startswith (const char *str, const char *with) {
   }
   return TRUE;
 }
-
