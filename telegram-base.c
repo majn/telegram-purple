@@ -474,7 +474,7 @@ gboolean assert_file_exists (PurpleConnection *gc, const char *filepath, const c
 }
 
 void export_auth_callback (struct tgl_state *TLS, void *extra, int success) {
-  if (!error_if_val_false (TLS, success, _("Login Canceled"), _("Authentication export to remote data centers failed, login not possible."))) {
+  if (!error_if_val_false (TLS, success, _("Login canceled"), _("Authentication export to remote data centers failed, login not possible."))) {
     telegram_export_authorization (TLS);
   }
 }

@@ -240,7 +240,7 @@ void request_choose_user (struct accept_create_chat_data *data) {
   // the user to specify at least one other one.
   PurpleRequestFields* fields = purple_request_fields_new();
   PurpleRequestFieldGroup* group = purple_request_field_group_new (
-      _("Invite at least one additional user (Autocompletion available).\n You can add more users once"
+      _("Invite at least one additional user (Autocompletion available).\nYou can add more users once"
       " the chat was created."));
   
   PurpleRequestField *field = purple_request_field_string_new ("user1", _("Username"), NULL, FALSE);
