@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: telegram-purple 1.3.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-10-07 20:47+0200\n"
+"POT-Creation-Date: 2015-10-08 12:56+0200\n"
 "PO-Revision-Date: 2015-10-07 21:18+0200\n"
 "Last-Translator: Ben Wiederhake <BenWiederhake.GitHub@gmx.de>\n"
 "Language-Team: German\n"
@@ -24,7 +24,8 @@ msgid "Login Canceled"
 msgstr "Login abgebrochen"
 
 #: ../telegram-base.c:477
-msgid "Authentication export to remote data centers failed, login not possible."
+msgid ""
+"Authentication export to remote data centers failed, login not possible."
 msgstr ""
 "Exportieren der Authentifizierung bei allen Servern\n"
 "fehlgeschlagen. Ein Login ist nicht möglich."
@@ -43,8 +44,8 @@ msgstr "Ungültige Telefonnummer"
 
 #: ../telegram-base.c:533
 msgid ""
-"Please enter only numbers in the international phone number format, a leading "
-"+ following by the country prefix and the phone number.\n"
+"Please enter only numbers in the international phone number format, a "
+"leading + following by the country prefix and the phone number.\n"
 "Do not use any other special chars."
 msgstr ""
 "Bitte geben Sie Telefonnummern im internationalen Format ein, bestehend aus "
@@ -105,8 +106,8 @@ msgid ""
 "Error, server public key not found at %s. Make sure that telegram-purple is "
 "installed properly."
 msgstr ""
-"Fehler, konnte öffentlichen Schlüssel nicht an %s finden. Stellen Sie sicher, "
-"dass telegram-purple korrekt installiert wurde."
+"Fehler, konnte öffentlichen Schlüssel nicht an %s finden. Stellen Sie "
+"sicher, dass telegram-purple korrekt installiert wurde."
 
 #: ../telegram-purple.c:580
 #, c-format
@@ -352,13 +353,13 @@ msgstr "Absenden der Nachricht fehlgeschlagen. %d: %s"
 msgid "Sending image failed."
 msgstr "Absenden des Bilds fehlgeschlagen."
 
-#: ../tgp-msg.c:296
+#: ../tgp-msg.c:297
 msgid "Sorry, sending documents to encrypted chats not yet supported."
 msgstr ""
-"Tut uns Leid, aber das Versenden von Dokumenten in verschlüsselten Chats wird "
-"noch nicht unterstützt."
+"Tut uns Leid, aber das Versenden von Dokumenten in verschlüsselten Chats "
+"wird noch nicht unterstützt."
 
-#: ../tgp-msg.c:383
+#: ../tgp-msg.c:384
 #, c-format
 msgid "%s sent a sticker."
 msgstr "%s hat einen Sticker gesendet."
@@ -384,8 +385,8 @@ msgid ""
 "Telegram wants to verify your identity. Please enter the code that you have "
 "received via SMS."
 msgstr ""
-"Telegram möchte Ihre Identität prüfen. Bitte geben Sie den Login-Code ein, den "
-"Sie per SMS erhalten haben."
+"Telegram möchte Ihre Identität prüfen. Bitte geben Sie den Login-Code ein, "
+"den Sie per SMS erhalten haben."
 
 #: ../tgp-request.c:77
 msgid "the code"
@@ -437,7 +438,7 @@ msgid "Password"
 msgstr "Passwort"
 
 #: ../tgp-request.c:174
-msgid "Password needed"
+msgid "Enter password"
 msgstr "Passwort wird benötigt"
 
 #: ../tgp-request.c:174
@@ -446,8 +447,8 @@ msgstr "Passwort für die Zwei-Faktor-Authentifizierung angeben"
 
 #: ../tgp-request.c:177
 msgid ""
-"No password set for two factor authentication. Please enter it in the extended "
-"settings."
+"No password set for two factor authentication. Please enter it in the "
+"extended settings."
 msgstr ""
 "Kein Passwort für die Zwei-Faktor-Authentifizierung gesetzt, bitte\n"
 "spezifizieren Sie dies in den erweiterten Einstellungen."
@@ -467,9 +468,9 @@ msgstr "Geheimer Chat"
 
 #: ../tgp-request.c:208
 msgid ""
-"Secret chats can only have one end point. If you accept a secret chat on this "
-"device, its messages will not be available anywhere else. If you decline, you "
-"can accept the chat on other devices."
+"Secret chats can only have one end point. If you accept a secret chat on "
+"this device, its messages will not be available anywhere else. If you "
+"decline, you can accept the chat on other devices."
 msgstr ""
 "Geheime Chats können nur einen Endpunkt haben. Wenn du den geheimen Chat auf "
 "diesem Geräte akzeptierst werden die Nachrichten nirgendwo anders verfügbar "
@@ -552,3 +553,5 @@ msgstr "Chat ID:"
 msgid "Users"
 msgstr "Benutzer"
 
+#~ msgid "Password needed"
+#~ msgstr "Passwort wird benötigt"
