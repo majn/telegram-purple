@@ -33,6 +33,7 @@ all: ${PRPL_LIBNAME} ${LOCALES}
 
 PLUGIN_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=plugindir purple)
 DATA_ROOT_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=datarootdir purple)
+COPY_ICONS=@COPY_ICONS@
 
 create_dirs: ${DIR_LIST}
 
@@ -81,12 +82,19 @@ install: $(PRPL_LIBNAME)
 	install -m $(FILE_PERM) $(PRPL_LIBNAME) $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)/etc/telegram-purple
 	install -m $(FILE_PERM) tg-server.tglpub $(DESTDIR)/etc/telegram-purple/server.tglpub
+ifeq ($(COPY_ICONS),no)
+	@echo "Not copying icons due to configure-option --disable-icons."
+	@echo " If you're using Finch, Empathy, or Telepathy, then this is a good idea."
+	@echo " If you're using Pidgin, then this is a bad idea."
+	@echo " If you're using Adium, read the README.md: You're using the wrong build system!"
+else
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16
 	install -m $(FILE_PERM) imgs/telegram16.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22
 	install -m $(FILE_PERM) imgs/telegram22.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48
 	install -m $(FILE_PERM) imgs/telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
+endif
 	@for lang in $(shell cat po/LINGUAS); do \
 		mkdir -p $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES; \
 		echo "installing po/$$lang.mo to $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
