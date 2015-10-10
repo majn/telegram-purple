@@ -76,7 +76,7 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status);
 static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_message *list[]);
 static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4);
-void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
+static void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
 
 PurpleGroup *tggroup;
 const char *config_dir = "telegram-purple";
