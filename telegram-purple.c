@@ -78,7 +78,6 @@ static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_messa
 static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4);
 void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
 
-PurpleGroup *tggroup;
 const char *config_dir = "telegram-purple";
 const char *pk_path = "/etc/telegram-purple/server.tglpub";
 
@@ -422,12 +421,6 @@ void on_ready (struct tgl_state *TLS) {
   purple_connection_set_state (conn->gc, PURPLE_CONNECTED);
   purple_connection_set_display_name (conn->gc, purple_account_get_username (conn->pa));
   purple_blist_add_account (conn->pa);
-  
-  tggroup = purple_find_group ("Telegram");
-  if (tggroup == NULL) {
-    tggroup = purple_group_new ("Telegram");
-    purple_blist_add_group (tggroup, NULL);
-  }
 
   debug ("seq = %d, pts = %d, date = %d", TLS->seq, TLS->pts, TLS->date);
   tgl_do_get_difference (TLS, purple_account_get_bool (conn->pa, "history-sync-all", FALSE), tgp_notify_on_error_gw, NULL);
