@@ -34,7 +34,6 @@ GHashTable *tgp_chat_info_new (struct tgl_state *TLS, struct tgl_chat *chat) {
   
   GHashTable *ht = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
   g_hash_table_insert (ht, "subject", title);
-  g_hash_table_insert (ht, "owner", admin);
   g_hash_table_insert (ht, "id", g_strdup_printf ("%d", tgl_get_peer_id (chat->id)));
   
   return ht;
@@ -48,7 +47,6 @@ void p2tgl_chat_update (struct tgl_state *TLS, PurpleChat *chat, tgl_peer_id_t i
   GHashTable *ht = purple_chat_get_components (chat);
   
   g_hash_table_replace (ht, g_strdup ("id"), g_strdup_printf ("%d", tgl_get_peer_id (id)));
-  g_hash_table_replace (ht, g_strdup ("owner"), g_strdup_printf ("%d", admin_id));
   g_hash_table_replace (ht, g_strdup ("subject"), g_strdup (subject));
 }
 
