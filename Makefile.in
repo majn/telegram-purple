@@ -109,12 +109,24 @@ uninstall:
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
-	rm -f ${HOME}/.purple/plugins/$(PRPL_NAME)
 # TODO: Delete all installed .mo's, no matter what LINGUAS says.
 	@for lang in $(shell cat po/LINGUAS); do \
 		echo "removing $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
 		rm -f $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
 	done
+
+.PHONY: local_install
+local_install:
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(HOME)/.purple/plugins
+	install -m $(FILE_PERM) $(PRPL_LIBNAME) $(DESTDIR)$(HOME)/.purple/plugins/$(PRPL_NAME)
+# See telegram-base.c, function get_user_pk_path for justification:
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(HOME)/.purple/telegram-purple
+	install -m $(FILE_PERM) tg-server.tglpub $(DESTDIR)$(HOME)/.purple/telegram-purple/server.tglpub
+
+.PHONY: local_uninstall
+local_uninstall:
+	rm -f $(DESTDIR)$(HOME)/.purple/plugins/$(PRPL_NAME)
+	rm -f $(DESTDIR)$(HOME)/.purple/telegram-purple/server.tglpub
 
 .PHONY: run
 run:
