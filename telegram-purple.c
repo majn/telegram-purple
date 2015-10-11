@@ -244,11 +244,7 @@ static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_messa
     } else {
       to_id = list[i]->to_id;
     }
-    PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, to_id);
-    if (conv) {
-      p2tgl_conversation_write (conv, to_id, _("Message marked as read."),
-                                 PURPLE_MESSAGE_NO_LOG | PURPLE_MESSAGE_SYSTEM, (int)time (NULL));
-    }
+    tgp_msg_sys_out (TLS, _("Message marked as read."), to_id, TRUE);
   }
 }
 

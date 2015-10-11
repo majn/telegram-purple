@@ -37,8 +37,6 @@
 #include "tgp-chat.h"
 #include "msglog.h"
 
-static void tgp_msg_err_out (struct tgl_state *TLS, const char *error, tgl_peer_id_t to);
-
 static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
   assert (M && M->flags & TGLMF_SERVICE);
   connection_data *conn = TLS->ev_base;
@@ -233,7 +231,7 @@ static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_p
   return 1;
 }
 
-static void tgp_msg_err_out (struct tgl_state *TLS, const char *error, tgl_peer_id_t to) {
+void tgp_msg_err_out (struct tgl_state *TLS, const char *error, tgl_peer_id_t to) {
   int flags = PURPLE_MESSAGE_ERROR | PURPLE_MESSAGE_SYSTEM;
   time_t now;
   time (&now);
@@ -243,8 +241,31 @@ static void tgp_msg_err_out (struct tgl_state *TLS, const char *error, tgl_peer_
         break;
       case TGL_PEER_USER:
       case TGL_PEER_ENCR_CHAT:
-        p2tgl_got_im (TLS, to, error, flags, now);
+        serv_got_im (tg_get_conn (TLS), tgp_blist_peer_get_name (TLS, to), error, flags, now);
         break;
+  }
+}
+
+void tgp_msg_sys_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to_id, int no_log) {
+  int flags = PURPLE_MESSAGE_SYSTEM;
+  if (no_log) {
+    flags |= PURPLE_MESSAGE_NO_LOG;
+  }
+  time_t now;
+  time (&now);
+  
+  switch (tgl_get_peer_type (to_id)) {
+    case TGL_PEER_CHAT:
+      p2tgl_got_chat_in (TLS, to_id, to_id, msg, flags, now);
+      break;
+    case TGL_PEER_USER:
+    case TGL_PEER_ENCR_CHAT: {
+      PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, to_id);
+      if (conv) {
+        purple_conversation_write (conv, tgp_blist_peer_get_name (TLS, to_id), msg, flags, now);
+      }
+      break;
+    }
   }
 }
 
