@@ -35,10 +35,14 @@
 #include <tgl.h>
 #include <purple.h>
 #include <notify.h>
+#include <server.h>
 #include <plugin.h>
 #include <version.h>
 #include <account.h>
 #include <connection.h>
+
+#include "tgp-blist.h"
+#include "tgp-structs.h"
 
 #define PLUGIN_ID "prpl-telegram"
 #define TG_AUTHOR "Matthias Jentsch <mtthsjntsch@gmail.com>, Vitaly Valtman, Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>. Based on libtgl by Vitaly Valtman."

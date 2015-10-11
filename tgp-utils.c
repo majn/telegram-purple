@@ -26,12 +26,6 @@
 
 #include <purple.h>
 
-connection_data *get_conn_from_buddy (PurpleBuddy *buddy) {
-  connection_data *c = purple_connection_get_protocol_data (
-                            purple_account_get_connection (purple_buddy_get_account (buddy)));
-  return c;
-}
-
 const char *format_time (time_t date) {
   struct tm *datetime = localtime(&date);
   return purple_utf8_strftime ("%d.%m.%Y %H:%M", datetime);
@@ -79,16 +73,6 @@ int tgp_outgoing_msg (struct tgl_state *TLS, struct tgl_message *M) {
 
 int tgp_our_msg (struct tgl_state *TLS, struct tgl_message *M) {
   return tgl_get_peer_id (TLS->our_id) == tgl_get_peer_id (M->from_id);
-}
-
-tgl_peer_t *find_peer_by_name (struct tgl_state *TLS, const char *who) {
-  tgl_peer_t *peer = tgl_peer_get (TLS, TGL_MK_USER(atoi (who)));
-  if (peer) { return peer; }
-  peer = tgl_peer_get (TLS, TGL_MK_CHAT(atoi(who)));
-  if (peer) { return peer; }
-  peer = tgl_peer_get (TLS, TGL_MK_ENCR_CHAT(atoi(who)));
-  if (peer) { return peer; }
-  return NULL;
 }
 
 tgl_peer_t *tgp_encr_chat_get_partner (struct tgl_state *TLS, struct tgl_secret_chat *chat) {

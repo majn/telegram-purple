@@ -101,6 +101,7 @@ connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *
   conn->out_messages = g_queue_new ();
   conn->pending_reads = g_queue_new ();
   conn->pending_chat_info = g_hash_table_new (g_direct_hash, g_direct_equal);
+  conn->id_to_tgl_peer = g_hash_table_new (g_direct_hash, g_direct_equal);
   return conn;
 }
 
@@ -114,6 +115,7 @@ void *connection_data_free (connection_data *conn) {
   tgp_g_queue_free_full (conn->out_messages, tgp_msg_sending_free);
   tgp_g_list_free_full (conn->used_images, used_image_free);
   g_hash_table_destroy (conn->pending_chat_info);
+  g_hash_table_destroy (conn->id_to_tgl_peer);
   tgprpl_xfer_free_all (conn);
   tgl_free_all (conn->TLS);
   g_free(conn->TLS->base_path);
@@ -129,3 +131,4 @@ get_user_info_data* get_user_info_data_new (int show_info, tgl_peer_id_t peer) {
   info_data->peer = peer;
   return info_data;
 }
+

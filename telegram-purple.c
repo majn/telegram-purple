@@ -56,7 +56,6 @@
 
 #include "msglog.h"
 #include "telegram-base.h"
-#include "tgp-structs.h"
 #include "tgp-2prpl.h"
 #include "tgp-net.h"
 #include "tgp-timers.h"
@@ -65,6 +64,7 @@
 #include "tgp-ft.h"
 #include "tgp-msg.h"
 #include "tgp-request.h"
+#include "tgp-blist.h"
 
 static void get_password (struct tgl_state *TLS, enum tgl_value_type type, const char *prompt, int num_values,
                           void (*callback)(struct tgl_state *TLS, const char *string[], void *arg), void *arg);
@@ -97,15 +97,15 @@ struct tgl_update_callback tgp_callback = {
 };
 
 static void _update_buddy (struct tgl_state *TLS, tgl_peer_t *user, unsigned flags) {
-  PurpleBuddy *buddy = p2tgl_buddy_find (TLS, user->id);
+  PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, user->id);
   if (buddy) {
     if (flags & TGL_UPDATE_DELETED) {
       purple_blist_remove_buddy (buddy);
     } else {
       if (flags & (TGL_UPDATE_NAME | TGL_UPDATE_REAL_NAME | TGL_UPDATE_USERNAME)) {
-        char *alias = p2tgl_strdup_alias (user);
-        purple_blist_alias_buddy (buddy, alias);
-        g_free (alias);
+        
+        // TODO: test this, renaming MUST NOT fail
+        purple_blist_rename_buddy (buddy, tgp_blist_peer_get_name (TLS, user->id));
       }
       if (flags & TGL_UPDATE_PHOTO) {
         tgl_do_get_user_info (TLS, user->id, 0, on_user_get_info, get_user_info_data_new (0, user->id));
@@ -115,8 +115,15 @@ static void _update_buddy (struct tgl_state *TLS, tgl_peer_t *user, unsigned fla
 }
 
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, unsigned flags) {
+  debug ("update_user_handler(id=%d, print_name=%s)", user->id.peer_id, user->print_name);
+
+  if (flags & TGL_UPDATE_CREATED) {
+    tgp_blist_peer_add (TLS, (tgl_peer_t *)user);
+  }
+  
+  // set own name
   if (tgl_get_peer_id (TLS->our_id) == tgl_get_peer_id (user->id) && flags & TGL_UPDATE_NAME) {
-    p2tgl_connection_set_display_name (TLS, (tgl_peer_t *)user);
+    purple_connection_set_display_name (tg_get_conn (TLS), user->print_name);
     return;
   }
   
@@ -124,14 +131,31 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
      // buddy was altered, update it
       _update_buddy (TLS, (tgl_peer_t *)user, flags);
   } else {
-    // new buddy was fetched, just update the status for all buddies in the contact list
-    if (p2tgl_buddy_find (TLS, user->id)) {
+    PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, user->id);
+    
+    // migrate buddies that are still stored in the old naming scheme
+    if (! buddy) {
+      char *id = g_strdup_printf ("%d", tgl_get_peer_id (user->id));
+      buddy = purple_find_buddy (tg_get_acc (TLS), id);
+      if (buddy) {
+        /*
+        purple_blist_rename_buddy (buddy, user->print_name);
+        tgp_blist_buddy_set_id (buddy, user->id);
+        */
+        tgp_blist_buddy_update_name (TLS, buddy, user);
+      }
+      g_free (id);
+    }
+    
+    // user that is also in buddy list created, initialize the buddy by upating the user status
+    if (buddy) {
       p2tgl_prpl_got_user_status (TLS, user->id, &user->status);
     }
   }
 }
 
 static void update_message_handler (struct tgl_state *TLS, struct tgl_message *M) {
+  debug ("update_message_handler(id=%d)", M->permanent_id.id);
   write_files_schedule (TLS);
   tgp_msg_recv (TLS, M);
 }
@@ -141,16 +165,21 @@ static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *
 }
 
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *U, unsigned flags) {
-  PurpleBuddy *buddy = p2tgl_buddy_find (TLS, U->id);
+  PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, U->id);
+  connection_data *conn = TLS->ev_base;
   debug ("update_secret_chat_handler: state=%d", U->state);
+  
+  if (flags & TGL_UPDATE_CREATED) {
+    tgp_blist_peer_add (TLS, (tgl_peer_t *)U);
+  }
   
   if (!(flags & TGL_UPDATE_DELETED)) {
     if (! buddy) {
-      buddy = p2tgl_buddy_new (TLS, (tgl_peer_t *)U);
-      purple_blist_add_buddy (buddy, NULL, tggroup, NULL);
+      buddy = tgp_blist_buddy_new (TLS, (tgl_peer_t *)U);
+      purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init ("Telegram"), NULL);
       purple_blist_alias_buddy (buddy, U->print_name);
     }
-    p2tgl_prpl_got_set_status_mobile (TLS, U->id);
+    purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_name (TLS, U->id), "mobile", NULL);
   }
   
   if (flags & TGL_UPDATE_WORKING || flags & TGL_UPDATE_DELETED) {
@@ -158,7 +187,6 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
   }
   
   if (flags & TGL_UPDATE_REQUESTED) {
-    connection_data *conn = TLS->ev_base;
     const char* choice = purple_account_get_string (conn->pa, "accept-secret-chats", "ask");
     if (! strcmp (choice, "always")) {
       tgl_do_accept_encr_chat_request (TLS, U, write_secret_chat_gw, 0);
@@ -169,8 +197,11 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
   
   if (!(flags & TGL_UPDATE_CREATED) && buddy) {
     if (flags & TGL_UPDATE_DELETED) {
-      p2tgl_got_im (TLS, U->id, _("Secret chat terminated."), PURPLE_MESSAGE_SYSTEM | PURPLE_MESSAGE_WHISPER, time (0));
-      p2tgl_prpl_got_set_status_offline (TLS, U->id);
+      
+      // TODO: Broken in Adium, message not displayed as system message
+      serv_got_im (conn->gc, tgp_blist_peer_get_name (TLS, U->id), _("Secret chat terminated."),
+                   PURPLE_MESSAGE_SYSTEM | PURPLE_MESSAGE_WHISPER, time (0));
+      purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_name (TLS, U->id), "offline", NULL);
     } else {
       _update_buddy (TLS, (tgl_peer_t *)U, flags);
     }
@@ -178,8 +209,12 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
 }
 
 static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, unsigned flags) {
+  if (flags & TGL_UPDATE_CREATED) {
+    tgp_blist_peer_add (TLS, (tgl_peer_t *)chat);
+  }
+  
   if (! (flags & TGL_UPDATE_CREATED)) {
-    PurpleChat *ch = p2tgl_chat_find (TLS, chat->id);
+    PurpleChat *ch = tgp_blist_chat_find (TLS, chat->id);
     
     if (flags & TGL_UPDATE_TITLE && ch) {
       purple_blist_alias_chat (ch, chat->print_title);
@@ -192,7 +227,7 @@ static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, u
 
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status) {
   if (status == tgl_typing_typing) {
-    p2tgl_got_typing (TLS, U->id, 2);
+    serv_got_typing (tg_get_conn(TLS), tgp_blist_peer_get_name (TLS, U->id), 2, PURPLE_TYPING);
   }
 }
 
@@ -300,13 +335,12 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
   if (imgStoreId > 0) {
     used_images_add (conn, imgStoreId);
 
-    p2tgl_buddy_icons_set_for_user (conn->pa, &P->id, filename);
+    p2tgl_buddy_icons_set_for_user (conn->pa, P->id, filename);
     if (dld->get_user_info_data->show_info == 1) {
-      PurpleNotifyUserInfo *info = p2tgl_notify_peer_info_new (TLS, P);
-      p2tgl_notify_userinfo (TLS, P->id, info, NULL, NULL);
+      purple_notify_userinfo (tg_get_conn (TLS), tgp_blist_peer_get_name (TLS, P->id),
+                              p2tgl_notify_peer_info_new (TLS, P), NULL, NULL);
     }
   }
-  
   free (dld->get_user_info_data);
   free (dld);
 }
@@ -324,15 +358,15 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra
       case TGL_PEER_USER:
         assert (UC);
         if (tgl_get_peer_id (UC->id) == tgl_get_peer_id (TLS->our_id)) {
-          p2tgl_connection_set_display_name (TLS, UC);
+          purple_connection_set_display_name (tg_get_conn (TLS), UC->print_name);
           continue;
         }
         
         if (! (UC->user.flags & TGLUF_DELETED)) {
-          PurpleBuddy *buddy = p2tgl_buddy_find (TLS, UC->id);
+          PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, UC->id);
           if (! buddy) {
-            buddy = p2tgl_buddy_new (TLS, UC);
-            purple_blist_add_buddy (buddy, NULL, tggroup, NULL);
+            buddy = tgp_blist_buddy_new (TLS, UC);
+            purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init ("Telegram"), NULL);
             
             if (UC->user.photo_id) {
               debug ("tgl_do_get_user_info(%s)", UC->print_name);
@@ -347,7 +381,7 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra
       case TGL_PEER_CHAT:
         assert (UC);
         if (UC->chat.users_num > 0 && purple_account_get_bool (conn->pa, TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS)) {
-          PurpleChat *PC = p2tgl_chat_find (TLS, UC->id);
+          PurpleChat *PC = tgp_blist_chat_find (TLS, UC->id);
           if (!PC) {
             PC = p2tgl_chat_new (TLS, &UC->chat);
             purple_blist_add_chat (PC, NULL, NULL);
@@ -370,8 +404,7 @@ void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, stru
   if (!U->photo || U->photo->sizes_num == 0) {
     // No profile pic to load, display it right away
     if (user_info_data->show_info) {
-      PurpleNotifyUserInfo *info = p2tgl_notify_peer_info_new (TLS, P);
-      p2tgl_notify_userinfo (TLS, P->id, info, NULL, NULL);
+      purple_notify_userinfo (tg_get_conn (TLS), tgp_blist_peer_get_name (TLS, P->id), p2tgl_notify_peer_info_new (TLS, P), NULL, NULL);
     }
     g_free (user_info_data);
   } else {
@@ -410,9 +443,9 @@ static void tgprpl_tooltip_text (PurpleBuddy *buddy, PurpleNotifyUserInfo *info,
   debug ("tgprpl_tooltip_text()");
   assert (buddy->name);
   
-  tgl_peer_t *P = find_peer_by_name (get_conn_from_buddy (buddy)->TLS, buddy->name);
+  tgl_peer_t *P = tgl_peer_get_by_name (pbn_get_conn (&buddy->node)->TLS, buddy->name);
   if (!P) {
-    warning ("Peer %s not found in tree.", buddy->name);
+    failure ("Peer %s not found in tree.", buddy->name);
     return;
   }
   gchar *status = tgp_format_user_status (&P->user.status);
@@ -458,10 +491,13 @@ static void create_secret_chat_done (struct tgl_state *TLS, void *callback_extra
 
 static void start_secret_chat (PurpleBlistNode *node, gpointer data) {
   PurpleBuddy *buddy = data;
-  
-  connection_data *conn = get_conn_from_buddy (buddy);
-  const char *name = purple_buddy_get_name (buddy);
-  tgl_do_create_secret_chat (conn->TLS, TGL_MK_USER(atoi (name)), create_secret_chat_done, 0);
+
+  tgl_peer_t *P = tgl_peer_get_by_name (pbn_get_conn (node)->TLS, purple_buddy_get_name (buddy));
+  if (P) {
+    tgl_do_create_secret_chat (pbn_get_conn (node)->TLS, P->id, create_secret_chat_done, NULL);
+    return;
+  }
+  failure ("Peer \"%s\" not found, not creating secret chat.", purple_buddy_get_name (buddy));
 }
 
 static void create_chat_link_done (struct tgl_state *TLS, void *extra, int success, const char *url) {
@@ -473,8 +509,7 @@ static void create_chat_link_done (struct tgl_state *TLS, void *extra, int succe
     tgp_chat_show (TLS, &C->chat);
     
     char *msg = g_strdup_printf (_("Invite link: %s"), url);
-    serv_got_chat_in (conn->gc, tgl_get_peer_id(C->id), "WebPage", PURPLE_MESSAGE_SYSTEM,
-                      msg, time(NULL));
+    serv_got_chat_in (conn->gc, tgl_get_peer_id (C->id), "WebPage", PURPLE_MESSAGE_SYSTEM, msg, time(NULL));
     g_free (msg);
   } else {
     tgp_notify_on_error_gw (TLS, NULL, success);
@@ -483,9 +518,7 @@ static void create_chat_link_done (struct tgl_state *TLS, void *extra, int succe
 
 static void create_chat_link (PurpleBlistNode *node, gpointer data) {
   PurpleChat *chat = (PurpleChat*)node;
-  connection_data *conn = purple_connection_get_protocol_data (
-                            purple_account_get_connection (purple_chat_get_account (chat)));
-  export_chat_link_checked (conn->TLS, purple_chat_get_name (chat));
+  export_chat_link_checked (pbn_get_conn (node)->TLS, purple_chat_get_name (chat));
 }
 
 void export_chat_link_checked (struct tgl_state *TLS, const char *name) {
@@ -504,16 +537,12 @@ void export_chat_link_checked (struct tgl_state *TLS, const char *name) {
 
 void leave_and_delete_chat (PurpleBlistNode *node, gpointer data) {
   PurpleChat *PC = (PurpleChat*)node;
-  connection_data *conn = purple_connection_get_protocol_data (
-                            purple_account_get_connection (purple_chat_get_account (PC)));
   
-  tgl_peer_t *P = tgl_peer_get (conn->TLS, p2tgl_chat_get_id (PC));
+  tgl_peer_t *P = tgl_peer_get (pbn_get_conn (node)->TLS, p2tgl_chat_get_id (PC));
   if (P && P->chat.users_num) {
-    tgl_do_del_user_from_chat (conn->TLS, P->id, conn->TLS->our_id,
-                               tgp_notify_on_error_gw, NULL);
-    serv_got_chat_left (conn->gc, tgl_get_peer_id (P->id));
+    tgl_do_del_user_from_chat (pbn_get_conn (node)->TLS, P->id, pbn_get_conn (node)->TLS->our_id, tgp_notify_on_error_gw, NULL);
+    serv_got_chat_left (pbn_get_conn (node)->gc, tgl_get_peer_id (P->id));
   }
-  
   purple_blist_remove_chat (PC);
 }
 
@@ -620,7 +649,7 @@ static void tgprpl_close (PurpleConnection * gc) {
 
 static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *message, PurpleMessageFlags flags) {
   debug ("tgprpl_send_im()");
-  connection_data *conn = purple_connection_get_protocol_data(gc);
+  connection_data *conn = purple_connection_get_protocol_data (gc);
  
   // this is part of a workaround to support clients without
   // the request API (request.h), see telegram-base.c:request_code()
@@ -641,7 +670,7 @@ static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *m
      searching it in the peer tree. This allows us to give immediate feedback 
      by returning an error-code in case the peer doesn't exist
    */
-  tgl_peer_t *peer = find_peer_by_name (conn->TLS, who);
+  tgl_peer_t *peer = tgl_peer_get_by_name (conn->TLS, who);
   if (peer) {
     if (tgl_get_peer_type (peer->id) == TGL_PEER_ENCR_CHAT && peer->encr_chat.state != sc_ok) {
       warning ("secret chat not ready for sending messages or deleted");
@@ -654,66 +683,57 @@ static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *m
   return -1;
 }
 
-static unsigned int tgprpl_send_typing (PurpleConnection * gc, const char *who, PurpleTypingState typing) {
+static unsigned int tgprpl_send_typing (PurpleConnection *gc, const char *who, PurpleTypingState typing) {
   debug ("tgprpl_send_typing()");
-  int id = atoi (who);
-  connection_data *conn = purple_connection_get_protocol_data(gc);
-  tgl_peer_t *U = tgl_peer_get (conn->TLS, TGL_MK_USER (id));
+  
+  tgl_peer_t *U = tgl_peer_get_by_name (gc_get_conn (gc)->TLS, who);
   if (U) {
     if (typing == PURPLE_TYPING) {
-      tgl_do_send_typing (conn->TLS, U->id, tgl_typing_typing, 0, 0);
+      tgl_do_send_typing (gc_get_conn (gc)->TLS, U->id, tgl_typing_typing, 0, 0);
     } else {
-      tgl_do_send_typing (conn->TLS, U->id, tgl_typing_cancel, 0, 0);
+      tgl_do_send_typing (gc_get_conn (gc)->TLS, U->id, tgl_typing_cancel, 0, 0);
     }
   }
   return 0;
 }
 
-static void tgprpl_get_info (PurpleConnection * gc, const char *who) {
+static void tgprpl_get_info (PurpleConnection *gc, const char *who) {
   debug ("tgprpl_get_info()");
-  connection_data *conn = purple_connection_get_protocol_data(gc);
-  
-  tgl_peer_t *peer = find_peer_by_name (conn->TLS, who);
-  if (! peer) { return; }
-  
-  get_user_info_data* info_data = get_user_info_data_new (1, peer->id);
-  
-  switch (tgl_get_peer_type (peer->id)) {
-    case TGL_PEER_USER:
-    case TGL_PEER_CHAT:
-      tgl_do_get_user_info (conn->TLS, peer->id, 0, on_user_get_info, info_data);
-      break;
-      
-    case TGL_PEER_ENCR_CHAT: {
-      tgl_peer_t *parent_peer = tgp_encr_chat_get_partner(conn->TLS, &peer->encr_chat);
-      if (parent_peer) {
-        tgl_do_get_user_info (conn->TLS, parent_peer->id, 0, on_user_get_info, info_data);
+
+  tgl_peer_t *peer = tgl_peer_get_by_name (gc_get_conn (gc)->TLS, who);
+  if (peer) {
+    get_user_info_data* info_data = get_user_info_data_new (1, peer->id);
+    switch (tgl_get_peer_type (peer->id)) {
+      case TGL_PEER_USER:
+      case TGL_PEER_CHAT:
+        tgl_do_get_user_info (gc_get_conn (gc)->TLS, peer->id, 0, on_user_get_info, info_data);
+        break;
+        
+      case TGL_PEER_ENCR_CHAT: {
+        tgl_peer_t *parent_peer = tgp_encr_chat_get_partner (gc_get_conn (gc)->TLS, &peer->encr_chat);
+        if (parent_peer) {
+          tgl_do_get_user_info (gc_get_conn (gc)->TLS, parent_peer->id, 0, on_user_get_info, info_data);
+        }
+        break;
       }
-      break;
     }
   }
 }
 
-static void tgprpl_set_status (PurpleAccount * acct, PurpleStatus * status) {
+static void tgprpl_set_status (PurpleAccount *acct, PurpleStatus *status) {
   debug ("tgprpl_set_status(%s)", purple_status_get_name (status));
-  debug ("tgprpl_set_status(currstatus=%s)", purple_status_get_name(purple_account_get_active_status(acct)));
-
-  PurpleConnection *gc = purple_account_get_connection(acct);
-  if (!gc) { return; }
-  connection_data *conn = purple_connection_get_protocol_data (gc);
+  debug ("tgprpl_set_status(currstatus=%s)", purple_status_get_name (purple_account_get_active_status (acct)));
 
   int present = p2tgl_status_is_present (status);
   if (present && p2tgl_send_notifications (acct)) {
-    pending_reads_send_all (conn->pending_reads, conn->TLS);
+    pending_reads_send_all (pa_get_conn (acct)->pending_reads, pa_get_conn (acct)->TLS);
   }
 }
 
-static void tgprpl_add_buddy (PurpleConnection * gc, PurpleBuddy * buddy, PurpleGroup * group) {
-  connection_data *conn = purple_connection_get_protocol_data(gc);
-  
-  tgl_peer_t *peer = tgl_peer_get (conn->TLS, TGL_MK_USER (atoi (buddy->name)));
+static void tgprpl_add_buddy (PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group) {
+  tgl_peer_t *peer = tgl_peer_get_by_name (gc_get_conn (gc)->TLS, purple_buddy_get_name (buddy));
   if (peer) {
-    _update_buddy (conn->TLS, peer, TGL_UPDATE_NAME | TGL_UPDATE_PHOTO);
+    _update_buddy (gc_get_conn (gc)->TLS, peer, TGL_UPDATE_NAME | TGL_UPDATE_PHOTO);
   }
 }
 
@@ -723,33 +743,30 @@ static void tgprpl_remove_buddy (PurpleConnection *gc, PurpleBuddy *buddy, Purpl
     return;
   }
 
-  connection_data *conn = purple_connection_get_protocol_data (gc);
-  tgl_peer_t *peer = find_peer_by_name (conn->TLS, buddy->name);
+  tgl_peer_t *peer = tgl_peer_get_by_name (gc_get_conn (gc)->TLS, buddy->name);
   if (!peer) {
     return;
   }
   
-  if (tgl_get_peer_type(peer->id) == TGL_PEER_ENCR_CHAT) {
+  if (tgl_get_peer_type (peer->id) == TGL_PEER_ENCR_CHAT) {
     /* TODO: implement the api call cancel secret chats. Currently the chat will only be marked as
      deleted on our side so that it won't be added on startup
      (when the secret chat file is loaded) */
-    bl_do_peer_delete (conn->TLS, peer->encr_chat.id);
+    bl_do_peer_delete (gc_get_conn (gc)->TLS, peer->encr_chat.id);
   }
 }
 
-static void tgprpl_chat_invite (PurpleConnection * gc, int id, const char *message, const char *name) {
+static void tgprpl_chat_invite (PurpleConnection *gc, int id, const char *message, const char *name) {
   debug ("tgprpl_chat_invite()");
-
-  connection_data *conn = purple_connection_get_protocol_data (gc);
-  tgl_peer_t *chat = tgl_peer_get(conn->TLS, TGL_MK_CHAT (id));
-  tgl_peer_t *user = tgl_peer_get(conn->TLS, TGL_MK_USER (atoi(name)));
+  tgl_peer_t *chat = tgl_peer_get (gc_get_conn (gc)->TLS, TGL_MK_CHAT (id));
+  tgl_peer_t *user = tgl_peer_get_by_name (gc_get_conn (gc)->TLS, name);
   
   if (! chat || ! user) {
     purple_notify_error (_telegram_protocol, _("Not found"), _("Cannot invite buddy to chat."), _("Specified user is not existing."));
     return;
   }
   
-  tgl_do_add_user_to_chat (conn->TLS, chat->id, user->id, 0, tgp_notify_on_error_gw, chat);
+  tgl_do_add_user_to_chat (gc_get_conn (gc)->TLS, chat->id, user->id, 0, tgp_notify_on_error_gw, chat);
 }
 
 static int tgprpl_send_chat (PurpleConnection * gc, int id, const char *message, PurpleMessageFlags flags) {

@@ -27,9 +27,7 @@
 #include <tgl.h>
 #include <glib.h>
 
-connection_data *get_conn_from_buddy (PurpleBuddy *buddy);
 tgl_peer_t *tgp_encr_chat_get_partner (struct tgl_state *TLS, struct tgl_secret_chat *chat);
-tgl_peer_t *find_peer_by_name (struct tgl_state *TLS, const char *who);
 
 /**
  * Return whether this message was created by our client in this session

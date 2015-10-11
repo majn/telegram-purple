@@ -166,7 +166,7 @@ static void tgprpl_xfer_recv_init (PurpleXfer *X) {
   
   purple_xfer_start (X, -1, NULL, 0);
   const char *who = purple_xfer_get_remote_user (X);
-  P = find_peer_by_name (TLS, who);
+  P = tgl_peer_get_by_name (TLS, who);
   if (P) {
     switch (M->media.type) {
       case tgl_message_media_document:
@@ -206,7 +206,7 @@ static void tgprpl_xfer_send_init (PurpleXfer *X) {
   const char *who = purple_xfer_get_remote_user (X);
   debug ("xfer_on_init (file=%s, local=%s, who=%s)", file, localfile, who);
   
-  tgl_peer_t *P = find_peer_by_name (data->conn->TLS, who);
+  tgl_peer_t *P = tgl_peer_get_by_name (data->conn->TLS, who);
   if (P) {
       tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL,
                             0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, tgprpl_xfer_on_finished, data);
