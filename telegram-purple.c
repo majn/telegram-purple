@@ -102,9 +102,10 @@ static void _update_buddy (struct tgl_state *TLS, tgl_peer_t *user, unsigned fla
       purple_blist_remove_buddy (buddy);
     } else {
       if (flags & (TGL_UPDATE_NAME | TGL_UPDATE_REAL_NAME | TGL_UPDATE_USERNAME)) {
-        
-        // TODO: test this, renaming MUST NOT fail
-        purple_blist_rename_buddy (buddy, tgp_blist_peer_get_name (TLS, user->id));
+        tgp_blist_buddy_update_name (TLS, buddy, &user->user);
+        if (user->user.photo_id) {
+          tgl_do_get_user_info (TLS, user->id, 0, on_user_get_info, get_user_info_data_new (0, user->id));
+        }
       }
       if (flags & TGL_UPDATE_PHOTO) {
         tgl_do_get_user_info (TLS, user->id, 0, on_user_get_info, get_user_info_data_new (0, user->id));
@@ -132,18 +133,20 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
   } else {
     PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, user->id);
     
-    // migrate buddies that are still stored in the old naming scheme
+    // fetch buddies that are still stored in the old naming scheme
     if (! buddy) {
       char *id = g_strdup_printf ("%d", tgl_get_peer_id (user->id));
       buddy = purple_find_buddy (tg_get_acc (TLS), id);
-      if (buddy) {
-        /*
-        purple_blist_rename_buddy (buddy, user->print_name);
-        tgp_blist_buddy_set_id (buddy, user->id);
-        */
-        tgp_blist_buddy_update_name (TLS, buddy, user);
-      }
       g_free (id);
+    }
+    
+    // assure that the names always match
+    if (buddy && strcmp (purple_buddy_get_name (buddy), user->print_name)) {
+      debug ("updating buddy name from %s to %s", purple_buddy_get_name (buddy), user->print_name);
+      tgp_blist_buddy_update_name (TLS, buddy, user);
+      if (user->photo_id) {
+        tgl_do_get_user_info (TLS, user->id, 0, on_user_get_info, get_user_info_data_new (0, user->id));
+      }
     }
     
     // user that is also in buddy list created, initialize the buddy by upating the user status
