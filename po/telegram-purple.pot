@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-10-08 12:56+0200\n"
+"POT-Creation-Date: 2015-10-12 13:27+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: ../telegram-base.c:477
-msgid "Login Canceled"
+msgid "Login canceled"
 msgstr ""
 
 #: ../telegram-base.c:477
@@ -225,120 +225,101 @@ msgstr ""
 msgid "Secret key"
 msgstr ""
 
-#. This is preceded by a username.
+#: ../tgp-msg.c:55
+#, c-format
+msgid "%2$s created chat %1$s."
+msgstr ""
+
 #: ../tgp-msg.c:58
 #, c-format
-msgid "created chat %s"
+msgid "%2$s changed title to %1$s."
 msgstr ""
 
-#. This is preceded by a username.
-#: ../tgp-msg.c:62
+#: ../tgp-msg.c:61
 #, c-format
-msgid "changed title to %s"
+msgid "%s changed photo."
 msgstr ""
 
-#. This is preceded by a username.
-#: ../tgp-msg.c:66
-msgid "changed photo"
-msgstr ""
-
-#. This is preceded by a username.
-#: ../tgp-msg.c:70
-msgid "deleted photo"
-msgstr ""
-
-#. This is (maybe?) preceded by a username.
-#: ../tgp-msg.c:79
+#: ../tgp-msg.c:64
 #, c-format
-msgid "%1$s added user %2$s by link"
+msgid "%s deleted photo."
 msgstr ""
 
-#. This is preceded by a username.
-#: ../tgp-msg.c:95
+#: ../tgp-msg.c:72
 #, c-format
-msgid "added user %s."
+msgid "%1$s added user %2$s by link."
 msgstr ""
 
-#. This is preceded by a username.
-#: ../tgp-msg.c:119
+#: ../tgp-msg.c:85
+#, c-format
+msgid "%2$s added user %1$s."
+msgstr ""
+
+#: ../tgp-msg.c:107
 #, c-format
 msgid "%1$s deleted user %2$s."
 msgstr ""
 
-#. This is preceded by a username.
-#: ../tgp-msg.c:136
+#: ../tgp-msg.c:120
 #, c-format
-msgid "deleted user %s"
+msgid "%2$s deleted user %1$s."
 msgstr ""
 
-#. This is preceded by a username.
+#: ../tgp-msg.c:125
+#, c-format
+msgid "%2$s set self destruction timer to %1$d seconds."
+msgstr ""
+
+#: ../tgp-msg.c:128
+#, c-format
+msgid "%2$s marked %1$d messages read."
+msgstr ""
+
+#: ../tgp-msg.c:131
+#, c-format
+msgid "%2$s deleted %1$d messages."
+msgstr ""
+
+#: ../tgp-msg.c:134
+#, c-format
+msgid "%2$s made a screenshot of %1$d messages."
+msgstr ""
+
+#: ../tgp-msg.c:137
+#, c-format
+msgid "%2$s updated to layer %1$d."
+msgstr ""
+
+#: ../tgp-msg.c:140
+msgid "%2$s requests rekey #1$%016llx."
+msgstr ""
+
 #: ../tgp-msg.c:143
-#, c-format
-msgid "set self destruction timer to %d seconds"
+msgid "%2$s accepts rekey #1$%016llx."
 msgstr ""
 
-#. This is (maybe?) preceded by a username.
-#: ../tgp-msg.c:147
-#, c-format
-msgid "%d messages marked read"
+#: ../tgp-msg.c:146
+msgid "%2$s commits rekey #1$%016llx."
 msgstr ""
 
-#. This is (maybe?) preceded by a username.
-#: ../tgp-msg.c:151
-#, c-format
-msgid "%d messages deleted"
+#: ../tgp-msg.c:149
+msgid "%2$s aborts rekey #1$%016llx."
 msgstr ""
 
-#. This is (maybe?) preceded by a username.
-#: ../tgp-msg.c:155
-#, c-format
-msgid "%d messages screenshot'ed"
-msgstr ""
-
-#. This is (maybe?) preceded by a username.
-#: ../tgp-msg.c:159
-#, c-format
-msgid "updated layer to %d"
-msgstr ""
-
-#. This is (maybe?) preceded by a username.
-#: ../tgp-msg.c:163
-#, c-format
-msgid "request rekey #%016llx"
-msgstr ""
-
-#. This is (maybe?) preceded by a username.
-#: ../tgp-msg.c:167
-#, c-format
-msgid "accept rekey #%016llx"
-msgstr ""
-
-#. This is (maybe?) preceded by a username.
-#: ../tgp-msg.c:171
-#, c-format
-msgid "commit rekey #%016llx"
-msgstr ""
-
-#. This is (maybe?) preceded by a username.
-#: ../tgp-msg.c:175
-#, c-format
-msgid "abort rekey #%016llx"
-msgstr ""
-
-#: ../tgp-msg.c:205
+#: ../tgp-msg.c:173
 #, c-format
 msgid "Sending message failed. %d: %s"
 msgstr ""
 
-#: ../tgp-msg.c:283
+#: ../tgp-msg.c:251
 msgid "Sending image failed."
 msgstr ""
 
-#: ../tgp-msg.c:297
+#: ../tgp-msg.c:265
 msgid "Sorry, sending documents to encrypted chats not yet supported."
 msgstr ""
 
-#: ../tgp-msg.c:384
+#: ../tgp-msg.c:352
 #, c-format
 msgid "%s sent a sticker."
 msgstr ""
@@ -449,7 +430,7 @@ msgstr ""
 #: ../tgp-request.c:243
 msgid ""
 "Invite at least one additional user (Autocompletion available).\n"
-" You can add more users once the chat was created."
+"You can add more users once the chat was created."
 msgstr ""
 
 #. FIXME: This dialog is pointless. It only asks whether the user wants to create a new chat.
