@@ -137,16 +137,16 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
       txt = g_strdup_printf (_("%2$s updated to layer %1$d."), M->action.layer, txt_user);
       break;
     case tgl_message_action_request_key:
-      txt = g_strdup_printf (_("%2$s requests rekey #1$%016llx."), M->action.exchange_id, txt_user);
+      txt = g_strdup_printf (_("%2$s requests rekey #%1$016llx."), M->action.exchange_id, txt_user);
       break;
     case tgl_message_action_accept_key:
-      txt = g_strdup_printf (_("%2$s accepts rekey #1$%016llx."), M->action.exchange_id, txt_user);
+      txt = g_strdup_printf (_("%2$s accepts rekey #%1$016llx."), M->action.exchange_id, txt_user);
       break;
     case tgl_message_action_commit_key:
-      txt = g_strdup_printf (_("%2$s commits rekey #1$%016llx."), M->action.exchange_id, txt_user);
+      txt = g_strdup_printf (_("%2$s commits rekey #%1$016llx."), M->action.exchange_id, txt_user);
       break;
     case tgl_message_action_abort_key:
-      txt = g_strdup_printf (_("%2$s aborts rekey #1$%016llx."), M->action.exchange_id, txt_user);
+      txt = g_strdup_printf (_("%2$s aborts rekey #%1$016llx."), M->action.exchange_id, txt_user);
       break;
     default:
       break;

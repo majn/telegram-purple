@@ -68,7 +68,7 @@ char *tgp_format_user_status (struct tgl_user_status *status) {
       when = g_strdup_printf (_("last month"));
       break;
     default:
-      /* This is preceded by a colon. */
+      /* This is preceded by a colon. It refers to a point on time. */
       when = g_strdup (_("unknown"));
       break;
   }

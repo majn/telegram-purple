@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-10-12 13:27+0200\n"
+"POT-Creation-Date: 2015-10-12 18:48+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -291,19 +291,23 @@ msgid "%2$s updated to layer %1$d."
 msgstr ""
 
 #: ../tgp-msg.c:140
-msgid "%2$s requests rekey #1$%016llx."
+#, c-format
+msgid "%2$s requests rekey #%1$016llx."
 msgstr ""
 
 #: ../tgp-msg.c:143
-msgid "%2$s accepts rekey #1$%016llx."
+#, c-format
+msgid "%2$s accepts rekey #%1$016llx."
 msgstr ""
 
 #: ../tgp-msg.c:146
-msgid "%2$s commits rekey #1$%016llx."
+#, c-format
+msgid "%2$s commits rekey #%1$016llx."
 msgstr ""
 
 #: ../tgp-msg.c:149
-msgid "%2$s aborts rekey #1$%016llx."
+#, c-format
+msgid "%2$s aborts rekey #%1$016llx."
 msgstr ""
 
 #: ../tgp-msg.c:173
@@ -477,7 +481,7 @@ msgstr ""
 msgid "last month"
 msgstr ""
 
-#. This is preceded by a colon.
+#. This is preceded by a colon. It refers to a point on time.
 #: ../tgp-utils.c:72
 msgid "unknown"
 msgstr ""
