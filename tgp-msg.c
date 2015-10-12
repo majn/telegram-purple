@@ -81,7 +81,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
     case tgl_message_action_chat_add_user: {
       tgl_peer_t *peer = tgl_peer_get (TLS, TGL_MK_USER (M->action.user));
       if (peer) {
-        char *alias = actionPeer->print_name;
+        char *alias = peer->print_name;
         txt = g_strdup_printf (_("%2$s added user %1$s."), alias, txt_user);
         
         PurpleConversation *conv = purple_find_chat (conn->gc, tgl_get_peer_id (M->to_id));
