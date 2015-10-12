@@ -542,19 +542,19 @@ static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
   if (PURPLE_BLIST_NODE_IS_BUDDY(node)) {
     // Add encrypted chat option to the right click menu of all buddies
     PurpleBuddy* buddy = (PurpleBuddy*)node;
-    PurpleMenuAction* action = purple_menu_action_new ("Start secret chat ...",
+    PurpleMenuAction* action = purple_menu_action_new ("Start secret chat…",
                                  PURPLE_CALLBACK(start_secret_chat), buddy, NULL);
     menu = g_list_append (menu, (gpointer)action);
   }
   if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
      // Generate Public Link
-    PurpleMenuAction* action = purple_menu_action_new ("Invite users by link ...",
+    PurpleMenuAction* action = purple_menu_action_new ("Invite users by link…",
                                  PURPLE_CALLBACK(create_chat_link), NULL, NULL);
     menu = g_list_append (menu, (gpointer)action);
   }
   if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
     // Delete self from chat
-    PurpleMenuAction* action = purple_menu_action_new ("Delete and exit ...",
+    PurpleMenuAction* action = purple_menu_action_new ("Delete and exit…",
                                  PURPLE_CALLBACK(leave_and_delete_chat), NULL, NULL);
     menu = g_list_append (menu, (gpointer)action);
   }
