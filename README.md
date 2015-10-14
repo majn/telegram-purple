@@ -31,7 +31,7 @@ This repository has submodules, so you need to clone recursively.
 
 ##### Fedora
 
-        sudo dnf install gcc libgcrypt-devel glib2-devel libpurple-devel libwebp-devel
+        sudo dnf install gcc gettext libgcrypt-devel libwebp-devel libpurple-devel zlib-devel
 
 
 ###### Debian / Ubuntu
