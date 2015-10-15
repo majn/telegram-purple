@@ -101,7 +101,7 @@ connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *
   conn->out_messages = g_queue_new ();
   conn->pending_reads = g_queue_new ();
   conn->pending_chat_info = g_hash_table_new (g_direct_hash, g_direct_equal);
-  conn->id_to_tgl_peer = g_hash_table_new (g_direct_hash, g_direct_equal);
+  conn->id_to_tgl_peer = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
   return conn;
 }
 

@@ -508,7 +508,7 @@ void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *titl
     if (use_print_names) {
       P = tgl_peer_get_by_name (TLS, users[i]);
     } else {
-      P = tgl_peer_get (TLS, TGL_MK_USER(atoi (users[i])));
+      P = tgp_blist_peer_find (TLS, users[i]);
     }
     if (P && tgl_get_peer_id (P->id) != tgl_get_peer_id (TLS->our_id)) {
       debug ("Adding %s: %d", P->print_name, tgl_get_peer_id (P->id));

@@ -27,17 +27,18 @@
 #define TGP_BUDDY_KEY_PEER_ID "user_id"
 #define TGP_BUDDY_KEY_PEER_TYPE "peer_type"
 
-tgl_peer_t *tgp_blist_peer_get (struct tgl_state *TLS, tgl_peer_id_t id);
 const char *tgp_blist_peer_get_name (struct tgl_state *TLS, tgl_peer_id_t id);
-int tgp_blist_peer_exists (struct tgl_state *TLS, tgl_peer_id_t id);
-
+void tgp_blist_peer_add_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *name);
 void tgp_blist_buddy_set_id (PurpleBuddy *buddy, tgl_peer_id_t id);
+tgl_peer_id_t tgp_blist_peer_find_id (struct tgl_state *TLS, const char *who);
+tgl_peer_t *tgp_blist_peer_find (struct tgl_state *TLS, const char *who);
+
 tgl_peer_id_t tgp_blist_buddy_get_id (PurpleBuddy *buddy);
+tgl_peer_t *tgp_blist_buddy_get_peer (PurpleBuddy *peer);
 PurpleBuddy *tgp_blist_buddy_new (struct tgl_state *TLS, tgl_peer_t *user);
-void tgp_blist_buddy_update_name (struct tgl_state *TLS, PurpleBuddy *buddy, struct tgl_user *user);
+PurpleBuddy *tgp_blist_buddy_update_name (struct tgl_state *TLS, PurpleBuddy *buddy, struct tgl_user *user);
 PurpleBuddy *tgp_blist_buddy_find (struct tgl_state *TLS, tgl_peer_id_t user);
 PurpleChat *tgp_blist_chat_find (struct tgl_state *TLS, tgl_peer_id_t user);
-void tgp_blist_peer_add (struct tgl_state *TLS, tgl_peer_t *peer);
 PurpleGroup *tgp_blist_group_init (const char *name);
 
 #endif

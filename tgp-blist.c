@@ -34,33 +34,35 @@
   Because of that, this plugin now uses the unique print names provided by libtgl as username instead.
 */
 
-tgl_peer_t *tgp_blist_peer_get (struct tgl_state *TLS, tgl_peer_id_t id) {
-  connection_data *conn = TLS->ev_base;
-  return g_hash_table_lookup (conn->id_to_tgl_peer, GINT_TO_POINTER(tgl_get_peer_id (id)));
-}
-
 const char *tgp_blist_peer_get_name (struct tgl_state *TLS, tgl_peer_id_t id) {
-  tgl_peer_t *P = tgp_blist_peer_get (TLS, id);
-  if (! P) {
+  const char *name = g_hash_table_lookup (tg_get_data (TLS)->id_to_tgl_peer, GINT_TO_POINTER(tgl_get_peer_id (id)));
+  if (! name) {
     assert (0);
     return NULL;
   }
-  return P->print_name;
+  return name;
 }
 
-int tgp_blist_peer_exists (struct tgl_state *TLS, tgl_peer_id_t id) {
-  return tgp_blist_peer_get (TLS, id) != NULL;
+void tgp_blist_peer_add_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *name) {
+  assert (g_hash_table_lookup (tg_get_data (TLS)->id_to_tgl_peer, GINT_TO_POINTER(tgl_get_peer_id (id))) == NULL);
+  g_hash_table_insert (tg_get_data (TLS)->id_to_tgl_peer, GINT_TO_POINTER(tgl_get_peer_id (id)), g_strdup (name));
 }
 
-void tgp_blist_peer_add (struct tgl_state *TLS, tgl_peer_t *peer) {
-  g_hash_table_insert (tg_get_data (TLS)->id_to_tgl_peer, GINT_TO_POINTER(tgl_get_peer_id (peer->id)), peer);
+tgl_peer_id_t tgp_blist_peer_find_id (struct tgl_state *TLS, const char *who) {
+  PurpleBuddy *buddy = purple_find_buddy (tg_get_acc (TLS), who);
+  if (! buddy) {
+    assert (0);
+  }
+  return tgp_blist_buddy_get_id (buddy);
+}
+
+tgl_peer_t *tgp_blist_peer_find (struct tgl_state *TLS, const char *who) {
+  return tgl_peer_get (TLS, tgp_blist_peer_find_id (TLS, who));
 }
 
 /*
   To make this new approach robust to names changes, it is necessarry to store the user ID in each
-  blist node to allow reliable buddy list lookups by user ids. Since users should be able to just
-  upgrade to this version without having to drop their history or buddy list, it is also necessary
-  to migrate all old buddy list nodes to the new format while preserving existing history.
+  blist node to allow reliable buddy list lookups by user ids.
 */
 
 PurpleBuddy *tgp_blist_buddy_new  (struct tgl_state *TLS, tgl_peer_t *user) {
@@ -69,23 +71,18 @@ PurpleBuddy *tgp_blist_buddy_new  (struct tgl_state *TLS, tgl_peer_t *user) {
   return buddy;
 }
 
-void tgp_blist_buddy_update_name (struct tgl_state *TLS, PurpleBuddy *buddy, struct tgl_user *user) {
-  PurpleBuddyIcon *icon = purple_buddy_get_icon (buddy);
-  purple_buddy_icon_ref (icon);
+PurpleBuddy *tgp_blist_buddy_update_name (struct tgl_state *TLS, PurpleBuddy *buddy, struct tgl_user *user) {
   purple_blist_remove_buddy (buddy);
-  
   buddy = purple_buddy_new (tg_get_acc (TLS), user->print_name, NULL);
   tgp_blist_buddy_set_id (buddy, user->id);
-  purple_buddy_set_icon (buddy, icon);
   purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init ("Telegram"), NULL);
-  
-  purple_buddy_icon_unref (icon);
+  return buddy;
 }
 
 void tgp_blist_buddy_set_id (PurpleBuddy *buddy, tgl_peer_id_t id) {
   int uid = tgl_get_peer_id (id),
      type = tgl_get_peer_type (id);
-  assert (uid == TGL_PEER_ENCR_CHAT || type == TGL_PEER_USER);
+  assert (type == TGL_PEER_ENCR_CHAT || type == TGL_PEER_USER);
   
   purple_blist_node_set_int (&buddy->node, TGP_BUDDY_KEY_PEER_ID, uid);
   purple_blist_node_set_int (&buddy->node, TGP_BUDDY_KEY_PEER_TYPE, type);
@@ -102,6 +99,10 @@ tgl_peer_id_t tgp_blist_buddy_get_id (PurpleBuddy *buddy) {
   } else {
     assert (FALSE);
   }
+}
+
+tgl_peer_t *tgp_blist_buddy_get_peer (PurpleBuddy *buddy) {
+  return tgl_peer_get (pbn_get_conn (&buddy->node)->TLS, tgp_blist_buddy_get_id (buddy));
 }
 
 PurpleBuddy *tgp_blist_buddy_find (struct tgl_state *TLS, tgl_peer_id_t user) {
