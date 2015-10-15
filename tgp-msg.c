@@ -509,7 +509,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     flags |= PURPLE_MESSAGE_RECV;
   }
   
-  if (! (M->flags & TGLMF_UNREAD)) {
+  if (tgl_get_peer_type (M->to_id) != TGL_PEER_ENCR_CHAT && ! (M->flags & TGLMF_UNREAD)) {
     flags |= PURPLE_MESSAGE_DELAYED;
   }
   
