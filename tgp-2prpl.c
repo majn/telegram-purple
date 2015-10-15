@@ -30,6 +30,7 @@
 #include "telegram-purple.h"
 #include "tgp-utils.h"
 #include "telegram-base.h"
+#include "tgp-msg.h"
 
 #include <server.h>
 #include <tgl.h>
@@ -90,7 +91,12 @@ void p2tgl_got_chat_in (struct tgl_state *TLS, tgl_peer_id_t chat, tgl_peer_id_t
 void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, int flags, time_t when) {
   connection_data *conn = TLS->ev_base;
   
-  /* 
+  if (flags & PURPLE_MESSAGE_SYSTEM) {
+    tgp_msg_sys_out (TLS, msg, who, flags & PURPLE_MESSAGE_NO_LOG);
+    return;
+  }
+  
+  /*
      Outgoing messages are not well supported in different libpurple clients, 
      purple_conv_im_write should have the best among different versions. Unfortunately
      this causes buggy formatting in Adium, so we don't use this workaround in that case.

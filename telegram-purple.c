@@ -199,10 +199,7 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
   
   if (!(flags & TGL_UPDATE_CREATED) && buddy) {
     if (flags & TGL_UPDATE_DELETED) {
-      
-      // TODO: Broken in Adium, message not displayed as system message
-      serv_got_im (conn->gc, tgp_blist_peer_get_name (TLS, U->id), _("Secret chat terminated."),
-                   PURPLE_MESSAGE_SYSTEM | PURPLE_MESSAGE_WHISPER, time (0));
+      tgp_msg_sys_out (TLS, _("Secret chat terminated."), U->id, FALSE);
       purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_name (TLS, U->id), "offline", NULL);
     } else {
       _update_buddy (TLS, (tgl_peer_t *)U, flags);

@@ -260,10 +260,12 @@ void tgp_msg_sys_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to_i
       break;
     case TGL_PEER_USER:
     case TGL_PEER_ENCR_CHAT: {
+      const char *name = tgp_blist_peer_get_name (TLS, to_id);
       PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, to_id);
-      if (conv) {
-        purple_conversation_write (conv, tgp_blist_peer_get_name (TLS, to_id), msg, flags, now);
+      if (! conv) {
+        conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tg_get_acc (TLS), name);
       }
+      purple_conversation_write (conv, name, msg, flags, now);
       break;
     }
   }
@@ -530,7 +532,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
       break;
     }
     case TGL_PEER_ENCR_CHAT: {
-      serv_got_im (tg_get_conn (TLS), tgp_blist_peer_get_name (TLS, M->to_id), text, flags, M->date);
+      p2tgl_got_im_combo (TLS, M->to_id, text, flags, M->date);
       pending_reads_add (conn->pending_reads, M->to_id);
       break;
     }
@@ -540,14 +542,14 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         flags &= ~PURPLE_MESSAGE_RECV;
         p2tgl_got_im_combo (TLS, M->to_id, text, flags, M->date);
       } else {
-        serv_got_im (tg_get_conn (TLS), tgp_blist_peer_get_name (TLS, M->from_id), text, flags, M->date);
+        p2tgl_got_im_combo (TLS, M->from_id, text, flags, M->date);
         pending_reads_add (conn->pending_reads, M->from_id);
       }
       break;
     }
   }
   
-  if (p2tgl_status_is_present (purple_account_get_active_status (conn->pa)) && p2tgl_send_notifications(conn->pa)) {
+  if (p2tgl_status_is_present (purple_account_get_active_status (conn->pa)) && p2tgl_send_notifications (conn->pa)) {
     pending_reads_send_all (conn->pending_reads, conn->TLS);
   }
   
