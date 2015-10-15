@@ -699,7 +699,7 @@ static void tgprpl_set_status (PurpleAccount *acct, PurpleStatus *status) {
 static void tgprpl_add_buddy (PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group) {
   tgl_peer_t *peer = tgp_blist_buddy_get_peer (buddy);
   if (peer) {
-    _update_buddy (gc_get_conn (gc)->TLS, peer, TGL_UPDATE_NAME | TGL_UPDATE_PHOTO);
+    _update_buddy (gc_get_conn (gc)->TLS, peer, TGL_UPDATE_PHOTO);
   }
 }
 
