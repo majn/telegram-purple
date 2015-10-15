@@ -158,7 +158,6 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
 }
 
 static void update_message_handler (struct tgl_state *TLS, struct tgl_message *M) {
-  debug ("update_message_handler(id=%d)", M->permanent_id.id);
   write_files_schedule (TLS);
   tgp_msg_recv (TLS, M);
 }
@@ -393,11 +392,12 @@ void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, stru
   if (!U->photo || U->photo->sizes_num == 0) {
     // No profile pic to load, display it right away
     if (user_info_data->show_info) {
-      purple_notify_userinfo (tg_get_conn (TLS), tgp_blist_peer_get_name (TLS, P->id), p2tgl_notify_peer_info_new (TLS, P), NULL, NULL);
+      purple_notify_userinfo (tg_get_conn (TLS), tgp_blist_peer_get_name (TLS, P->id), p2tgl_notify_peer_info_new (TLS, P),
+                              NULL, NULL);
     }
     g_free (user_info_data);
   } else {
-    struct download_desc *dld = malloc (sizeof(struct download_desc));
+    struct download_desc *dld = malloc (sizeof (struct download_desc));
     dld->data = U;
     dld->get_user_info_data = info_data;
     tgl_do_load_photo (TLS, U->photo, on_userpic_loaded, dld);
@@ -483,7 +483,7 @@ static void create_chat_link_done (struct tgl_state *TLS, void *extra, int succe
     tgp_chat_show (TLS, &C->chat);
     
     char *msg = g_strdup_printf (_("Invite link: %s"), url);
-    serv_got_chat_in (conn->gc, tgl_get_peer_id (C->id), "WebPage", PURPLE_MESSAGE_SYSTEM, msg, time(NULL));
+    serv_got_chat_in (tg_get_conn (TLS), tgl_get_peer_id (C->id), "WebPage", PURPLE_MESSAGE_SYSTEM, msg, time(NULL));
     g_free (msg);
   } else {
     tgp_notify_on_error_gw (TLS, NULL, success);
@@ -621,21 +621,20 @@ static void tgprpl_close (PurpleConnection * gc) {
   connection_data_free (conn);
 }
 
-static int tgprpl_send_im (PurpleConnection * gc, const char *who, const char *message, PurpleMessageFlags flags) {
+static int tgprpl_send_im (PurpleConnection *gc, const char *who, const char *message, PurpleMessageFlags flags) {
   debug ("tgprpl_send_im()");
-  connection_data *conn = purple_connection_get_protocol_data (gc);
  
   // this is part of a workaround to support clients without
   // the request API (request.h), see telegram-base.c:request_code()
-  if (conn->in_fallback_chat) {
+  if (gc_get_conn (gc)->in_fallback_chat) {
 
     // OTR plugins may try to insert messages that don't contain the code
     if (tgp_startswith (message, "?OTR")) {
         info ("Fallback SMS auth, skipping OTR messsage: '%s'", message);
         return -1;
     }
-    request_code_entered (conn->TLS, message);
-    conn->in_fallback_chat = 0;
+    request_code_entered (gc_get_conn (gc)->TLS, message);
+    gc_get_conn (gc)->in_fallback_chat = 0;
     return 1;
   }
   
