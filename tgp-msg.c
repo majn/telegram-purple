@@ -129,21 +129,6 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
     case tgl_message_action_screenshot_messages:
       txt_action = g_strdup_printf (_("%d messages screenshoted"), M->action.screenshot_cnt);
       break;
-    case tgl_message_action_notify_layer:
-      txt_action = g_strdup_printf (_("updated layer to %d"), M->action.layer);
-      break;
-    case tgl_message_action_request_key:
-      txt_action = g_strdup_printf (_("Request rekey #%016llx"), M->action.exchange_id);
-      break;
-    case tgl_message_action_accept_key:
-      txt_action = g_strdup_printf (_("Accept rekey #%016llx"), M->action.exchange_id);
-      break;
-    case tgl_message_action_commit_key:
-      txt_action = g_strdup_printf (_("Commit rekey #%016llx"), M->action.exchange_id);
-      break;
-    case tgl_message_action_abort_key:
-      txt_action = g_strdup_printf (_("Abort rekey #%016llx"), M->action.exchange_id);
-      break;
     default:
       txt_action = NULL;
       break;
