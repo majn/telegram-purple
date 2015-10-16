@@ -656,8 +656,10 @@ static int tgprpl_send_im (PurpleConnection *gc, const char *who, const char *me
 static unsigned int tgprpl_send_typing (PurpleConnection *gc, const char *who, PurpleTypingState typing) {
   debug ("tgprpl_send_typing()");
   tgl_peer_t *peer = tgp_blist_peer_find (gc_get_conn (gc)->TLS, who);
+  if (peer) {
     tgl_do_send_typing (gc_get_conn (gc)->TLS, peer->id,
                         typing == PURPLE_TYPING ? tgl_typing_typing : tgl_typing_cancel, 0, 0);
+  }
   return 0;
 }
 
@@ -708,11 +710,13 @@ static void tgprpl_remove_buddy (PurpleConnection *gc, PurpleBuddy *buddy, Purpl
   }
 
   tgl_peer_t *peer = tgp_blist_buddy_get_peer (buddy);
+  if (peer) {
     if (tgl_get_peer_type (peer->id) == TGL_PEER_ENCR_CHAT) {
       /* TODO: implement the api call cancel secret chats. Currently the chat will only be marked as
        deleted on our side so that it won't be added on startup
        (when the secret chat file is loaded) */
       bl_do_peer_delete (gc_get_conn (gc)->TLS, peer->encr_chat.id);
+    }
   }
 }
 
