@@ -142,7 +142,6 @@ GHashTable *tgprpl_chat_info_defaults (PurpleConnection *gc, const char *chat_na
   debug ("tgprpl_chat_info_defaults()");
   
   connection_data *conn = purple_connection_get_protocol_data (gc);
-  
   if (chat_name) {
     tgl_peer_t *P = tgl_peer_get_by_name (conn->TLS, chat_name);
     if (P) {

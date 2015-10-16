@@ -738,8 +738,7 @@ static int tgprpl_send_chat (PurpleConnection * gc, int id, const char *message,
   connection_data *conn = purple_connection_get_protocol_data (gc);
   int ret = tgp_msg_send (conn->TLS, message, TGL_MK_CHAT(id));
   if (ret != 0) {
-    p2tgl_got_chat_in (conn->TLS, TGL_MK_CHAT(id), conn->TLS->our_id, message,
-                       PURPLE_MESSAGE_RECV, time(NULL));
+    p2tgl_got_chat_in (conn->TLS, TGL_MK_CHAT(id), conn->TLS->our_id, message, PURPLE_MESSAGE_RECV, time (NULL));
   }
   return ret;
 }
