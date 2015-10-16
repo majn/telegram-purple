@@ -24,17 +24,7 @@
 #include <blist.h>
 #include <assert.h>
 
-/*  
-  Functions for handling telegram users in the buddy list
- 
-  Purple prefers human-readable names for buddy usernames, while Telegram uses numerical user ids.
-  In older versions of this plugin, the user id was used as username and the print name as the users
-  alias. This means that getting a useful username in the interface relied on the alias resolution,
-  which unfortunately doesn't work when a user isn't in the buddy list, or in Adium group chats.
-  Because of that, this plugin now uses the unique print names provided by libtgl as username instead.
-*/
-
-const char *tgp_blist_peer_get_name (struct tgl_state *TLS, tgl_peer_id_t id) {
+const char *tgp_blist_peer_get_purple_name (struct tgl_state *TLS, tgl_peer_id_t id) {
   const char *name = g_hash_table_lookup (tg_get_data (TLS)->id_to_tgl_peer, GINT_TO_POINTER(tgl_get_peer_id (id)));
   if (! name) {
     assert (0);
@@ -43,30 +33,22 @@ const char *tgp_blist_peer_get_name (struct tgl_state *TLS, tgl_peer_id_t id) {
   return name;
 }
 
-void tgp_blist_peer_add_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *name) {
+void tgp_blist_peer_add_purple_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *purple_name) {
   assert (g_hash_table_lookup (tg_get_data (TLS)->id_to_tgl_peer, GINT_TO_POINTER(tgl_get_peer_id (id))) == NULL);
-  g_hash_table_insert (tg_get_data (TLS)->id_to_tgl_peer, GINT_TO_POINTER(tgl_get_peer_id (id)), g_strdup (name));
+  g_hash_table_insert (tg_get_data (TLS)->id_to_tgl_peer, GINT_TO_POINTER(tgl_get_peer_id (id)),
+                       g_strdup (purple_name));
 }
 
-tgl_peer_id_t tgp_blist_peer_find_id (struct tgl_state *TLS, const char *who) {
-  PurpleBuddy *buddy = purple_find_buddy (tg_get_acc (TLS), who);
-  if (! buddy) {
-    assert (0);
+tgl_peer_t *tgp_blist_peer_find (struct tgl_state *TLS, const char *purple_name) {
+  PurpleBuddy *buddy = purple_find_buddy (tg_get_acc (TLS), purple_name);
+  if (! buddy || ! tgp_blist_buddy_has_id (buddy)) {
+    return NULL;
   }
-  return tgp_blist_buddy_get_id (buddy);
+  return tgl_peer_get (TLS, tgp_blist_buddy_get_id (buddy));
 }
-
-tgl_peer_t *tgp_blist_peer_find (struct tgl_state *TLS, const char *who) {
-  return tgl_peer_get (TLS, tgp_blist_peer_find_id (TLS, who));
-}
-
-/*
-  To make this new approach robust to names changes, it is necessarry to store the user ID in each
-  blist node to allow reliable buddy list lookups by user ids.
-*/
 
 PurpleBuddy *tgp_blist_buddy_new  (struct tgl_state *TLS, tgl_peer_t *user) {
-  PurpleBuddy *buddy = purple_buddy_new (tg_get_acc (TLS), tgp_blist_peer_get_name (TLS, user->id), NULL);
+  PurpleBuddy *buddy = purple_buddy_new (tg_get_acc (TLS), tgp_blist_peer_get_purple_name (TLS, user->id), NULL);
   tgp_blist_buddy_set_id (buddy, user->id);
   return buddy;
 }
@@ -88,6 +70,10 @@ void tgp_blist_buddy_set_id (PurpleBuddy *buddy, tgl_peer_id_t id) {
   purple_blist_node_set_int (&buddy->node, TGP_BUDDY_KEY_PEER_TYPE, type);
 }
 
+int tgp_blist_buddy_has_id (PurpleBuddy *buddy) {
+  return purple_blist_node_get_int (&buddy->node, TGP_BUDDY_KEY_PEER_ID) != 0;
+}
+
 tgl_peer_id_t tgp_blist_buddy_get_id (PurpleBuddy *buddy) {
   int id = purple_blist_node_get_int (&buddy->node, TGP_BUDDY_KEY_PEER_ID),
     type = purple_blist_node_get_int (&buddy->node, TGP_BUDDY_KEY_PEER_TYPE);
@@ -102,6 +88,9 @@ tgl_peer_id_t tgp_blist_buddy_get_id (PurpleBuddy *buddy) {
 }
 
 tgl_peer_t *tgp_blist_buddy_get_peer (PurpleBuddy *buddy) {
+  if (! tgp_blist_buddy_has_id (buddy)) {
+    return NULL;
+  }
   return tgl_peer_get (pbn_get_conn (&buddy->node)->TLS, tgp_blist_buddy_get_id (buddy));
 }
 

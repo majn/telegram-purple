@@ -116,7 +116,7 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
     // own user object, do not add that user to the buddy list but make the ID known to the name lookup and
     // set the print name as the name to be displayed in IM chats instead of the login name (the phone number)
     purple_connection_set_display_name (tg_get_conn (TLS), user->print_name);
-    tgp_blist_peer_add_name (TLS, user->id, user->print_name);
+    tgp_blist_peer_add_purple_name (TLS, user->id, user->print_name);
     return;
   }
   
@@ -143,13 +143,13 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
     // changing the username would mean dropping the history. The first print name that is known to the blist
     // will remain the permanent name for this user, all future name changes will just change the user alias.
     if (buddy) {
-      tgp_blist_peer_add_name (TLS, user->id, purple_buddy_get_name (buddy));
+      tgp_blist_peer_add_purple_name (TLS, user->id, purple_buddy_get_name (buddy));
       if (strcmp (user->print_name, purple_buddy_get_name (buddy))) {
         purple_blist_alias_buddy (buddy, user->print_name);
       }
       p2tgl_prpl_got_user_status (TLS, user->id, &user->status);
     } else {
-      tgp_blist_peer_add_name (TLS, user->id, user->print_name);
+      tgp_blist_peer_add_purple_name (TLS, user->id, user->print_name);
     }
   } else {
     // peer was altered in some way
@@ -172,7 +172,7 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
   debug ("update_secret_chat_handler: state=%d", U->state);
   
   if (flags & TGL_UPDATE_CREATED) {
-    tgp_blist_peer_add_name (TLS, U->id, U->print_name);
+    tgp_blist_peer_add_purple_name (TLS, U->id, U->print_name);
   }
   
   if (!(flags & TGL_UPDATE_DELETED)) {
@@ -181,7 +181,7 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
       purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init ("Telegram"), NULL);
       purple_blist_alias_buddy (buddy, U->print_name);
     }
-    purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_name (TLS, U->id), "mobile", NULL);
+    purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_purple_name (TLS, U->id), "mobile", NULL);
   }
   
   if (flags & TGL_UPDATE_WORKING || flags & TGL_UPDATE_DELETED) {
@@ -200,7 +200,7 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
   if (!(flags & TGL_UPDATE_CREATED) && buddy) {
     if (flags & TGL_UPDATE_DELETED) {
       tgp_msg_sys_out (TLS, _("Secret chat terminated."), U->id, FALSE);
-      purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_name (TLS, U->id), "offline", NULL);
+      purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_purple_name (TLS, U->id), "offline", NULL);
     } else {
       _update_buddy (TLS, (tgl_peer_t *)U, flags);
     }
@@ -209,7 +209,7 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
 
 static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, unsigned flags) {
   if (flags & TGL_UPDATE_CREATED) {
-    tgp_blist_peer_add_name (TLS, chat->id, chat->print_title);
+    tgp_blist_peer_add_purple_name (TLS, chat->id, chat->print_title);
   }
   
   if (! (flags & TGL_UPDATE_CREATED)) {
@@ -226,7 +226,7 @@ static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, u
 
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status) {
   if (status == tgl_typing_typing) {
-    serv_got_typing (tg_get_conn(TLS), tgp_blist_peer_get_name (TLS, U->id), 2, PURPLE_TYPING);
+    serv_got_typing (tg_get_conn(TLS), tgp_blist_peer_get_purple_name (TLS, U->id), 2, PURPLE_TYPING);
   }
 }
 
@@ -332,7 +332,7 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
 
     p2tgl_buddy_icons_set_for_user (conn->pa, P->id, filename);
     if (dld->get_user_info_data->show_info == 1) {
-      purple_notify_userinfo (tg_get_conn (TLS), tgp_blist_peer_get_name (TLS, P->id),
+      purple_notify_userinfo (tg_get_conn (TLS), tgp_blist_peer_get_purple_name (TLS, P->id),
                               p2tgl_notify_peer_info_new (TLS, P), NULL, NULL);
     }
   }
@@ -389,7 +389,7 @@ void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, stru
   if (!U->photo || U->photo->sizes_num == 0) {
     // No profile pic to load, display it right away
     if (user_info_data->show_info) {
-      purple_notify_userinfo (tg_get_conn (TLS), tgp_blist_peer_get_name (TLS, P->id), p2tgl_notify_peer_info_new (TLS, P),
+      purple_notify_userinfo (tg_get_conn (TLS), tgp_blist_peer_get_purple_name (TLS, P->id), p2tgl_notify_peer_info_new (TLS, P),
                               NULL, NULL);
     }
     g_free (user_info_data);
@@ -655,8 +655,9 @@ static int tgprpl_send_im (PurpleConnection *gc, const char *who, const char *me
 
 static unsigned int tgprpl_send_typing (PurpleConnection *gc, const char *who, PurpleTypingState typing) {
   debug ("tgprpl_send_typing()");
-  tgl_do_send_typing (gc_get_conn (gc)->TLS, tgp_blist_peer_find_id (gc_get_conn (gc)->TLS, who),
-                      typing == PURPLE_TYPING ? tgl_typing_typing : tgl_typing_cancel, 0, 0);
+  tgl_peer_t *peer = tgp_blist_peer_find (gc_get_conn (gc)->TLS, who);
+    tgl_do_send_typing (gc_get_conn (gc)->TLS, peer->id,
+                        typing == PURPLE_TYPING ? tgl_typing_typing : tgl_typing_cancel, 0, 0);
   return 0;
 }
 
@@ -707,12 +708,11 @@ static void tgprpl_remove_buddy (PurpleConnection *gc, PurpleBuddy *buddy, Purpl
   }
 
   tgl_peer_t *peer = tgp_blist_buddy_get_peer (buddy);
-  
-  if (tgl_get_peer_type (peer->id) == TGL_PEER_ENCR_CHAT) {
-    /* TODO: implement the api call cancel secret chats. Currently the chat will only be marked as
-     deleted on our side so that it won't be added on startup
-     (when the secret chat file is loaded) */
-    bl_do_peer_delete (gc_get_conn (gc)->TLS, peer->encr_chat.id);
+    if (tgl_get_peer_type (peer->id) == TGL_PEER_ENCR_CHAT) {
+      /* TODO: implement the api call cancel secret chats. Currently the chat will only be marked as
+       deleted on our side so that it won't be added on startup
+       (when the secret chat file is loaded) */
+      bl_do_peer_delete (gc_get_conn (gc)->TLS, peer->encr_chat.id);
   }
 }
 

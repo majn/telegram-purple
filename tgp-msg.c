@@ -102,7 +102,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
           txt_action = g_strdup_printf (_("%s deleted user %s."), txt_user, peer->print_name);
         
           purple_conv_chat_remove_user (purple_conversation_get_chat_data (conv),
-                                        tgp_blist_peer_get_name (TLS, TGL_MK_USER (M->action.user)), txt_action);
+                                        tgp_blist_peer_get_purple_name (TLS, TGL_MK_USER (M->action.user)), txt_action);
           
           if (M->action.user == tgl_get_peer_id (TLS->our_id)) {
             purple_conv_chat_left (purple_conversation_get_chat_data (conv));
@@ -241,7 +241,7 @@ void tgp_msg_err_out (struct tgl_state *TLS, const char *error, tgl_peer_id_t to
         break;
       case TGL_PEER_USER:
       case TGL_PEER_ENCR_CHAT:
-        serv_got_im (tg_get_conn (TLS), tgp_blist_peer_get_name (TLS, to), error, flags, now);
+        serv_got_im (tg_get_conn (TLS), tgp_blist_peer_get_purple_name (TLS, to), error, flags, now);
         break;
   }
 }
@@ -260,7 +260,7 @@ void tgp_msg_sys_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to_i
       break;
     case TGL_PEER_USER:
     case TGL_PEER_ENCR_CHAT: {
-      const char *name = tgp_blist_peer_get_name (TLS, to_id);
+      const char *name = tgp_blist_peer_get_purple_name (TLS, to_id);
       PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, to_id);
       if (! conv) {
         conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tg_get_acc (TLS), name);
@@ -374,7 +374,7 @@ static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from,
   text = tgp_format_img (img);
   *flags |= PURPLE_MESSAGE_IMAGES;
 #else
-  text = g_strdup_printf (_("%s sent a sticker"), tgp_blist_peer_get_name (TLS, from));
+  text = g_strdup_printf (_("%s sent a sticker"), tgp_blist_peer_get_purple_name (TLS, from));
   *flags |= PURPLE_MESSAGE_SYSTEM;
 #endif
   return text;
@@ -439,7 +439,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
           text = tgp_msg_photo_display (TLS, C->data, &flags);
         } else {
           if (! tgp_our_msg(TLS, M)) {
-            tgprpl_recv_file (conn->gc, tgp_blist_peer_get_name (TLS, M->from_id), M);
+            tgprpl_recv_file (conn->gc, tgp_blist_peer_get_purple_name (TLS, M->from_id), M);
           }
           return;
         }
@@ -448,7 +448,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
       case tgl_message_media_video:
       case tgl_message_media_audio: {
         if (! tgp_our_msg(TLS, M)) {
-          tgprpl_recv_file (conn->gc, tgp_blist_peer_get_name (TLS, M->from_id), M);
+          tgprpl_recv_file (conn->gc, tgp_blist_peer_get_purple_name (TLS, M->from_id), M);
         }
       }
       break;
@@ -462,7 +462,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
           text = tgp_msg_photo_display (TLS, C->data, &flags);
         } else {
           if (! tgp_our_msg(TLS, M)) {
-            tgprpl_recv_file (conn->gc, tgp_blist_peer_get_name (TLS, M->to_id), M);
+            tgprpl_recv_file (conn->gc, tgp_blist_peer_get_purple_name (TLS, M->to_id), M);
           }
           return;
         }

@@ -85,7 +85,7 @@ void p2tgl_got_chat_left (struct tgl_state *TLS, tgl_peer_id_t chat) {
 
 void p2tgl_got_chat_in (struct tgl_state *TLS, tgl_peer_id_t chat, tgl_peer_id_t who,
                         const char *message, int flags, time_t when) {
-  serv_got_chat_in (tg_get_conn(TLS), tgl_get_peer_id (chat), tgp_blist_peer_get_name (TLS, who), flags, message, when);
+  serv_got_chat_in (tg_get_conn(TLS), tgl_get_peer_id (chat), tgp_blist_peer_get_purple_name (TLS, who), flags, message, when);
 }
 
 void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, int flags, time_t when) {
@@ -109,14 +109,14 @@ void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *m
     PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, who);
     if (!conv) {
       conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tg_get_acc (TLS),
-                                      tgp_blist_peer_get_name (TLS, who));
+                                      tgp_blist_peer_get_purple_name (TLS, who));
     }
-    purple_conv_im_write (purple_conversation_get_im_data (conv), tgp_blist_peer_get_name (TLS, who),
+    purple_conv_im_write (purple_conversation_get_im_data (conv), tgp_blist_peer_get_purple_name (TLS, who),
                           msg, PURPLE_MESSAGE_SEND, when);
     return;
   }
 #endif
-  serv_got_im (conn->gc, tgp_blist_peer_get_name (TLS, who), msg, flags, when);
+  serv_got_im (conn->gc, tgp_blist_peer_get_purple_name (TLS, who), msg, flags, when);
 }
 
 PurpleConversation *p2tgl_find_conversation_with_account (struct tgl_state *TLS, tgl_peer_id_t peer) {
@@ -125,7 +125,7 @@ PurpleConversation *p2tgl_find_conversation_with_account (struct tgl_state *TLS,
     type = PURPLE_CONV_TYPE_CHAT;
   }
   PurpleConversation *conv = purple_find_conversation_with_account (type,
-                                tgp_blist_peer_get_name (TLS, peer), tg_get_acc (TLS));
+                                tgp_blist_peer_get_purple_name (TLS, peer), tg_get_acc (TLS));
   return conv;
 }
 
@@ -133,15 +133,15 @@ void p2tgl_prpl_got_user_status (struct tgl_state *TLS, tgl_peer_id_t user, stru
   connection_data *data = TLS->ev_base;
   
   if (status->online == 1) {
-    purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_name (TLS, user), "available", NULL);
+    purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_purple_name (TLS, user), "available", NULL);
   } else {
     debug ("%d: when=%d", tgl_get_peer_id (user), status->when);
     if (tgp_time_n_days_ago (purple_account_get_int (data->pa, "inactive-days-offline", TGP_DEFAULT_INACTIVE_DAYS_OFFLINE)) > status->when && status->when) {
       debug ("offline");
-      purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_name (TLS, user), "offline", NULL);
+      purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_purple_name (TLS, user), "offline", NULL);
     } else {
       debug ("mobile");
-      purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_name (TLS, user), "mobile", NULL);
+      purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_purple_name (TLS, user), "mobile", NULL);
     }
   }
 }
@@ -157,7 +157,7 @@ tgl_chat_id_t p2tgl_chat_get_id (PurpleChat *PC) {
 
 void p2tgl_conv_add_user (struct tgl_state *TLS, PurpleConversation *conv,
                           int user, char *message, int flags, int new_arrival) {
-  purple_conv_chat_add_user (purple_conversation_get_chat_data (conv), tgp_blist_peer_get_name (TLS, TGL_MK_USER (user)), message, flags, new_arrival);
+  purple_conv_chat_add_user (purple_conversation_get_chat_data (conv), tgp_blist_peer_get_purple_name (TLS, TGL_MK_USER (user)), message, flags, new_arrival);
 }
 
 PurpleNotifyUserInfo *p2tgl_notify_user_info_new (struct tgl_user *U) {
@@ -308,6 +308,6 @@ void p2tgl_buddy_icons_set_for_user (PurpleAccount *pa, tgl_peer_id_t id, const 
   size_t len;
   GError *err = NULL;
   g_file_get_contents (filename, &data, &len, &err);
-  purple_buddy_icons_set_for_user (conn->pa, tgp_blist_peer_get_name (conn->TLS, id), data, len, NULL);
+  purple_buddy_icons_set_for_user (conn->pa, tgp_blist_peer_get_purple_name (conn->TLS, id), data, len, NULL);
 }
 
