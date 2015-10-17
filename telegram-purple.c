@@ -420,7 +420,9 @@ static const char *tgprpl_list_icon (PurpleAccount *acct, PurpleBuddy *buddy) {
 }
 
 static void tgprpl_tooltip_text (PurpleBuddy *buddy, PurpleNotifyUserInfo *info, gboolean full) {
-  debug ("tgprpl_tooltip_text()");
+  if (! tgp_blist_buddy_has_id (buddy)) {
+    return;
+  }
   tgl_peer_t *P = tgl_peer_get (pbn_get_conn (&buddy->node)->TLS, tgp_blist_buddy_get_id (buddy));
   if (!P) {
     failure ("Peer %s not found in tree.", buddy->name);
