@@ -25,7 +25,7 @@
 #include <assert.h>
 
 const char *tgp_blist_peer_get_purple_name (struct tgl_state *TLS, tgl_peer_id_t id) {
-  const char *name = g_hash_table_lookup (tg_get_data (TLS)->id_to_tgl_peer, GINT_TO_POINTER(tgl_get_peer_id (id)));
+  const char *name = g_hash_table_lookup (tg_get_data (TLS)->id_to_purple_name, GINT_TO_POINTER(tgl_get_peer_id (id)));
   if (! name) {
     assert (0);
     return NULL;
@@ -34,8 +34,8 @@ const char *tgp_blist_peer_get_purple_name (struct tgl_state *TLS, tgl_peer_id_t
 }
 
 void tgp_blist_peer_add_purple_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *purple_name) {
-  assert (g_hash_table_lookup (tg_get_data (TLS)->id_to_tgl_peer, GINT_TO_POINTER(tgl_get_peer_id (id))) == NULL);
-  g_hash_table_insert (tg_get_data (TLS)->id_to_tgl_peer, GINT_TO_POINTER(tgl_get_peer_id (id)),
+  assert (g_hash_table_lookup (tg_get_data (TLS)->id_to_purple_name, GINT_TO_POINTER(tgl_get_peer_id (id))) == NULL);
+  g_hash_table_insert (tg_get_data (TLS)->id_to_purple_name, GINT_TO_POINTER(tgl_get_peer_id (id)),
                        g_strdup (purple_name));
 }
 

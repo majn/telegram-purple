@@ -43,7 +43,7 @@ typedef struct {
   int password_retries;
   PurpleRoomlist *roomlist;
   GHashTable *pending_chat_info;
-  GHashTable *id_to_tgl_peer;
+  GHashTable *id_to_purple_name;
 } connection_data;
 
 typedef struct { 
