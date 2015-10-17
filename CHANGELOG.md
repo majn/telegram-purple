@@ -1,12 +1,10 @@
 Changelog
 ---------
 
-
-##### 1.3.0 (Beta4)
+##### 1.2.2
 
     - no longer depend on OpenSSL to fix some licensing issues
     - translation
-
 
 ##### 1.2.1
 
