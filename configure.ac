@@ -14,7 +14,10 @@ AC_PROG_CC
 AC_PROG_INSTALL
 
 AC_CHECK_LIB([rt], [clock_gettime])
-AC_CHECK_LIB([gcrypt], [gcry_md_open])
+AC_CHECK_LIB([gcrypt], [gcry_mpi_snatch], [], [
+  echo "no libgcrypt >= 1.60 found"
+  exit -1
+])
 AX_CHECK_ZLIB(, [AC_MSG_ERROR([No zlib found])])
 
 PKG_CHECK_MODULES([PURPLE], [purple])
