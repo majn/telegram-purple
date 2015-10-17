@@ -133,7 +133,7 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
       // migrate the old buddy to the new format
       if (buddy) {
         debug ("migrating buddy from old name %s to %s", purple_buddy_get_name (buddy), user->print_name);
-        buddy = tgp_blist_buddy_update_name (TLS, buddy, user);
+        buddy = tgp_blist_buddy_migrate (TLS, buddy, user);
         if (user->photo_id) {
           tgl_do_get_user_info (TLS, user->id, 0, on_user_get_info, get_user_info_data_new (0, user->id));
         }
@@ -612,7 +612,7 @@ static void tgprpl_login (PurpleAccount * acct) {
   telegram_login (TLS);
 }
 
-static void tgprpl_close (PurpleConnection * gc) {
+static void tgprpl_close (PurpleConnection *gc) {
   debug ("tgprpl_close()");
   connection_data *conn = purple_connection_get_protocol_data (gc);
   connection_data_free (conn);

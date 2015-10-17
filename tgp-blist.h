@@ -52,7 +52,7 @@ int tgp_blist_buddy_has_id (PurpleBuddy *buddy);
 tgl_peer_id_t tgp_blist_buddy_get_id (PurpleBuddy *buddy);
 tgl_peer_t *tgp_blist_buddy_get_peer (PurpleBuddy *peer);
 PurpleBuddy *tgp_blist_buddy_new (struct tgl_state *TLS, tgl_peer_t *user);
-PurpleBuddy *tgp_blist_buddy_update_name (struct tgl_state *TLS, PurpleBuddy *buddy, struct tgl_user *user);
+PurpleBuddy *tgp_blist_buddy_migrate (struct tgl_state *TLS, PurpleBuddy *buddy, struct tgl_user *user);
 PurpleBuddy *tgp_blist_buddy_find (struct tgl_state *TLS, tgl_peer_id_t user);
 PurpleChat *tgp_blist_chat_find (struct tgl_state *TLS, tgl_peer_id_t user);
 PurpleGroup *tgp_blist_group_init (const char *name);

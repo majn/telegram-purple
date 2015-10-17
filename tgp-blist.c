@@ -53,7 +53,7 @@ PurpleBuddy *tgp_blist_buddy_new  (struct tgl_state *TLS, tgl_peer_t *user) {
   return buddy;
 }
 
-PurpleBuddy *tgp_blist_buddy_update_name (struct tgl_state *TLS, PurpleBuddy *buddy, struct tgl_user *user) {
+PurpleBuddy *tgp_blist_buddy_migrate (struct tgl_state *TLS, PurpleBuddy *buddy, struct tgl_user *user) {
   purple_blist_remove_buddy (buddy);
   buddy = purple_buddy_new (tg_get_acc (TLS), user->print_name, NULL);
   tgp_blist_buddy_set_id (buddy, user->id);
