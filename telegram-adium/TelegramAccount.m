@@ -74,10 +74,6 @@
   }
 }
 
-- (void)didDisconnect
-{
-}
-
 - (void)configurePurpleAccount
 {
   [super configurePurpleAccount];
