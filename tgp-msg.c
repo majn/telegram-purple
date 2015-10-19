@@ -128,16 +128,29 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
       break;
     }
     case tgl_message_action_set_message_ttl:
-      txt = g_strdup_printf (_("%2$s set self destruction timer to %1$d seconds."), M->action.ttl, txt_user);
+
+      txt = g_strdup_printf (P_("%2$s set self destruction timer to %1$d second.",
+                                "%2$s set self destruction timer to %1$d seconds.",
+                                M->action.ttl),
+                             M->action.ttl, txt_user);
       break;
     case tgl_message_action_read_messages:
-      txt = g_strdup_printf (_("%2$s marked %1$d messages read."), M->action.read_cnt, txt_user);
+      txt = g_strdup_printf (P_("%2$s marked %1$d message read.",
+                                "%2$s marked %1$d messages read.",
+                                M->action.read_cnt),
+                             M->action.read_cnt, txt_user);
       break;
     case tgl_message_action_delete_messages:
-      txt = g_strdup_printf (_("%2$s deleted %1$d messages."), M->action.delete_cnt, txt_user);
+      txt = g_strdup_printf (P_("%2$s deleted %1$d message.",
+                                "%2$s deleted %1$d messages.",
+                                M->action.delete_cnt),
+                             M->action.delete_cnt, txt_user);
       break;
     case tgl_message_action_screenshot_messages:
-      txt = g_strdup_printf (_("%2$s made a screenshot of %1$d messages."), M->action.screenshot_cnt, txt_user);
+      txt = g_strdup_printf (P_("%2$s made a screenshot of %1$d message.",
+                                "%2$s made a screenshot of %1$d messages.",
+                                M->action.screenshot_cnt),
+                             M->action.screenshot_cnt, txt_user);
       break;
     default:
       break;

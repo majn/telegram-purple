@@ -28,8 +28,10 @@
 // libintl.h. If this is not the case a dummy macro is defined to bypass the translation functions
 #ifdef ENABLE_NLS
 #  include <glib/gi18n-lib.h>
+#  define P_(Singular,Plural,N) ((char *) g_dngettext (GETTEXT_PACKAGE, Singular, Plural, N))
 #else
 #  define _(String) String
+#  define P_(Singular,Plural,N) Plural
 #endif
 
 #include <tgl.h>
