@@ -313,7 +313,7 @@ static void restart_connection (struct connection *c) {
   debug("restart_connection()");
   if (tglt_get_double_time () - c->last_receive_time > 6 * PING_TIMEOUT) {
     purple_connection_error_reason (tls_get_conn (c->TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
-        _("Cannot connect to server"));
+        _("Cannot connect to server: Ping timeout."));
     return;
   }
   purple_proxy_connect_cancel (c->prpl_data);

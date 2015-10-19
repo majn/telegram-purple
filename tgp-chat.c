@@ -219,7 +219,7 @@ PurpleRoomlist *tgprpl_roomlist_get_list (PurpleConnection *gc) {
   PurpleRoomlistField *f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_STRING, "", "id", TRUE);
   fields = g_list_append (fields, f);
   
-  f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_INT, _("Users"), "users", FALSE);
+  f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_INT, _("Users in chat"), "users", FALSE);
   fields = g_list_append (fields, f);
   
   purple_roomlist_set_fields (conn->roomlist, fields);

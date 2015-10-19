@@ -187,7 +187,7 @@ PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TL
     purple_notify_user_info_add_pair (info, ttl_key, ttl);
     g_free (ttl);
   } else {
-    purple_notify_user_info_add_pair (info, ttl_key, _("Off"));
+    purple_notify_user_info_add_pair (info, ttl_key, _("Timer is not enabled."));
   }
   
   if (secret->first_key_sha[0]) {

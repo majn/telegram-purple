@@ -108,7 +108,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
           char *alias = peer->print_name;
           const char *aliasLeft = tgp_blist_peer_get_purple_name (TLS, TGL_MK_USER (M->action.user));
           
-          txt = g_strdup_printf (_("%1$s deleted user %2$s."), txt_user, alias);
+          txt = g_strdup_printf (_("%2$s deleted user %1$s."), alias, txt_user);
           
           g_return_val_if_fail (aliasLeft, txt);
           
@@ -161,14 +161,13 @@ static char *format_geo_link_osm (double lat, double lon) {
 
 static void tgp_msg_send_done (struct tgl_state *TLS, void *callback_extra, int success, struct tgl_message *M) {
   if (! success) {
-    char *err = g_strdup_printf(_("Sending message failed. %d: %s"), TLS->error_code, TLS->error);
+    char *err = _("Sending message failed.");
     warning (err);
     if (M) {
       tgp_msg_err_out (TLS, err, M->to_id);
     } else {
       fatal (err);
     }
-    g_free (err);
     return;
   }
   

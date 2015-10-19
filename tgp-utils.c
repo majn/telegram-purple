@@ -22,8 +22,7 @@
 
 const char *format_time (time_t date) {
   struct tm *datetime = localtime(&date);
-  /* This should be the language's timestamp format.
-   * This is preceded by a colon. */
+  /* This should be the language's timestamp format. This is preceded by a colon. */
   return purple_utf8_strftime (_("%d.%m.%Y %H:%M"), datetime);
 }
 

@@ -48,9 +48,10 @@ static void request_canceled (struct request_values_data *data) {
 static void request_code (struct tgl_state *TLS, void (*callback) (struct tgl_state *TLS, const char *string[], void *arg),
     void *arg) {
   debug ("client is not registered, registering...");
+  char *explanation = _("Telegram wants to verify your "
+      "identity. Please enter the login code that you have received via SMS.");
   if (purple_account_get_bool (tls_get_pa (TLS), "compat-verification", 0) ||
-      !purple_request_input (tls_get_conn (TLS), _("Login code"), _("Enter login code"), _("Telegram wants to verify your "
-          "identity. Please enter the code that you have received via SMS."), NULL, 0, 0, _("the code"), _("OK"),
+      !purple_request_input (tls_get_conn (TLS), _("Login code"), _("Enter login code"), explanation, NULL, 0, 0, _("the code"), _("OK"),
           G_CALLBACK(request_code_entered), _("Cancel"), G_CALLBACK(request_canceled_disconnect), tls_get_pa (TLS),
           NULL, NULL, request_values_data_init (TLS, callback, arg, 0))) {
     
@@ -59,7 +60,7 @@ static void request_code (struct tgl_state *TLS, void (*callback) (struct tgl_st
     tls_get_data (TLS)->request_code_data = request_values_data_init (TLS, callback, arg, 0);
     purple_connection_set_state (tls_get_conn (TLS), PURPLE_CONNECTED);
     PurpleConversation *conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tls_get_pa (TLS), "Telegram");
-    purple_conversation_write (conv, "Telegram", _("What is your SMS verification code?"),
+    purple_conversation_write (conv, "Telegram", explanation,
         PURPLE_MESSAGE_RECV | PURPLE_MESSAGE_SYSTEM, 0);
   }
 }
@@ -85,7 +86,7 @@ static void request_name_code_entered (struct request_values_data *data, PurpleR
 
 static void request_name (struct tgl_state *TLS,
     void (*callback) (struct tgl_state *TLS, const char *string[], void *arg), void *arg) {
-  debug("phone is not registered, registering...");
+  debug("Phone is not registered, registering...");
 
   PurpleRequestFields *fields = purple_request_fields_new ();
   PurpleRequestField *field = 0;
@@ -105,7 +106,7 @@ static void request_name (struct tgl_state *TLS,
     // purple_request API not available
     const char *error = _("Phone number is not registered. Please register your phone on a different client.");
     purple_connection_error_reason (tls_get_conn (TLS), PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, error);
-    purple_notify_error (_telegram_protocol, _("Not Registered"), _("Not Registered"), error);
+    purple_notify_error (_telegram_protocol, _("Not registered"), _("Not registered"), error);
   }
 }
 
@@ -145,10 +146,10 @@ void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *
   data->TLS = TLS;
   data->U = U;
 
-  gchar *message = g_strdup_printf (_("Accept Secret Chat '%s'?"), U->print_name);
-  purple_request_accept_cancel (tls_get_conn (TLS), _("Secret Chat"), message, _("Secret chats can only have one "
+  gchar *message = g_strdup_printf (_("Accept secret chat '%s'?"), U->print_name);
+  purple_request_accept_cancel (tls_get_conn (TLS), _("Secret chat"), message, _("Secret chats can only have one "
       "end point. If you accept a secret chat on this device, its messages will not be available anywhere "
-      "else. If you decline, you can accept the chat on other devices."), 0, tls_get_pa (TLS), who->name, NULL, data,
+      "else. If you decline, you can still accept the chat on other devices."), 0, tls_get_pa (TLS), who->name, NULL, data,
       G_CALLBACK(accept_secret_chat_cb), G_CALLBACK(decline_secret_chat_cb));
   g_free (message);
 }
@@ -177,7 +178,7 @@ void request_create_chat (struct tgl_state *TLS, const char *subject) {
   // the user to specify at least one other one.
   PurpleRequestFields* fields = purple_request_fields_new ();
   PurpleRequestFieldGroup* group = purple_request_field_group_new (
-      _("Invite at least one additional user by specifying their full name (Autocompletion available).\nYou can add more users once"
+      _("Invite at least one additional user by specifying their full name (autocompletion available).\nYou can add more users once"
       " the chat was created."));
   
   PurpleRequestField *field = purple_request_field_string_new ("user1", _("Username"), NULL, FALSE);

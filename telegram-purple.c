@@ -555,12 +555,13 @@ static void tgprpl_login (PurpleAccount * acct) {
   tgl_init (TLS);
 
   if (! tgp_startswith (purple_account_get_username (acct), "+")) {
-        char *cause = g_strdup_printf (_("Unable to sign on as %s: phone number lacks country prefix."),
+        char *cause = g_strdup_printf (_("Unable to sign on as %s: phone number lacks country prefix."
+                                         " Numbers must start with the full international"
+                                         "prefix code, e.g. +49 for Germany."),
                         purple_account_get_username (acct));
     purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_INVALID_SETTINGS, cause);
-    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, cause,
-        _("Numbers must start with the full international\n"
-            "prefix code, e.g. +49 for Germany."), NULL, NULL, NULL);
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, _("Incomplete phone number"),
+        cause, NULL, NULL, NULL);
     g_free (cause);
     return;
   }
