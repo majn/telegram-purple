@@ -272,7 +272,7 @@ static void net_on_connected_assert_success (gpointer arg, gint fd, const gchar 
   struct tgl_state *TLS = c->TLS;
   if (fd == -1) {
     info ("Connection to main data center (%d) %s:%d not possible\n", c->dc->id, c->ip, c->port);
-    purple_connection_error_reason (tls_get_conn (TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR, _("Cannot connect to server"));
+    purple_connection_error_reason (tls_get_conn (TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR, _("Cannot connect to main server"));
     return;
   }
   net_on_connected (arg, fd, error_message);

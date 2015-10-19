@@ -146,7 +146,7 @@ void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *
   data->TLS = TLS;
   data->U = U;
 
-  gchar *message = g_strdup_printf (_("Accept secret chat '%s'?"), U->print_name);
+  gchar *message = g_strdup_printf (_("Accept secret chat '%s' on this device?"), U->print_name);
   purple_request_accept_cancel (tls_get_conn (TLS), _("Secret chat"), message, _("Secret chats can only have one "
       "end point. If you accept a secret chat on this device, its messages will not be available anywhere "
       "else. If you decline, you can still accept the chat on other devices."), 0, tls_get_pa (TLS), who->name, NULL, data,
