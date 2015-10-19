@@ -31,6 +31,7 @@
 #include "tgp-utils.h"
 #include "telegram-base.h"
 #include "tgp-msg.h"
+#include "tgp-net.h"
 
 #include <server.h>
 #include <tgl.h>
@@ -66,6 +67,11 @@ connection_data *pbn_get_conn (PurpleBlistNode *node) {
     return pa_get_conn (purple_buddy_get_account ((PurpleBuddy *)node));
   }
   return NULL;
+}
+
+connection_data *c_get_conn (struct connection *c) {
+  struct tgl_state *TLS = c->TLS;
+  return TLS->ev_base;
 }
 
 int p2tgl_status_is_present (PurpleStatus *status) {

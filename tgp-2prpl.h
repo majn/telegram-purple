@@ -34,6 +34,7 @@ connection_data *tg_get_data (struct tgl_state *TLS);
 connection_data *gc_get_conn (PurpleConnection *gc);
 connection_data *pa_get_conn (PurpleAccount *pa);
 connection_data *pbn_get_conn (PurpleBlistNode *node);
+connection_data *c_get_conn (struct connection *c);
 
 tgl_peer_t *p2tgl_get_peer (tgl_peer_id_t peer);
 tgl_peer_t *p2tgl_get_peer_by_id (int id);
