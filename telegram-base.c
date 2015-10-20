@@ -437,7 +437,7 @@ void read_secret_chat_file (struct tgl_state *TLS) {
   close (secret_chat_fd);
 }
 
-gchar *get_config_dir (struct tgl_state *TLS, char const *username) {
+gchar *get_config_dir (char const *username) {
   gchar *dir = g_strconcat (purple_user_dir(), G_DIR_SEPARATOR_S, config_dir,
                                 G_DIR_SEPARATOR_S, username, NULL);
   
@@ -450,6 +450,18 @@ gchar *get_config_dir (struct tgl_state *TLS, char const *username) {
   }
   g_mkdir_with_parents (dir, 0700);
   return dir;
+}
+
+gchar *get_user_pk_path () {
+  /* This can't be conditional on whether or not we're using telepathy, because
+   * then we would need to make sure that `make local_install` also knows about
+   * that location. So we *always* use ${HOME}/.purple/telegram-purple,
+   * even when the other files aren't in this folder.
+   * Note that this is only visible when using Telepathy/Empathy with
+   * local_install, which should be kinda rare anyway (use telepathy-morse!). */
+  return g_strconcat (g_get_home_dir(), G_DIR_SEPARATOR_S, ".purple",
+                                G_DIR_SEPARATOR_S, "telegram-purple",
+                                G_DIR_SEPARATOR_S, user_pk_filename, NULL);
 }
 
 gchar *get_download_dir (struct tgl_state *TLS) {

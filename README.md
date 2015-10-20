@@ -36,6 +36,12 @@ This repository has submodules, so you need to clone recursively.
 
 ###### Debian / Ubuntu
 
+We are working on a Debian package! Please first check if it's already available to you: `sudo apt-get install telegram-purple`
+
+If the above works, then you should stop here: It is now installed.
+
+If the above fails: Don't worry, just continue building it by yourself. Next you need to install these dependencies:
+
         sudo apt-get install libgcrypt20-dev libpurple-dev libwebp-dev
 
 ###### OpenSUSE
@@ -48,6 +54,7 @@ And the development files for gcrypt, probably `gcrypt-devel` or something.
 #### 3. Compile and install
 
 If libwebp is not available, you can disable sticker support by calling ./configure --disable-libweb instead.
+Please note that this is usually not necessary.
 
         ./configure
         make
@@ -150,6 +157,47 @@ Compiling with XCode is a little bit problematic, since it requires you to compi
 
 7. Build the XCode-Project and execute the created bundle
 
+
+Building the Debian Package
+---------------------------
+
+If you just need a `.deb`, simply do:
+
+    git checkout debian-master
+    fakeroot ./debian/rules binary
+
+And you're done! The `.deb` is in the directory at which you started.
+To show some info about it, try this:
+
+    dpkg --info telegram-purple_*.deb
+
+`debian-master` always points to a version that was submitted to Debian. (Note that this doesn't exist yet, as we haven't released to Debian yet.)
+`debian-develop` is the candidate for the next submission.
+
+#### Debian Maintainers ####
+
+If you're a maintainer (if you're not sure, then you aren't a
+maintainer), you need to produce a lot more files than that.
+
+Here's how you can generate a `.orig.tar.gz`:
+
+    debian/genorigtar.sh
+
+This command requires the original tar to exist (and will fail otherwise,
+although the error message will be misleading) will build all further files,
+specifically `.debian.tar.xz`,`.dsc`, `.deb`, and `.changes`:
+
+    dpkg-buildpackage
+
+And that already covers the official part of the work-flow. Of course,
+you can call small parts of the build process directly, in order to avoid
+overhead like rebuilding. For example, if you only need the `.debian.tar.xz`
+and `.dsc` files, do this:
+
+    debian/genorigtar.sh
+    ( cd .. && dpkg-source -b telegram-purple )
+
+Note that the parenthesis are important.
 
 Discussion / Help
 -----------------

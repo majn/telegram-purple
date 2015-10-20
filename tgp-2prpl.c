@@ -254,6 +254,10 @@ int p2tgl_imgstore_add_with_id (const char* filename) {
 }
 
 #ifdef HAVE_LIBWEBP
+
+static const int MAX_W = 256;
+static const int MAX_H = 256;
+
 int p2tgl_imgstore_add_with_id_webp (const char *filename) {
   
   const uint8_t *data = NULL;
@@ -270,15 +274,28 @@ int p2tgl_imgstore_add_with_id_webp (const char *filename) {
     g_free ((gchar *)data);
     return 0;
   }
-  int H = config.input.height;
-  int W = config.input.width;
-  while (H > 256 || W > 256) {
-    H /= 2;
-    W /= 2;
+
+  config.options.use_scaling = 0;
+  config.options.scaled_width = config.input.width;
+  config.options.scaled_height = config.input.height;
+  if (config.options.scaled_width > MAX_W || config.options.scaled_height > MAX_H) {
+    const float max_scale_width = MAX_W * 1.0f / config.options.scaled_width;
+    const float max_scale_height = MAX_H * 1.0f / config.options.scaled_height;
+    if (max_scale_width < max_scale_height) {
+      /* => the width is most limiting */
+      config.options.scaled_width = MAX_W;
+      /* Can't use ' *= ', because we need to do the multiplication in float
+       * (or double), and only THEN cast back to int. */
+      config.options.scaled_height = (int) (config.options.scaled_height * max_scale_width);
+    } else {
+      /* => the height is most limiting */
+      config.options.scaled_height = MAX_H;
+      /* Can't use ' *= ', because we need to do the multiplication in float
+       * (or double), and only THEN cast back to int. */
+      config.options.scaled_width = (int) (config.options.scaled_width * max_scale_height);
+    }
+    config.options.use_scaling = 1;
   }
-  config.options.use_scaling = 1;
-  config.options.scaled_width = W;
-  config.options.scaled_height = H;
   config.output.colorspace = MODE_RGBA;
   if (! WebPDecode(data, len, &config) == VP8_STATUS_OK) {
     warning ("error decoding webp: %s", filename);
@@ -297,11 +314,11 @@ int p2tgl_imgstore_add_with_id_webp (const char *filename) {
     warning ("error encoding webp as png: %s", filename);
     return 0;
   }
-  
+
   // will be owned by libpurple imgstore, which uses glib functions for managing memory
   void *pngdub = g_memdup (png, (guint)pnglen);
   free (png);
-  
+
   int imgStoreId = purple_imgstore_add_with_id (pngdub, pnglen, NULL);
   return imgStoreId;
 }
