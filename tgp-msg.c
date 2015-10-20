@@ -356,7 +356,7 @@ static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from,
   text = tgp_format_img (img);
   *flags |= PURPLE_MESSAGE_IMAGES;
 #else
-  char *txt_user = tgp_blist_peer_get_purple_name (TLS, from)
+  const char *txt_user = tgp_blist_peer_get_purple_name (TLS, from);
   text = g_strdup_printf (_("%s sent a sticker."), txt_user);
   *flags |= PURPLE_MESSAGE_SYSTEM;
 #endif
