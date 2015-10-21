@@ -7,6 +7,12 @@ I keep getting many questions about this plugin in my E-mail, so I've created a
 [telegram group chat](https://telegram.me/joinchat/01fb53f301b67d3c7a5532908dfa9a89) for
 telegram-purple related discussions or questions.
 
+
+OS Support
+----------
+
+This plugin is tested and works on *Linux* and *OS X*. As of right now, *Windows is not supported* although there's a plan to port it in the near future.
+
 Beta 3
 ------
 
