@@ -11,7 +11,7 @@ telegram-purple related discussions or questions.
 OS Support
 ----------
 
-This plugin is tested and works on *Linux* and *OS X*. As of right now, *Windows is not supported* although there's a plan to port it in the near future.
+This plugin is tested and works on **Linux** and **OS X**. As of right now, **Windows is not supported** although there's a plan to port it in the near future.
 
 Beta 3
 ------
