@@ -95,7 +95,9 @@ int read_pubkey_file (const char *name, struct rsa_pubkey *dst) {
     return 0;
   }
 
-  if (n_len != read (pubkey_fd, n_raw, n_len)) {
+  gint readret;
+  readret = read (pubkey_fd, n_raw, n_len);
+  if (readret <= 0 || (n_len != (guint) readret)) {
     free (n_raw);
     close (pubkey_fd);
     return 0;
@@ -110,9 +112,7 @@ int read_pubkey_file (const char *name, struct rsa_pubkey *dst) {
 
 void read_state_file (struct tgl_state *TLS) {
   char *name = 0;
-  if (asprintf (&name, "%s/%s", TLS->base_path, "state") < 0) {
-    return;
-  }
+  name = g_strdup_printf("%s/%s", TLS->base_path, "state");
 
   int state_file_fd = open (name, O_CREAT | O_RDWR, 0600);
   free (name);
@@ -148,9 +148,7 @@ void write_state_file (struct tgl_state *TLS) {
   wseq = TLS->seq; wpts = TLS->pts; wqts = TLS->qts; wdate = TLS->date;
   
   char *name = 0;
-  if (asprintf (&name, "%s/%s", TLS->base_path, "state") < 0) {
-    return;
-  }
+  name = g_strdup_printf("%s/%s", TLS->base_path, "state");
 
   int state_file_fd = open (name, O_CREAT | O_RDWR, 0600);
   free (name);
@@ -210,9 +208,7 @@ void write_dc (struct tgl_dc *DC, void *extra) {
 
 void write_auth_file (struct tgl_state *TLS) {
   char *name = 0;
-  if (asprintf (&name, "%s/%s", TLS->base_path, "auth") < 0) {
-    return;
-  }
+  name = g_strdup_printf("%s/%s", TLS->base_path, "auth");
   int auth_file_fd = open (name, O_CREAT | O_RDWR, 0600);
   free (name);
   if (auth_file_fd < 0) { return; }
@@ -277,9 +273,7 @@ void empty_auth_file (struct tgl_state *TLS) {
 
 void read_auth_file (struct tgl_state *TLS) {
   char *name = 0;
-  if (asprintf (&name, "%s/%s", TLS->base_path, "auth") < 0) {
-    return;
-  }
+  name = g_strdup_printf("%s/%s", TLS->base_path, "auth");
   int auth_file_fd = open (name, O_CREAT | O_RDWR, 0600);
   free (name);
   if (auth_file_fd < 0) {
@@ -350,9 +344,7 @@ void write_secret_chat (tgl_peer_t *_P, void *extra) {
 
 void write_secret_chat_file (struct tgl_state *TLS) {
   char *name = 0;
-  if (asprintf (&name, "%s/%s", TLS->base_path, "secret") < 0) {
-    return;
-  }
+  name = g_strdup_printf("%s/%s", TLS->base_path, "secret");
   int secret_chat_fd = open (name, O_CREAT | O_RDWR, 0600);
   free (name);
   assert (secret_chat_fd >= 0);
@@ -414,9 +406,7 @@ void read_secret_chat (struct tgl_state *TLS, int fd, int v) {
 
 void read_secret_chat_file (struct tgl_state *TLS) {
   char *name = 0;
-  if (asprintf (&name, "%s/%s", TLS->base_path, "secret") < 0) {
-    return;
-  }
+  name = g_strdup_printf("%s/%s", TLS->base_path, "secret");
   
   int secret_chat_fd = open (name, O_RDWR, 0600);
   free (name);

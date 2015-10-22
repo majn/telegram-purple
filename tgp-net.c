@@ -23,16 +23,20 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <sys/types.h>
+#ifndef WIN32
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <sys/fcntl.h>
 #include <sys/socket.h>
+#include <poll.h>
+#include <arpa/inet.h>
+#else
+#include <winsock2.h>
+#endif
+#include <sys/fcntl.h>
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <poll.h>
-#include <arpa/inet.h>
 #include <sys/time.h>
 #include <time.h>
 
@@ -259,7 +263,7 @@ static void net_on_connected (gpointer arg, gint fd, const gchar *error_message)
   
   if (fd == -1) {
     const char *msg = "Connection not possible, either your network or a Telegram data center is down, or the"
-    " Telegram network configuratio has changed.";
+    " Telegram network configuration has changed.";
     warning (msg);
     return;
   }
@@ -403,7 +407,7 @@ static void try_write (struct connection *c) {
       delete_connection_buffer (b);
     } else {
       if (errno != EAGAIN && errno != EWOULDBLOCK) {
-        info ("fail_connection: write_error %m\n");
+        info ("fail_connection: write_error %s\n", g_strerror(errno));
         fail_connection (c);
         return;
       } else {
@@ -481,7 +485,7 @@ static void try_read (struct connection *c) {
       c->in_tail = b;
     } else {
       if (errno != EAGAIN && errno != EWOULDBLOCK) {
-        debug ("fail_connection: read_error %m\n");
+        debug ("fail_connection: read_error %s\n", strerror(errno));
         fail_connection (c);
         return;
       } else {

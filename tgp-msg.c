@@ -27,6 +27,25 @@
 #include <locale.h>
 #include <tgl-queries.h>
 
+#if !GLIB_CHECK_VERSION(2,30,0)
+gchar *
+g_utf8_substring (const gchar *str,
+                  glong        start_pos,
+                  glong        end_pos)
+{
+  gchar *start, *end, *out;
+
+  start = g_utf8_offset_to_pointer (str, start_pos);
+  end = g_utf8_offset_to_pointer (start, end_pos - start_pos);
+
+  out = g_malloc (end - start + 1);
+  memcpy (out, start, end - start);
+  out[end - start] = 0;
+
+  return out;
+}
+#endif
+
 #include "telegram-base.h"
 #include "tgp-structs.h"
 #include "tgp-msg.h"
