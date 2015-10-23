@@ -623,6 +623,7 @@ static void tgprpl_login (PurpleAccount * acct) {
     }
   }
   
+  tgl_enable_pfs (TLS);
   tgl_set_ev_base (TLS, conn);
   tgl_set_net_methods (TLS, &tgp_conn_methods);
   tgl_set_timer_methods (TLS, &tgp_timers);
