@@ -1,0 +1,101 @@
+srcdir=.
+
+SCHEME_VERSION = 38
+ENCRYPTED_SCHEME_VERSION = 23
+
+
+WIN32_DEV_TOP ?= ../../win32-dev
+
+CFLAGS=-I$(WIN32_DEV_TOP)/libgcrypt-1.6.3/include -I$(WIN32_DEV_TOP)/libgpg-error-1.12-2/include -I$(WIN32_DEV_TOP)/glib-2.28.8/include  -DHAVE_CONFIG_H
+LDFLAGS=-L$(WIN32_DEV_TOP)/libgcrypt-1.6.3/lib -I$(WIN32_DEV_TOP)/libgpg-error-1.12-2/lib -L$(WIN32_DEV_TOP)/libwebp-0.4.3-1/lib -L$(WIN32_DEV_TOP)/glib-2.28.8/lib -lwebp -lz -lgcrypt -Wl,--export-all-symbols -ggdb 
+CPPFLAGS=
+DEFS=-DHAVE_CONFIG_H
+COMPILE_FLAGS=${CFLAGS} ${CPFLAGS} ${CPPFLAGS} ${DEFS} -Wall -Wextra -Werror -Wno-deprecated-declarations -fno-strict-aliasing -fno-omit-frame-pointer -ggdb -Wno-unused-parameter
+
+EXTRA_LIBS=-lz -lgcrypt  
+LOCAL_LDFLAGS=-ggdb ${EXTRA_LIBS}
+LINK_FLAGS=${LDFLAGS} ${LOCAL_LDFLAGS}
+
+DEP=dep
+AUTO=auto
+OBJ=objs
+LIB=libs
+EXE=bin
+DIR_LIST=${DEP} ${DEP}/crypto ${AUTO} ${EXE} ${OBJ} ${OBJ}/crypto ${LIB} ${DEP}/auto ${OBJ}/auto
+
+LIB_LIST=${LIB}/libtgl.a ${LIB}/libtgl.dll
+
+TGL_OBJECTS=${OBJ}/mtproto-common.o ${OBJ}/mtproto-client.o ${OBJ}/mtproto-key.o ${OBJ}/queries.o ${OBJ}/structures.o ${OBJ}/binlog.o ${OBJ}/tgl.o ${OBJ}/updates.o ${OBJ}/tg-mime-types.o ${OBJ}/mtproto-utils.o ${OBJ}/crypto/bn_openssl.o ${OBJ}/crypto/bn_altern.o ${OBJ}/crypto/rsa_pem_openssl.o ${OBJ}/crypto/rsa_pem_altern.o ${OBJ}/crypto/md5_openssl.o ${OBJ}/crypto/md5_altern.o ${OBJ}/crypto/sha_openssl.o ${OBJ}/crypto/sha_altern.o ${OBJ}/crypto/aes_openssl.o ${OBJ}/crypto/aes_altern.o 
+TGL_OBJECTS_AUTO=${OBJ}/auto/auto-skip.o ${OBJ}/auto/auto-fetch.o ${OBJ}/auto/auto-store.o ${OBJ}/auto/auto-autocomplete.o ${OBJ}/auto/auto-types.o ${OBJ}/auto/auto-fetch-ds.o  ${OBJ}/auto/auto-free-ds.o ${OBJ}/auto/auto-store-ds.o ${OBJ}/auto/auto-print-ds.o
+TLD_OBJECTS=${OBJ}/dump-tl-file.o
+GENERATE_OBJECTS=${OBJ}/generate.o
+COMMON_OBJECTS=${OBJ}/tools.o ${OBJ}/crypto/rand_openssl.o ${OBJ}/crypto/rand_altern.o ${OBJ}/crypto/err_openssl.o ${OBJ}/crypto/err_altern.o
+OBJ_C=${GENERATE_OBJECTS} ${COMMON_OBJECTS} ${TGL_OBJECTS} ${TLD_OBJECTS}
+
+DEPENDENCE=$(subst ${OBJ}/,${DEP}/,$(patsubst %.o,%.d,${OBJ_C}))
+DEPENDENCE_LIST=${DEPENDENCE}
+
+INCLUDE=-I. -I${srcdir}
+CC=$(WIN32_DEV_TOP)/mingw/bin/gcc
+
+.SUFFIXES:
+
+.SUFFIXES: .c .h .o
+
+all: ${LIB_LIST}
+create_dirs_and_headers: ${DIR_LIST}  ${AUTO}/auto-skip.h ${AUTO}/auto-fetch.h ${AUTO}/auto-store.h ${AUTO}/auto-autocomplete.h ${AUTO}/auto-types.h
+create_dirs: ${DIR_LIST}
+dump-tl: ${EXE}/dump-tl-file
+
+#include ${srcdir}/Makefile.tl-parser
+
+${DIR_LIST}:
+	@test -d $@ || mkdir -p $@
+
+-include ${DEPENDENCE_LIST}
+
+${TGL_OBJECTS}: ${AUTO}/constants.h ${AUTO}/auto-skip.h ${AUTO}/auto-fetch.h ${AUTO}/auto-store.h ${AUTO}/auto-autocomplete.h ${AUTO}/auto-types.h ${AUTO}/auto-fetch-ds.h ${AUTO}/auto-free-ds.h ${AUTO}/auto-store-ds.h ${AUTO}/auto-print-ds.h
+
+${OBJ_C}: ${OBJ}/%.o: ${srcdir}/%.c | create_dirs
+	${CC} ${INCLUDE} ${COMPILE_FLAGS} -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
+
+${TGL_OBJECTS_AUTO}: ${OBJ}/auto/%.o: ${AUTO}/%.c | create_dirs
+	${CC} ${INCLUDE} ${COMPILE_FLAGS} -iquote ${srcdir}/tgl -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
+
+${LIB}/libtgl.a: ${TGL_OBJECTS} ${COMMON_OBJECTS} ${TGL_OBJECTS_AUTO}
+	rm -f $@ && ar ruv $@ $^
+
+${LIB}/libtgl.dll: ${TGL_OBJECTS} ${COMMON_OBJECTS} ${TGL_OBJECTS_AUTO}
+	${CC} -shared -o $@ $^ ${LINK_FLAGS}
+
+${EXE}/generate: ${GENERATE_OBJECTS} ${COMMON_OBJECTS}
+	${CC} ${GENERATE_OBJECTS} ${COMMON_OBJECTS} ${LINK_FLAGS} -o $@
+
+${AUTO}/scheme.tlo: ${AUTO}/scheme.tl ${EXE}/tl-parser
+	${EXE}/tl-parser -e $@ ${AUTO}/scheme.tl
+
+${AUTO}/scheme.tl: ${srcdir}/scheme$(SCHEME_VERSION).tl ${srcdir}/encrypted_scheme$(ENCRYPTED_SCHEME_VERSION).tl ${srcdir}/binlog.tl ${srcdir}/mtproto.tl ${srcdir}/append.tl | ${AUTO}
+	cat $^ > $@
+
+${AUTO}/scheme2.tl: ${AUTO}/scheme.tl ${EXE}/tl-parser
+	${EXE}/tl-parser -E ${AUTO}/scheme.tl 2> $@  || ( cat $@ && rm $@ && false )
+
+${AUTO}/auto.c: ${AUTO}/scheme.tlo ${EXE}/generate
+	${EXE}/generate ${AUTO}/scheme.tlo > $@
+
+${AUTO}/auto-%.c: ${AUTO}/scheme.tlo ${EXE}/generate auto/constants.h ${AUTO}/auto-%.h | create_dirs_and_headers
+	${EXE}/generate -g $(patsubst ${AUTO}/auto-%.c,%,$@) ${AUTO}/scheme.tlo > $@ || ( rm $@ && false )
+
+${AUTO}/auto-%.h: ${AUTO}/scheme.tlo ${EXE}/generate
+	${EXE}/generate -g $(patsubst ${AUTO}/auto-%.h,%-header,$@) ${AUTO}/scheme.tlo > $@ || ( rm $@ && false )
+
+
+${AUTO}/constants.h: ${AUTO}/scheme2.tl ${srcdir}/gen_constants_h.awk
+	awk -f ${srcdir}/gen_constants_h.awk < $< > $@
+
+${EXE}/dump-tl-file: ${OBJ}/auto/auto.o ${TLD_OBJECTS}
+	${CC} ${OBJ}/auto/auto.o ${TLD_OBJECTS} ${LINK_FLAGS} -o $@
+
+clean:
+	rm -rf ${DIR_LIST}
+

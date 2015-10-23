@@ -1,0 +1,148 @@
+srcdir=.
+gettext_package=telegram-purple
+
+PURPLE_VERSION = 2.10.11
+PIDGIN_TREE_TOP := ../pidgin-$(PURPLE_VERSION)
+WIN32_DEV_TOP = $(PIDGIN_TREE_TOP)/../win32-dev
+
+CFLAGS=-I$(WIN32_DEV_TOP)/libgcrypt-1.6.3/include -I$(WIN32_DEV_TOP)/libgpg-error-1.12-2/include -I$(WIN32_DEV_TOP)/glib-2.28.8/include -I$(WIN32_DEV_TOP)/glib-2.28.8/include/glib-2.0 -I$(WIN32_DEV_TOP)/glib-2.28.8/lib/glib-2.0/include -I$(PIDGIN_TREE_TOP)/libpurple -I$(WIN32_DEV_TOP)/libwebp-0.4.3-1/include -DHAVE_CONFIG_H -DENABLE_NLS -Wall -Wextra -Werror -Wno-deprecated-declarations -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing
+LDFLAGS=-L$(WIN32_DEV_TOP)/libgcrypt-1.6.3/lib -L$(WIN32_DEV_TOP)/libwebp-0.4.3-1/lib -L$(WIN32_DEV_TOP)/gettext-0.18/bin -L$(PIDGIN_TREE_TOP)/libpurple -L$(WIN32_DEV_TOP)/glib-2.28.8/lib -L$(WIN32_DEV_TOP)/libwebp-0.4.3-1/lib -lpurple -lintl -lglib-2.0 -lwebp -lz -lgcrypt -Wl,--export-all-symbols -ggdb -lws2_32 -static-libgcc
+DIR_PERM=0755
+FILE_PERM=0644
+
+CC = $(WIN32_DEV_TOP)/mingw/bin/gcc
+PKG_CONFIG=
+
+DEP=dep
+EXE=bin
+OBJ=objs
+LIB=libs
+DIR_LIST=${DEP} ${EXE} ${OBJ} ${LIB} ${DEP}/lodepng ${OBJ}/lodepng
+
+PLUGIN_OBJECTS=${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/telegram-base.o ${OBJ}/telegram-purple.o ${OBJ}/tgp-2prpl.o ${OBJ}/tgp-structs.o ${OBJ}/tgp-utils.o ${OBJ}/tgp-chat.o ${OBJ}/tgp-ft.o ${OBJ}/tgp-msg.o ${OBJ}/tgp-request.o ${OBJ}/tgp-blist.o ${OBJ}/lodepng/lodepng.o
+ALL_OBJS=${PLUGIN_OBJECTS}
+
+LOCALES=$(patsubst %.po, %.mo, $(wildcard po/*.po))
+
+.SUFFIXES:
+
+.SUFFIXES: .c .h .o
+
+PRPL_NAME=libtelegram.dll
+PRPL_LIBNAME=${EXE}/${PRPL_NAME}
+all: ${PRPL_LIBNAME} ${LOCALES}
+
+PLUGIN_DIR_PURPLE="$(PROGRAMFILES)/Pidgin/plugins"
+DATA_ROOT_DIR_PURPLE="$(PROGRAMFILES)/Pidgin"
+COPY_ICONS=yes
+localedir=$(DATA_ROOT_DIR_PURPLE)/locale
+
+create_dirs: ${DIR_LIST}
+
+${DIR_LIST}:
+	@test -d $@ || mkdir -p $@
+
+DEPENDENCE=$(subst ${OBJ}/,${DEP}/,$(patsubst %.o,%.d,${ALL_OBJS}))
+DEPENDENCE_LIST=${DEPENDENCE}
+-include ${DEPENDENCE_LIST}
+
+
+# The dependency on tgl/libs/libtgl.a ensures that "make -C tgl" was called,
+# and most importantly: It ensures that all automatic headers exist.
+${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c ${LIB}/libtgl.a | create_dirs
+	echo $@ && ${CC} ${CFLAGS} ${CPPFLAGS} -I ${srcdir}/tgl -I ${srcdir}/lodepng -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
+
+tgl/Makefile.mingw: ${srcdir}/Makefile.tgl.mingw
+	cp $< $@
+
+tgl/libs/libtgl.a: tgl/Makefile.mingw
+	+make -C tgl -f Makefile.mingw
+
+tgl/config.h: ${srcdir}/config.h.tgl.mingw
+	cp $< $@
+	
+config.h: ${srcdir}/config.h.mingw
+	cp $< $@
+
+po/%.mo: po/%.po
+	$(WIN32_DEV_TOP)/gettext-0.17/bin/msgfmt -cf -o $@ $<
+
+${LIB}/libtgl.a: tgl/libs/libtgl.a | create_dirs
+	cp $< $@
+
+${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} ${LIB}/libtgl.a | create_dirs
+	${CC} -shared -o $@ $^ ${LDFLAGS}
+
+.PHONY: plugin
+plugin: $(PRPL_LIBNAME)
+
+
+.PHONY: strip
+strip: $(PRPL_LIBNAME)
+	$(STRIP) --strip-unneeded $(PRPL_LIBNAME)
+
+.PHONY: install
+install: $(PRPL_LIBNAME) $(LOCALES)
+	mkdir -m $(DIR_PERM) -p $(PLUGIN_DIR_PURPLE)
+	install -m $(FILE_PERM) $(PRPL_LIBNAME) $(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
+	install -m $(FILE_PERM) tg-server.tglpub $(DATA_ROOT_DIR_PURPLE)/server.tglpub
+ifeq ($(COPY_ICONS),no)
+	@echo "Not copying icons due to configure-option --disable-icons."
+	@echo " If you're using Finch, Empathy, or Telepathy, then this is a good idea."
+	@echo " If you're using Pidgin, then this is a bad idea."
+	@echo " If you're using Adium, read the README.md: You're using the wrong build system!"
+else
+	mkdir -m $(DIR_PERM) -p $(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16
+	install -m $(FILE_PERM) imgs/telegram16.png $(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
+	mkdir -m $(DIR_PERM) -p $(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22
+	install -m $(FILE_PERM) imgs/telegram22.png $(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
+	mkdir -m $(DIR_PERM) -p $(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48
+	install -m $(FILE_PERM) imgs/telegram48.png $(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
+endif
+	@for lang in $(shell cat po/LINGUAS); do \
+		mkdir -p $(localedir)/$$lang/LC_MESSAGES; \
+		echo "installing po/$$lang.mo to $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
+		install -m $(FILE_PERM) po/$$lang.mo $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
+	done
+
+.PHONY: uninstall
+uninstall:
+	rm -f $(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
+	rm -f $(DATA_ROOT_DIR_PURPLE)/server.tglpub
+	rm -f $(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
+	rm -f $(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
+	rm -f $(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
+# TODO: Delete all installed .mo's, no matter what LINGUAS says.
+	@for lang in $(shell cat po/LINGUAS); do \
+		echo "removing $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
+		rm -f $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
+	done
+
+.PHONY: local_install
+local_install:
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(HOME)/.purple/plugins
+	install -m $(FILE_PERM) $(PRPL_LIBNAME) $(DESTDIR)$(HOME)/.purple/plugins/$(PRPL_NAME)
+# See telegram-base.c, function get_user_pk_path for justification:
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(HOME)/.purple/telegram-purple
+	install -m $(FILE_PERM) tg-server.tglpub $(DESTDIR)$(HOME)/.purple/telegram-purple/server.tglpub
+
+.PHONY: local_uninstall
+local_uninstall:
+	rm -f $(DESTDIR)$(HOME)/.purple/plugins/$(PRPL_NAME)
+	rm -f $(DESTDIR)$(HOME)/.purple/telegram-purple/server.tglpub
+
+.PHONY: run
+run:
+	pidgin -d | grep 'telegram\|plugin\|proxy'
+
+.PHONY: debug
+debug: install
+	ddd pidgin
+
+.PHONY: clean-here
+clean-here:
+	rm -rf ${DIR_LIST} $(PRPL_C_OBJS) $(PRPL_LIBNAME) po/*.mo
+
+.PHONY: clean
+clean: clean-here tgl/Makefile.mingw
+	+make -C tgl -f Makefile.mingw clean
