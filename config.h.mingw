@@ -80,16 +80,13 @@
 #define PACKAGE_NAME "telegram-purple"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "telegram-purple 1.2.2"
+#define PACKAGE_STRING PACKAGE_NAME " " PACKAGE_VERSION
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "telegram-purple"
+#define PACKAGE_TARNAME PACKAGE_NAME
 
 /* Define to the home page for this package. */
 #define PACKAGE_URL ""
-
-/* Define to the version of this package. */
-#define PACKAGE_VERSION "1.2.2"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1

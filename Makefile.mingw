@@ -4,9 +4,12 @@ gettext_package=telegram-purple
 PURPLE_VERSION = 2.10.11
 PIDGIN_TREE_TOP := ../pidgin-$(PURPLE_VERSION)
 WIN32_DEV_TOP = $(PIDGIN_TREE_TOP)/../win32-dev
+MAKENSIS ?= "$(PROGRAMFILES)/NSIS/makensis.exe"
+PLUGIN_VERSION ?= 1.2.2
+GMSGFMT ?= $(WIN32_DEV_TOP)/gettext-0.17/bin/msgfmt
 
-CFLAGS=-I$(WIN32_DEV_TOP)/libgcrypt-1.6.3/include -I$(WIN32_DEV_TOP)/libgpg-error-1.12-2/include -I$(WIN32_DEV_TOP)/glib-2.28.8/include -I$(WIN32_DEV_TOP)/glib-2.28.8/include/glib-2.0 -I$(WIN32_DEV_TOP)/glib-2.28.8/lib/glib-2.0/include -I$(PIDGIN_TREE_TOP)/libpurple -I$(WIN32_DEV_TOP)/libwebp-0.4.3-1/include -DHAVE_CONFIG_H -DENABLE_NLS -Wall -Wextra -Werror -Wno-deprecated-declarations -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing
-LDFLAGS=-L$(WIN32_DEV_TOP)/libgcrypt-1.6.3/lib -L$(WIN32_DEV_TOP)/libwebp-0.4.3-1/lib -L$(WIN32_DEV_TOP)/gettext-0.18/bin -L$(PIDGIN_TREE_TOP)/libpurple -L$(WIN32_DEV_TOP)/glib-2.28.8/lib -L$(WIN32_DEV_TOP)/libwebp-0.4.3-1/lib -lpurple -lintl -lglib-2.0 -lwebp -lz -lgcrypt -Wl,--export-all-symbols -ggdb -lws2_32 -static-libgcc
+CFLAGS=-I$(WIN32_DEV_TOP)/libgcrypt-1.6.3/include -I$(WIN32_DEV_TOP)/libgpg-error-1.12-2/include -I$(WIN32_DEV_TOP)/glib-2.28.8/include -I$(WIN32_DEV_TOP)/glib-2.28.8/include/glib-2.0 -I$(WIN32_DEV_TOP)/glib-2.28.8/lib/glib-2.0/include -I$(PIDGIN_TREE_TOP)/libpurple -I$(WIN32_DEV_TOP)/libwebp-0.4.3-1/include -DHAVE_CONFIG_H -DENABLE_NLS -DPACKAGE_VERSION='"$(PLUGIN_VERSION)"' -Wall -Wextra -Werror -Wno-deprecated-declarations -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing
+LDFLAGS=-L$(WIN32_DEV_TOP)/libgcrypt-1.6.3/lib -L$(WIN32_DEV_TOP)/libwebp-0.4.3-1/lib -L$(WIN32_DEV_TOP)/gettext-0.18/bin -L$(PIDGIN_TREE_TOP)/libpurple -L$(WIN32_DEV_TOP)/glib-2.28.8/lib -lpurple -lintl -lglib-2.0 -lwebp -lz -lgcrypt -Wl,--export-all-symbols -ggdb -lws2_32 -static-libgcc
 DIR_PERM=0755
 FILE_PERM=0644
 
@@ -65,7 +68,7 @@ config.h: ${srcdir}/config.h.mingw
 	cp $< $@
 
 po/%.mo: po/%.po
-	$(WIN32_DEV_TOP)/gettext-0.17/bin/msgfmt -cf -o $@ $<
+	$(GMSGFMT) -cf -o $@ $<
 
 ${LIB}/libtgl.a: tgl/libs/libtgl.a | create_dirs
 	cp $< $@
@@ -146,3 +149,7 @@ clean-here:
 .PHONY: clean
 clean: clean-here tgl/Makefile.mingw
 	+make -C tgl -f Makefile.mingw clean
+	
+.PHONY: installer
+installer: telegram-purple.nsi $(PRPL_LIBNAME) $(LOCALES)
+	$(MAKENSIS) -DPLUGIN_VERSION="$(PLUGIN_VERSION)" -DPRPL_NAME="$(PRPL_NAME)" -DWIN32_DEV_TOP="$(WIN32_DEV_TOP)" telegram-purple.nsi
