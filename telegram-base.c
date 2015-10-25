@@ -76,7 +76,7 @@ int read_pubkey_file (const char *name, struct rsa_pubkey *dst) {
   dst->n_len = 0;
   dst->n_raw = NULL;
 
-  int pubkey_fd = open (name, O_RDONLY);
+  int pubkey_fd = open (name, O_RDONLY | O_BINARY);
   if (pubkey_fd < 0) {
     return 0;
   }
@@ -408,7 +408,7 @@ void read_secret_chat_file (struct tgl_state *TLS) {
   char *name = 0;
   name = g_strdup_printf("%s/%s", TLS->base_path, "secret");
   
-  int secret_chat_fd = open (name, O_RDWR, 0600);
+  int secret_chat_fd = open (name, O_RDWR | O_BINARY, 0600);
   free (name);
   
   if (secret_chat_fd < 0) { return; }
