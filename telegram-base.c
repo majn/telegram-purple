@@ -114,7 +114,7 @@ void read_state_file (struct tgl_state *TLS) {
   char *name = 0;
   name = g_strdup_printf("%s/%s", TLS->base_path, "state");
 
-  int state_file_fd = open (name, O_CREAT | O_RDWR, 0600);
+  int state_file_fd = open (name, O_CREAT | O_RDWR | O_BINARY, 0600);
   free (name);
 
   if (state_file_fd < 0) {
@@ -150,7 +150,7 @@ void write_state_file (struct tgl_state *TLS) {
   char *name = 0;
   name = g_strdup_printf("%s/%s", TLS->base_path, "state");
 
-  int state_file_fd = open (name, O_CREAT | O_RDWR, 0600);
+  int state_file_fd = open (name, O_CREAT | O_RDWR | O_BINARY, 0600);
   free (name);
 
   if (state_file_fd < 0) {
@@ -209,7 +209,7 @@ void write_dc (struct tgl_dc *DC, void *extra) {
 void write_auth_file (struct tgl_state *TLS) {
   char *name = 0;
   name = g_strdup_printf("%s/%s", TLS->base_path, "auth");
-  int auth_file_fd = open (name, O_CREAT | O_RDWR, 0600);
+  int auth_file_fd = open (name, O_CREAT | O_RDWR | O_BINARY, 0600);
   free (name);
   if (auth_file_fd < 0) { return; }
   int x = DC_SERIALIZED_MAGIC;
@@ -274,7 +274,7 @@ void empty_auth_file (struct tgl_state *TLS) {
 void read_auth_file (struct tgl_state *TLS) {
   char *name = 0;
   name = g_strdup_printf("%s/%s", TLS->base_path, "auth");
-  int auth_file_fd = open (name, O_CREAT | O_RDWR, 0600);
+  int auth_file_fd = open (name, O_CREAT | O_RDWR | O_BINARY, 0600);
   free (name);
   if (auth_file_fd < 0) {
     empty_auth_file (TLS);
@@ -345,7 +345,7 @@ void write_secret_chat (tgl_peer_t *_P, void *extra) {
 void write_secret_chat_file (struct tgl_state *TLS) {
   char *name = 0;
   name = g_strdup_printf("%s/%s", TLS->base_path, "secret");
-  int secret_chat_fd = open (name, O_CREAT | O_RDWR, 0600);
+  int secret_chat_fd = open (name, O_CREAT | O_RDWR | O_BINARY, 0600);
   free (name);
   assert (secret_chat_fd >= 0);
   int x = SECRET_CHAT_FILE_MAGIC;
