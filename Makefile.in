@@ -33,6 +33,7 @@ all: ${PRPL_LIBNAME} ${LOCALES}
 
 PLUGIN_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=plugindir purple)
 DATA_ROOT_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=datarootdir purple)
+COPY_ICONS=@COPY_ICONS@
 
 create_dirs: ${DIR_LIST}
 
@@ -76,27 +77,29 @@ strip: $(PRPL_LIBNAME)
 	$(STRIP) --strip-unneeded $(PRPL_LIBNAME)
 
 .PHONY: install
-install: $(PRPL_LIBNAME)
+install: $(PRPL_LIBNAME) $(LOCALES)
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(PLUGIN_DIR_PURPLE)
 	install -m $(FILE_PERM) $(PRPL_LIBNAME) $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)/etc/telegram-purple
 	install -m $(FILE_PERM) tg-server.tglpub $(DESTDIR)/etc/telegram-purple/server.tglpub
+ifeq ($(COPY_ICONS),no)
+	@echo "Not copying icons due to configure-option --disable-icons."
+	@echo " If you're using Finch, Empathy, or Telepathy, then this is a good idea."
+	@echo " If you're using Pidgin, then this is a bad idea."
+	@echo " If you're using Adium, read the README.md: You're using the wrong build system!"
+else
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16
 	install -m $(FILE_PERM) imgs/telegram16.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22
 	install -m $(FILE_PERM) imgs/telegram22.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48
 	install -m $(FILE_PERM) imgs/telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
+endif
 	@for lang in $(shell cat po/LINGUAS); do \
 		mkdir -p $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES; \
 		echo "installing po/$$lang.mo to $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
 		install -m $(FILE_PERM) po/$$lang.mo $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
 	done
-
-.PHONY: local_install
-local_install:
-	mkdir -m $(DIR_PERM) -p ${HOME}/.purple/plugins/$(PRPL_NAME)
-	install $(PRPL_LIBNAME) ${HOME}/.purple/plugins/$(PRPL_NAME)
 
 .PHONY: uninstall
 uninstall:
@@ -106,11 +109,24 @@ uninstall:
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
-	rm -f ${HOME}/.purple/plugins/$(PRPL_NAME)
-	for lang in $(shell cat po/LINGUAS); do \
+# TODO: Delete all installed .mo's, no matter what LINGUAS says.
+	@for lang in $(shell cat po/LINGUAS); do \
 		echo "removing $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
 		rm -f $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
 	done
+
+.PHONY: local_install
+local_install:
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(HOME)/.purple/plugins
+	install -m $(FILE_PERM) $(PRPL_LIBNAME) $(DESTDIR)$(HOME)/.purple/plugins/$(PRPL_NAME)
+# See telegram-base.c, function get_user_pk_path for justification:
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(HOME)/.purple/telegram-purple
+	install -m $(FILE_PERM) tg-server.tglpub $(DESTDIR)$(HOME)/.purple/telegram-purple/server.tglpub
+
+.PHONY: local_uninstall
+local_uninstall:
+	rm -f $(DESTDIR)$(HOME)/.purple/plugins/$(PRPL_NAME)
+	rm -f $(DESTDIR)$(HOME)/.purple/telegram-purple/server.tglpub
 
 .PHONY: run
 run:

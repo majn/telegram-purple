@@ -76,9 +76,10 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status);
 static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_message *list[]);
 static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4);
-void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
+static void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
 
 const char *config_dir = "telegram-purple";
+const char *user_pk_filename = "server.tglpub";
 const char *pk_path = "/etc/telegram-purple/server.tglpub";
 
 struct tgl_update_callback tgp_callback = {
@@ -568,30 +569,45 @@ static void tgprpl_login (PurpleAccount * acct) {
   connection_data *conn = connection_data_init (TLS, gc, acct);
   purple_connection_set_protocol_data (gc, conn);
 
-  TLS->base_path = get_config_dir (TLS, purple_account_get_username (acct));
+  TLS->base_path = get_config_dir (purple_account_get_username (acct));
   tgl_set_download_directory (TLS, get_download_dir(TLS));
-  if (!assert_file_exists (gc, pk_path, _("Error, server public key not found at %s."
-                      " Make sure that telegram-purple is installed properly."))) {
-    /* Already reported. */
-    return;
-  }
   debug ("base configuration path: '%s'", TLS->base_path);
   
-  struct rsa_pubkey the_pubkey;
-  if (! read_pubkey_file (pk_path, &the_pubkey)) {
-    char *cause = g_strdup_printf (_("Unable to sign on as %s: missing file %s."),
-                    purple_account_get_username (acct), pk_path);
-    purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_INVALID_SETTINGS, cause);
-    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, cause,
-                           _("Make sure telegram-purple is installed properly,\n"
-                            "including the .tglpub file."), NULL, NULL, NULL);
-    g_free (cause);
-    return;
-  }
+  struct rsa_pubkey pubkey;
+  debug ("trying global pubkey at %s", pk_path);
+  gboolean global_pk_loaded = read_pubkey_file (pk_path, &pubkey);
 
   tgl_set_verbosity (TLS, 4);
-  tgl_set_rsa_key_direct (TLS, the_pubkey.e, the_pubkey.n_len, the_pubkey.n_raw);
-  
+  if (global_pk_loaded) {
+    debug ("using global pubkey");
+    tgl_set_rsa_key_direct (TLS, pubkey.e, pubkey.n_len, pubkey.n_raw);
+  } else {
+    char *user_pk_path = get_user_pk_path ();
+    debug ("trying local pubkey at %s", user_pk_path);
+    gboolean user_pk_loaded = read_pubkey_file (user_pk_path, &pubkey);
+
+    if (user_pk_loaded) {
+      debug ("using local pubkey");
+      tgl_set_rsa_key_direct (TLS, pubkey.e, pubkey.n_len, pubkey.n_raw);
+    } else {
+      debug ("both didn't work. abort.");
+      char *cause = g_strdup_printf (_("Unable to sign on as %s: pubkey not found."),
+                      purple_account_get_username (acct));
+      purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_INVALID_SETTINGS, cause);
+      char *long_hint = g_strdup_printf (
+        _("Make sure telegram-purple is installed properly,\n"
+          "including the .tglpub file.\n"
+          "If you're running SELinux (e.g. when using Tails),\n"
+          "try 'make local_install', or simply copy\n"
+          "%1$s to %2$s."), pk_path, user_pk_path);
+      purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, cause,
+                             long_hint, NULL, NULL, NULL);
+      g_free (cause);
+      g_free (long_hint);
+      return;
+    }
+  }
+
   tgl_set_ev_base (TLS, conn);
   tgl_set_net_methods (TLS, &tgp_conn_methods);
   tgl_set_timer_methods (TLS, &tgp_timers);

@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: telegram-purple\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-10-12 18:48+0200\n"
-"PO-Revision-Date: 2015-10-12 18:19+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2015-10-19 15:06+0200\n"
+"PO-Revision-Date: 2015-10-19 13:11+0000\n"
+"Last-Translator: Ben Wiederhake <BenWiederhake.GitHub@gmx.de>\n"
 "Language-Team: Polish (http://www.transifex.com/telegram-purple-developers/telegram-purple/language/pl/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -49,281 +49,256 @@ msgstr "Proszę podać tylko numery w międzynarodowym formacie numerów telefon
 msgid "Query Failed"
 msgstr "Zapytanie się nie powiodło"
 
-#: ../telegram-purple.c:172
+#: ../telegram-purple.c:202
 msgid "Secret chat terminated."
 msgstr "Zakończono tajną rozmowę."
 
-#: ../telegram-purple.c:215
+#: ../telegram-purple.c:247
 msgid "Message marked as read."
 msgstr "Oznaczono wiadomość jako przeczytaną."
 
-#: ../telegram-purple.c:475
+#: ../telegram-purple.c:484
 #, c-format
 msgid "Invite link: %s"
 msgstr "Odnośnik do zaproszenia: %s"
 
-#: ../telegram-purple.c:498 ../telegram-purple.c:499
+#: ../telegram-purple.c:504 ../telegram-purple.c:505
 msgid "Creating chat link failed"
 msgstr "Utworzenie odnośnika do rozmowy się nie powiodło"
 
-#: ../telegram-purple.c:500
+#: ../telegram-purple.c:506
 msgid "You need to be admin of the group to do that."
 msgstr "Należy być administratorem grupy, aby to zrobić."
 
-#: ../telegram-purple.c:526
+#: ../telegram-purple.c:528
 msgid "Chat joined"
 msgstr "Dołączono do rozmowy"
 
-#: ../telegram-purple.c:527
+#: ../telegram-purple.c:529
 msgid "Chat added to list of chat rooms."
 msgstr "Dodano rozmowę do listy pokojów rozmów."
 
-#: ../telegram-purple.c:541
+#: ../telegram-purple.c:543
 msgid "Start secret chat ..."
 msgstr "Rozpocznij tajną rozmowę…"
 
 #. Generate Public Link
-#: ../telegram-purple.c:547
+#: ../telegram-purple.c:549
 msgid "Invite users by link ..."
 msgstr "Zaproś użytkowników przez odnośnik…"
 
 #. Delete self from chat
-#: ../telegram-purple.c:553
+#: ../telegram-purple.c:555
 msgid "Delete and exit ..."
 msgstr "Usuń i wyjdź…"
 
-#: ../telegram-purple.c:571
+#: ../telegram-purple.c:573
 #, c-format
 msgid ""
 "Error, server public key not found at %s. Make sure that telegram-purple is "
 "installed properly."
 msgstr "Błąd, nie odnaleziono klucza publicznego serwera w %s. Proszę się upewnić, że wtyczka telegram-purple jest poprawnie zainstalowana."
 
-#: ../telegram-purple.c:580
+#: ../telegram-purple.c:582
 #, c-format
 msgid "Unable to sign on as %s: missing file %s."
 msgstr "Nie można zalogować jako %s: brak pliku %s."
 
-#: ../telegram-purple.c:584
+#: ../telegram-purple.c:586
 msgid ""
 "Make sure telegram-purple is installed properly,\n"
 "including the .tglpub file."
 msgstr "Proszę się upewnić, że wtyczka telegram-purple jest poprawnie zainstalowana,\nw tym plik „.tglpub”."
 
-#: ../telegram-purple.c:602
+#: ../telegram-purple.c:604
 #, c-format
 msgid "Unable to sign on as %s: phone number lacks country prefix."
 msgstr "Nie można zalogować jako %s: numer telefonu nie ma przedrostka kraju."
 
-#: ../telegram-purple.c:606
+#: ../telegram-purple.c:608
 msgid ""
 "Numbers must start with the full international\n"
 "prefix code, e.g. +49 for Germany."
 msgstr "Numery muszą zaczynać się od pełnego międzynarodowego\nprzedrostka, np. +48 dla Polski."
 
-#: ../telegram-purple.c:750 ../telegram-purple.c:751
+#: ../telegram-purple.c:733 ../telegram-purple.c:734
 msgid "Cannot invite buddy to chat"
 msgstr "Nie można zaprosić znajomego do rozmowy"
 
-#: ../telegram-purple.c:752
+#: ../telegram-purple.c:735
 msgid "Specified user does not exist."
 msgstr "Podany użytkownik nie istnieje."
 
 #. Login
-#: ../telegram-purple.c:895
+#: ../telegram-purple.c:877
 msgid "Password (two factor authentication)"
 msgstr "Hasło (uwierzytelnianie dwustopniowe)"
 
-#: ../telegram-purple.c:901
+#: ../telegram-purple.c:883
 msgid ""
 "Fallback SMS verification\n"
 "(Helps when not using Pidgin and you aren't being prompted for the code)"
 msgstr "Zapasowa weryfikacja przez SMS\n(Pomaga w przypadkach, kiedy nie jest używany program Pidgin i użytkownik nie jest pytany o kod)"
 
-#: ../telegram-purple.c:909
+#: ../telegram-purple.c:891
 msgid "ask"
 msgstr "pytanie"
 
-#: ../telegram-purple.c:910
+#: ../telegram-purple.c:892
 msgid "always"
 msgstr "zawsze"
 
-#: ../telegram-purple.c:911
+#: ../telegram-purple.c:893
 msgid "never"
 msgstr "nigdy"
 
-#: ../telegram-purple.c:913
+#: ../telegram-purple.c:895
 msgid "Accept secret chats"
 msgstr "Akceptowanie tajnych rozmów"
 
-#: ../telegram-purple.c:918
+#: ../telegram-purple.c:900
 msgid "Display buddies offline after (days)"
 msgstr "Wyświetlanie znajomych jako w trybie offline po (w dniach)"
 
-#: ../telegram-purple.c:923
+#: ../telegram-purple.c:905
 msgid "Fetch past history on first login"
 msgstr "Pobieranie historii podczas pierwszego logowania"
 
-#: ../telegram-purple.c:928
+#: ../telegram-purple.c:910
 msgid ""
 "Don't fetch history older than (days)\n"
 "(0 for unlimited)"
 msgstr "Bez pobierania historii starszej niż (w dniach)\n(0 oznacza brak ograniczenia)"
 
 #. Chats
-#: ../telegram-purple.c:936
+#: ../telegram-purple.c:918
 msgid "Add all group chats to buddy list"
 msgstr "Dodawanie wszystkich rozmów grupowych do listy znajomych"
 
 #. Read notifications
-#: ../telegram-purple.c:944
+#: ../telegram-purple.c:926
 msgid "Display notices of receipt"
 msgstr "Wyświetlanie powiadomień o odebraniu"
 
-#: ../telegram-purple.c:949
+#: ../telegram-purple.c:931
 msgid "Send notices of receipt when present"
 msgstr "Wysyłanie powiadomień o odebraniu podczas obecności"
 
-#: ../tgp-2prpl.c:386 ../tgp-request.c:130
+#: ../tgp-2prpl.c:167 ../tgp-request.c:130
 msgid "First name"
 msgstr "Imię"
 
-#: ../tgp-2prpl.c:387 ../tgp-request.c:132
+#: ../tgp-2prpl.c:168 ../tgp-request.c:132
 msgid "Last name"
 msgstr "Nazwisko"
 
-#: ../tgp-2prpl.c:389
+#: ../tgp-2prpl.c:170
 msgid "Name"
 msgstr "Nazwa"
 
-#: ../tgp-2prpl.c:394 ../tgp-request.c:246 ../tgp-request.c:250
+#: ../tgp-2prpl.c:175 ../tgp-request.c:246 ../tgp-request.c:250
 #: ../tgp-request.c:254
 msgid "Username"
 msgstr "Nazwa użytkownika"
 
-#: ../tgp-2prpl.c:399
+#: ../tgp-2prpl.c:180
 msgid "Last seen"
 msgstr "Ostatnio widziany"
 
-#: ../tgp-2prpl.c:404
+#: ../tgp-2prpl.c:185
 msgid "Phone"
 msgstr "Telefon"
 
-#: ../tgp-2prpl.c:417
+#: ../tgp-2prpl.c:197
 msgid "Waiting for the user to get online ..."
 msgstr "Oczekiwanie, aż użytkownik przejdzie do trybu online…"
 
-#: ../tgp-2prpl.c:421
+#: ../tgp-2prpl.c:201
 msgid "Self destruction timer"
 msgstr "Czas samozniszczenia"
 
-#: ../tgp-2prpl.c:427
+#: ../tgp-2prpl.c:207
 msgid "Off"
 msgstr "Wyłączone"
 
-#: ../tgp-2prpl.c:434
+#: ../tgp-2prpl.c:214
 msgid "Secret key"
 msgstr "Tajny klucz"
 
-#: ../tgp-msg.c:55
+#: ../tgp-msg.c:53
 #, c-format
 msgid "%2$s created chat %1$s."
 msgstr "Użytkownik %2$s utworzył rozmowę %1$s."
 
-#: ../tgp-msg.c:58
+#: ../tgp-msg.c:56
 #, c-format
 msgid "%2$s changed title to %1$s."
 msgstr "Użytkownik %2$s zmienił tytuł na %1$s."
 
-#: ../tgp-msg.c:61
+#: ../tgp-msg.c:59
 #, c-format
 msgid "%s changed photo."
 msgstr "Użytkownik %s zmienił zdjęcie."
 
-#: ../tgp-msg.c:64
+#: ../tgp-msg.c:62
 #, c-format
 msgid "%s deleted photo."
 msgstr "Użytkownik %s usunął zdjęcie."
 
-#: ../tgp-msg.c:72
+#: ../tgp-msg.c:70
 #, c-format
 msgid "%1$s added user %2$s by link."
 msgstr "Użytkownik %1$s dodał użytkownika %2$s przez odnośnik."
 
-#: ../tgp-msg.c:85
+#: ../tgp-msg.c:83
 #, c-format
 msgid "%2$s added user %1$s."
 msgstr "Użytkownik %2$s dodał użytkownika %1$s."
 
-#: ../tgp-msg.c:107
+#: ../tgp-msg.c:104
 #, c-format
 msgid "%1$s deleted user %2$s."
 msgstr "Użytkownik %1$s usunął użytkownika %2$s."
 
-#: ../tgp-msg.c:120
+#: ../tgp-msg.c:118
 #, c-format
 msgid "%2$s deleted user %1$s."
 msgstr "Użytkownik %2$s usunął użytkownika %1$s."
 
-#: ../tgp-msg.c:125
+#: ../tgp-msg.c:123
 #, c-format
 msgid "%2$s set self destruction timer to %1$d seconds."
 msgstr "Użytkownik %2$s ustawił czas samozniszczenia na %1$d s."
 
-#: ../tgp-msg.c:128
+#: ../tgp-msg.c:126
 #, c-format
 msgid "%2$s marked %1$d messages read."
 msgstr "Użytkownik %2$s oznaczył %1$d wiadomości jako przeczytane."
 
-#: ../tgp-msg.c:131
+#: ../tgp-msg.c:129
 #, c-format
 msgid "%2$s deleted %1$d messages."
 msgstr "Użytkownik %2$s usunął %1$d wiadomości."
 
-#: ../tgp-msg.c:134
+#: ../tgp-msg.c:132
 #, c-format
 msgid "%2$s made a screenshot of %1$d messages."
 msgstr "Użytkownik %2$s utworzył zrzut ekranu %1$d wiadomości."
 
-#: ../tgp-msg.c:137
-#, c-format
-msgid "%2$s updated to layer %1$d."
-msgstr "Użytkownik %2$s zaktualizował do warstwy %1$d."
-
-#: ../tgp-msg.c:140
-#, c-format
-msgid "%2$s requests rekey #%1$016llx."
-msgstr "Użytkownik %2$s zażądał ponownego nadania klucza #%1$016llx."
-
-#: ../tgp-msg.c:143
-#, c-format
-msgid "%2$s accepts rekey #%1$016llx."
-msgstr "Użytkownik %2$s zaakceptował ponowne nadanie klucza #%1$016llx."
-
-#: ../tgp-msg.c:146
-#, c-format
-msgid "%2$s commits rekey #%1$016llx."
-msgstr "Użytkownik %2$s zatwierdził ponowne nadanie klucza #%1$016llx."
-
-#: ../tgp-msg.c:149
-#, c-format
-msgid "%2$s aborts rekey #%1$016llx."
-msgstr "Użytkownik %2$s przerwał ponowne nadanie klucza #%1$016llx."
-
-#: ../tgp-msg.c:173
+#: ../tgp-msg.c:156
 #, c-format
 msgid "Sending message failed. %d: %s"
 msgstr "Wysłanie wiadomości się nie powiodło. %d: %s"
 
-#: ../tgp-msg.c:251
+#: ../tgp-msg.c:259
 msgid "Sending image failed."
 msgstr "Wysłanie obrazu się nie powiodło."
 
-#: ../tgp-msg.c:265
+#: ../tgp-msg.c:273
 msgid "Sorry, sending documents to encrypted chats not yet supported."
 msgstr "Wysyłanie dokumentów do zaszyfrowanych rozmów nie jest jeszcze obsługiwane."
 
-#: ../tgp-msg.c:352
+#: ../tgp-msg.c:360
 #, c-format
 msgid "%s sent a sticker."
 msgstr "Użytkownik %s wysłał naklejkę."
@@ -460,49 +435,49 @@ msgstr "Utworzyć nową rozmowę grupową o nazwie „%s”?"
 
 #. This should be the language's timestamp format.
 #. * This is preceded by a colon.
-#: ../tgp-utils.c:39
+#: ../tgp-utils.c:33
 msgid "%d.%m.%Y %H:%M"
 msgstr "%d.%m.%Y %H∶%M"
 
 #. This is preceded by a colon.
-#: ../tgp-utils.c:60
+#: ../tgp-utils.c:54
 #, c-format
 msgid "recently"
 msgstr "niedawno"
 
 #. This is preceded by a colon.
-#: ../tgp-utils.c:64
+#: ../tgp-utils.c:58
 #, c-format
 msgid "last week"
 msgstr "ostatni tydzień"
 
 #. This is preceded by a colon.
-#: ../tgp-utils.c:68
+#: ../tgp-utils.c:62
 #, c-format
 msgid "last month"
 msgstr "ostatni miesiąc"
 
 #. This is preceded by a colon. It refers to a point on time.
-#: ../tgp-utils.c:72
+#: ../tgp-utils.c:66
 msgid "unknown"
 msgstr "nieznane"
 
-#: ../tgp-chat.c:83
+#: ../tgp-chat.c:79
 msgid "You have already left this chat."
 msgstr "Już opuszczoną tę rozmowę."
 
-#: ../tgp-chat.c:133
+#: ../tgp-chat.c:122
 msgid "Subject:"
 msgstr "Temat:"
 
-#: ../tgp-chat.c:139
+#: ../tgp-chat.c:128
 msgid "Invite link:"
 msgstr "Odnośnik do zaproszenia:"
 
-#: ../tgp-chat.c:145
+#: ../tgp-chat.c:134
 msgid "Chat ID:"
 msgstr "Identyfikator rozmowy:"
 
-#: ../tgp-chat.c:244
+#: ../tgp-chat.c:232
 msgid "Users"
 msgstr "Użytkownicy"

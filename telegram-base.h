@@ -42,7 +42,8 @@ void write_secret_chat_gw (struct tgl_state *TLS, void *extra, int success, stru
 void telegram_login (struct tgl_state *TLS);
 void telegram_export_authorization (struct tgl_state *TLS);
 
-gchar *get_config_dir (struct tgl_state *TLS, char const *username);
+gchar *get_config_dir (char const *username);
+gchar *get_user_pk_path ();
 gchar *get_download_dir (struct tgl_state *TLS);
 
 gboolean assert_file_exists (PurpleConnection *gc, const char *filepath, const char *format);

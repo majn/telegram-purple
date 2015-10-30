@@ -3,13 +3,15 @@
 # This file is distributed under the same license as the PACKAGE package.
 # 
 # Translators:
+# Vladimir <TurbaVladimir@yandex.ru>, 2015
+# Yan  Pas, 2015
 # Сергей <djam5@ya.ru>, 2015
 msgid ""
 msgstr ""
 "Project-Id-Version: telegram-purple\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-10-12 18:48+0200\n"
-"PO-Revision-Date: 2015-10-12 16:49+0000\n"
+"POT-Creation-Date: 2015-10-19 15:06+0200\n"
+"PO-Revision-Date: 2015-10-19 13:11+0000\n"
 "Last-Translator: Ben Wiederhake <BenWiederhake.GitHub@gmx.de>\n"
 "Language-Team: Russian (http://www.transifex.com/telegram-purple-developers/telegram-purple/language/ru/)\n"
 "MIME-Version: 1.0\n"
@@ -20,12 +22,12 @@ msgstr ""
 
 #: ../telegram-base.c:477
 msgid "Login canceled"
-msgstr ""
+msgstr "Вход отменен"
 
 #: ../telegram-base.c:477
 msgid ""
 "Authentication export to remote data centers failed, login not possible."
-msgstr ""
+msgstr "Экспорт аутентификации на удаленные дата-центры не удался. Авторизация невозможна."
 
 #: ../telegram-base.c:524
 msgid "Couldn't create group"
@@ -33,7 +35,7 @@ msgstr "Не удалось создать группу"
 
 #: ../telegram-base.c:524
 msgid "Select at least one other user"
-msgstr ""
+msgstr "Выберите хотя бы одного другого пользователя"
 
 #: ../telegram-base.c:532
 msgid "Invalid phone number"
@@ -43,290 +45,265 @@ msgstr "Неправильный номер телефона"
 msgid ""
 "Please enter only numbers in the international phone number format, a leading + following by the country prefix and the phone number.\n"
 "Do not use any other special chars."
-msgstr ""
+msgstr "Пожалуйста, введите только номер в международном  формате телефонного номера. Начиная с +, префикса страны и телефонного номера. Не используйте никакие другие специальные символы."
 
 #: ../telegram-base.c:647
 msgid "Query Failed"
 msgstr "Ошибка запроса"
 
-#: ../telegram-purple.c:172
+#: ../telegram-purple.c:202
 msgid "Secret chat terminated."
 msgstr "Защищенный чат завершен"
 
-#: ../telegram-purple.c:215
+#: ../telegram-purple.c:247
 msgid "Message marked as read."
 msgstr "Сообщение помечено как прочитанное"
 
-#: ../telegram-purple.c:475
+#: ../telegram-purple.c:484
 #, c-format
 msgid "Invite link: %s"
-msgstr ""
+msgstr "Пригласительная ссылка: %s"
 
-#: ../telegram-purple.c:498 ../telegram-purple.c:499
+#: ../telegram-purple.c:504 ../telegram-purple.c:505
 msgid "Creating chat link failed"
-msgstr ""
+msgstr "Не удалось создать ссылку чата"
 
-#: ../telegram-purple.c:500
+#: ../telegram-purple.c:506
 msgid "You need to be admin of the group to do that."
-msgstr ""
+msgstr "Вы должны быть администратором группы, чтобы сделать это."
 
-#: ../telegram-purple.c:526
+#: ../telegram-purple.c:528
 msgid "Chat joined"
 msgstr "Присоединился к чату"
 
-#: ../telegram-purple.c:527
+#: ../telegram-purple.c:529
 msgid "Chat added to list of chat rooms."
-msgstr ""
+msgstr "Чат добавлен в список чатов."
 
-#: ../telegram-purple.c:541
+#: ../telegram-purple.c:543
 msgid "Start secret chat ..."
 msgstr "Начать защищенный чат..."
 
 #. Generate Public Link
-#: ../telegram-purple.c:547
+#: ../telegram-purple.c:549
 msgid "Invite users by link ..."
-msgstr ""
+msgstr "Пригласить пользователей по ссылке ..."
 
 #. Delete self from chat
-#: ../telegram-purple.c:553
+#: ../telegram-purple.c:555
 msgid "Delete and exit ..."
 msgstr "Удалить и выйти..."
 
-#: ../telegram-purple.c:571
+#: ../telegram-purple.c:573
 #, c-format
 msgid ""
 "Error, server public key not found at %s. Make sure that telegram-purple is "
 "installed properly."
-msgstr ""
+msgstr "Ошибка. Публичный ключ сервера не найден в %s. Убедитесь, что telegram-purple установлен правильно."
 
-#: ../telegram-purple.c:580
+#: ../telegram-purple.c:582
 #, c-format
 msgid "Unable to sign on as %s: missing file %s."
-msgstr ""
+msgstr "Не удается войти как %s: не найден файл %s."
 
-#: ../telegram-purple.c:584
+#: ../telegram-purple.c:586
 msgid ""
 "Make sure telegram-purple is installed properly,\n"
 "including the .tglpub file."
-msgstr ""
+msgstr "Убедитесь, что telegram-purple установлен правильно,\nвключая файл .tglpub."
 
-#: ../telegram-purple.c:602
+#: ../telegram-purple.c:604
 #, c-format
 msgid "Unable to sign on as %s: phone number lacks country prefix."
-msgstr ""
+msgstr "Не удается войти как %s: номер телефона не имеет кода страны."
 
-#: ../telegram-purple.c:606
+#: ../telegram-purple.c:608
 msgid ""
 "Numbers must start with the full international\n"
 "prefix code, e.g. +49 for Germany."
 msgstr "Номер должен начинаться с международного \nпрефикса, например +7 для России."
 
-#: ../telegram-purple.c:750 ../telegram-purple.c:751
+#: ../telegram-purple.c:733 ../telegram-purple.c:734
 msgid "Cannot invite buddy to chat"
 msgstr "Не могу пригласить пользователя в чат"
 
-#: ../telegram-purple.c:752
+#: ../telegram-purple.c:735
 msgid "Specified user does not exist."
 msgstr "Указанный пользователь не существует."
 
 #. Login
-#: ../telegram-purple.c:895
+#: ../telegram-purple.c:877
 msgid "Password (two factor authentication)"
 msgstr "Пароль (двухфакторная аутентификация) "
 
-#: ../telegram-purple.c:901
+#: ../telegram-purple.c:883
 msgid ""
 "Fallback SMS verification\n"
 "(Helps when not using Pidgin and you aren't being prompted for the code)"
-msgstr ""
+msgstr "Альтернативная СМС верификация\n(Помогает когда не используется pidgin и вас не просило ввести код)"
 
-#: ../telegram-purple.c:909
+#: ../telegram-purple.c:891
 msgid "ask"
-msgstr ""
+msgstr "Спрашивать"
 
-#: ../telegram-purple.c:910
+#: ../telegram-purple.c:892
 msgid "always"
 msgstr "всегда"
 
-#: ../telegram-purple.c:911
+#: ../telegram-purple.c:893
 msgid "never"
 msgstr "никогда"
 
-#: ../telegram-purple.c:913
+#: ../telegram-purple.c:895
 msgid "Accept secret chats"
 msgstr "Присоединится к защищенным чатам"
 
-#: ../telegram-purple.c:918
+#: ../telegram-purple.c:900
 msgid "Display buddies offline after (days)"
-msgstr ""
+msgstr "Показывать друзей оффлайн через(дней)"
 
-#: ../telegram-purple.c:923
+#: ../telegram-purple.c:905
 msgid "Fetch past history on first login"
 msgstr "Загрузить историю при первом входе"
 
-#: ../telegram-purple.c:928
+#: ../telegram-purple.c:910
 msgid ""
 "Don't fetch history older than (days)\n"
 "(0 for unlimited)"
 msgstr "Не загружать историю старше N дней\n(0 без ограничений)"
 
 #. Chats
-#: ../telegram-purple.c:936
+#: ../telegram-purple.c:918
 msgid "Add all group chats to buddy list"
 msgstr "Добавить все групповые чаты в контактлист"
 
 #. Read notifications
-#: ../telegram-purple.c:944
+#: ../telegram-purple.c:926
 msgid "Display notices of receipt"
 msgstr "Показать уведомления о получении"
 
-#: ../telegram-purple.c:949
+#: ../telegram-purple.c:931
 msgid "Send notices of receipt when present"
-msgstr ""
+msgstr "Показать уведомления о получении"
 
-#: ../tgp-2prpl.c:386 ../tgp-request.c:130
+#: ../tgp-2prpl.c:167 ../tgp-request.c:130
 msgid "First name"
 msgstr "Имя"
 
-#: ../tgp-2prpl.c:387 ../tgp-request.c:132
+#: ../tgp-2prpl.c:168 ../tgp-request.c:132
 msgid "Last name"
 msgstr "Фамилия"
 
-#: ../tgp-2prpl.c:389
+#: ../tgp-2prpl.c:170
 msgid "Name"
 msgstr "Ник"
 
-#: ../tgp-2prpl.c:394 ../tgp-request.c:246 ../tgp-request.c:250
+#: ../tgp-2prpl.c:175 ../tgp-request.c:246 ../tgp-request.c:250
 #: ../tgp-request.c:254
 msgid "Username"
 msgstr "Пользователь"
 
-#: ../tgp-2prpl.c:399
+#: ../tgp-2prpl.c:180
 msgid "Last seen"
-msgstr ""
+msgstr "Последний раз был в сети"
 
-#: ../tgp-2prpl.c:404
+#: ../tgp-2prpl.c:185
 msgid "Phone"
 msgstr "Телефон"
 
-#: ../tgp-2prpl.c:417
+#: ../tgp-2prpl.c:197
 msgid "Waiting for the user to get online ..."
-msgstr ""
+msgstr "Ожидание пользователя ..."
 
-#: ../tgp-2prpl.c:421
+#: ../tgp-2prpl.c:201
 msgid "Self destruction timer"
-msgstr ""
+msgstr "Таймер самоуничтожения"
 
-#: ../tgp-2prpl.c:427
+#: ../tgp-2prpl.c:207
 msgid "Off"
 msgstr "Выключить"
 
-#: ../tgp-2prpl.c:434
+#: ../tgp-2prpl.c:214
 msgid "Secret key"
 msgstr "Секретный ключ"
 
-#: ../tgp-msg.c:55
+#: ../tgp-msg.c:53
 #, c-format
 msgid "%2$s created chat %1$s."
-msgstr ""
+msgstr "%2$s создан чат %1$s."
 
-#: ../tgp-msg.c:58
+#: ../tgp-msg.c:56
 #, c-format
 msgid "%2$s changed title to %1$s."
-msgstr ""
+msgstr "%2$s название изменено на %1$s."
 
-#: ../tgp-msg.c:61
+#: ../tgp-msg.c:59
 #, c-format
 msgid "%s changed photo."
-msgstr ""
+msgstr "%s фото изменено."
 
-#: ../tgp-msg.c:64
+#: ../tgp-msg.c:62
 #, c-format
 msgid "%s deleted photo."
-msgstr ""
+msgstr "%s фото удалено."
 
-#: ../tgp-msg.c:72
+#: ../tgp-msg.c:70
 #, c-format
 msgid "%1$s added user %2$s by link."
-msgstr ""
+msgstr "%1$s пользователи добавлены %2$s по ссылке"
 
-#: ../tgp-msg.c:85
+#: ../tgp-msg.c:83
 #, c-format
 msgid "%2$s added user %1$s."
-msgstr ""
+msgstr "%2$s пользователь добавлен %1$s."
 
-#: ../tgp-msg.c:107
+#: ../tgp-msg.c:104
 #, c-format
 msgid "%1$s deleted user %2$s."
 msgstr "%1$s пользователи удалены %2$s."
 
-#: ../tgp-msg.c:120
+#: ../tgp-msg.c:118
 #, c-format
 msgid "%2$s deleted user %1$s."
-msgstr ""
+msgstr "%2$s пользователи удалены %1$s."
 
-#: ../tgp-msg.c:125
+#: ../tgp-msg.c:123
 #, c-format
 msgid "%2$s set self destruction timer to %1$d seconds."
-msgstr ""
+msgstr "%2$s установлен таймер самоуничтожения на %1$d секунд."
 
-#: ../tgp-msg.c:128
+#: ../tgp-msg.c:126
 #, c-format
 msgid "%2$s marked %1$d messages read."
-msgstr ""
+msgstr "%2$s пометил %1$d сообщений прочитанными."
 
-#: ../tgp-msg.c:131
+#: ../tgp-msg.c:129
 #, c-format
 msgid "%2$s deleted %1$d messages."
-msgstr ""
+msgstr "%2$s удалено %1$d сообщений."
 
-#: ../tgp-msg.c:134
+#: ../tgp-msg.c:132
 #, c-format
 msgid "%2$s made a screenshot of %1$d messages."
-msgstr ""
+msgstr "%2$s сделан скриншот %1$d сообщений."
 
-#: ../tgp-msg.c:137
-#, c-format
-msgid "%2$s updated to layer %1$d."
-msgstr ""
-
-#: ../tgp-msg.c:140
-#, c-format
-msgid "%2$s requests rekey #%1$016llx."
-msgstr ""
-
-#: ../tgp-msg.c:143
-#, c-format
-msgid "%2$s accepts rekey #%1$016llx."
-msgstr ""
-
-#: ../tgp-msg.c:146
-#, c-format
-msgid "%2$s commits rekey #%1$016llx."
-msgstr ""
-
-#: ../tgp-msg.c:149
-#, c-format
-msgid "%2$s aborts rekey #%1$016llx."
-msgstr ""
-
-#: ../tgp-msg.c:173
+#: ../tgp-msg.c:156
 #, c-format
 msgid "Sending message failed. %d: %s"
 msgstr "Ошибка при отправке сообщения. %d: %s"
 
-#: ../tgp-msg.c:251
+#: ../tgp-msg.c:259
 msgid "Sending image failed."
 msgstr "Ошибка при отправке изображения."
 
-#: ../tgp-msg.c:265
+#: ../tgp-msg.c:273
 msgid "Sorry, sending documents to encrypted chats not yet supported."
-msgstr ""
+msgstr "Извините, отправка документов в секретных чатах пока не поддерживается."
 
-#: ../tgp-msg.c:352
+#: ../tgp-msg.c:360
 #, c-format
 msgid "%s sent a sticker."
-msgstr ""
+msgstr "%s отправил стикер."
 
 #: ../tgp-net.c:326
 msgid "Cannot connect to server"
@@ -338,21 +315,21 @@ msgstr "Потеряно соединение с сервером..."
 
 #: ../tgp-request.c:76 ../tgp-request.c:137
 msgid "Login code"
-msgstr ""
+msgstr "Код входа"
 
 #: ../tgp-request.c:76
 msgid "Enter login code"
-msgstr ""
+msgstr "Введите код входа"
 
 #: ../tgp-request.c:76
 msgid ""
 "Telegram wants to verify your identity. Please enter the code that you have "
 "received via SMS."
-msgstr ""
+msgstr "Telegram хочет проверить вашу личность. Пожалуйста введите код, полученный вами через СМС."
 
 #: ../tgp-request.c:77
 msgid "the code"
-msgstr ""
+msgstr "код"
 
 #: ../tgp-request.c:77 ../tgp-request.c:141 ../tgp-request.c:259
 msgid "OK"
@@ -364,7 +341,7 @@ msgstr "Отмена"
 
 #: ../tgp-request.c:85
 msgid "What is your SMS verification code?"
-msgstr ""
+msgstr "Какой код подтверждения пришел вам по SMS?"
 
 #: ../tgp-request.c:129
 msgid "Registration"
@@ -387,7 +364,7 @@ msgstr "Пожалуйста, зарегистрируйте свой номер
 msgid ""
 "Phone number is not registered. Please register your phone on a different "
 "client."
-msgstr ""
+msgstr "Номер телефона не зарегистрирован. Пожалуйста зарегистрируйте ваш телефон в другом клиенте."
 
 #: ../tgp-request.c:146
 msgid "Not Registered"
@@ -399,17 +376,17 @@ msgstr "Пароль"
 
 #: ../tgp-request.c:174
 msgid "Enter password"
-msgstr ""
+msgstr "Введите пароль"
 
 #: ../tgp-request.c:174
 msgid "Enter password for two factor authentication"
-msgstr ""
+msgstr "Введите пароль для двухфакторной аутентификации"
 
 #: ../tgp-request.c:177
 msgid ""
 "No password set for two factor authentication. Please enter it in the "
 "extended settings."
-msgstr ""
+msgstr "Не указан пароль для двухфакторной аутентификации. Пожалуйста введите его в расширенных настройках."
 
 #: ../tgp-request.c:179
 msgid "Password invalid"
@@ -418,7 +395,7 @@ msgstr "Неверный пароль"
 #: ../tgp-request.c:207
 #, c-format
 msgid "Accept Secret Chat '%s'?"
-msgstr ""
+msgstr "Присоединится к защищенному чату  '%s'?"
 
 #: ../tgp-request.c:208
 msgid "Secret Chat"
@@ -429,13 +406,13 @@ msgid ""
 "Secret chats can only have one end point. If you accept a secret chat on "
 "this device, its messages will not be available anywhere else. If you "
 "decline, you can accept the chat on other devices."
-msgstr ""
+msgstr "Секретные чаты могут иметь только одну конечную точку: если вы подтвердите секретный чат на этом устройстве, его сообщения будут недоступны нигде больше. Если вы отклоните, то вы сможете принять этот чат на других устройствах."
 
 #: ../tgp-request.c:243
 msgid ""
 "Invite at least one additional user (Autocompletion available).\n"
 "You can add more users once the chat was created."
-msgstr ""
+msgstr "Пригласите хотя бы одного дополнительного пользователя(Автодополнение доступно).\nВы можете добавить больше пользователей после создания чата."
 
 #. FIXME: This dialog is pointless. It only asks whether the user wants to
 #. create a new chat.
@@ -456,53 +433,53 @@ msgstr "Чат не существует"
 #: ../tgp-request.c:270
 #, c-format
 msgid "Do you want to create a new group chat named '%s'?"
-msgstr ""
+msgstr "Вы хотите создать новый групповой чат '%s'?"
 
 #. This should be the language's timestamp format.
 #. * This is preceded by a colon.
-#: ../tgp-utils.c:39
+#: ../tgp-utils.c:33
 msgid "%d.%m.%Y %H:%M"
 msgstr "%d.%m.%Y %H:%M"
 
 #. This is preceded by a colon.
-#: ../tgp-utils.c:60
+#: ../tgp-utils.c:54
 #, c-format
 msgid "recently"
 msgstr "недавно"
 
 #. This is preceded by a colon.
-#: ../tgp-utils.c:64
+#: ../tgp-utils.c:58
 #, c-format
 msgid "last week"
 msgstr "последняя неделя"
 
 #. This is preceded by a colon.
-#: ../tgp-utils.c:68
+#: ../tgp-utils.c:62
 #, c-format
 msgid "last month"
 msgstr "последний месяц"
 
 #. This is preceded by a colon. It refers to a point on time.
-#: ../tgp-utils.c:72
+#: ../tgp-utils.c:66
 msgid "unknown"
 msgstr "неизвестно"
 
-#: ../tgp-chat.c:83
+#: ../tgp-chat.c:79
 msgid "You have already left this chat."
-msgstr ""
+msgstr "Вы уже покинули этот чат."
 
-#: ../tgp-chat.c:133
+#: ../tgp-chat.c:122
 msgid "Subject:"
 msgstr "Заголовок:"
 
-#: ../tgp-chat.c:139
+#: ../tgp-chat.c:128
 msgid "Invite link:"
-msgstr ""
+msgstr "Пригласительная ссылка:"
 
-#: ../tgp-chat.c:145
+#: ../tgp-chat.c:134
 msgid "Chat ID:"
 msgstr "Чат ID:"
 
-#: ../tgp-chat.c:244
+#: ../tgp-chat.c:232
 msgid "Users"
 msgstr "Пользователи"

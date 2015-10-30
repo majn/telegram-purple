@@ -3,331 +3,331 @@
 # This file is distributed under the same license as the PACKAGE package.
 # 
 # Translators:
-# M J <mtthsjntsch@gmail.com>, 2015
+# Gilberto Coutinho <gilberto.jsc@gmail.com>, 2015
 msgid ""
 msgstr ""
 "Project-Id-Version: telegram-purple\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2015-10-19 15:06+0200\n"
-"PO-Revision-Date: 2015-10-19 13:11+0000\n"
-"Last-Translator: Ben Wiederhake <BenWiederhake.GitHub@gmx.de>\n"
-"Language-Team: Albanian (http://www.transifex.com/telegram-purple-developers/telegram-purple/language/sq/)\n"
+"PO-Revision-Date: 2015-10-19 21:15+0000\n"
+"Last-Translator: Gilberto Coutinho <gilberto.jsc@gmail.com>\n"
+"Language-Team: Portuguese (Brazil) (http://www.transifex.com/telegram-purple-developers/telegram-purple/language/pt_BR/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: sq\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 #: ../telegram-base.c:477
 msgid "Login canceled"
-msgstr "Hyrja u anulua"
+msgstr "Login cancelado"
 
 #: ../telegram-base.c:477
 msgid ""
 "Authentication export to remote data centers failed, login not possible."
-msgstr "Eksportimi i mirëfilltësimit te qendra të largëta të dhënash dështoi, hyrje e pamundur."
+msgstr "Exportação de autenticação para servidor remoto falho, não é possível fazer o login"
 
 #: ../telegram-base.c:524
 msgid "Couldn't create group"
-msgstr "S’u krijua dot grup"
+msgstr "Não foi possível criar o grupo"
 
 #: ../telegram-base.c:524
 msgid "Select at least one other user"
-msgstr "Përzgjidhni të paktën një përdorues tjetër"
+msgstr "Selecione ao menos um usuNumeroário"
 
 #: ../telegram-base.c:532
 msgid "Invalid phone number"
-msgstr "Numër telefoni i pavlefshëm"
+msgstr "Número de telefone inválido"
 
 #: ../telegram-base.c:533
 msgid ""
 "Please enter only numbers in the international phone number format, a leading + following by the country prefix and the phone number.\n"
 "Do not use any other special chars."
-msgstr "Ju lutemi, jepni vetëm numra sipas formatit ndërkombëtar për numra telefonash, një + paraprijës të pasuar nga prefiksi i vendit dhe numri i telefonit.\nMos përdorni ndonjë shenjë tjetër speciale."
+msgstr "Por favor, adicione apenas número no formato de telefeno internacional, iniciando com + seguindo pelo código do país e o número do telefone.\nNão use outros caractérers especiais."
 
 #: ../telegram-base.c:647
 msgid "Query Failed"
-msgstr "Kërkesa Dështoi"
+msgstr "Falha na fila"
 
 #: ../telegram-purple.c:202
 msgid "Secret chat terminated."
-msgstr "Fjalosja e fshehtë përfundoi."
+msgstr "Conversa secreta terminada."
 
 #: ../telegram-purple.c:247
 msgid "Message marked as read."
-msgstr "Mesazh i shënuar si i lexuar."
+msgstr "Mensagem marcada como \"lida\"."
 
 #: ../telegram-purple.c:484
 #, c-format
 msgid "Invite link: %s"
-msgstr "Lidhje ftese: %s"
+msgstr "Link de convite: %s"
 
 #: ../telegram-purple.c:504 ../telegram-purple.c:505
 msgid "Creating chat link failed"
-msgstr "Krijimi i lidhjes së fjalosjes dështoi"
+msgstr "Falha na criação do link para a conversa"
 
 #: ../telegram-purple.c:506
 msgid "You need to be admin of the group to do that."
-msgstr "Lypset të jeni përgjegjës grupi që të bëni këtë."
+msgstr "Você precisa ser administrador do grupo apra fazer isso."
 
 #: ../telegram-purple.c:528
 msgid "Chat joined"
-msgstr "U hy në fjalosje"
+msgstr "Entrou na conversa"
 
 #: ../telegram-purple.c:529
 msgid "Chat added to list of chat rooms."
-msgstr "Fjalosja u shtua te listë dhomash fjalosjeje."
+msgstr "Conversa adicionada a listas de salas de conversa"
 
 #: ../telegram-purple.c:543
 msgid "Start secret chat ..."
-msgstr "Filloni fjalosje të fshehtë ..."
+msgstr "Iniciando conversa sercreta..."
 
 #. Generate Public Link
 #: ../telegram-purple.c:549
 msgid "Invite users by link ..."
-msgstr "Ftoni përdorues me lidhje ..."
+msgstr "Convidar usuário pelo link..."
 
 #. Delete self from chat
 #: ../telegram-purple.c:555
 msgid "Delete and exit ..."
-msgstr "Fshije dhe dil ..."
+msgstr "Deletar e sair..."
 
 #: ../telegram-purple.c:573
 #, c-format
 msgid ""
 "Error, server public key not found at %s. Make sure that telegram-purple is "
 "installed properly."
-msgstr "Gabim, s’u gjet kyç publik shërbyesi te %s. Sigurohuni që telegram-purple është instaluar si duhet."
+msgstr "Erro, chave publica do servidor não foi encontrada em %s. Tenha certeza que o telegram-purple está instalado corretamente."
 
 #: ../telegram-purple.c:582
 #, c-format
 msgid "Unable to sign on as %s: missing file %s."
-msgstr "Nuk arrihet të bëhet hyrja si %s: mungon kartela %s."
+msgstr "Não foi possível assinar como %s. falta o arquivo %s."
 
 #: ../telegram-purple.c:586
 msgid ""
 "Make sure telegram-purple is installed properly,\n"
 "including the .tglpub file."
-msgstr "Sigurohuni që telegram-purple është instaluar si duhet,\npërfshi kartelën .tglpub."
+msgstr "Tenha certeza que o telegram-purple está instalado corretamente,\nincluindo o arquivo .tglpub."
 
 #: ../telegram-purple.c:604
 #, c-format
 msgid "Unable to sign on as %s: phone number lacks country prefix."
-msgstr "Nuk arrihet të bëhet hyrja si %s: numrit të telefonit i mungon prefiksi i vendit."
+msgstr "Não foi possível assinar como %s: o número de telefone não está com o prefixo do país."
 
 #: ../telegram-purple.c:608
 msgid ""
 "Numbers must start with the full international\n"
 "prefix code, e.g. +49 for Germany."
-msgstr "Numrat duhet të fillojnë me kodin e plotë prefiks\nndërkombëtar, p.sh. +355 për Shqipërinë."
+msgstr "Números precisam começar com o prefixo internacional,\npor exemplo: +55 para o Brasil."
 
 #: ../telegram-purple.c:733 ../telegram-purple.c:734
 msgid "Cannot invite buddy to chat"
-msgstr "S’ftohet dot shok në fjalosje"
+msgstr "Não foi possível convidar o amigo para a conversa"
 
 #: ../telegram-purple.c:735
 msgid "Specified user does not exist."
-msgstr "Përdoruesi i treguar nuk ekziston."
+msgstr "O usuário especificado não existe."
 
 #. Login
 #: ../telegram-purple.c:877
 msgid "Password (two factor authentication)"
-msgstr "Fjalëkalim (mirëfilltësim dyfaktorësh)"
+msgstr "Senha (processo de autenticação dupla)"
 
 #: ../telegram-purple.c:883
 msgid ""
 "Fallback SMS verification\n"
 "(Helps when not using Pidgin and you aren't being prompted for the code)"
-msgstr "Kalim vetvetiu për verfikime SMS\n(I dobishëm kur s’përdoret Pidgin-i dhe nuk ju kërkohet kod)"
+msgstr "Retorno de verificaçao via SMS\n(Ajuda quando não estiver usando o Pidgin e não é apresentado a janela com o código)"
 
 #: ../telegram-purple.c:891
 msgid "ask"
-msgstr "pyet"
+msgstr "pergunta"
 
 #: ../telegram-purple.c:892
 msgid "always"
-msgstr "përherë"
+msgstr "sempre"
 
 #: ../telegram-purple.c:893
 msgid "never"
-msgstr "kurrë"
+msgstr "nunca"
 
 #: ../telegram-purple.c:895
 msgid "Accept secret chats"
-msgstr "Prano fjalosje të fshehta"
+msgstr "Aceitar conversa secrete"
 
 #: ../telegram-purple.c:900
 msgid "Display buddies offline after (days)"
-msgstr "Shfaqi shokët si jo të lidhur pas (ditësh)"
+msgstr "Mostrar período que os amigos estão offline (dias)"
 
 #: ../telegram-purple.c:905
 msgid "Fetch past history on first login"
-msgstr "Sill historik të kaluar gjatë hyrjes së parë"
+msgstr "Trazer histórico no primeio login"
 
 #: ../telegram-purple.c:910
 msgid ""
 "Don't fetch history older than (days)\n"
 "(0 for unlimited)"
-msgstr "Mos sill historik më të vjetë se (ditë)\n(0 për pa kufizim)"
+msgstr "Não trazer históricos mais velhos que  (dias)\n(0 para não limitar)"
 
 #. Chats
 #: ../telegram-purple.c:918
 msgid "Add all group chats to buddy list"
-msgstr "Shtoji krejt fjalosjet e grupit te lista e shokëve"
+msgstr "Adicinar todos os grupos de conversa a lista de amigos"
 
 #. Read notifications
 #: ../telegram-purple.c:926
 msgid "Display notices of receipt"
-msgstr "Shfaq njoftime dëftese"
+msgstr "Mostrar avisos de recebimento"
 
 #: ../telegram-purple.c:931
 msgid "Send notices of receipt when present"
-msgstr "Dërgo njoftime dëftese kur ka"
+msgstr "Mandar avisos de recebimento quando estiver online"
 
 #: ../tgp-2prpl.c:167 ../tgp-request.c:130
 msgid "First name"
-msgstr "Emër"
+msgstr "Primeiro nome"
 
 #: ../tgp-2prpl.c:168 ../tgp-request.c:132
 msgid "Last name"
-msgstr "Mbiemër"
+msgstr "Último nome"
 
 #: ../tgp-2prpl.c:170
 msgid "Name"
-msgstr "Emër"
+msgstr "Nome"
 
 #: ../tgp-2prpl.c:175 ../tgp-request.c:246 ../tgp-request.c:250
 #: ../tgp-request.c:254
 msgid "Username"
-msgstr "Emër përdoruesi"
+msgstr "Nome de usuário"
 
 #: ../tgp-2prpl.c:180
 msgid "Last seen"
-msgstr "Parë së fundi"
+msgstr "Visto em"
 
 #: ../tgp-2prpl.c:185
 msgid "Phone"
-msgstr "Telefon"
+msgstr "Fone"
 
 #: ../tgp-2prpl.c:197
 msgid "Waiting for the user to get online ..."
-msgstr "Po pritet që përdoruesi të lidhet në internet ..."
+msgstr "Esperando pelo usuário ficar onlie"
 
 #: ../tgp-2prpl.c:201
 msgid "Self destruction timer"
-msgstr "Kohëmatës vetëshkatërrimi"
+msgstr "Tempo para auto destruição"
 
 #: ../tgp-2prpl.c:207
 msgid "Off"
-msgstr "Off"
+msgstr "Desligado"
 
 #: ../tgp-2prpl.c:214
 msgid "Secret key"
-msgstr "Kyç i fshehtë"
+msgstr "Chave secreta"
 
 #: ../tgp-msg.c:53
 #, c-format
 msgid "%2$s created chat %1$s."
-msgstr "%2$s krijoi fjalosjen %1$s."
+msgstr "%2$s criouo a conversa %1$s."
 
 #: ../tgp-msg.c:56
 #, c-format
 msgid "%2$s changed title to %1$s."
-msgstr "%2$s ndryshoi titullin te %1$s."
+msgstr "%2$s mudou o assunto para %1$s,"
 
 #: ../tgp-msg.c:59
 #, c-format
 msgid "%s changed photo."
-msgstr "%s ndryshoi foton."
+msgstr "%s mudou a foto."
 
 #: ../tgp-msg.c:62
 #, c-format
 msgid "%s deleted photo."
-msgstr "%s fshiu foton."
+msgstr "%s deletou a foto."
 
 #: ../tgp-msg.c:70
 #, c-format
 msgid "%1$s added user %2$s by link."
-msgstr "%1$s shtoi përdoruesin %2$s përmes lidhjeje."
+msgstr "%1$s adicionou o usuário %2$s por link."
 
 #: ../tgp-msg.c:83
 #, c-format
 msgid "%2$s added user %1$s."
-msgstr "%2$s shtoi përdoruesin %1$s."
+msgstr "%2$s adicionou o usuário %1$s."
 
 #: ../tgp-msg.c:104
 #, c-format
 msgid "%1$s deleted user %2$s."
-msgstr "%1$s fshiu përdoruesin %2$s."
+msgstr "%1$s removeu o usuário %2$s"
 
 #: ../tgp-msg.c:118
 #, c-format
 msgid "%2$s deleted user %1$s."
-msgstr "%2$s fshiu përdoruesin %1$s."
+msgstr "%2$s reoveu o usuário %1$s"
 
 #: ../tgp-msg.c:123
 #, c-format
 msgid "%2$s set self destruction timer to %1$d seconds."
-msgstr "%2$s e vendosi kohëmatësin e vetëshkatërrimit në %1$d sekonda."
+msgstr "%2$s tempo para auto destruição configurado para %1$d segundos."
 
 #: ../tgp-msg.c:126
 #, c-format
 msgid "%2$s marked %1$d messages read."
-msgstr "%2$s shënoi %1$d mesazhe si të lexuar."
+msgstr "%2$s marcou %1$d mensagens como lidas."
 
 #: ../tgp-msg.c:129
 #, c-format
 msgid "%2$s deleted %1$d messages."
-msgstr "%2$s fshiu %1$d mesazhe."
+msgstr "%2$s deletou %1$d mensagens."
 
 #: ../tgp-msg.c:132
 #, c-format
 msgid "%2$s made a screenshot of %1$d messages."
-msgstr "%2$s bëri një foto ekrani të %1$d mesazheve."
+msgstr "%2$s capturou a tela de %1$d mesnagens."
 
 #: ../tgp-msg.c:156
 #, c-format
 msgid "Sending message failed. %d: %s"
-msgstr "Dërgimi i mesazhit dështoi. %d: %s"
+msgstr "Envio da mensagem falhou. %d: %s."
 
 #: ../tgp-msg.c:259
 msgid "Sending image failed."
-msgstr "Dërgimi i figurës dështoi."
+msgstr "Envio de imagem falhou."
 
 #: ../tgp-msg.c:273
 msgid "Sorry, sending documents to encrypted chats not yet supported."
-msgstr "Na ndjeni, dërgimi i dokumenteve në fjalosje të fshehtëzuara nuk mbulohet ende."
+msgstr "Desculpe, envio de documentos para conversas encriptadas não é suportado."
 
 #: ../tgp-msg.c:360
 #, c-format
 msgid "%s sent a sticker."
-msgstr "%s dërgoi një ngjitëse."
+msgstr "%s enviou um adesivo."
 
 #: ../tgp-net.c:326
 msgid "Cannot connect to server"
-msgstr "S’lidhet dot te shërbyesin"
+msgstr "Não pode se conectar no servidor"
 
 #: ../tgp-net.c:371
 msgid "Lost connection to the server ..."
-msgstr "Humbi lidhja me  shërbyesin ..."
+msgstr "Perdeu a conexão com o servidor..."
 
 #: ../tgp-request.c:76 ../tgp-request.c:137
 msgid "Login code"
-msgstr "Kod hyrjeje"
+msgstr "Código de login"
 
 #: ../tgp-request.c:76
 msgid "Enter login code"
-msgstr "Jepni kodin e hyrjes postar"
+msgstr "Insira o código de login"
 
 #: ../tgp-request.c:76
 msgid ""
 "Telegram wants to verify your identity. Please enter the code that you have "
 "received via SMS."
-msgstr "Telegram-i dëshiron të verifikojë identitetin tuaj. Ju lutemi, jepni kodin që keni marrë përmes SMS-je."
+msgstr "Telegram quer confirmar sua identidade. Por favor insira o código recebido por SMS."
 
 #: ../tgp-request.c:77
 msgid "the code"
-msgstr "kodi"
+msgstr "o código"
 
 #: ../tgp-request.c:77 ../tgp-request.c:141 ../tgp-request.c:259
 msgid "OK"
@@ -335,82 +335,82 @@ msgstr "OK"
 
 #: ../tgp-request.c:78 ../tgp-request.c:142 ../tgp-request.c:260
 msgid "Cancel"
-msgstr "Anuloje"
+msgstr "Cancelar"
 
 #: ../tgp-request.c:85
 msgid "What is your SMS verification code?"
-msgstr "Cili është kodi juaj i verifikimit SMS?"
+msgstr "Qual seu código de verificação SMS?"
 
 #: ../tgp-request.c:129
 msgid "Registration"
-msgstr "Regjistrim"
+msgstr "Registro"
 
 #: ../tgp-request.c:136
 msgid "Authorization"
-msgstr "Mirëfilltësim"
+msgstr "Autorização"
 
 #: ../tgp-request.c:141
 msgid "Register"
-msgstr "Regjistrohuni"
+msgstr "Registrar"
 
 #: ../tgp-request.c:141
 msgid "Please register your phone number."
-msgstr "Ju lutemi, regjistroni numrin tuaj të telefonit."
+msgstr "Por favor registre  seu número de telefone."
 
 #. purple_request API not available
 #: ../tgp-request.c:144
 msgid ""
 "Phone number is not registered. Please register your phone on a different "
 "client."
-msgstr "Numri i telefonit s’është i regjistruar. Ju lutemi, regjistroni telefonin tuaj me një klient tjetër."
+msgstr "Número de telefone não registrado. Por favor registre seu número de telefone com um cliente diferente."
 
 #: ../tgp-request.c:146
 msgid "Not Registered"
-msgstr "I Paregjistruar"
+msgstr "Não Registrado"
 
 #: ../tgp-request.c:169
 msgid "Password"
-msgstr "Fjalëkalim"
+msgstr "Senha"
 
 #: ../tgp-request.c:174
 msgid "Enter password"
-msgstr "Jepni fjalëkalimin"
+msgstr "Insira a senha"
 
 #: ../tgp-request.c:174
 msgid "Enter password for two factor authentication"
-msgstr "Jepni fjalëkalim për mirëfilltësim dyfaktorësh"
+msgstr "Insira a senha para o processo de autenticação dupla"
 
 #: ../tgp-request.c:177
 msgid ""
 "No password set for two factor authentication. Please enter it in the "
 "extended settings."
-msgstr "Pa fjalëkalim të caktuar, për mirëfilltësim dyfaktorësh. Ju lutemi, jepeni te rregullimet e thelluara."
+msgstr "Não há senha configurado para o processo de autenticação dupla. Por favor insira nas configurações expandidas."
 
 #: ../tgp-request.c:179
 msgid "Password invalid"
-msgstr "Fjalëkalim i pavlefshëm"
+msgstr "Senha inválida"
 
 #: ../tgp-request.c:207
 #, c-format
 msgid "Accept Secret Chat '%s'?"
-msgstr "Të pranohet Fjalosja e Fshehtë '%s'?"
+msgstr "Aceitar Conversa Secreta '%s'?"
 
 #: ../tgp-request.c:208
 msgid "Secret Chat"
-msgstr "Fjalosje e Fshehtë"
+msgstr "Conversa Secreta"
 
 #: ../tgp-request.c:208
 msgid ""
 "Secret chats can only have one end point. If you accept a secret chat on "
 "this device, its messages will not be available anywhere else. If you "
 "decline, you can accept the chat on other devices."
-msgstr "Fjalosjet e fshehta mund të kenë vetëm një pikë marrjeje. Nëse pranoni një fjalosje të fshehtë në këtë pajisje, mesazhet e saj nuk do të jenë të dukshme gjetiu. Nëse nuk e pranoni, mund ta pranoni fjalosjen në pajisje të tjera."
+msgstr "Conversas secretas podem ocorrer em apenas um loca. Se você aceitar uma conversa secreta nesse dispositivo, essas mensagens não estarão disponíveis em nenhum outro local. Se você rejeitar, pode aceitar a conversa em outros dispositivos."
 
 #: ../tgp-request.c:243
 msgid ""
 "Invite at least one additional user (Autocompletion available).\n"
 "You can add more users once the chat was created."
-msgstr "Ftoni të paktën një përdorues shtesë (Mund të përdoret vetëplotësimi).\nMund të shtoni më tepër përdoruesi, sapo të jetë krijuar fjalosja."
+msgstr "Convide ao menos um usuário a mais (Autocompletar disponível).\nVocê pode adicionar mais usuários depois que a conversa estiver criada."
 
 #. FIXME: This dialog is pointless. It only asks whether the user wants to
 #. create a new chat.
@@ -418,20 +418,20 @@ msgstr "Ftoni të paktën një përdorues shtesë (Mund të përdoret vetëplot�
 #. TODO: This still displays "Cancel" and "Accept", no matter $LANG
 #: ../tgp-request.c:259 ../tgp-request.c:275
 msgid "Create group chat"
-msgstr "Krijoni fjalosje grupi"
+msgstr "Criar conversa em grupo"
 
 #: ../tgp-request.c:259
 msgid "Invite users"
-msgstr "Ftoni përdorues"
+msgstr "Convidar usuários"
 
 #: ../tgp-request.c:269
 msgid "Chat doesn't exist (yet)"
-msgstr "Fjalosja s’ekziston (ende)"
+msgstr "Conversa não existe (ainda)"
 
 #: ../tgp-request.c:270
 #, c-format
 msgid "Do you want to create a new group chat named '%s'?"
-msgstr "Doni të krijoni një fjalosje të re grupi me emrin '%s'?"
+msgstr "Você quer criar uma nova conversa em grupo chamada '%s'?"
 
 #. This should be the language's timestamp format.
 #. * This is preceded by a colon.
@@ -443,41 +443,41 @@ msgstr "%d.%m.%Y %H:%M"
 #: ../tgp-utils.c:54
 #, c-format
 msgid "recently"
-msgstr "së fundi"
+msgstr "recentemente"
 
 #. This is preceded by a colon.
 #: ../tgp-utils.c:58
 #, c-format
 msgid "last week"
-msgstr "javën e fundit"
+msgstr "semana passada"
 
 #. This is preceded by a colon.
 #: ../tgp-utils.c:62
 #, c-format
 msgid "last month"
-msgstr "muajin e fundit"
+msgstr "mês passado"
 
 #. This is preceded by a colon. It refers to a point on time.
 #: ../tgp-utils.c:66
 msgid "unknown"
-msgstr "e panjohur"
+msgstr "desconhecido"
 
 #: ../tgp-chat.c:79
 msgid "You have already left this chat."
-msgstr "E keni lëndë tashmë këtë fjalosje."
+msgstr "Você já saiu dessa conversa."
 
 #: ../tgp-chat.c:122
 msgid "Subject:"
-msgstr "Subjekt:"
+msgstr "Assunto:"
 
 #: ../tgp-chat.c:128
 msgid "Invite link:"
-msgstr "Lidhje ftese:"
+msgstr "Link do convite:"
 
 #: ../tgp-chat.c:134
 msgid "Chat ID:"
-msgstr "ID Fjalosjeje:"
+msgstr "Identificação da conversa:"
 
 #: ../tgp-chat.c:232
 msgid "Users"
-msgstr "Përdorues"
+msgstr "Usuários"
