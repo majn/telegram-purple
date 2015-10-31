@@ -209,6 +209,12 @@ static void tgprpl_xfer_send_init (PurpleXfer *X) {
   debug ("xfer_on_init (file=%s, local=%s, who=%s)", file, localfile, who);
   
   tgl_peer_t *P = tgp_blist_peer_find (data->conn->TLS, who);
+  
+  if (tgl_get_peer_type (P->id) == TGL_PEER_ENCR_CHAT) {
+    purple_xfer_error (PURPLE_XFER_SEND, data->conn->pa, who, _("Sorry, sending documents to encrypted chats not yet supported."));
+    return;
+  }
+  
   if (P) {
       tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL,
                             0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, tgprpl_xfer_on_finished, data);
