@@ -548,7 +548,8 @@ static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
   debug ("tgprpl_blist_node_menu()");
 
   GList* menu = NULL;
-  if (PURPLE_BLIST_NODE_IS_BUDDY(node)) {
+  if (PURPLE_BLIST_NODE_IS_BUDDY(node) &&
+      tgl_get_peer_type (tgp_blist_buddy_get_id ((PurpleBuddy *)node)) == TGL_PEER_USER) {
     // Add encrypted chat option to the right click menu of all buddies
     PurpleBuddy* buddy = (PurpleBuddy*)node;
     PurpleMenuAction* action = purple_menu_action_new (_("Start secret chat ..."),
