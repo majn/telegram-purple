@@ -507,21 +507,28 @@ void export_chat_link_checked (struct tgl_state *TLS, const char *name) {
   if (C->chat.admin_id != tgl_get_peer_id (TLS->our_id)) {
     purple_notify_error (_telegram_protocol, _("Creating chat link failed"),
                          _("Creating chat link failed"),
-                         _("You need to be admin of the group to do that."));
+                         _("You need to be admin of the group  to do that."));
     return;
   }
   tgl_do_export_chat_link (TLS, C->id, create_chat_link_done, C);
 }
 
-void leave_and_delete_chat (PurpleBlistNode *node, gpointer data) {
+void leave_and_delete_chat_gw (PurpleBlistNode *node, gpointer data) {
   PurpleChat *PC = (PurpleChat*)node;
-  
   tgl_peer_t *P = tgl_peer_get (pbn_get_conn (node)->TLS, p2tgl_chat_get_id (PC));
+  leave_and_delete_chat (pbn_get_conn (node)->TLS, P);
+}
+
+void leave_and_delete_chat (struct tgl_state *TLS, tgl_peer_t *P) {
+  g_return_if_fail (P);
   if (P && P->chat.users_num) {
-    tgl_do_del_user_from_chat (pbn_get_conn (node)->TLS, P->id, pbn_get_conn (node)->TLS->our_id, tgp_notify_on_error_gw, NULL);
-    serv_got_chat_left (pbn_get_conn (node)->gc, tgl_get_peer_id (P->id));
+    tgl_do_del_user_from_chat (TLS, P->id, TLS->our_id, tgp_notify_on_error_gw, NULL);
   }
-  purple_blist_remove_chat (PC);
+  serv_got_chat_left (tg_get_conn (TLS), tgl_get_peer_id (P->id));
+  PurpleChat *PC = tgp_blist_chat_find (TLS, P->id);
+  if (PC) {
+    purple_blist_remove_chat (PC);
+  }
 }
 
 static void import_chat_link_done (struct tgl_state *TLS, void *extra, int success) {

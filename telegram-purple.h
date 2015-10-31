@@ -86,6 +86,6 @@ extern const char *config_dir;
 extern PurplePlugin *_telegram_protocol;
 void export_chat_link_checked (struct tgl_state *TLS, const char *name);
 void import_chat_link_checked (struct tgl_state *TLS, const char *link);
-void leave_and_delete_chat (PurpleBlistNode *node, gpointer data);
+void leave_and_delete_chat (struct tgl_state *TLS, tgl_peer_t *P);
 
 #endif

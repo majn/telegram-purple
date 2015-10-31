@@ -161,9 +161,10 @@
   connection_data *conn = purple_connection_get_protocol_data (purple_account_get_connection(account));
   AIChat *chat = adium.interfaceController.activeChat;
   if (chat) {
-    PurpleChat *purpleChat = purple_blist_find_chat (conn->pa, [chat.name UTF8String]);
-    if (purpleChat) {
-      leave_and_delete_chat ((PurpleBlistNode *)purpleChat, NULL);
+    const char *name = [chat.name UTF8String];
+    tgl_peer_t *P = tgl_peer_get_by_name (conn->TLS, name);
+    if (P) {
+      leave_and_delete_chat (conn->TLS, P);
     }
   }
 }
