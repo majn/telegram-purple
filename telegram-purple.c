@@ -226,6 +226,9 @@ static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, u
 }
 
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status) {
+  
+  g_return_if_fail (tgp_blist_peer_get_purple_name (TLS, U->id));
+  
   if (status == tgl_typing_typing) {
     serv_got_typing (tg_get_conn(TLS), tgp_blist_peer_get_purple_name (TLS, U->id), 2, PURPLE_TYPING);
   }

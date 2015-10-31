@@ -271,8 +271,11 @@ static PurpleXfer *tgprpl_new_xfer_recv (PurpleConnection * gc, const char *who)
   return X;
 }
 
-void tgprpl_recv_file (PurpleConnection * gc, const char *who, struct tgl_message *M) {
+void tgprpl_recv_file (PurpleConnection *gc, const char *who, struct tgl_message *M) {
   debug ("tgprpl_recv_file()");
+  
+  g_return_if_fail (who);
+  
   PurpleXfer *X = tgprpl_new_xfer_recv (gc, who);
   const char *mime_type, *caption;
   long long access_hash;

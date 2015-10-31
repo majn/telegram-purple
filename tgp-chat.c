@@ -88,7 +88,12 @@ static void tgp_chat_add_all_users (struct tgl_state *TLS, PurpleConversation *c
   int i = 0;
   for (; i < C->user_list_size; i++) {
     struct tgl_chat_user *uid = (C->user_list + i);
-    users = g_list_append (users, g_strdup (tgp_blist_peer_get_purple_name (TLS, TGL_MK_USER(uid->user_id))));
+    const char *name = tgp_blist_peer_get_purple_name (TLS, TGL_MK_USER(uid->user_id));
+    if (! name) {
+      g_warn_if_reached();
+      continue;
+    }
+    users = g_list_append (users, g_strdup (name));
     flags = g_list_append (flags, GINT_TO_POINTER(C->admin_id == uid->user_id ? PURPLE_CBFLAGS_FOUNDER : PURPLE_CBFLAGS_NONE));
   }
   purple_conv_chat_add_users (PURPLE_CONV_CHAT(conv), users, NULL, flags, FALSE);

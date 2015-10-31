@@ -101,10 +101,13 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
         PurpleConversation *conv = tgp_chat_show (TLS, &chatPeer->chat);
         if (conv) {
           char *alias = peer->print_name;
+          const char *aliasLeft = tgp_blist_peer_get_purple_name (TLS, TGL_MK_USER (M->action.user));
+          
           txt = g_strdup_printf (_("%1$s deleted user %2$s."), txt_user, alias);
           
-          purple_conv_chat_remove_user (purple_conversation_get_chat_data (conv),
-                                        tgp_blist_peer_get_purple_name (TLS, TGL_MK_USER (M->action.user)), txt);
+          g_return_val_if_fail (aliasLeft, txt);
+          
+          purple_conv_chat_remove_user (purple_conversation_get_chat_data (conv), aliasLeft, txt);
           if (M->action.user == tgl_get_peer_id (TLS->our_id)) {
             purple_conv_chat_left (purple_conversation_get_chat_data (conv));
           }
@@ -243,6 +246,9 @@ void tgp_msg_sys_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to_i
     case TGL_PEER_ENCR_CHAT: {
       const char *name = tgp_blist_peer_get_purple_name (TLS, to_id);
       PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, to_id);
+      
+      g_return_if_fail (name);
+
       if (! conv) {
         conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tg_get_acc (TLS), name);
       }
@@ -357,6 +363,9 @@ static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from,
   *flags |= PURPLE_MESSAGE_IMAGES;
 #else
   const char *txt_user = tgp_blist_peer_get_purple_name (TLS, from);
+  
+  g_return_val_if_fail (txt_user, NULL);
+  
   text = g_strdup_printf (_("%s sent a sticker."), txt_user);
   *flags |= PURPLE_MESSAGE_SYSTEM;
 #endif

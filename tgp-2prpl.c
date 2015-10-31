@@ -163,7 +163,12 @@ tgl_chat_id_t p2tgl_chat_get_id (PurpleChat *PC) {
 
 void p2tgl_conv_add_user (struct tgl_state *TLS, PurpleConversation *conv,
                           int user, char *message, int flags, int new_arrival) {
-  purple_conv_chat_add_user (purple_conversation_get_chat_data (conv), tgp_blist_peer_get_purple_name (TLS, TGL_MK_USER (user)), message, flags, new_arrival);
+  
+  const char *name = tgp_blist_peer_get_purple_name (TLS, TGL_MK_USER (user));
+  
+  g_return_if_fail (name);
+  
+  purple_conv_chat_add_user (purple_conversation_get_chat_data (conv), name, message, flags, new_arrival);
 }
 
 PurpleNotifyUserInfo *p2tgl_notify_user_info_new (struct tgl_user *U) {

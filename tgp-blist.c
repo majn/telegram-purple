@@ -27,16 +27,14 @@
 const char *tgp_blist_peer_get_purple_name (struct tgl_state *TLS, tgl_peer_id_t id) {
   const char *name = g_hash_table_lookup (tg_get_data (TLS)->id_to_purple_name, GINT_TO_POINTER(tgl_get_peer_id (id)));
   if (! name) {
-    assert (0);
+    g_warn_if_reached();
     return NULL;
   }
   return name;
 }
 
 void tgp_blist_peer_add_purple_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *purple_name) {
-  assert (g_hash_table_lookup (tg_get_data (TLS)->id_to_purple_name, GINT_TO_POINTER(tgl_get_peer_id (id))) == NULL);
-  g_hash_table_insert (tg_get_data (TLS)->id_to_purple_name, GINT_TO_POINTER(tgl_get_peer_id (id)),
-                       g_strdup (purple_name));
+  g_hash_table_replace (tg_get_data (TLS)->id_to_purple_name, GINT_TO_POINTER(tgl_get_peer_id (id)), g_strdup (purple_name));
 }
 
 tgl_peer_t *tgp_blist_peer_find (struct tgl_state *TLS, const char *purple_name) {
