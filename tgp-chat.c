@@ -192,6 +192,7 @@ void tgprpl_chat_join (PurpleConnection * gc, GHashTable *data) {
     // handle joining chats by print_names as used by the Adium plugin
     if (P && tgl_get_peer_type (P->id) == TGL_PEER_CHAT) {
       debug ("joining chat by subject %s ...", subject);
+      
       tgl_do_get_chat_info (conn->TLS, P->id, FALSE, tgp_chat_on_loaded_chat_full_joining, NULL);
       return;
     }
