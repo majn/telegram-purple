@@ -424,9 +424,12 @@ static const char *tgprpl_list_icon (PurpleAccount *acct, PurpleBuddy *buddy) {
 }
 
 static void tgprpl_tooltip_text (PurpleBuddy *buddy, PurpleNotifyUserInfo *info, gboolean full) {
+  
+  // buddy in old format that didn't migrate
   if (! tgp_blist_buddy_has_id (buddy)) {
     return;
   }
+  
   tgl_peer_t *P = tgl_peer_get (pbn_get_conn (&buddy->node)->TLS, tgp_blist_buddy_get_id (buddy));
   if (!P) {
     failure ("Peer %s not found in tree.", buddy->name);
@@ -547,6 +550,11 @@ void import_chat_link_checked (struct tgl_state *TLS, const char *link) {
 static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
   debug ("tgprpl_blist_node_menu()");
 
+  // orphaned buddy in "old" format that didn't migrate
+  if (! tgp_blist_buddy_has_id ((PurpleBuddy *)node)) {
+    return NULL;
+  }
+  
   GList* menu = NULL;
   if (PURPLE_BLIST_NODE_IS_BUDDY(node) &&
       tgl_get_peer_type (tgp_blist_buddy_get_id ((PurpleBuddy *)node)) == TGL_PEER_USER) {
