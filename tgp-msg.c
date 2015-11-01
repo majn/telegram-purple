@@ -544,10 +544,6 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     }
   }
   
-  if (p2tgl_status_is_present (purple_account_get_active_status (conn->pa)) && p2tgl_send_notifications (conn->pa)) {
-    pending_reads_send_all (conn->pending_reads, conn->TLS);
-  }
-  
   g_free (text);
 }
 
@@ -567,6 +563,8 @@ static void tgp_msg_process_in_ready (struct tgl_state *TLS) {
       break;
     }
     g_queue_pop_head (conn->new_messages);
+    
+    pending_reads_send_all (TLS);
     tgp_msg_display (TLS, C);
     if (C->data) {
       g_free (C->data);

@@ -728,11 +728,8 @@ static void tgprpl_get_info (PurpleConnection *gc, const char *who) {
 static void tgprpl_set_status (PurpleAccount *acct, PurpleStatus *status) {
   debug ("tgprpl_set_status(%s)", purple_status_get_name (status));
   debug ("tgprpl_set_status(currstatus=%s)", purple_status_get_name (purple_account_get_active_status (acct)));
-
-  int present = p2tgl_status_is_present (status);
-  if (present && p2tgl_send_notifications (acct)) {
-    pending_reads_send_all (pa_get_conn (acct)->pending_reads, pa_get_conn (acct)->TLS);
-  }
+  
+  pending_reads_send_all (pa_get_conn (acct)->TLS);
 }
 
 static void tgprpl_add_buddy (PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group) {
