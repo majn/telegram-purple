@@ -145,7 +145,7 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
     // will remain the permanent name for this user, all future name changes will just change the user alias.
     if (buddy) {
       tgp_blist_peer_add_purple_name (TLS, user->id, purple_buddy_get_name (buddy));
-      if (strcmp (user->print_name, purple_buddy_get_name (buddy))) {
+      if (user->print_name && strcmp (user->print_name, purple_buddy_get_name (buddy))) {
         purple_blist_alias_buddy (buddy, user->print_name);
       }
       p2tgl_prpl_got_user_status (TLS, user->id, &user->status);
