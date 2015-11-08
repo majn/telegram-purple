@@ -126,9 +126,7 @@ void *connection_data_free (connection_data *conn) {
   g_hash_table_destroy (conn->id_to_purple_name);
   tgprpl_xfer_free_all (conn);
   tgl_free_all (conn->TLS);
-  g_free(conn->TLS->base_path);
-  free (conn->TLS);
-  
+  g_free (conn->TLS->base_path);
   free (conn);
   return NULL;
 }
