@@ -174,6 +174,10 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
   
   if (flags & TGL_UPDATE_CREATED) {
     tgp_blist_peer_add_purple_name (TLS, U->id, U->print_name);
+  } else {
+    if (flags & TGL_UPDATE_WORKING || flags & TGL_UPDATE_DELETED) {
+      write_secret_chat_file (TLS);
+    }
   }
   
   if (!(flags & TGL_UPDATE_DELETED)) {
@@ -184,11 +188,7 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
     }
     purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_purple_name (TLS, U->id), "mobile", NULL);
   }
-  
-  if (flags & TGL_UPDATE_WORKING || flags & TGL_UPDATE_DELETED) {
-    write_secret_chat_file (TLS);
-  }
-  
+
   if (flags & TGL_UPDATE_REQUESTED) {
     const char* choice = purple_account_get_string (conn->pa, "accept-secret-chats", "ask");
     if (! strcmp (choice, "always")) {
