@@ -15,8 +15,14 @@ This plugin is tested and works on **Linux** and **OS X**. As of right now, **Wi
 1.2.2
 -----
 
-    - fix some licensing issues by not depending on OpenSSL any longer
-    - translation
+    - fix some licensing issues by not depending on OpenSSL any longer (thanks Ben!)
+    - add tons of translations (thanks to anyone helping!)
+    - fix issue that caused empty files
+    - fix pidgin not reconnecting after hibernation
+    - fix adium not reconnecting after hibernation
+    - fix secret chat fingerprint not being displayed after restart
+    - fix secret chat name not being displayed after restart
+
 
 Build
 -----
