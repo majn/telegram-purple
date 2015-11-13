@@ -38,13 +38,13 @@ void tgp_blist_peer_add_purple_name (struct tgl_state *TLS, tgl_peer_id_t id, co
 }
 
 tgl_peer_t *tgp_blist_peer_find (struct tgl_state *TLS, const char *purple_name) {
-  // for buddies in the buddy list the purple username is the print name at the
-  // time when the user was added to the buddy list. The buddy is used to store
-  // the UID, which can then be used to acquire the tgl_peer.
+  // buddies will keep the name they had when they were first added to the user list. The print_name
+  // of the peer may have changed since then, therefore the ID stored in the buddy is used to fetch
+  // the user name.
   PurpleBuddy *buddy = purple_find_buddy (tg_get_acc (TLS), purple_name);
   if (! buddy) {
-    // foreign users are not in the buddy list by default but are stored in the tgl peer list
-    // with the exact print name they have right now.
+    // foreign users are not in the buddy list by default, therefore the name used by libpurple and the
+    // print name is always identical
     return tgl_peer_get_by_name (TLS, purple_name);
   }
   if (! tgp_blist_buddy_has_id (buddy)) {
