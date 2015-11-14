@@ -43,6 +43,7 @@ typedef struct {
   int password_retries;
   PurpleRoomlist *roomlist;
   GHashTable *pending_chat_info;
+  GHashTable *id_to_purple_name;
 } connection_data;
 
 typedef struct { 
@@ -75,7 +76,7 @@ struct tgp_msg_sending {
   gchar *msg;
 };
 
-void pending_reads_send_all (GQueue *queue, struct tgl_state *TLS);
+void pending_reads_send_all (struct tgl_state *TLS);
 void pending_reads_add (GQueue *queue, tgl_peer_id_t id);
 struct message_text *message_text_init (struct tgl_message *M, gchar *text);
 void message_text_free (gpointer data);
@@ -88,3 +89,4 @@ struct tgp_msg_sending *tgp_msg_sending_init (struct tgl_state *TLS, char *M, tg
 void tgp_msg_loading_free (gpointer data);
 void tgp_msg_sending_free (gpointer data);
 #endif
+

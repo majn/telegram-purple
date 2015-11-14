@@ -104,16 +104,17 @@
 
 - (NSCharacterSet *)allowedCharactersForAccountName
 {
-   return ([NSCharacterSet characterSetWithCharactersInString: @"+1234567890"]);
+  return ([NSCharacterSet characterSetWithCharactersInString: @"+1234567890"]);
 }
 
 - (NSUInteger)allowedLengthForAccountName
 {
-    return 16;
+  return 16;
 }
 
-- (BOOL)caseSensitive{
-	return NO;
+- (BOOL)caseSensitive
+{
+	return YES;
 }
 
 - (NSImage *)defaultServiceIconOfType:(AIServiceIconType)iconType

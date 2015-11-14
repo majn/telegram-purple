@@ -72,4 +72,3 @@ void fatal(const char* format, ...) {
   va_end (ap);
   info ("\n");
 }
-

@@ -35,10 +35,14 @@
 #include <tgl.h>
 #include <purple.h>
 #include <notify.h>
+#include <server.h>
 #include <plugin.h>
 #include <version.h>
 #include <account.h>
 #include <connection.h>
+
+#include "tgp-blist.h"
+#include "tgp-structs.h"
 
 #define PLUGIN_ID "prpl-telegram"
 // FIXME: Name must be translated (for languages without latin script, it would look like gibberish. Just like Japanese script looks to me.)
@@ -82,6 +86,6 @@ extern const char *config_dir;
 extern PurplePlugin *_telegram_protocol;
 void export_chat_link_checked (struct tgl_state *TLS, const char *name);
 void import_chat_link_checked (struct tgl_state *TLS, const char *link);
-void leave_and_delete_chat (PurpleBlistNode *node, gpointer data);
+void leave_and_delete_chat (struct tgl_state *TLS, tgl_peer_t *P);
 
 #endif

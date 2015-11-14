@@ -38,6 +38,7 @@
 
 #include "tgp-net.h"
 #include "tgp-structs.h"
+#include "tgp-2prpl.h"
 #include "telegram-base.h"
 #include <tgl.h>
 #include <tgl-inner.h>
@@ -273,6 +274,17 @@ static void net_on_connected (gpointer arg, gint fd, const gchar *error_message)
   start_ping_timer (c);
 }
 
+static void net_on_connected_assert_success (gpointer arg, gint fd, const gchar *error_message) { 
+  struct connection *c = arg;
+  struct tgl_state *TLS = c->TLS;
+  if (fd == -1) {
+    info ("Connection to main data center (%d) %s:%d not possible\n", c->dc->id, c->ip, c->port);
+    purple_connection_error_reason (tg_get_conn (TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR, _("Cannot connect to server"));
+    return;
+  }
+  net_on_connected (arg, fd, error_message);
+}
+
 struct connection *tgln_create_connection (struct tgl_state *TLS, const char *host, int port, struct tgl_session *session, struct tgl_dc *dc, struct mtproto_methods *methods) {
   struct connection *c = malloc (sizeof (*c));
   memset (c, 0, sizeof (*c));
@@ -296,8 +308,8 @@ struct connection *tgln_create_connection (struct tgl_state *TLS, const char *ho
   c->session = session;
   c->methods = methods;
 
-  connection_data *conn = TLS->ev_base;
-  c->prpl_data = purple_proxy_connect (conn->gc, conn->pa, host, port, net_on_connected, c);
+  c->prpl_data = purple_proxy_connect (tg_get_conn(TLS), tg_get_acc(TLS), host, port, 
+                    TLS->dc_working_num == dc->id ? net_on_connected_assert_success : net_on_connected, c);
 
   start_fail_timer (c);
   

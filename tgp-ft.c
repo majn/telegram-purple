@@ -69,6 +69,7 @@ static char *tgp_strdup_determine_filename (const char *mime, const char *captio
 static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, int success, const char *filename) {
   debug ("tgprpl_xfer_recv_on_finished()");
   struct tgp_xfer_send_data *data = _data;
+  char *selected = g_strdup(purple_xfer_get_local_filename (data->xfer));
 
   if (success) {
     if (!data->done) {
@@ -77,10 +78,6 @@ static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, in
       purple_xfer_set_completed (data->xfer, TRUE);
       purple_xfer_end (data->xfer);
     }
-    
-    g_unlink (purple_xfer_get_local_filename (data->xfer));
-    g_rename (filename, purple_xfer_get_local_filename (data->xfer));
-
   } else {
     tgp_notify_on_error_gw (TLS, NULL, success);
     failure ("ERROR xfer failed");
@@ -88,6 +85,11 @@ static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, in
 
   data->xfer->data = NULL;
   tgprpl_xfer_free_data (data);
+
+  debug ("moving transferred file from tgl directory %s to selected target %s", selected, filename);
+  g_unlink (selected);
+  g_rename (filename, selected);
+  g_free (selected);
 }
 
 static void tgprpl_xfer_on_finished (struct tgl_state *TLS, void *_data, int success, struct tgl_message *M) {
@@ -166,7 +168,7 @@ static void tgprpl_xfer_recv_init (PurpleXfer *X) {
   
   purple_xfer_start (X, -1, NULL, 0);
   const char *who = purple_xfer_get_remote_user (X);
-  P = find_peer_by_name (TLS, who);
+  P = tgp_blist_peer_find (TLS, who);
   if (P) {
     switch (M->media.type) {
       case tgl_message_media_document:
@@ -206,7 +208,13 @@ static void tgprpl_xfer_send_init (PurpleXfer *X) {
   const char *who = purple_xfer_get_remote_user (X);
   debug ("xfer_on_init (file=%s, local=%s, who=%s)", file, localfile, who);
   
-  tgl_peer_t *P = find_peer_by_name (data->conn->TLS, who);
+  tgl_peer_t *P = tgp_blist_peer_find (data->conn->TLS, who);
+  
+  if (tgl_get_peer_type (P->id) == TGL_PEER_ENCR_CHAT) {
+    purple_xfer_error (PURPLE_XFER_SEND, data->conn->pa, who, _("Sorry, sending documents to encrypted chats not yet supported."));
+    return;
+  }
+  
   if (P) {
       tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL,
                             0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, tgprpl_xfer_on_finished, data);
@@ -269,8 +277,11 @@ static PurpleXfer *tgprpl_new_xfer_recv (PurpleConnection * gc, const char *who)
   return X;
 }
 
-void tgprpl_recv_file (PurpleConnection * gc, const char *who, struct tgl_message *M) {
+void tgprpl_recv_file (PurpleConnection *gc, const char *who, struct tgl_message *M) {
   debug ("tgprpl_recv_file()");
+  
+  g_return_if_fail (who);
+  
   PurpleXfer *X = tgprpl_new_xfer_recv (gc, who);
   const char *mime_type, *caption;
   long long access_hash;

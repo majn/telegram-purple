@@ -403,13 +403,10 @@ void read_secret_chat (struct tgl_state *TLS, int fd, int v) {
     assert (read (fd, &last_in_seq_no, 4) == 4);
     assert (read (fd, &out_seq_no, 4) == 4);
   }
-
-  bl_do_encr_chat (TLS, id,
-    &access_hash, &date, &admin_id, &user_id,
-    key, NULL, sha, &state, &ttl, &layer,
-    &in_seq_no, &last_in_seq_no, &out_seq_no,
-    &key_fingerprint, TGLECF_CREATE | TGLECF_CREATED
-  );
+  
+  bl_do_encr_chat (TLS, id, &access_hash, &date, &admin_id, &user_id, key, NULL, sha, &state, &ttl,
+    &layer, &in_seq_no, &last_in_seq_no, &out_seq_no, &key_fingerprint, TGLECF_CREATE | TGLECF_CREATED,
+    s, l);
 }
 
 void read_secret_chat_file (struct tgl_state *TLS) {
@@ -486,7 +483,7 @@ gboolean assert_file_exists (PurpleConnection *gc, const char *filepath, const c
 }
 
 void export_auth_callback (struct tgl_state *TLS, void *extra, int success) {
-  if (!error_if_val_false (TLS, success, _("Login Canceled"), _("Authentication export to remote data centers failed, login not possible."))) {
+  if (!error_if_val_false (TLS, success, _("Login canceled"), _("Authentication export to remote data centers failed, login not possible."))) {
     telegram_export_authorization (TLS);
   }
 }
@@ -520,7 +517,7 @@ void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *titl
     if (use_print_names) {
       P = tgl_peer_get_by_name (TLS, users[i]);
     } else {
-      P = tgl_peer_get (TLS, TGL_MK_USER(atoi (users[i])));
+      P = tgp_blist_peer_find (TLS, users[i]);
     }
     if (P && tgl_get_peer_id (P->id) != tgl_get_peer_id (TLS->our_id)) {
       debug ("Adding %s: %d", P->print_name, tgl_get_peer_id (P->id));

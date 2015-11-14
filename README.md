@@ -1,5 +1,5 @@
-Telegram-Purple Unofficial (Beta 4)
-===================================
+Telegram-Purple Unofficial (Beta)
+=================================
 
 Telegram-purple is a Libpurple protocol plugin that adds support for the Telegram messenger.
 
@@ -7,11 +7,22 @@ I keep getting many questions about this plugin in my E-mail, so I've created a
 [telegram group chat](https://telegram.me/joinchat/01fb53f301b67d3c7a5532908dfa9a89) for
 telegram-purple related discussions or questions.
 
-Beta 4
-------
+OS Support
+----------
 
-    - fix some licensing issues by not depending on OpenSSL any longer
-    - translation
+This plugin is tested and works on **Linux** and **OS X**. As of right now, **Windows is not supported** although there's a plan to port it in the near future.
+
+1.2.2
+-----
+
+    - fix some licensing issues by not depending on OpenSSL any longer (thanks Ben!)
+    - add tons of translations (thanks to anyone helping!)
+    - fix issue that caused empty files
+    - fix pidgin not reconnecting after hibernation
+    - fix adium not reconnecting after hibernation
+    - fix secret chat fingerprint not being displayed after restart
+    - fix secret chat name not being displayed after restart
+
 
 Build
 -----
@@ -31,7 +42,7 @@ This repository has submodules, so you need to clone recursively.
 
 ##### Fedora
 
-        sudo dnf install gcc libgcrypt-devel glib2-devel libpurple-devel libwebp-devel
+        sudo dnf install gcc gettext libgcrypt-devel libwebp-devel libpurple-devel zlib-devel
 
 
 ###### Debian / Ubuntu
@@ -244,6 +255,6 @@ Telegram-Purple was written by:
 Acknowledgements
 ----------------
 
-This software is based on the library [Libtgl](https://github.com/vysheng/tgl), which was written by Vitaly Valtman <mail@vysheng.ru> and others, see (http://github.com/vysheng/tgl)
+This software is based on the library [Libtgl](https://github.com/vysheng/tgl), which was written by Vitaly Valtman <mail@vysheng.ru> and others, see (https://github.com/vysheng/tgl/)
 
 For PNG rendering, it includes the [lodepng library](http://lodev.org/lodepng/).

@@ -1,7 +1,7 @@
 /*
-LodePNG version 20140823
+LodePNG version 20150912
 
-Copyright (c) 2005-2014 Lode Vandevenne
+Copyright (c) 2005-2015 Lode Vandevenne
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -33,12 +33,16 @@ freely, subject to the following restrictions:
 #include <string>
 #endif /*__cplusplus*/
 
+extern const char* LODEPNG_VERSION_STRING;
+
 /*
 The following #defines are used to create code sections. They can be disabled
 to disable code sections, which can give faster compile time and smaller binary.
 The "NO_COMPILE" defines are designed to be used to pass as defines to the
 compiler command to disable them without modifying this header, e.g.
 -DLODEPNG_NO_COMPILE_ZLIB for gcc.
+In addition to those below, you can also define LODEPNG_NO_COMPILE_CRC to
+allow implementing a custom lodepng_crc32.
 */
 /*deflate & zlib. If disabled, you must specify alternative zlib functions in
 the custom_zlib field of the compress and decompress settings*/
@@ -211,8 +215,8 @@ Same as the other decode functions, but instead takes a filename as input.
 unsigned decode(std::vector<unsigned char>& out, unsigned& w, unsigned& h,
                 const std::string& filename,
                 LodePNGColorType colortype = LCT_RGBA, unsigned bitdepth = 8);
-#endif //LODEPNG_COMPILE_DISK
-#endif //LODEPNG_COMPILE_DECODER
+#endif /* LODEPNG_COMPILE_DISK */
+#endif /* LODEPNG_COMPILE_DECODER */
 
 #ifdef LODEPNG_COMPILE_ENCODER
 /*Same as lodepng_encode_memory, but encodes to an std::vector. colortype
@@ -235,9 +239,9 @@ unsigned encode(const std::string& filename,
 unsigned encode(const std::string& filename,
                 const std::vector<unsigned char>& in, unsigned w, unsigned h,
                 LodePNGColorType colortype = LCT_RGBA, unsigned bitdepth = 8);
-#endif //LODEPNG_COMPILE_DISK
-#endif //LODEPNG_COMPILE_ENCODER
-} //namespace lodepng
+#endif /* LODEPNG_COMPILE_DISK */
+#endif /* LODEPNG_COMPILE_ENCODER */
+} /* namespace lodepng */
 #endif /*LODEPNG_COMPILE_CPP*/
 #endif /*LODEPNG_COMPILE_PNG*/
 
@@ -568,9 +572,9 @@ typedef struct LodePNGColorProfile
 void lodepng_color_profile_init(LodePNGColorProfile* profile);
 
 /*Get a LodePNGColorProfile of the image.*/
-unsigned get_color_profile(LodePNGColorProfile* profile,
-                           const unsigned char* image, unsigned w, unsigned h,
-                           const LodePNGColorMode* mode_in);
+unsigned lodepng_get_color_profile(LodePNGColorProfile* profile,
+                                   const unsigned char* image, unsigned w, unsigned h,
+                                   const LodePNGColorMode* mode_in);
 /*The function LodePNG uses internally to decide the PNG color with auto_convert.
 Chooses an optimal color model, e.g. grey if only grey pixels, palette if < 256 colors, ...*/
 unsigned lodepng_auto_choose_color(LodePNGColorMode* mode_out,
@@ -627,7 +631,7 @@ typedef struct LodePNGState
   LodePNGInfo info_png; /*info of the PNG image obtained after decoding*/
   unsigned error;
 #ifdef LODEPNG_COMPILE_CPP
-  //For the lodepng::State subclass.
+  /* For the lodepng::State subclass. */
   virtual ~LodePNGState(){}
 #endif
 } LodePNGState;
@@ -677,7 +681,11 @@ Third byte: must be uppercase
 Fourth byte: uppercase = unsafe to copy, lowercase = safe to copy
 */
 
-/*get the length of the data of the chunk. Total chunk length has 12 bytes more.*/
+/*
+Gets the length of the data of the chunk. Total chunk length has 12 bytes more.
+There must be at least 4 bytes to read from. If the result value is too large,
+it may be corrupt data.
+*/
 unsigned lodepng_chunk_length(const unsigned char* chunk);
 
 /*puts the 4-byte type in null terminated string*/
@@ -805,7 +813,7 @@ unsigned lodepng_save_file(const unsigned char* buffer, size_t buffersize, const
 #endif /*LODEPNG_COMPILE_DISK*/
 
 #ifdef LODEPNG_COMPILE_CPP
-//The LodePNG C++ wrapper uses std::vectors instead of manually allocated memory buffers.
+/* The LodePNG C++ wrapper uses std::vectors instead of manually allocated memory buffers. */
 namespace lodepng
 {
 #ifdef LODEPNG_COMPILE_PNG
@@ -819,7 +827,7 @@ class State : public LodePNGState
 };
 
 #ifdef LODEPNG_COMPILE_DECODER
-//Same as other lodepng::decode, but using a State for more settings and information.
+/* Same as other lodepng::decode, but using a State for more settings and information. */
 unsigned decode(std::vector<unsigned char>& out, unsigned& w, unsigned& h,
                 State& state,
                 const unsigned char* in, size_t insize);
@@ -829,7 +837,7 @@ unsigned decode(std::vector<unsigned char>& out, unsigned& w, unsigned& h,
 #endif /*LODEPNG_COMPILE_DECODER*/
 
 #ifdef LODEPNG_COMPILE_ENCODER
-//Same as other lodepng::encode, but using a State for more settings and information.
+/* Same as other lodepng::encode, but using a State for more settings and information. */
 unsigned encode(std::vector<unsigned char>& out,
                 const unsigned char* in, unsigned w, unsigned h,
                 State& state);
@@ -849,32 +857,32 @@ void load_file(std::vector<unsigned char>& buffer, const std::string& filename);
 Save the binary data in an std::vector to a file on disk. The file is overwritten
 without warning.
 */
-void save_file(const std::vector<unsigned char>& buffer, const std::string& filename);
-#endif //LODEPNG_COMPILE_DISK
-#endif //LODEPNG_COMPILE_PNG
+unsigned save_file(const std::vector<unsigned char>& buffer, const std::string& filename);
+#endif /* LODEPNG_COMPILE_DISK */
+#endif /* LODEPNG_COMPILE_PNG */
 
 #ifdef LODEPNG_COMPILE_ZLIB
 #ifdef LODEPNG_COMPILE_DECODER
-//Zlib-decompress an unsigned char buffer
+/* Zlib-decompress an unsigned char buffer */
 unsigned decompress(std::vector<unsigned char>& out, const unsigned char* in, size_t insize,
                     const LodePNGDecompressSettings& settings = lodepng_default_decompress_settings);
 
-//Zlib-decompress an std::vector
+/* Zlib-decompress an std::vector */
 unsigned decompress(std::vector<unsigned char>& out, const std::vector<unsigned char>& in,
                     const LodePNGDecompressSettings& settings = lodepng_default_decompress_settings);
-#endif //LODEPNG_COMPILE_DECODER
+#endif /* LODEPNG_COMPILE_DECODER */
 
 #ifdef LODEPNG_COMPILE_ENCODER
-//Zlib-compress an unsigned char buffer
+/* Zlib-compress an unsigned char buffer */
 unsigned compress(std::vector<unsigned char>& out, const unsigned char* in, size_t insize,
                   const LodePNGCompressSettings& settings = lodepng_default_compress_settings);
 
-//Zlib-compress an std::vector
+/* Zlib-compress an std::vector */
 unsigned compress(std::vector<unsigned char>& out, const std::vector<unsigned char>& in,
                   const LodePNGCompressSettings& settings = lodepng_default_compress_settings);
-#endif //LODEPNG_COMPILE_ENCODER
-#endif //LODEPNG_COMPILE_ZLIB
-} //namespace lodepng
+#endif /* LODEPNG_COMPILE_ENCODER */
+#endif /* LODEPNG_COMPILE_ZLIB */
+} /* namespace lodepng */
 #endif /*LODEPNG_COMPILE_CPP*/
 
 /*
@@ -888,8 +896,8 @@ TODO:
 [X] let the "isFullyOpaque" function check color keys and transparent palettes too
 [X] better name for the variables "codes", "codesD", "codelengthcodes", "clcl" and "lldl"
 [ ] don't stop decoding on errors like 69, 57, 58 (make warnings)
-[ ] make option to choose if the raw image with non multiple of 8 bits per scanline should have padding bits or not
 [ ] let the C++ wrapper catch exceptions coming from the standard library and return LodePNG error codes
+[ ] allow user to provide custom color conversion functions, e.g. for premultiplied alpha, padding bits or not, ...
 */
 
 #endif /*LODEPNG_H inclusion guard*/
@@ -1556,6 +1564,7 @@ yyyymmdd.
 Some changes aren't backwards compatible. Those are indicated with a (!)
 symbol.
 
+*) 18 apr 2015: Boundary PM instead of just package-merge for faster encoding.
 *) 23 aug 2014: Reduced needless memory usage of decoder.
 *) 28 jun 2014: Removed fix_png setting, always support palette OOB for
     simplicity. Made ColorProfile public.
@@ -1698,5 +1707,5 @@ Domain: gmail dot com.
 Account: lode dot vandevenne.
 
 
-Copyright (c) 2005-2014 Lode Vandevenne
+Copyright (c) 2005-2015 Lode Vandevenne
 */

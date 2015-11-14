@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([telegram-purple], [1.3.0])
+AC_INIT([telegram-purple], [1.2.2])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
 
@@ -14,7 +14,10 @@ AC_PROG_CC
 AC_PROG_INSTALL
 
 AC_CHECK_LIB([rt], [clock_gettime])
-AC_CHECK_LIB([gcrypt], [gcry_md_open])
+AC_CHECK_LIB([gcrypt], [gcry_mpi_snatch], [], [
+  echo "no libgcrypt >= 1.60 found"
+  exit -1
+])
 AX_CHECK_ZLIB(, [AC_MSG_ERROR([No zlib found])])
 
 PKG_CHECK_MODULES([PURPLE], [purple])

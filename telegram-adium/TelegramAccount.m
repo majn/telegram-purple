@@ -58,8 +58,6 @@
 {
   [super didConnect];
   [self purpleAccount];
-  purple_signal_connect (purple_conversations_get_handle(), "chat-buddy-joined",
-                         [self purpleAccount], PURPLE_CALLBACK(chat_buddy_joined), (__bridge void *)(self));
   
   // Storing chats in the blist breaks Adium bookmarks. Adium doesn't
   // show those chats anyway, so we can just safely delete those.
@@ -74,12 +72,6 @@
     }
     node = purple_blist_node_next (node, 0);
   }
-}
-
-- (void)didDisconnect
-{
-  purple_signal_disconnect(purple_conversations_get_handle(), "chat-buddy-joined",
-                           [self purpleAccount], PURPLE_CALLBACK(chat_buddy_joined));
 }
 
 - (void)configurePurpleAccount
@@ -169,9 +161,10 @@
   connection_data *conn = purple_connection_get_protocol_data (purple_account_get_connection(account));
   AIChat *chat = adium.interfaceController.activeChat;
   if (chat) {
-    PurpleChat *purpleChat = purple_blist_find_chat (conn->pa, [chat.name UTF8String]);
-    if (purpleChat) {
-      leave_and_delete_chat ((PurpleBlistNode *)purpleChat, NULL);
+    const char *name = [chat.name UTF8String];
+    tgl_peer_t *P = tgl_peer_get_by_name (conn->TLS, name);
+    if (P) {
+      leave_and_delete_chat (conn->TLS, P);
     }
   }
 }
@@ -203,38 +196,6 @@
 }
 
 #pragma mark Group Chats
-void chat_buddy_joined (PurpleConversation *conv, const char *name,
-                        PurpleConvChatBuddyFlags flags,
-                        gboolean new_arrival, void *data) {
-  const char *proto = purple_conversation_get_account (conv)->protocol_id;
-  if (! proto || 0 != strcmp ("prpl-telegram", proto)) {
-    return;
-  }
-  
-  TelegramAccount *_self = (__bridge TelegramAccount *)(data);
-  connection_data *conn = purple_connection_get_protocol_data(
-                            purple_account_get_connection(purple_conversation_get_account(conv)));
-  assert (conn);
-  if (!name || !conv->name) {
-    return;
-  }
-  
-  tgl_peer_t *P = tgl_peer_get (conn->TLS, TGL_MK_USER(atoi(name)));
-  AIChat *chat = [_self chatWithName:[NSString stringWithUTF8String:conv->name] identifier:nil];
-  if (P && chat) {
-    AIListObject *dummy = [[AIListObject alloc]
-                           initWithUID:[NSString stringWithUTF8String:name]
-                           service:nil];
-    
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10 * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
-      if (P->print_name) {
-        [chat setAlias:[NSString stringWithUTF8String:P->print_name]
-            forContact:dummy];
-        [chat resortParticipants];
-      }
-    });
-  }
-}
 
 /*!
  * @brief Re-create the chat's join options.
@@ -249,7 +210,6 @@ void chat_buddy_joined (PurpleConversation *conv, const char *name,
     return [NSMutableDictionary dictionaryWithObjectsAndKeys:
             [NSString stringWithFormat:@"%d", tgl_get_peer_id(P->id)], @"id",
             [NSString stringWithUTF8String: name], @"subject",
-            [NSString stringWithFormat:@"%d", P->chat.admin_id], @"owner",
             nil];
   }
   return nil;

@@ -192,14 +192,14 @@ static void decline_secret_chat_cb (gpointer _data, const gchar *code) {
   struct accept_secret_chat_data *data = _data;
   
   bl_do_peer_delete (data->TLS, data->U->id);
-  purple_blist_remove_buddy (p2tgl_buddy_find(data->TLS, data->U->id));
+  purple_blist_remove_buddy (tgp_blist_buddy_find (data->TLS, data->U->id));
   
   g_free (data);
 }
 
 void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *U) {
   connection_data *conn = TLS->ev_base;
-  PurpleBuddy *who = p2tgl_buddy_find (TLS, TGL_MK_USER (U->user_id));
+  PurpleBuddy *who = tgp_blist_buddy_find (TLS, TGL_MK_USER (U->user_id));
   struct accept_secret_chat_data *data = g_new (struct accept_secret_chat_data, 1);
   data->TLS = TLS;
   data->U = U;
@@ -240,7 +240,7 @@ void request_choose_user (struct accept_create_chat_data *data) {
   // the user to specify at least one other one.
   PurpleRequestFields* fields = purple_request_fields_new();
   PurpleRequestFieldGroup* group = purple_request_field_group_new (
-      _("Invite at least one additional user (Autocompletion available).\n You can add more users once"
+      _("Invite at least one additional user (Autocompletion available).\nYou can add more users once"
       " the chat was created."));
   
   PurpleRequestField *field = purple_request_field_string_new ("user1", _("Username"), NULL, FALSE);

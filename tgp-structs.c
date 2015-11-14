@@ -24,6 +24,7 @@
 #include "msglog.h"
 #include "tgp-utils.h"
 #include "tgp-ft.h"
+#include "tgp-2prpl.h"
 
 #include <glib.h>
 #include <tgl.h>
@@ -37,8 +38,15 @@ static gint pending_reads_compare (gconstpointer a, gconstpointer b) {
   return !memcmp ((tgl_peer_id_t *)a, (tgl_peer_id_t *)b, sizeof(tgl_peer_id_t));
 }
 
-void pending_reads_send_all (GQueue *queue, struct tgl_state *TLS) {
+void pending_reads_send_all (struct tgl_state *TLS) {
   debug ("send all pending ack");
+  
+  GQueue *queue = tg_get_data (TLS)->pending_reads;
+  
+  if (! p2tgl_status_is_present (purple_account_get_active_status (tg_get_acc (TLS))) ||
+      ! p2tgl_send_notifications (tg_get_acc (TLS))) {
+    return;
+  }
   
   tgl_peer_id_t *pending;
   while ((pending = (tgl_peer_id_t*) g_queue_pop_head(queue))) {
@@ -101,6 +109,7 @@ connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *
   conn->out_messages = g_queue_new ();
   conn->pending_reads = g_queue_new ();
   conn->pending_chat_info = g_hash_table_new (g_direct_hash, g_direct_equal);
+  conn->id_to_purple_name = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
   return conn;
 }
 
@@ -114,11 +123,10 @@ void *connection_data_free (connection_data *conn) {
   tgp_g_queue_free_full (conn->out_messages, tgp_msg_sending_free);
   tgp_g_list_free_full (conn->used_images, used_image_free);
   g_hash_table_destroy (conn->pending_chat_info);
+  g_hash_table_destroy (conn->id_to_purple_name);
   tgprpl_xfer_free_all (conn);
   tgl_free_all (conn->TLS);
-  g_free(conn->TLS->base_path);
-  free (conn->TLS);
-  
+  g_free (conn->TLS->base_path);
   free (conn);
   return NULL;
 }
@@ -129,3 +137,4 @@ get_user_info_data* get_user_info_data_new (int show_info, tgl_peer_id_t peer) {
   info_data->peer = peer;
   return info_data;
 }
+

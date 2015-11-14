@@ -39,6 +39,7 @@
 		C4B4BE371AB5FB5C0064AC17 /* TelegramJoinChatViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C4B4BE351AB5FB5C0064AC17 /* TelegramJoinChatViewController.m */; };
 		C4B4BE391AB613950064AC17 /* TelegramJoinChatView.xib in Resources */ = {isa = PBXBuildFile; fileRef = C4B4BE381AB613950064AC17 /* TelegramJoinChatView.xib */; };
 		C4B57BF01B1598D4006997F4 /* libtgl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C4B57BEF1B1598D4006997F4 /* libtgl.a */; };
+		C4D12DF01BC534CF00C0F6E1 /* tgp-blist.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D12DEF1BC534CF00C0F6E1 /* tgp-blist.c */; settings = {ASSET_TAGS = (); }; };
 		C4D432D61BC2768C00561667 /* libgcrypt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C4D432D51BC2768C00561667 /* libgcrypt.dylib */; };
 		C4D432D81BC2783C00561667 /* tg-server.tglpub in Resources */ = {isa = PBXBuildFile; fileRef = C4D432D71BC2783C00561667 /* tg-server.tglpub */; };
 		C4D819031A5C85FE0044CBA9 /* lodepng.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D819011A5C85FE0044CBA9 /* lodepng.c */; };
@@ -110,6 +111,8 @@
 		C4B57BEC1B13B2C4006997F4 /* auto-types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "auto-types.h"; path = "../auto/auto-types.h"; sourceTree = "<group>"; };
 		C4B57BED1B1598BE006997F4 /* telegram-purple */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "telegram-purple"; path = ..; sourceTree = "<group>"; };
 		C4B57BEF1B1598D4006997F4 /* libtgl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libtgl.a; path = ../libs/libtgl.a; sourceTree = "<group>"; };
+		C4D12DEE1BC534CF00C0F6E1 /* tgp-blist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "tgp-blist.h"; path = "../tgp-blist.h"; sourceTree = "<group>"; };
+		C4D12DEF1BC534CF00C0F6E1 /* tgp-blist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "tgp-blist.c"; path = "../tgp-blist.c"; sourceTree = "<group>"; };
 		C4D432D31BC2766E00561667 /* libgcrypt.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgcrypt.dylib; path = ../../../../../usr/local/Cellar/libgcrypt/1.6.4/lib/libgcrypt.dylib; sourceTree = "<group>"; };
 		C4D432D51BC2768C00561667 /* libgcrypt.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgcrypt.dylib; path = ../../../../../usr/local/lib/libgcrypt.dylib; sourceTree = "<group>"; };
 		C4D432D71BC2783C00561667 /* tg-server.tglpub */ = {isa = PBXFileReference; lastKnownFileType = file; name = "tg-server.tglpub"; path = "../tg-server.tglpub"; sourceTree = "<group>"; };
@@ -267,6 +270,8 @@
 				C4E528101A8A907200C4B915 /* tgp-ft.h */,
 				C479A8001BB69C2100C153DF /* tgp-request.c */,
 				C479A8011BB69C2100C153DF /* tgp-request.h */,
+				C4D12DEE1BC534CF00C0F6E1 /* tgp-blist.h */,
+				C4D12DEF1BC534CF00C0F6E1 /* tgp-blist.c */,
 			);
 			name = "telegram-purple";
 			sourceTree = "<group>";
@@ -358,6 +363,7 @@
 				C4B4BE371AB5FB5C0064AC17 /* TelegramJoinChatViewController.m in Sources */,
 				C438CE341A12C07800E1DA0F /* telegram-purple.c in Sources */,
 				C4877C1819BB37EA006FA91F /* TelegramService.m in Sources */,
+				C4D12DF01BC534CF00C0F6E1 /* tgp-blist.c in Sources */,
 				C448ADA71AB0789A001B7ECD /* tgp-msg.c in Sources */,
 				C4FFD0DE1B5FC68400939D8A /* TelegramAutocompletionDelegate.m in Sources */,
 				C4E528111A8A907200C4B915 /* tgp-ft.c in Sources */,

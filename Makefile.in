@@ -18,7 +18,7 @@ OBJ=objs
 LIB=libs
 DIR_LIST=${DEP} ${EXE} ${OBJ} ${LIB} ${DEP}/lodepng ${OBJ}/lodepng
 
-PLUGIN_OBJECTS=${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/telegram-base.o ${OBJ}/telegram-purple.o ${OBJ}/tgp-2prpl.o ${OBJ}/tgp-structs.o ${OBJ}/tgp-utils.o ${OBJ}/tgp-chat.o ${OBJ}/tgp-ft.o ${OBJ}/tgp-msg.o ${OBJ}/tgp-request.o ${OBJ}/lodepng/lodepng.o
+PLUGIN_OBJECTS=${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/telegram-base.o ${OBJ}/telegram-purple.o ${OBJ}/tgp-2prpl.o ${OBJ}/tgp-structs.o ${OBJ}/tgp-utils.o ${OBJ}/tgp-chat.o ${OBJ}/tgp-ft.o ${OBJ}/tgp-msg.o ${OBJ}/tgp-request.o ${OBJ}/tgp-blist.o ${OBJ}/lodepng/lodepng.o
 ALL_OBJS=${PLUGIN_OBJECTS}
 
 LOCALES=$(patsubst %.po, %.mo, $(wildcard po/*.po))
@@ -54,7 +54,7 @@ tgl/Makefile.in:
 	@echo "tgl/Makefile.in not found. Maybe you need to 'git submodule update --init --recursive' ?" && exit 1
 
 tgl/Makefile: tgl/Makefile.in
-	cd tgl && ./configure -q --disable-openssl
+	cd tgl && ./configure -q --disable-openssl CFLAGS="@CFLAGS@" LDFLAGS="@LDFLAGS@"
 
 tgl/libs/libtgl.a: tgl/Makefile
 	+make -C tgl
