@@ -1,9 +1,10 @@
-telegram-purple (1.2.2~bw2-1) UNRELEASED; urgency=medium
+telegram-purple (1.2.2~bw2-2) UNRELEASED; urgency=medium
 
   * New upstream release
     - Add translations
     - Fix lots of bugs around secret chats (still not perfect, though)
     - Fix behavior around hibernation
+  * Fix debian/watch
 
  -- Ben Wiederhake <Ben.Wiederhake@gmail.com>  Sat, 14 Nov 2015 11:55:53 +0100
 
