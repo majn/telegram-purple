@@ -563,9 +563,12 @@ static void telegram_send_sms (struct tgl_state *TLS) {
 
 static int all_authorized (struct tgl_state *TLS) {
   int i;
-  for (i = 0; i <= TLS->max_dc_num; i++) if (TLS->DC_list[i]) {
-    if (!tgl_signed_dc (TLS, TLS->DC_list[i]) && !tgl_authorized_dc (TLS, TLS->DC_list[i])) {
-      return 0;
+  for (i = 0; i <= TLS->max_dc_num; i++) {
+    if (TLS->DC_list[i]) {
+      tgl_dc_authorize (TLS, TLS->DC_list[i]);
+      if (!tgl_signed_dc (TLS, TLS->DC_list[i]) && !tgl_authorized_dc (TLS, TLS->DC_list[i])) {
+        return 0;
+      }
     }
   }
   return 1;
