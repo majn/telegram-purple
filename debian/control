@@ -1,8 +1,8 @@
 Source: telegram-purple
 Section: net
 Priority: optional
-Maintainer: Hugues Morisset <morisset.hugues@gmail.com>
-Uploaders: Ben Wiederhake <ben.wiederhake@gmail.com>
+Maintainer: Ben Wiederhake <Ben.Wiederhake@gmail.com>
+Uploaders: Hugues Morisset <morisset.hugues@gmail.com>
 Build-Depends: debhelper (>= 9), autotools-dev, libpurple-dev, zlib1g-dev, libgcrypt20-dev, libwebp-dev, libglib2.0-dev, pkg-config
 Standards-Version: 3.9.6
 Homepage: https://github.com/majn/telegram-purple
