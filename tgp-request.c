@@ -145,7 +145,7 @@ void request_password (struct tgl_state *TLS, void (*callback) (struct tgl_state
   purple_request_fields_add_group (fields, group);
   
   if (! purple_request_fields (conn->gc, _("Enter password"), _("Enter password for two factor authentication"),
-      NULL, fields, "Ok", G_CALLBACK(request_password_entered), "Cancel", NULL, conn->pa,
+      NULL, fields, _("Ok"), G_CALLBACK(request_password_entered), _("Cancel"), G_CALLBACK(request_code_canceled), conn->pa,
       NULL, NULL, data)) {
     const char *error = _("No password set for two factor authentication. Please enter it in the extended settings.");
     purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, error);
