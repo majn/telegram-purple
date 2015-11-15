@@ -26,10 +26,11 @@
 
 #include "tgp-structs.h"
 
-struct request_password_data {
+struct request_values_data {
   struct tgl_state *TLS;
-  void *callback;
+  void (*callback) (struct tgl_state *TLS, const char *string[], void *arg);
   void *arg;
+  const char *string[];
 };
 
 struct accept_create_chat_data {
@@ -42,11 +43,8 @@ struct accept_secret_chat_data {
   struct tgl_secret_chat *U;
 };
 
-void request_code (struct tgl_state *TLS, void (*callback) (struct tgl_state *TLS));
-void request_code_entered (gpointer extra, const gchar *code);
-void request_name_code_entered (PurpleConnection* gc, PurpleRequestFields* fields);
-void request_name_and_code (struct tgl_state *TLS);
-void request_password (struct tgl_state *TLS, void (*callback)(struct tgl_state *TLS, const char *string[], void *arg), void *arg);
+void request_value (struct tgl_state *TLS, enum tgl_value_type type, const char *prompt, int num_values,
+    void (*callback) (struct tgl_state *TLS, const char *string[], void *arg), void *arg);
 void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *U);
 void request_choose_user (struct accept_create_chat_data *data);
 void request_create_chat (struct tgl_state *TLS, const char *subject);

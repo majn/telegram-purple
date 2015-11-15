@@ -247,13 +247,11 @@ void read_dc (struct tgl_state *TLS, int auth_file_fd, int id, unsigned ver) {
   bl_do_dc_signed (TLS, id);
 }
 
-int error_if_val_false (struct tgl_state *TLS, int val, const char *cause, const char *msg) {
-  if (!val) {
+int tgp_error_if_false (struct tgl_state *TLS, int val, const char *cause, const char *msg) {
+  if (! val) {
     connection_data *conn = TLS->ev_base;
     purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, msg);
-    
-    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR,
-            cause, msg, NULL, NULL, NULL);
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, cause, msg, NULL, NULL, NULL);
     return TRUE;
   }
   return 0;
@@ -318,7 +316,6 @@ void read_auth_file (struct tgl_state *TLS) {
   }
   close (auth_file_fd);
 }
-
 
 void write_secret_chat (tgl_peer_t *_P, void *extra) {
   struct tgl_secret_chat *P = (void *)_P;
@@ -472,33 +469,6 @@ gchar *get_download_dir (struct tgl_state *TLS) {
   return dir;
 }
 
-gboolean assert_file_exists (PurpleConnection *gc, const char *filepath, const char *format) {
-  if (!g_file_test (filepath, G_FILE_TEST_EXISTS)) {
-    gchar *msg = g_strdup_printf (format, filepath);
-    purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_CERT_OTHER_ERROR, msg);
-    g_free (msg);
-    return 0;
-  }
-  return 1;
-}
-
-void export_auth_callback (struct tgl_state *TLS, void *extra, int success) {
-  if (!error_if_val_false (TLS, success, _("Login canceled"), _("Authentication export to remote data centers failed, login not possible."))) {
-    telegram_export_authorization (TLS);
-  }
-}
-
-void telegram_export_authorization (struct tgl_state *TLS) {
-  int i;
-  for (i = 0; i <= TLS->max_dc_num; i++) if (TLS->DC_list[i] && !tgl_signed_dc (TLS, TLS->DC_list[i])) {
-    debug ("tgl_do_export_auth(%d)", i);
-    tgl_do_export_auth (TLS, i, export_auth_callback, (void*)(long)TLS->DC_list[i]);
-    return;
-  }
-  write_auth_file (TLS);
-  on_ready (TLS);
-}
-
 void write_secret_chat_gw (struct tgl_state *TLS, void *extra, int success, struct tgl_secret_chat *_) {
   if (!success) {
     tgp_notify_on_error_gw (TLS, NULL, success);
@@ -533,70 +503,6 @@ void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *titl
     purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, _("Couldn't create group"), _("Select at least one other user"), NULL,
                            NULL, NULL);
   }
-}
-
-
-static void sign_in_callback (struct tgl_state *TLS, void *extra, int success, int registered, const char *mhash) {
-  connection_data *conn = TLS->ev_base;
-  if (! error_if_val_false (TLS, success, _("Invalid phone number"),
-          _("Please enter only numbers in the international phone number format, "
-          "a leading + following by the country prefix and the phone number.\n"
-          "Do not use any other special chars."))) {
-    conn->hash = strdup (mhash);
-    if (registered) {
-      request_code (TLS, telegram_export_authorization);
-    } else {
-      request_name_and_code (TLS);
-    }
-  }
-}
-
-static void telegram_send_sms (struct tgl_state *TLS) {
-  if (tgl_signed_dc (TLS, TLS->DC_working)) {
-    telegram_export_authorization (TLS);
-    return;
-  }
-  connection_data *conn = TLS->ev_base;
-  char const *username = purple_account_get_username(conn->pa);
-  tgl_do_send_code (TLS, username, (int) strlen(username), sign_in_callback, NULL);
-}
-
-static int all_authorized (struct tgl_state *TLS) {
-  int i;
-  for (i = 0; i <= TLS->max_dc_num; i++) {
-    if (TLS->DC_list[i]) {
-      tgl_dc_authorize (TLS, TLS->DC_list[i]);
-      if (!tgl_signed_dc (TLS, TLS->DC_list[i]) && !tgl_authorized_dc (TLS, TLS->DC_list[i])) {
-        return 0;
-      }
-    }
-  }
-  return 1;
-}
-
-static int check_all_authorized (gpointer arg) {
-  struct tgl_state *TLS = arg;
-
-  if (all_authorized (TLS)) {
-    ((connection_data *)TLS->ev_base)->login_timer = 0;
-    telegram_send_sms (TLS);    
-    return FALSE;
-  } else {
-    return TRUE;
-  }
-}
-    
-void telegram_login (struct tgl_state *TLS) {
-  connection_data *conn = TLS->ev_base;
-  
-  read_auth_file (TLS);
-  read_state_file (TLS);
-  read_secret_chat_file (TLS);
-  if (all_authorized (TLS)) {
-    telegram_send_sms (TLS);
-    return;
-  }
-  conn->login_timer = purple_timeout_add (100, check_all_authorized, TLS);
 }
 
 /**

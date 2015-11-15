@@ -31,97 +31,71 @@
 #include "telegram-base.h"
 #include "tgp-2prpl.h"
 #include "tgp-utils.h"
+#include "tgp-structs.h"
 
-static void code_receive_result (struct tgl_state *TLS, void *extra, int success, struct tgl_user *U) {
-  struct request_password_data *data = extra;
-  if (success) {
-    ((void (*) (struct tgl_state *TLS)) data->callback) (TLS);
-  } else {
-    debug ("bad code, retrying...");
-    request_code (TLS, data->callback);
-  }
-  free (data);
-}
-
-void request_code_entered (gpointer extra, const gchar *code) {
-  struct request_password_data *data = extra;
-  connection_data *conn = data->TLS->ev_base;
-  char const *username = purple_account_get_username (conn->pa);
+static void request_code_entered (struct request_values_data *data, const gchar *code) {
   char *stripped = g_strstrip (purple_markup_strip_html (code));
   debug ("sending code: '%s'\n", stripped);
-  
-  tgl_do_send_code_result (data->TLS, username, (int)strlen (username), conn->hash, (int)strlen (conn->hash),
-      stripped, (int)strlen (stripped), code_receive_result, data);
+  data->callback (data->TLS, (const char **)&stripped, data->arg);
   g_free (stripped);
 }
 
-static void request_code_canceled (gpointer extra) {
-  struct request_password_data *data = extra;
-  connection_data *conn = data->TLS->ev_base;
-  
-  purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, "registration canceled");
+static void request_code_canceled (struct request_values_data *data) {
+  purple_connection_error_reason (tg_get_conn (data->TLS), PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, "registration canceled");
   free (data);
 }
 
-void request_code (struct tgl_state *TLS, void (*callback) (struct tgl_state *TLS)) {
-  debug ("Client is not registered, registering...");
-  connection_data *conn = TLS->ev_base;
-  
-  struct request_password_data *data = malloc (sizeof(struct request_password_data));
+static void request_code (struct tgl_state *TLS, void (*callback) (struct tgl_state *TLS, const char *string[], void *arg),
+    void *arg) {
+  debug ("client is not registered, registering...");
+
+  struct request_values_data *data = malloc (sizeof(struct request_values_data));
   data->TLS = TLS;
-  data->arg = conn;
+  data->arg = arg;
   data->callback = callback;
 
   if (purple_account_get_bool (tg_get_acc (TLS), "compat-verification", 0) ||
-      ! purple_request_input (conn->gc, _("Login code"), _("Enter login code"), _("Telegram wants to verify your "
+      ! purple_request_input (tg_get_conn (TLS), _("Login code"), _("Enter login code"), _("Telegram wants to verify your "
         "identity. Please enter the code that you have received via SMS."), NULL, 0, 0, _("the code"), _("OK"),
-        G_CALLBACK(request_code_entered), _("Cancel"), G_CALLBACK(request_code_canceled), conn->pa, NULL, NULL, data)) {
+        G_CALLBACK(request_code_entered), _("Cancel"), G_CALLBACK(request_code_canceled), tg_get_acc (TLS), NULL, NULL, data)) {
     
-    // purple request API is not available, so we create a new conversation (the Telegram system
-    // account "7770000") to prompt the user for the code
-    conn->in_fallback_chat = 1;
-    purple_connection_set_state (conn->gc, PURPLE_CONNECTED);
-    PurpleConversation *conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, conn->pa, "777000");
-    purple_conversation_write (conv, "777000", _("What is your SMS verification code?"),
+    // the purple request API is not supported, create a new conversation (the Telegram system account "Telegram") to
+    // prompt the user for the code.
+    tg_get_data (TLS)->request_code_data = data;
+    purple_connection_set_state (tg_get_conn (TLS), PURPLE_CONNECTED);
+    PurpleConversation *conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tg_get_acc (TLS), "Telegram");
+    purple_conversation_write (conv, "Telegram", _("What is your SMS verification code?"),
         PURPLE_MESSAGE_RECV | PURPLE_MESSAGE_SYSTEM, 0);
-    free (data);
   }
 }
 
-static void code_auth_receive_result (struct tgl_state *TLS, void *extra, int success, struct tgl_user *U) {
-  if (! success) {
-    debug ("Bad code...");
-    request_name_and_code (TLS);
+static void request_name_and_code (struct tgl_state *TLS, void (*callback) (struct tgl_state *TLS, const char *string[], void *arg), void *arg);
+static void request_name_code_entered (struct request_values_data *data, PurpleRequestFields* fields) {
+  char *names[] = {
+    g_strstrip (g_strdup (purple_request_fields_get_string (fields, "first_name"))),
+    g_strstrip (g_strdup (purple_request_fields_get_string (fields, "last_name"))),
+    g_strstrip (g_strdup (purple_request_fields_get_string (fields, "code")))
+  };
+
+  if (str_not_empty (names[0]) && str_not_empty (names[1]) && str_not_empty (names[2])) {
+    data->callback (data->TLS, (const char **) names, data->arg);
   } else {
-    telegram_export_authorization (TLS);
+    request_name_and_code (data->TLS, data->callback, data->arg);
   }
+
+  int j;
+  for (j = 0; j < 3; ++j) {
+    g_free (names[j]);
+  }
+  free (data);
 }
 
-void request_name_code_entered (PurpleConnection* gc, PurpleRequestFields* fields) {
-  connection_data *conn = purple_connection_get_protocol_data (gc);
-  struct tgl_state *TLS = conn->TLS;
-  char const *username = purple_account_get_username (conn->pa);
-  
-  char* first = g_strstrip (g_strdup (purple_request_fields_get_string (fields, "first_name")));
-  char* last = g_strstrip (g_strdup (purple_request_fields_get_string (fields, "last_name")));
-  char* code = g_strstrip (g_strdup (purple_request_fields_get_string (fields, "code")));
-  if (!first || !last || !code) {
-    request_name_and_code (TLS);
-    return;
-  }
-  tgl_do_send_code_result_auth (TLS, username, (int)strlen(username), conn->hash,
-      (int)strlen (conn->hash), code, (int)strlen (code), first,
-      (int)strlen (first), last, (int)strlen (last),
-      code_auth_receive_result, NULL);
-  g_free (first);
-  g_free (last);
-  g_free (code);
-}
+static void request_name_and_code (struct tgl_state *TLS, void (*callback) (struct tgl_state *TLS, const char *string[], void *arg), void *arg) {
+  debug ("phone is not registered, registering...");
 
-void request_name_and_code (struct tgl_state *TLS) {
-  debug ("Phone is not registered, registering...");
-  
-  connection_data *conn = TLS->ev_base;
+  struct request_values_data *data = talloc0 (sizeof (struct request_values_data));
+  data->callback = callback;
+  data->arg = arg;
   
   PurpleRequestFields* fields = purple_request_fields_new ();
   PurpleRequestField* field = 0;
@@ -138,26 +112,25 @@ void request_name_and_code (struct tgl_state *TLS) {
   purple_request_field_group_add_field (group, field);
   purple_request_fields_add_group (fields, group);
   
-  if (!purple_request_fields (conn->gc, _("Register"), _("Please register your phone number."), NULL, fields, _("OK"),
-        G_CALLBACK(request_name_code_entered), _("Cancel"), NULL, conn->pa, NULL, NULL, conn->gc)) {
+  if (!purple_request_fields (tg_get_conn (TLS), _("Register"), _("Please register your phone number."), NULL, fields,
+      _("OK"), G_CALLBACK(request_name_code_entered), _("Cancel"), NULL, tg_get_acc (TLS), NULL, NULL, data)) {
     // purple_request API not available
     const char *error = _("Phone number is not registered. Please register your phone on a different client.");
-    purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, error);
+    purple_connection_error_reason (tg_get_conn (data->TLS) , PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED, error);
     purple_notify_error (_telegram_protocol, _("Not Registered"), _("Not Registered"), error);
   }
 }
 
-static void request_password_entered (struct request_password_data *data, PurpleRequestFields* fields) {
-  const char* pass = purple_request_fields_get_string (fields, "password");
-  ((void (*)(struct tgl_state *TLS, const char *string[], void *arg)) data->callback) (data->TLS, &pass, data->arg);
+static void request_password_entered (struct request_values_data *data, PurpleRequestFields* fields) {
+  const char *pass = purple_request_fields_get_string (fields, "password");
+  data->callback (data->TLS, &pass, data->arg);
   free (data);
 }
 
-void request_password (struct tgl_state *TLS, void (*callback) (struct tgl_state *TLS, const char *string[], void *arg),
-                       void *arg) {
+void request_password (struct tgl_state *TLS, void (*callback) (struct tgl_state *TLS, const char *string[], void *arg), void *arg) {
   connection_data *conn = TLS->ev_base;
   
-  struct request_password_data *data = malloc (sizeof(struct request_password_data));
+  struct request_values_data *data = malloc (sizeof(struct request_values_data));
   data->TLS = TLS;
   data->arg = arg;
   data->callback = callback;
@@ -180,11 +153,8 @@ void request_password (struct tgl_state *TLS, void (*callback) (struct tgl_state
   }
 }
 
-static void accept_secret_chat_cb (gpointer _data, const gchar *code) {
-  struct accept_secret_chat_data *data = _data;
-  
+static void accept_secret_chat_cb (struct accept_secret_chat_data *data, const gchar *code) {
   tgl_do_accept_encr_chat_request (data->TLS, data->U, write_secret_chat_gw, 0);
-  
   g_free (data);
 }
 
@@ -212,8 +182,7 @@ void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *
   g_free (message);
 }
 
-static void create_group_chat_cb (void *_data, PurpleRequestFields* fields) {
-  struct accept_create_chat_data *data = _data;
+static void create_group_chat_cb (struct accept_create_chat_data *data, PurpleRequestFields* fields) {
   // FIXME: Oh god.
   const char *users[3] = {
     purple_request_fields_get_string (fields, "user1"),
@@ -233,9 +202,6 @@ static void cancel_group_chat_cb (gpointer data) {
 }
 
 void request_choose_user (struct accept_create_chat_data *data) {
-  struct tgl_state *TLS = data->TLS;
-  connection_data *conn = TLS->ev_base;
-  
   // Telegram doesn't allow to create chats with only one user, so we need to force
   // the user to specify at least one other one.
   PurpleRequestFields* fields = purple_request_fields_new();
@@ -256,13 +222,11 @@ void request_choose_user (struct accept_create_chat_data *data) {
   purple_request_field_group_add_field (group, field);
   
   purple_request_fields_add_group (fields, group);
-  purple_request_fields (conn->gc, _("Create group chat"), _("Invite users"), NULL, fields, _("OK"),
-      G_CALLBACK(create_group_chat_cb), _("Cancel"), G_CALLBACK(cancel_group_chat_cb), conn->pa, NULL, NULL, data);
+  purple_request_fields (tg_get_conn (data->TLS), _("Create group chat"), _("Invite users"), NULL, fields, _("OK"),
+      G_CALLBACK(create_group_chat_cb), _("Cancel"), G_CALLBACK(cancel_group_chat_cb), tg_get_acc (data->TLS), NULL, NULL, data);
 }
 
 void request_create_chat (struct tgl_state *TLS, const char *subject) {
-  connection_data *conn = TLS->ev_base;
-  
   struct accept_create_chat_data *data = malloc (sizeof (struct accept_create_chat_data));
   data->title = g_strdup (subject);
   data->TLS = TLS;
@@ -272,7 +236,52 @@ void request_create_chat (struct tgl_state *TLS, const char *subject) {
   // FIXME: This dialog is pointless. It only asks whether the user wants to create a new chat.
   // This should be merged with the next dialog.
   // TODO: This still displays "Cancel" and "Accept", no matter $LANG
-  purple_request_accept_cancel (conn->gc, _("Create group chat"), title, secondary, 1, conn->pa, NULL,
+  purple_request_accept_cancel (tg_get_conn (TLS), _("Create group chat"), title, secondary, 1, tg_get_acc (TLS), NULL,
       NULL, data, G_CALLBACK(request_choose_user), G_CALLBACK(cancel_group_chat_cb));
   g_free (secondary);
+}
+
+void request_value (struct tgl_state *TLS, enum tgl_value_type type, const char *prompt, int num_values,
+    void (*callback) (struct tgl_state *TLS, const char *string[], void *arg), void *arg) {
+
+  debug ("tgl requests user input, tgl_value_type: %d, prompt: %s, count: %d", type, prompt, num_values);
+  switch (type) {
+    case tgl_cur_password: {
+      const char *P = purple_account_get_string (tg_get_acc (TLS), TGP_KEY_PASSWORD_TWO_FACTOR, NULL);
+      if (str_not_empty (P)) {
+        if (tg_get_data (TLS)->password_retries ++ < 1) {
+          callback (TLS, &P, arg);
+          return;
+        }
+      }
+      request_password (TLS, callback, arg);
+      break;
+    }
+
+    case tgl_register_info:
+      request_name_and_code (TLS, callback, arg);
+      break;
+
+    case tgl_code:
+      request_code (TLS, callback, arg);
+      break;
+
+    case tgl_phone_number: {
+      // if we arrive here for the second time the specified phone number is not valid. We do not
+      // ask for the phone number directly, cause in that case the account would still be created
+      // named with the invalid phone number, even though the login will work
+      tgp_error_if_false (TLS, tg_get_data(TLS)->login_retries++ < 1, _("Invalid phone number"),
+          _("Please enter only numbers in the international phone number format, "
+              "a leading + following by the country prefix and the phone number.\n"
+              "Do not use any other special chars."));
+
+      const char *username = purple_account_get_username (tg_get_acc (TLS));
+      callback (TLS, &username, arg);
+      break;
+    }
+
+    default:
+      assert (FALSE);
+      break;
+  }
 }

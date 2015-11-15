@@ -65,9 +65,8 @@
 #include "tgp-msg.h"
 #include "tgp-request.h"
 #include "tgp-blist.h"
+#include "tgp-structs.h"
 
-static void get_password (struct tgl_state *TLS, enum tgl_value_type type, const char *prompt, int num_values,
-                          void (*callback)(struct tgl_state *TLS, const char *string[], void *arg), void *arg);
 static void update_message_handler (struct tgl_state *TLS, struct tgl_message *M);
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *U, unsigned flags);
 static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *U);
@@ -75,6 +74,7 @@ static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *C, unsi
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *C, unsigned flags);
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status);
 static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_message *list[]);
+static void update_on_ready (struct tgl_state *TLS);
 static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4);
 static void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
 
@@ -84,7 +84,8 @@ const char *pk_path = "/etc/telegram-purple/server.tglpub";
 
 struct tgl_update_callback tgp_callback = {
   .logprintf = debug,
-  .get_values = get_password,
+  .get_values = request_value,
+  .started = update_on_ready,
   .new_msg = update_message_handler,
   .msg_receive = update_message_handler,
   .user_update = update_user_handler,
@@ -286,21 +287,6 @@ static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const c
   return tgl_strdup (s);
 }
 
-static void get_password (struct tgl_state *TLS, enum tgl_value_type type, const char *prompt, int num_values,
-                          void (*callback)(struct tgl_state *TLS, const char *string[], void *arg), void *arg) {
-  if (type == tgl_cur_password) {
-    connection_data *conn = TLS->ev_base;
-    const char *P = purple_account_get_string (conn->pa, TGP_KEY_PASSWORD_TWO_FACTOR, NULL);
-    
-    if (str_not_empty (P)) {
-      if (conn->password_retries++ < 1) {
-        callback (TLS, &P, arg);
-        return;
-      }
-    }
-    request_password (TLS, callback, arg);
-  }
-}
 
 /*
 static void on_contact_added (struct tgl_state *TLS,void *callback_extra, int success, int size, struct tgl_user *users[]) {
@@ -405,20 +391,6 @@ void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, stru
   }
 }
 
-void on_ready (struct tgl_state *TLS) {
-  debug ("on_ready().");
-  connection_data *conn = TLS->ev_base;
-  
-  purple_connection_set_state (conn->gc, PURPLE_CONNECTED);
-  purple_connection_set_display_name (conn->gc, purple_account_get_username (conn->pa));
-  purple_blist_add_account (conn->pa);
-
-  debug ("seq = %d, pts = %d, date = %d", TLS->seq, TLS->pts, TLS->date);
-  tgl_do_get_difference (TLS, purple_account_get_bool (conn->pa, "history-sync-all", FALSE), tgp_notify_on_error_gw, NULL);
-  tgl_do_get_dialog_list (TLS, 200, 0, on_get_dialog_list_done, NULL);
-  tgl_do_update_contact_list (TLS, 0, 0);
-}
-
 static const char *tgprpl_list_icon (PurpleAccount *acct, PurpleBuddy *buddy) {
   return "telegram";
 }
@@ -474,6 +446,8 @@ static void create_secret_chat_done (struct tgl_state *TLS, void *callback_extra
     return;
   }
   write_secret_chat_file (TLS);
+  
+  // show the created secret chat to the user
 }
 
 static void start_secret_chat (PurpleBlistNode *node, gpointer data) {
@@ -514,12 +488,6 @@ void export_chat_link_checked (struct tgl_state *TLS, const char *name) {
     return;
   }
   tgl_do_export_chat_link (TLS, C->id, create_chat_link_done, C);
-}
-
-void leave_and_delete_chat_gw (PurpleBlistNode *node, gpointer data) {
-  PurpleChat *PC = (PurpleChat*)node;
-  tgl_peer_t *P = tgl_peer_get (pbn_get_conn (node)->TLS, p2tgl_chat_get_id (PC));
-  leave_and_delete_chat (pbn_get_conn (node)->TLS, P);
 }
 
 void leave_and_delete_chat (struct tgl_state *TLS, tgl_peer_t *P) {
@@ -577,6 +545,22 @@ static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
     menu = g_list_append (menu, (gpointer)action);
   }
   return menu;
+}
+
+static void update_on_ready (struct tgl_state *TLS) {
+  debug ("update_on_ready().");
+
+  write_auth_file (TLS);
+
+  purple_connection_set_state (tg_get_conn (TLS), PURPLE_CONNECTED);
+  purple_connection_set_display_name (tg_get_conn (TLS), purple_account_get_username (tg_get_acc (TLS)));
+  purple_blist_add_account (tg_get_acc (TLS));
+
+  debug ("seq = %d, pts = %d, date = %d", TLS->seq, TLS->pts, TLS->date);
+  tgl_do_get_difference (TLS, purple_account_get_bool (tg_get_acc (TLS), "history-sync-all", FALSE),
+      tgp_notify_on_error_gw, NULL);
+  tgl_do_get_dialog_list (TLS, 200, 0, on_get_dialog_list_done, NULL);
+  tgl_do_update_contact_list (TLS, 0, 0);
 }
 
 static void tgprpl_login (PurpleAccount * acct) {
@@ -638,46 +622,50 @@ static void tgprpl_login (PurpleAccount * acct) {
   if (! tgp_startswith (purple_account_get_username (acct), "+")) {
         char *cause = g_strdup_printf (_("Unable to sign on as %s: phone number lacks country prefix."),
                         purple_account_get_username (acct));
-        purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_INVALID_SETTINGS, cause);
-        purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, cause,
-                                _("Numbers must start with the full international\n"
-                                "prefix code, e.g. +49 for Germany."), NULL, NULL, NULL);
-        g_free (cause);
-        return;
+    purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_INVALID_SETTINGS, cause);
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, cause,
+        _("Numbers must start with the full international\n"
+            "prefix code, e.g. +49 for Germany."), NULL, NULL, NULL);
+    g_free (cause);
+    return;
   }
 
+  read_auth_file (TLS);
+  read_state_file (TLS);
+  read_secret_chat_file (TLS);
+
   purple_connection_set_state (conn->gc, PURPLE_CONNECTING);
-  
-  telegram_login (TLS);
+
+  tgl_login (TLS);
 }
 
 static void tgprpl_close (PurpleConnection *gc) {
   debug ("tgprpl_close()");
-  connection_data *conn = purple_connection_get_protocol_data (gc);
-  connection_data_free (conn);
+  connection_data_free (purple_connection_get_protocol_data (gc));
 }
 
 static int tgprpl_send_im (PurpleConnection *gc, const char *who, const char *message, PurpleMessageFlags flags) {
   debug ("tgprpl_send_im()");
- 
-  // this is part of a workaround to support clients without
-  // the request API (request.h), see telegram-base.c:request_code()
-  if (gc_get_conn (gc)->in_fallback_chat) {
+
+  // workaround to support clients without the request API (request.h), see tgp-request.c:request_code()
+  if (gc_get_conn (gc)->request_code_data) {
 
     // OTR plugins may try to insert messages that don't contain the code
     if (tgp_startswith (message, "?OTR")) {
-        info ("Fallback SMS auth, skipping OTR message: '%s'", message);
-        return -1;
+      info ("Fallback SMS auth, skipping OTR message: '%s'", message);
+      return -1;
     }
-    request_code_entered (gc_get_conn (gc)->TLS, message);
-    gc_get_conn (gc)->in_fallback_chat = 0;
+    struct request_values_data *data = gc_get_conn (gc)->request_code_data;
+    data->callback (gc_get_conn(gc)->TLS, &message, data->arg);
+    free (data);
+
+    gc_get_conn (gc)->request_code_data = NULL;
     return 1;
   }
   
   /* 
-     Make sure that we only send messages to an existing peer by
-     searching it in the peer tree. This allows us to give immediate feedback 
-     by returning an error-code in case the peer doesn't exist
+     Make sure that to only send messages to an existing peer by searching it in the peer tree, to give immediate
+     feedback by returning an error-code in case the peer doesn't exist.
    */
   tgl_peer_t *peer = tgp_blist_peer_find (gc_get_conn (gc)->TLS, who);
   if (peer) {
@@ -1002,4 +990,3 @@ static PurplePluginInfo plugin_info = {
 };
 
 PURPLE_INIT_PLUGIN (telegram, tgprpl_init, plugin_info)
-
