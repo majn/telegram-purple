@@ -447,12 +447,14 @@ gchar *get_config_dir (char const *username) {
 }
 
 gchar *get_user_pk_path () {
-  /* This can't be conditional on whether or not we're using telepathy, because
-   * then we would need to make sure that `make local_install` also knows about
-   * that location. So we *always* use ${HOME}/.purple/telegram-purple,
-   * even when the other files aren't in this folder.
-   * Note that this is only visible when using Telepathy/Empathy with
-   * local_install, which should be kinda rare anyway (use telepathy-morse!). */
+  /*
+     This can't be conditional on whether or not we're using telepathy, because
+     then we would need to make sure that `make local_install` also knows about
+     that location. So we *always* use ${HOME}/.purple/telegram-purple,
+     even when the other files aren't in this folder.
+     Note that this is only visible when using Telepathy/Empathy with
+     local_install, which should be kinda rare anyway (use telepathy-morse!).
+   */
   return g_strconcat (g_get_home_dir(), G_DIR_SEPARATOR_S, ".purple",
                                 G_DIR_SEPARATOR_S, "telegram-purple",
                                 G_DIR_SEPARATOR_S, user_pk_filename, NULL);

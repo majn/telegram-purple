@@ -412,7 +412,7 @@ static void tgprpl_tooltip_text (PurpleBuddy *buddy, PurpleNotifyUserInfo *info,
   g_free (status);
 }
 
-static GList *tgprpl_status_types (PurpleAccount * acct) {
+static GList *tgprpl_status_types (PurpleAccount *acct) {
   debug ("tgprpl_status_types()");
   GList *types = NULL;
   PurpleStatusType *type;
@@ -528,20 +528,20 @@ static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
       tgl_get_peer_type (tgp_blist_buddy_get_id ((PurpleBuddy *)node)) == TGL_PEER_USER) {
     // Add encrypted chat option to the right click menu of all buddies
     PurpleBuddy* buddy = (PurpleBuddy*)node;
-    PurpleMenuAction* action = purple_menu_action_new (_("Start secret chat ..."),
-                                 PURPLE_CALLBACK(start_secret_chat), buddy, NULL);
+    PurpleMenuAction* action = purple_menu_action_new (_("Start secret chat ..."), PURPLE_CALLBACK(start_secret_chat),
+        buddy, NULL);
     menu = g_list_append (menu, (gpointer)action);
   }
   if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
      // Generate Public Link
-    PurpleMenuAction* action = purple_menu_action_new (_("Invite users by link ..."),
-                                 PURPLE_CALLBACK(create_chat_link), NULL, NULL);
+    PurpleMenuAction* action = purple_menu_action_new (_("Invite users by link ..."), PURPLE_CALLBACK(create_chat_link),
+        NULL, NULL);
     menu = g_list_append (menu, (gpointer)action);
   }
   if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
     // Delete self from chat
-    PurpleMenuAction* action = purple_menu_action_new (_("Delete and exit ..."),
-                                 PURPLE_CALLBACK(leave_and_delete_chat), NULL, NULL);
+    PurpleMenuAction* action = purple_menu_action_new (_("Delete and exit ..."), PURPLE_CALLBACK(leave_and_delete_chat),
+        NULL, NULL);
     menu = g_list_append (menu, (gpointer)action);
   }
   return menu;
