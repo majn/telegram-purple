@@ -33,11 +33,6 @@ struct request_values_data {
   const char *string[];
 };
 
-struct accept_create_chat_data {
-  struct tgl_state *TLS;
-  char *title;
-};
-
 struct accept_secret_chat_data {
   struct tgl_state *TLS;
   struct tgl_secret_chat *U;
@@ -46,7 +41,6 @@ struct accept_secret_chat_data {
 void request_value (struct tgl_state *TLS, enum tgl_value_type type, const char *prompt, int num_values,
     void (*callback) (struct tgl_state *TLS, const char *string[], void *arg), void *arg);
 void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *U);
-void request_choose_user (struct accept_create_chat_data *data);
 void request_create_chat (struct tgl_state *TLS, const char *subject);
 
 #endif

@@ -182,7 +182,7 @@ void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *
   g_free (message);
 }
 
-static void create_group_chat_cb (struct accept_create_chat_data *data, PurpleRequestFields* fields) {
+static void create_group_chat_cb (struct request_values_data *data, PurpleRequestFields* fields) {
   // FIXME: Oh god.
   const char *users[3] = {
     purple_request_fields_get_string (fields, "user1"),
@@ -190,18 +190,21 @@ static void create_group_chat_cb (struct accept_create_chat_data *data, PurpleRe
     purple_request_fields_get_string (fields, "user3")
   };
   
-  tgp_create_group_chat_by_usernames (data->TLS, data->title, users, 3, FALSE);
-  g_free (data->title);
+  tgp_create_group_chat_by_usernames (data->TLS, data->arg, users, 3, FALSE);
+  g_free (data->arg);
   free (data);
 }
 
-static void cancel_group_chat_cb (gpointer data) {
-  struct accept_create_chat_data *d = data;
-  g_free (d->title);
-  free (d);
+static void cancel_group_chat_cb (struct request_values_data *data) {
+  g_free (data->arg);
+  free (data);
 }
 
-void request_choose_user (struct accept_create_chat_data *data) {
+void request_create_chat (struct tgl_state *TLS, const char *subject) {
+  struct request_values_data *data = talloc0 (sizeof (struct request_values_data));
+  data->arg = g_strdup (subject);
+  data->TLS = TLS;
+
   // Telegram doesn't allow to create chats with only one user, so we need to force
   // the user to specify at least one other one.
   PurpleRequestFields* fields = purple_request_fields_new();
@@ -226,20 +229,12 @@ void request_choose_user (struct accept_create_chat_data *data) {
       G_CALLBACK(create_group_chat_cb), _("Cancel"), G_CALLBACK(cancel_group_chat_cb), tg_get_acc (data->TLS), NULL, NULL, data);
 }
 
-void request_create_chat (struct tgl_state *TLS, const char *subject) {
-  struct accept_create_chat_data *data = malloc (sizeof (struct accept_create_chat_data));
-  data->title = g_strdup (subject);
-  data->TLS = TLS;
-  char *title = _("Chat doesn't exist (yet)");
-  char *secondary = g_strdup_printf (_("Do you want to create a new group chat named '%s'?"), subject);
-  
-  // FIXME: This dialog is pointless. It only asks whether the user wants to create a new chat.
-  // This should be merged with the next dialog.
-  // TODO: This still displays "Cancel" and "Accept", no matter $LANG
-  purple_request_accept_cancel (tg_get_conn (TLS), _("Create group chat"), title, secondary, 1, tg_get_acc (TLS), NULL,
-      NULL, data, G_CALLBACK(request_choose_user), G_CALLBACK(cancel_group_chat_cb));
-  g_free (secondary);
+/*
+void request_input (struct tgl_state *TLS, const char *prompt, int num_values,
+    void (*callback) (struct tgl_state *TLS, const char *string[], void *arg), void *arg) {
+  accept_create
 }
+ */
 
 void request_value (struct tgl_state *TLS, enum tgl_value_type type, const char *prompt, int num_values,
     void (*callback) (struct tgl_state *TLS, const char *string[], void *arg), void *arg) {
