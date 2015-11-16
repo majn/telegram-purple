@@ -25,7 +25,6 @@
 #include <gcrypt.h>
 
 #include "telegram-base.h"
-#include "lodepng/lodepng.h"
 
 // O_BINARY exists on windows and must be defined, but doesn't exist on unix-based systems
 #ifndef O_BINARY
@@ -538,15 +537,8 @@ int tgp_visualize_key (struct tgl_state *TLS, unsigned char* sha1_key) {
       }
     }
   }
-  unsigned char* png;
-  size_t pngsize;
-  unsigned error = lodepng_encode32 (&png, &pngsize, image, img_size, img_size);
-  int imgStoreId = -1;
-  if(!error)
-  {
-    imgStoreId = purple_imgstore_add_with_id (png, pngsize, NULL);
-    used_images_add ((connection_data*)TLS->ev_base, imgStoreId);
-  }
+  int imgStoreId = p2tgl_imgstore_add_with_id_raw(image, img_size, img_size);
+  used_images_add ((connection_data*)TLS->ev_base, imgStoreId);
   g_free (image);
   return imgStoreId;
 }

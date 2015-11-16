@@ -256,5 +256,3 @@ Acknowledgements
 ----------------
 
 This software is based on the library [Libtgl](https://github.com/vysheng/tgl), which was written by Vitaly Valtman <mail@vysheng.ru> and others, see (https://github.com/vysheng/tgl/)
-
-For PNG rendering, it includes the [lodepng library](http://lodev.org/lodepng/).

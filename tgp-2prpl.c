@@ -22,7 +22,6 @@
 
 #ifdef HAVE_LIBWEBP
 #include <webp/decode.h>
-#include "lodepng/lodepng.h"
 #endif
 
 PurpleAccount *tls_get_pa (struct tgl_state *TLS) {
@@ -305,21 +304,9 @@ int p2tgl_imgstore_add_with_id_webp (const char *filename) {
   g_free ((gchar *)data);
   const uint8_t *decoded = config.output.u.RGBA.rgba;
 
-  // convert to png
-  unsigned char* png = NULL;
-  size_t pnglen;
-  unsigned error = lodepng_encode32 (&png, &pnglen, decoded, config.options.scaled_width, config.options.scaled_height);
+  // convert and add
+  int imgStoreId = p2tgl_imgstore_add_with_id_raw(decoded, config.options.scaled_width, config.options.scaled_height);
   WebPFreeDecBuffer (&config.output);
-  if (error) {
-    warning ("error encoding webp as png: %s", filename);
-    return 0;
-  }
-
-  // will be owned by libpurple imgstore, which uses glib functions for managing memory
-  void *pngdub = g_memdup (png, (guint)pnglen);
-  free (png);
-
-  int imgStoreId = purple_imgstore_add_with_id (pngdub, pnglen, NULL);
   return imgStoreId;
 }
 #endif
