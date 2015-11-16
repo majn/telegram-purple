@@ -338,6 +338,11 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra
   for (; i >= 0; i--) {
     tgl_peer_t *UC = tgl_peer_get (TLS, peers[i]);
     
+    // our own contact shouldn't show up in our buddy list
+    if (tgl_get_peer_id (UC->id) == tgl_get_peer_id (TLS->our_id)) {
+      continue;
+    }
+    
     switch (tgl_get_peer_type (peers[i])) {
       case TGL_PEER_USER:
         assert (UC);
