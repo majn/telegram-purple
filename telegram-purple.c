@@ -125,16 +125,15 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
   }
   
   if (flags & TGL_UPDATE_CREATED) {
-    // new user was allocated
+    // new user was allocated, fetch the corresponding buddy from the buddy list
     PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, user->id);
     
-    // fetch buddies that are still stored in the old naming scheme
+    // the buddy doesn't exist, if it is stored in the legacy naming format find and migrate it. This
+    // should only happen when making the switch from a version < 1.2.2 to a version >= 1.2.2
     if (! buddy) {
       char *id = g_strdup_printf ("%d", tgl_get_peer_id (user->id));
       buddy = purple_find_buddy (tg_get_acc (TLS), id);
       g_free (id);
-      
-      // migrate the old buddy to the new format
       if (buddy) {
         debug ("migrating buddy from old name %s to %s", purple_buddy_get_name (buddy), user->print_name);
         buddy = tgp_blist_buddy_migrate (TLS, buddy, user);
@@ -591,7 +590,7 @@ static void tgprpl_login (PurpleAccount * acct) {
 
   tgl_set_verbosity (TLS, 4);
   if (global_pk_loaded) {
-    debug ("using global pubkey");
+    info ("using global pubkey");
     tgl_set_rsa_key_direct (TLS, pubkey.e, pubkey.n_len, pubkey.n_raw);
   } else {
     char *user_pk_path = get_user_pk_path ();
@@ -599,10 +598,10 @@ static void tgprpl_login (PurpleAccount * acct) {
     gboolean user_pk_loaded = read_pubkey_file (user_pk_path, &pubkey);
 
     if (user_pk_loaded) {
-      debug ("using local pubkey");
+      info ("using local pubkey");
       tgl_set_rsa_key_direct (TLS, pubkey.e, pubkey.n_len, pubkey.n_raw);
     } else {
-      debug ("both didn't work. abort.");
+      failure ("both didn't work. abort.");
       char *cause = g_strdup_printf (_("Unable to sign on as %s: pubkey not found."),
                       purple_account_get_username (acct));
       purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_INVALID_SETTINGS, cause);
@@ -624,8 +623,7 @@ static void tgprpl_login (PurpleAccount * acct) {
   tgl_set_net_methods (TLS, &tgp_conn_methods);
   tgl_set_timer_methods (TLS, &tgp_timers);
   tgl_set_callback (TLS, &tgp_callback);
-  tgl_register_app_id (TLS, TGP_APP_ID, TGP_APP_HASH); 
-  
+  tgl_register_app_id (TLS, TGP_APP_ID, TGP_APP_HASH);
   tgl_init (TLS);
 
   if (! tgp_startswith (purple_account_get_username (acct), "+")) {

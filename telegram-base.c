@@ -105,6 +105,8 @@ int read_pubkey_file (const char *name, struct rsa_pubkey *dst) {
   dst->e = e;
   dst->n_len = n_len;
   dst->n_raw = n_raw;
+  
+  info ("read pubkey file: n_len=%u e=%u", n_len, e);
   return 1;
 }
 
@@ -138,6 +140,7 @@ void read_state_file (struct tgl_state *TLS) {
   bl_do_set_pts (TLS, pts);
   bl_do_set_qts (TLS, qts);
   bl_do_set_date (TLS, date);
+  info ("read state file: seq=%d pts=%d qts=%d date=%d", seq, pts, qts, date);
 }
 
 void write_state_file (struct tgl_state *TLS) {
@@ -166,7 +169,8 @@ void write_state_file (struct tgl_state *TLS) {
   x[4] = wseq;
   x[5] = wdate;
   assert (write (state_file_fd, x, 24) == 24);
-  close (state_file_fd); 
+  close (state_file_fd);
+  info ("wrote state file: wpts=%d wqts=%d wseq=%d wdate=%d", wpts, wqts, wseq, wdate);
 }
 
 static gboolean write_files_gw (gpointer data) {
@@ -225,6 +229,7 @@ void write_auth_file (struct tgl_state *TLS) {
 
   assert (write (auth_file_fd, &TLS->our_id, 4) == 4);
   close (auth_file_fd);
+  info ("wrote auth file: magic=%d max_dc_num=%d dc_working_num=%d", x, TLS->max_dc_num, TLS->dc_working_num);
 }
 
 void read_dc (struct tgl_state *TLS, int auth_file_fd, int id, unsigned ver) {
@@ -245,6 +250,7 @@ void read_dc (struct tgl_state *TLS, int auth_file_fd, int id, unsigned ver) {
   bl_do_dc_option (TLS, 0, id, "DC", 2, ip, l, port);
   bl_do_set_auth_key (TLS, id, auth_key);
   bl_do_dc_signed (TLS, id);
+  debug ("read dc: id=%d", id);
 }
 
 int tgp_error_if_false (struct tgl_state *TLS, int val, const char *cause, const char *msg) {
@@ -258,6 +264,7 @@ int tgp_error_if_false (struct tgl_state *TLS, int val, const char *cause, const
 }
 
 void empty_auth_file (struct tgl_state *TLS) {
+  info ("initializing empty auth file");
   if (TLS->test_mode) {
     bl_do_dc_option (TLS, 0, 1, "", 0, TG_SERVER_TEST_1, strlen (TG_SERVER_TEST_1), 443);
     bl_do_dc_option (TLS, 0, 2, "", 0, TG_SERVER_TEST_2, strlen (TG_SERVER_TEST_2), 443);
@@ -315,6 +322,7 @@ void read_auth_file (struct tgl_state *TLS) {
     bl_do_set_our_id (TLS, TGL_MK_USER (our_id));
   }
   close (auth_file_fd);
+  info ("read auth file: dcs=%d dc_working_num=%d our_id=%d", x, dc_working_num, our_id);
 }
 
 void write_secret_chat (tgl_peer_t *_P, void *extra) {
@@ -343,6 +351,7 @@ void write_secret_chat (tgl_peer_t *_P, void *extra) {
   assert (write (fd, &P->in_seq_no, 4) == 4);
   assert (write (fd, &P->last_in_seq_no, 4) == 4);
   assert (write (fd, &P->out_seq_no, 4) == 4);
+  debug ("wrote secret chat: %s, state=%d, in_seq_no=%d, out_seq_no=%d", P->print_name, P->state, P->in_seq_no, P->out_seq_no);
 }
 
 void write_secret_chat_file (struct tgl_state *TLS) {
@@ -368,6 +377,7 @@ void write_secret_chat_file (struct tgl_state *TLS) {
   lseek (secret_chat_fd, 8, SEEK_SET);
   assert (write (secret_chat_fd, &y[1], 4) == 4);
   close (secret_chat_fd);
+  info ("wrote secret chat file: %d chats written.", y[1]);
 }
 
 void read_secret_chat (struct tgl_state *TLS, int fd, int v) {
@@ -378,7 +388,7 @@ void read_secret_chat (struct tgl_state *TLS, int fd, int v) {
   static unsigned char sha[20];
   assert (read (fd, &id, 4) == 4);
   assert (read (fd, &l, 4) == 4);
-  assert (l > 0 && l < 1000);
+  assert (l > 0 && l < 999);
   assert (read (fd, s, l) == l);
   assert (read (fd, &user_id, 4) == 4);
   assert (read (fd, &admin_id, 4) == 4);
@@ -401,9 +411,12 @@ void read_secret_chat (struct tgl_state *TLS, int fd, int v) {
     assert (read (fd, &out_seq_no, 4) == 4);
   }
   
+  s[l] = '\0';
+  debug ("read secret chat: %s, state=%d, in_seq_no=%d, last_in_seq_no=%d, out_seq_no=%d",
+      s, state, in_seq_no, last_in_seq_no, out_seq_no);
   bl_do_encr_chat (TLS, id, &access_hash, &date, &admin_id, &user_id, key, NULL, sha, &state, &ttl,
-    &layer, &in_seq_no, &last_in_seq_no, &out_seq_no, &key_fingerprint, TGLECF_CREATE | TGLECF_CREATED,
-    s, l);
+      &layer, &in_seq_no, &last_in_seq_no, &out_seq_no, &key_fingerprint, TGLECF_CREATE | TGLECF_CREATED,
+      s, l);
 }
 
 void read_secret_chat_file (struct tgl_state *TLS) {
@@ -425,10 +438,12 @@ void read_secret_chat_file (struct tgl_state *TLS) {
   assert (v == 0 || v == 1 || v == 2); // version
   assert (read (secret_chat_fd, &x, 4) == 4);
   assert (x >= 0);
+  int cnt = x;
   while (x -- > 0) {
     read_secret_chat (TLS, secret_chat_fd, v);
   }
   close (secret_chat_fd);
+  info ("read secret chat file: %d chats read", cnt);
 }
 
 gchar *get_config_dir (char const *username) {
