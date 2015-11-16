@@ -555,10 +555,16 @@ static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
 
 static void update_on_logged_in (struct tgl_state *TLS) {
   info ("update_on_logged_in(): The account is signed in");
-  debug ("state: seq = %d, pts = %d, date = %d", TLS->seq, TLS->pts, TLS->date);
   write_auth_file (TLS);
+  
+  debug ("state: seq = %d, pts = %d, date = %d", TLS->seq, TLS->pts, TLS->date);
   purple_connection_set_state (tg_get_conn (TLS), PURPLE_CONNECTED);
   purple_blist_add_account (tg_get_acc (TLS));
+  
+  // It is important to load secret chats exactly at this point during login, cause if it was done earlier,
+  // the update function wouldn't find existing chats and create duplicate entries. If it was done later, eventual
+  // updates for those secret chats wouldn't be able to be decrypted due to missing secret keys.
+  read_secret_chat_file (TLS);
 }
 
 static void update_on_ready (struct tgl_state *TLS) {
@@ -639,10 +645,8 @@ static void tgprpl_login (PurpleAccount * acct) {
 
   read_auth_file (TLS);
   read_state_file (TLS);
-  read_secret_chat_file (TLS);
 
   purple_connection_set_state (conn->gc, PURPLE_CONNECTING);
-
   tgl_login (TLS);
 }
 
