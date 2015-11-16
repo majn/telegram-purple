@@ -30,7 +30,7 @@ struct request_values_data {
   struct tgl_state *TLS;
   void (*callback) (struct tgl_state *TLS, const char *string[], void *arg);
   void *arg;
-  const char *string[];
+  int num_values;
 };
 
 struct accept_secret_chat_data {
