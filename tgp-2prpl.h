@@ -46,6 +46,7 @@ PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TL
 int p2tgl_imgstore_add_with_id (const char* filename);
 void p2tgl_buddy_icons_set_for_user (PurpleAccount *pa, tgl_peer_id_t id, const char* filename);
 
+int p2tgl_imgstore_add_with_id_raw (const unsigned char *raw_rgba, unsigned width, unsigned height);
 #ifdef HAVE_LIBWEBP
 int p2tgl_imgstore_add_with_id_webp (const char *filename);
 #endif

@@ -231,13 +231,35 @@ int p2tgl_imgstore_add_with_id (const char* filename) {
   return id;
 }
 
+int p2tgl_imgstore_add_with_id_raw (const unsigned char *raw_rgba, unsigned width, unsigned height) {
+  /* Heavily inspired by: https://github.com/EionRobb/pidgin-opensteamworks/blob/master/libsteamworks.cpp#L113 */
+  const unsigned char tga_header[] = {
+      /* No ID; no color map; uncompressed true color */
+      0,0,2,
+      /* No color map metadata */
+      0,0,0,0,0,
+      /* No offsets */
+      0,0,0,0,
+      /* Dimensions */
+      width&0xFF,(width/256)&0xFF,height&0xFF,(height/256)&0xFF,
+      /* 32 bits per pixel */
+      32,
+      /* "Origin in upper left-hand corner" */
+      32};
+  // Will be owned by libpurple imgstore, which uses glib functions for managing memory
+  const unsigned tga_len = sizeof(tga_header) + width * height * 4;
+  unsigned char *tga = g_malloc(tga_len);
+  memcpy(tga, tga_header, sizeof(tga_header));
+  memcpy(tga + sizeof(tga_header), raw_rgba, width * height * 4);
+  return purple_imgstore_add_with_id (tga, tga_len, NULL);
+}
+
 #ifdef HAVE_LIBWEBP
 
 static const int MAX_W = 256;
 static const int MAX_H = 256;
 
 int p2tgl_imgstore_add_with_id_webp (const char *filename) {
-  
   const uint8_t *data = NULL;
   size_t len;
   GError *err = NULL;
