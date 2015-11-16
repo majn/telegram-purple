@@ -230,7 +230,7 @@ int p2tgl_imgstore_add_with_id (const char* filename) {
   return id;
 }
 
-int p2tgl_imgstore_add_with_id_raw (const unsigned char *raw_rgba, unsigned width, unsigned height) {
+int p2tgl_imgstore_add_with_id_raw (const unsigned char *raw_bgra, unsigned width, unsigned height) {
   /* Heavily inspired by: https://github.com/EionRobb/pidgin-opensteamworks/blob/master/libsteamworks.cpp#L113 */
   const unsigned char tga_header[] = {
       /* No ID; no color map; uncompressed true color */
@@ -249,7 +249,8 @@ int p2tgl_imgstore_add_with_id_raw (const unsigned char *raw_rgba, unsigned widt
   const unsigned tga_len = sizeof(tga_header) + width * height * 4;
   unsigned char *tga = g_malloc(tga_len);
   memcpy(tga, tga_header, sizeof(tga_header));
-  memcpy(tga + sizeof(tga_header), raw_rgba, width * height * 4);
+  /* From the documentation: "The 4 byte entry contains 1 byte each of blue, green, red, and attribute." */
+  memcpy(tga + sizeof(tga_header), raw_bgra, width * height * 4);
   return purple_imgstore_add_with_id (tga, tga_len, NULL);
 }
 
@@ -295,7 +296,7 @@ int p2tgl_imgstore_add_with_id_webp (const char *filename) {
     }
     config.options.use_scaling = 1;
   }
-  config.output.colorspace = MODE_RGBA;
+  config.output.colorspace = MODE_BGRA;
   if (! WebPDecode(data, len, &config) == VP8_STATUS_OK) {
     warning ("error decoding webp: %s", filename);
     g_free ((gchar *)data);

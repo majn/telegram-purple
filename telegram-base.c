@@ -529,9 +529,9 @@ int tgp_visualize_key (struct tgl_state *TLS, unsigned char* sha1_key) {
         for (j = 0; j < img_size / 8; j++)
         {
           unsigned off_x = offset_x + j * 4;
-          image[off_y + off_x + 0] = (colors[idx] >> 16) & 0xFF;
+          image[off_y + off_x + 0] = colors[idx] & 0xFF;
           image[off_y + off_x + 1] = (colors[idx] >> 8) & 0xFF;
-          image[off_y + off_x + 2] = colors[idx] & 0xFF;
+          image[off_y + off_x + 2] = (colors[idx] >> 16) & 0xFF;
           image[off_y + off_x + 3] = 0xFF;
         }
       }
