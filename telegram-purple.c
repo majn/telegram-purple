@@ -74,6 +74,7 @@ static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *C, unsi
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *C, unsigned flags);
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status);
 static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_message *list[]);
+static void update_on_logged_in (struct tgl_state *TLS);
 static void update_on_ready (struct tgl_state *TLS);
 static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4);
 static void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
@@ -85,6 +86,7 @@ const char *pk_path = "/etc/telegram-purple/server.tglpub";
 struct tgl_update_callback tgp_callback = {
   .logprintf = debug,
   .get_values = request_value,
+  .logged_in = update_on_logged_in,
   .started = update_on_ready,
   .new_msg = update_message_handler,
   .msg_receive = update_message_handler,
@@ -547,24 +549,26 @@ static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
   return menu;
 }
 
-static void update_on_ready (struct tgl_state *TLS) {
-  debug ("update_on_ready().");
-
+static void update_on_logged_in (struct tgl_state *TLS) {
+  info ("update_on_logged_in(): The account is signed in");
+  debug ("state: seq = %d, pts = %d, date = %d", TLS->seq, TLS->pts, TLS->date);
   write_auth_file (TLS);
-
   purple_connection_set_state (tg_get_conn (TLS), PURPLE_CONNECTED);
-  purple_connection_set_display_name (tg_get_conn (TLS), purple_account_get_username (tg_get_acc (TLS)));
   purple_blist_add_account (tg_get_acc (TLS));
+}
 
-  debug ("seq = %d, pts = %d, date = %d", TLS->seq, TLS->pts, TLS->date);
-  tgl_do_get_difference (TLS, purple_account_get_bool (tg_get_acc (TLS), "history-sync-all", FALSE),
-      tgp_notify_on_error_gw, NULL);
+static void update_on_ready (struct tgl_state *TLS) {
+  info ("update_on_ready(): The account is done fetching new history");
+  
+  purple_connection_set_display_name (tg_get_conn (TLS), purple_account_get_username (tg_get_acc (TLS)));
+  /* tgl_do_get_difference (TLS, purple_account_get_bool (tg_get_acc (TLS), "history-sync-all", FALSE),
+      tgp_notify_on_error_gw, NULL); */
   tgl_do_get_dialog_list (TLS, 200, 0, on_get_dialog_list_done, NULL);
   tgl_do_update_contact_list (TLS, 0, 0);
 }
 
 static void tgprpl_login (PurpleAccount * acct) {
-  debug ("tgprpl_login()");
+  info ("tgprpl_login(): Purple is telling the prpl to connect the account");
   
   PurpleConnection *gc = purple_account_get_connection (acct);
   
