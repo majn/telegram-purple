@@ -211,12 +211,70 @@ void request_create_chat (struct tgl_state *TLS, const char *subject) {
       request_values_data_init (TLS, NULL, (void *) subject, 0));
 }
 
-/*
-void request_input (struct tgl_state *TLS, const char *prompt, int num_values,
-    void (*callback) (struct tgl_state *TLS, const char *string[], void *arg), void *arg) {
-  accept_create
+static void request_cur_and_new_password_ok (struct request_values_data *data, PurpleRequestFields* fields) {
+  const char *names[3] = {
+      purple_request_fields_get_string (fields, "current"),
+      purple_request_fields_get_string (fields, "new1"),
+      purple_request_fields_get_string (fields, "new2")
+  };
+  data->callback(data->TLS, names, data->arg);
+  free (data);
 }
- */
+
+void request_cur_and_new_password (struct tgl_state *TLS,
+    void (*callback) (struct tgl_state *TLS, const char *string[], void *arg), void *arg) {
+
+  PurpleRequestFields* fields = purple_request_fields_new ();
+  PurpleRequestFieldGroup* group = purple_request_field_group_new (_("Change password"));
+
+  PurpleRequestField *field = purple_request_field_string_new ("current", _("Current"), NULL, FALSE);
+  purple_request_field_string_set_masked (field, TRUE);
+  purple_request_field_group_add_field (group, field);
+
+  field = purple_request_field_string_new ("new1", _("Password"), NULL, FALSE);
+  purple_request_field_string_set_masked (field, TRUE);
+  purple_request_field_group_add_field (group, field);
+
+  field = purple_request_field_string_new ("new2", _("Confirm"), NULL, FALSE);
+  purple_request_field_string_set_masked (field, TRUE);
+  purple_request_field_group_add_field (group, field);
+
+  purple_request_fields_add_group (fields, group);
+  purple_request_fields (tg_get_conn (TLS), _("Change password"), _("Change password"), NULL, fields,
+      _("OK"), G_CALLBACK(request_cur_and_new_password_ok),
+      _("Cancel"), G_CALLBACK(request_canceled), tg_get_acc (TLS), NULL, NULL,
+      request_values_data_init (TLS, callback, arg, 0));
+}
+
+static void request_new_password_ok (struct request_values_data *data, PurpleRequestFields* fields) {
+  const char *names[2] = {
+      purple_request_fields_get_string (fields, "new1"),
+      purple_request_fields_get_string (fields, "new2")
+  };
+  data->callback(data->TLS, names, data->arg);
+  free (data);
+}
+
+void request_new_password (struct tgl_state *TLS,
+    void (*callback) (struct tgl_state *TLS, const char *string[], void *arg), void *arg) {
+
+  PurpleRequestFields* fields = purple_request_fields_new ();
+  PurpleRequestFieldGroup* group = purple_request_field_group_new (_("New password"));
+
+  PurpleRequestField * field = purple_request_field_string_new ("new1", _("Password"), NULL, FALSE);
+  purple_request_field_string_set_masked (field, TRUE);
+  purple_request_field_group_add_field (group, field);
+
+  field = purple_request_field_string_new ("new2", _("Confirm"), NULL, FALSE);
+  purple_request_field_string_set_masked (field, TRUE);
+  purple_request_field_group_add_field (group, field);
+
+  purple_request_fields_add_group (fields, group);
+  purple_request_fields (tg_get_conn (TLS), _("New password"), _("New password"), NULL, fields,
+      _("OK"), G_CALLBACK(request_new_password_ok),
+      _("Cancel"), G_CALLBACK(cancel_group_chat_cb), tg_get_acc (TLS), NULL, NULL,
+      request_values_data_init (TLS, callback, arg, 0));
+}
 
 void request_value (struct tgl_state *TLS, enum tgl_value_type type, const char *prompt, int num_values,
     void (*callback) (struct tgl_state *TLS, const char *string[], void *arg), void *arg) {
@@ -234,7 +292,12 @@ void request_value (struct tgl_state *TLS, enum tgl_value_type type, const char 
       request_password (TLS, callback, arg);
       break;
     }
-
+    case tgl_cur_and_new_password:
+      request_cur_and_new_password (TLS, callback, arg);
+      break;
+    case tgl_new_password:
+      request_new_password (TLS, callback, arg);
+      break;
     case tgl_register_info:
       request_name (TLS, callback, arg);
       break;
