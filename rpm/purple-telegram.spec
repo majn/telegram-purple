@@ -39,6 +39,6 @@ chmod 755 %{buildroot}/%{_libdir}/purple-2/telegram-purple.so
 - Add translations.
 - Switch to libgcrypt from openssl.
 
-* Thu Okt 07 2015 mjentsch 1.2.2-1
+* Wed Oct 07 2015 mjentsch 1.2.2-1
 - update version to 1.2.2
 
