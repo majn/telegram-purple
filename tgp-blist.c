@@ -95,6 +95,7 @@ tgl_peer_id_t tgp_blist_buddy_get_id (PurpleBuddy *buddy) {
 
 tgl_peer_t *tgp_blist_buddy_get_peer (PurpleBuddy *buddy) {
   if (! tgp_blist_buddy_has_id (buddy)) {
+    g_warn_if_reached();
     return NULL;
   }
   return tgl_peer_get (pbn_get_conn (&buddy->node)->TLS, tgp_blist_buddy_get_id (buddy));

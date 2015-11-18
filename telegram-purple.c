@@ -732,9 +732,11 @@ static void tgprpl_set_status (PurpleAccount *acct, PurpleStatus *status) {
 }
 
 static void tgprpl_add_buddy (PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group) {
-  tgl_peer_t *peer = tgp_blist_buddy_get_peer (buddy);
+  tgl_peer_t *peer = tgl_peer_get_by_name (gc_get_conn(gc)->TLS, buddy->name);
   if (peer) {
     _update_buddy (gc_get_conn (gc)->TLS, peer, TGL_UPDATE_PHOTO);
+    tgp_blist_buddy_set_id (buddy, peer->id);
+    p2tgl_prpl_got_user_status (gc_get_conn(gc)->TLS, peer->id, &peer->user.status);
   }
 }
 
