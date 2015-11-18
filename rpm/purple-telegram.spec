@@ -34,7 +34,7 @@ chmod 755 %{buildroot}/%{_libdir}/purple-2/telegram-purple.so
 %{_datadir}/pixmaps/pidgin/protocols/48/telegram.png
 
 %changelog
-*Wed Nov 18 2015 tuxmaster 1.2.2-3
+* Wed Nov 18 2015 tuxmaster 1.2.2-3
 - Add required version for libgcrypt. 
 
 * Wed Oct 14 2015 tuxmaster 1.2.2-2
