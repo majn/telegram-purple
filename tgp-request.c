@@ -272,7 +272,7 @@ void request_new_password (struct tgl_state *TLS,
   purple_request_fields_add_group (fields, group);
   purple_request_fields (tg_get_conn (TLS), _("New password"), _("New password"), NULL, fields,
       _("OK"), G_CALLBACK(request_new_password_ok),
-      _("Cancel"), G_CALLBACK(cancel_group_chat_cb), tg_get_acc (TLS), NULL, NULL,
+      _("Cancel"), G_CALLBACK(request_canceled), tg_get_acc (TLS), NULL, NULL,
       request_values_data_init (TLS, callback, arg, 0));
 }
 
