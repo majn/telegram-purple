@@ -591,7 +591,6 @@ void telegram_login (struct tgl_state *TLS) {
   
   read_auth_file (TLS);
   read_state_file (TLS);
-  read_secret_chat_file (TLS);
   if (all_authorized (TLS)) {
     telegram_send_sms (TLS);
     return;

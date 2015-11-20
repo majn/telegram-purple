@@ -412,7 +412,9 @@ void on_ready (struct tgl_state *TLS) {
   purple_connection_set_state (conn->gc, PURPLE_CONNECTED);
   purple_connection_set_display_name (conn->gc, purple_account_get_username (conn->pa));
   purple_blist_add_account (conn->pa);
-
+  
+  read_secret_chat_file (TLS);
+  
   debug ("seq = %d, pts = %d, date = %d", TLS->seq, TLS->pts, TLS->date);
   tgl_do_get_difference (TLS, purple_account_get_bool (conn->pa, "history-sync-all", FALSE), tgp_notify_on_error_gw, NULL);
   tgl_do_get_dialog_list (TLS, 200, 0, on_get_dialog_list_done, NULL);
