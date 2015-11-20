@@ -178,8 +178,21 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
   if (flags & TGL_UPDATE_CREATED) {
     tgp_blist_peer_add_purple_name (TLS, U->id, U->print_name);
   } else {
-    if (flags & TGL_UPDATE_WORKING || flags & TGL_UPDATE_DELETED) {
+    if (flags & TGL_UPDATE_WORKING) {
       write_secret_chat_file (TLS);
+      if (U->state == sc_ok) {
+        tgp_msg_sys_out (TLS, _("Secret chat ready."), U->id, TRUE);
+      }
+    }
+    if (buddy) {
+      if (flags & TGL_UPDATE_DELETED) {
+        U->state = sc_deleted;
+        write_secret_chat_file (TLS);
+        tgp_msg_sys_out (TLS, _("Secret chat terminated."), U->id, FALSE);
+        purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_purple_name (TLS, U->id), "offline", NULL);
+      } else {
+        _update_buddy (TLS, (tgl_peer_t *)U, flags);
+      }
     }
   }
   
@@ -198,15 +211,6 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
       tgl_do_accept_encr_chat_request (TLS, U, write_secret_chat_gw, 0);
     } else if (! strcmp (choice, "ask")) {
       request_accept_secret_chat (TLS, U);
-    }
-  }
-  
-  if (!(flags & TGL_UPDATE_CREATED) && buddy) {
-    if (flags & TGL_UPDATE_DELETED) {
-      tgp_msg_sys_out (TLS, _("Secret chat terminated."), U->id, FALSE);
-      purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_purple_name (TLS, U->id), "offline", NULL);
-    } else {
-      _update_buddy (TLS, (tgl_peer_t *)U, flags);
     }
   }
 }
