@@ -72,3 +72,43 @@ void fatal(const char* format, ...) {
   va_end (ap);
   info ("\n");
 }
+
+const char *print_flags_update (unsigned flags) {
+  static char *text = NULL;
+  const char *names[16] = {
+    "CREATED",
+    "DELETED",
+    "PHONE",
+    "CONTACT",
+    "PHOTO",
+    "BLOCKED",
+    "REAL_NAME",
+    "NAME",
+    "REQUESTED",
+    "WORKING",
+    "FLAGS",
+    "TITLE",
+    "ADMIN",
+    "MEMBERS",
+    "ACCESS_HASH",
+    "USERNAME"
+  };
+  if (text) {
+    g_free (text);
+    text = NULL;
+  }
+  for (int i = 0; i < 16; i ++) {
+    if (flags & 1) {
+      char *new;
+      if (text) {
+        new = g_strconcat (text, " ", names[i], NULL);
+        g_free (text);
+      } else {
+        new = g_strdup (names[i]);
+      }
+      text = new;
+    }
+    flags >>= 1;
+  }
+  return (const char*)text;
+}

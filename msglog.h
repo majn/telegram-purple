@@ -24,4 +24,4 @@ void info(const char* format, ...);
 void warning(const char* format, ...);
 void failure(const char* format, ...);
 void fatal(const char* format, ...);
-
+const char *print_flags_update (unsigned update);

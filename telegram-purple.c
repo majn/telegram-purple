@@ -116,6 +116,7 @@ static void _update_buddy (struct tgl_state *TLS, tgl_peer_t *user, unsigned fla
 }
 
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, unsigned flags) {
+  debug ("update_user_handler() flags: %s", print_flags_update (flags));
   if (tgl_get_peer_id (TLS->our_id) == tgl_get_peer_id (user->id) && (flags & (TGL_UPDATE_NAME | TGL_UPDATE_CONTACT))) {
     // own user object, do not add that user to the buddy list but make the ID known to the name lookup and
     // set the print name as the name to be displayed in IM chats instead of the login name (the phone number)
@@ -172,7 +173,7 @@ static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *U, unsigned flags) {
   PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, U->id);
   connection_data *conn = TLS->ev_base;
-  debug ("update_secret_chat_handler: state=%d", U->state);
+  debug ("update_secret_chat_handler() flags: %s", print_flags_update (flags));
   
   if (flags & TGL_UPDATE_CREATED) {
     tgp_blist_peer_add_purple_name (TLS, U->id, U->print_name);
@@ -211,10 +212,11 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
 }
 
 static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, unsigned flags) {
+  debug ("update_chat_handler() flags: %s", print_flags_update(flags));
+  
   if (flags & TGL_UPDATE_CREATED) {
     tgp_blist_peer_add_purple_name (TLS, chat->id, chat->print_title);
   }
-  
   if (! (flags & TGL_UPDATE_CREATED)) {
     PurpleChat *ch = tgp_blist_chat_find (TLS, chat->id);
     
