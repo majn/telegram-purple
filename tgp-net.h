@@ -66,22 +66,14 @@ struct connection {
   void *prpl_data;
 };
 
-//extern struct connection *Connections[];
 
 int tgln_write_out (struct connection *c, const void *data, int len);
 void tgln_flush_out (struct connection *c);
 int tgln_read_in (struct connection *c, void *data, int len);
 int tgln_read_in_lookup (struct connection *c, void *data, int len);
 
-//void tgln_insert_msg_id (struct tgl_session *S, long long id);
 
 extern struct tgl_net_methods tgp_conn_methods;
-
-//void create_all_outbound_connections (void);
-
-//struct connection *create_connection (const char *host, int port, struct tgl_session *session, struct connection_methods *methods);
-//struct tgl_dc *tgln_alloc_dc (int id, char *ip, int port);
-//void tgln_dc_create_session (struct tgl_dc *DC, struct mtproto_methods *methods);
 struct connection *tgln_create_connection (struct tgl_state *TLS, const char *host, int port, struct tgl_session *session, struct tgl_dc *dc, struct mtproto_methods *methods);
 
 #define GET_DC(c) (c->session->dc)
