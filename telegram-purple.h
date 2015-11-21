@@ -79,7 +79,6 @@
 #define TGP_DEFAULT_SEND_READ_NOTIFICATIONS TRUE
 #define TGP_KEY_SEND_READ_NOTIFICATIONS "send-read-notifications"
 
-void on_ready (struct tgl_state *TLS);
 extern const char *pk_path;
 extern const char *user_pk_filename;
 extern const char *config_dir;
