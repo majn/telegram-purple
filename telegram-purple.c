@@ -29,8 +29,10 @@
 #include <assert.h>
 #include <unistd.h>
 #include <sys/types.h>
+#ifndef WIN32
 #include <pwd.h>
 #include <regex.h>
+#endif
 
 #include "accountopt.h"
 #include "blist.h"
@@ -47,6 +49,9 @@
 #include "util.h"
 #include "eventloop.h"
 #include "request.h"
+#ifdef WIN32
+#include "win32/win32dep.h"
+#endif
 
 #include <tgl.h>
 #include <tgl-binlog.h>
@@ -81,7 +86,11 @@ static void on_user_get_info (struct tgl_state *TLS, void *info_data, int succes
 
 const char *config_dir = "telegram-purple";
 const char *user_pk_filename = "server.tglpub";
+#ifdef WIN32
+const char *pk_path = "server.tglpub";
+#else
 const char *pk_path = "/etc/telegram-purple/server.tglpub";
+#endif
 
 struct tgl_update_callback tgp_callback = {
   .logprintf = debug,
@@ -597,8 +606,14 @@ static void tgprpl_login (PurpleAccount * acct) {
   debug ("base configuration path: '%s'", TLS->base_path);
   
   struct rsa_pubkey pubkey;
-  debug ("trying global pubkey at %s", pk_path);
-  gboolean global_pk_loaded = read_pubkey_file (pk_path, &pubkey);
+#ifdef WIN32
+  gchar *global_pk_path = g_strdup_printf("%s/%s", DATADIR, pk_path);
+#else
+  gchar *global_pk_path = g_strdup(pk_path);
+#endif
+  debug ("trying global pubkey at %s", global_pk_path);
+  gboolean global_pk_loaded = read_pubkey_file (global_pk_path, &pubkey);
+  g_free(global_pk_path);
 
   tgl_set_verbosity (TLS, 4);
   if (global_pk_loaded) {
@@ -630,7 +645,8 @@ static void tgprpl_login (PurpleAccount * acct) {
       return;
     }
   }
-
+  
+  tgl_enable_pfs (TLS);
   tgl_set_ev_base (TLS, conn);
   tgl_set_net_methods (TLS, &tgp_conn_methods);
   tgl_set_timer_methods (TLS, &tgp_timers);
