@@ -90,6 +90,8 @@ tgl_peer_id_t tgp_blist_buddy_get_id (PurpleBuddy *buddy) {
     return TGL_MK_ENCR_CHAT (id);
   } else {
     assert (FALSE);
+    // avoid compiler errors for missing return value
+    return TGL_MK_USER(0);
   }
 }
 
