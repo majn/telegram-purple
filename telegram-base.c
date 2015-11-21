@@ -46,6 +46,12 @@
 #include "tgp-request.h"
 #include "lodepng/lodepng.h"
 
+
+// O_BINARY exists on windows and must be defined, but doesn't exist on unix-based systems
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 #define DC_SERIALIZED_MAGIC 0x868aa81d
 #define STATE_FILE_MAGIC 0x28949a93
 #define SECRET_CHAT_FILE_MAGIC 0x37a1988a
