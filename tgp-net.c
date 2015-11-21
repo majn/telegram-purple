@@ -271,7 +271,7 @@ static void net_on_connected (gpointer arg, gint fd, const gchar *error_message)
   c->fd = fd;
   c->read_ev = purple_input_add (fd, PURPLE_INPUT_READ, conn_try_read, c);
   
-  char byte = 0xef;
+  unsigned char byte = 0xef;
   assert (tgln_write_out (c, &byte, 1) == 1);
   
   c->last_receive_time = tglt_get_double_time ();
