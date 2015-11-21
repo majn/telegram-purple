@@ -207,7 +207,7 @@ static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_p
     if (end > size) {
       end = size;
     }
-    gchar *chunk = g_utf8_substringg (message, start, end);
+    gchar *chunk = g_utf8_substring (message, start, end);
     tgp_msg_send_schedule (TLS, chunk, to);
     start = end;
   }
