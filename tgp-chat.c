@@ -63,8 +63,7 @@ void tgp_chat_on_loaded_chat_full (struct tgl_state *TLS, struct tgl_chat *C) {
   p2tgl_chat_update (TLS, PC, C->id, C->admin_id, C->print_title);
 }
 
-static void tgp_chat_on_loaded_chat_full_joining (struct tgl_state *TLS, void *_,
-                                                  int success, struct tgl_chat *C) {
+static void tgp_chat_on_loaded_chat_full_joining (struct tgl_state *TLS, void *_, int success, struct tgl_chat *C) {
   debug ("tgp_chat_on_loaded_chat_full_joining()");
   if (! success) {
     tgp_notify_on_error_gw (TLS, NULL, success);
@@ -76,14 +75,14 @@ static void tgp_chat_on_loaded_chat_full_joining (struct tgl_state *TLS, void *_
   
   // Check if the users attempts to join an empty chat
   if (! C->user_list_size) {
-    p2tgl_got_chat_in (TLS, C->id, C->id, _("You have already left this chat."),
-                       PURPLE_MESSAGE_SYSTEM, time (NULL));
+    p2tgl_got_chat_in (TLS, C->id, C->id, _("You have already left this chat."), PURPLE_MESSAGE_SYSTEM, time (NULL));
   }
 }
 
 static void tgp_chat_add_all_users (struct tgl_state *TLS, PurpleConversation *conv, struct tgl_chat *C) {
   GList *users = NULL,
         *flags = NULL;
+  debug ("tgp_chat_add_all_users()");
   
   int i = 0;
   for (; i < C->user_list_size; i++) {

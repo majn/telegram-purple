@@ -193,7 +193,6 @@ static gboolean tgp_msg_send_schedule_cb (gpointer data) {
   connection_data *conn = data;
   conn->out_timer = 0;
   struct tgp_msg_sending *D = NULL;
-
   while ((D = g_queue_peek_head (conn->out_messages))) {
     g_queue_pop_head (conn->out_messages);
 
@@ -205,14 +204,11 @@ static gboolean tgp_msg_send_schedule_cb (gpointer data) {
 }
 
 static void tgp_msg_send_schedule (struct tgl_state *TLS, gchar *chunk, tgl_peer_id_t to) {
-  connection_data *conn = TLS->ev_base;
-  struct tgp_msg_sending *D = tgp_msg_sending_init (TLS, chunk, to);
-  g_queue_push_tail (conn->out_messages, D);
-
-  if (conn->out_timer) {
-    purple_timeout_remove (conn->out_timer);
+  g_queue_push_tail (tg_get_data (TLS)->out_messages, tgp_msg_sending_init (TLS, chunk, to));
+  if (tg_get_data (TLS)->out_timer) {
+    purple_timeout_remove (tg_get_data (TLS)->out_timer);
   }
-  conn->out_timer = purple_timeout_add (0, tgp_msg_send_schedule_cb, conn);
+  tg_get_data (TLS)->out_timer = purple_timeout_add (0, tgp_msg_send_schedule_cb, tg_get_data (TLS));
 }
 
 static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {

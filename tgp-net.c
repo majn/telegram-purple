@@ -322,34 +322,16 @@ struct connection *tgln_create_connection (struct tgl_state *TLS, const char *ho
 
 static void restart_connection (struct connection *c) {
   debug("restart_connection()");
-  struct tgl_state *TLS = c->TLS;
-  connection_data *conn = TLS->ev_base;
-
-  /*
-  if (strcmp (c->ip, c->dc->ip) != 0 || c->port != c->dc->port) {
-    info ("DC%d address changed from %s:%d to %s:%d, updating settings.\n",
-          c->dc->id, c->ip, c->port, c->dc->ip, c->dc->port);
-    if (c->ip) {
-      free (c->ip);
-    }
-    c->ip = strdup (c->dc->ip);
-    c->port = c->dc->port;
-  }
-   */
-  
   if (tglt_get_double_time () - c->last_receive_time > 6 * PING_TIMEOUT) {
-    purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
-                                    _("Cannot connect to server"));
+    purple_connection_error_reason (tg_get_conn (c->TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+        _("Cannot connect to server"));
     return;
   }
   purple_proxy_connect_cancel (c->prpl_data);
-  c->prpl_data = purple_proxy_connect (conn->gc, conn->pa, c->ip, c->port, net_on_connected, c);
+  c->prpl_data = purple_proxy_connect (tg_get_conn (c->TLS), tg_get_acc (c->TLS), c->ip, c->port, net_on_connected, c);
 }
 
 static void fail_connection (struct connection *c) {
-  struct tgl_state *TLS = c->TLS;
-  connection_data *conn = TLS->ev_base;
-  
   if (c->state == conn_ready) {
     stop_ping_timer (c);
   }
@@ -383,8 +365,8 @@ static void fail_connection (struct connection *c) {
   c->prpl_data = NULL;
 
   info ("Lost connection to server ... %s:%d\n", c->ip, c->port);
-  purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
-                                  _("Lost connection to the server ..."));
+  purple_connection_error_reason (tg_get_conn (c->TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+      _("Lost connection to the server ..."));
 }
 
 //extern FILE *log_net_f;

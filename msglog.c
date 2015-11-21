@@ -97,7 +97,8 @@ const char *print_flags_update (unsigned flags) {
     g_free (text);
     text = NULL;
   }
-  for (int i = 0; i < 16; i ++) {
+  int i;
+  for (i = 0; i < 16; i ++) {
     if (flags & 1) {
       char *new;
       if (text) {
