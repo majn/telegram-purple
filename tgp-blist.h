@@ -29,9 +29,9 @@
 
 /*
  Functions for managing telegram contacts in the buddy list and performing id to purple-username and
- purple-username to id lookups.
+ purple-username to id look-up.
  
- Purple prefers human-readable names for buddy usernames, while Telegram uses numerical user ids.
+ Purple prefers human-readable names for buddy user names, while Telegram uses numerical user ids.
  In older versions of this plugin, the user id was used as username and the print name as the users
  alias. This means that getting a useful username in the interface relied on the alias resolution,
  which unfortunately doesn't work when a user isn't in the buddy list, or in Adium group chats.
@@ -43,8 +43,8 @@ void tgp_blist_peer_add_purple_name (struct tgl_state *TLS, tgl_peer_id_t id, co
 tgl_peer_t *tgp_blist_peer_find (struct tgl_state *TLS, const char *purple_name);
 
 /*
- To make this new approach robust to names changes, it is necessarry to store the user ID in each
- blist node to allow reliable buddy list lookups by user ids.
+ To make this new approach robust to names changes, it is necessary to store the user ID in each
+ blist node to allow reliable buddy list look-ups by user ids.
  */
 
 void tgp_blist_buddy_set_id (PurpleBuddy *buddy, tgl_peer_id_t id);
