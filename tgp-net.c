@@ -23,16 +23,20 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <sys/types.h>
+#ifndef WIN32
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <sys/fcntl.h>
 #include <sys/socket.h>
+#include <poll.h>
+#include <arpa/inet.h>
+#else
+#include <winsock2.h>
+#endif
+#include <sys/fcntl.h>
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <poll.h>
-#include <arpa/inet.h>
 #include <sys/time.h>
 #include <time.h>
 
@@ -259,7 +263,7 @@ static void net_on_connected (gpointer arg, gint fd, const gchar *error_message)
   
   if (fd == -1) {
     const char *msg = "Connection not possible, either your network or a Telegram data center is down, or the"
-    " Telegram network configuratio has changed.";
+    " Telegram network configuration has changed.";
     warning (msg);
     return;
   }
@@ -388,7 +392,7 @@ static void try_write (struct connection *c) {
   // debug ("try write: fd = %d\n", c->fd);
   int x = 0;
   while (c->out_head) {
-    int r = write (c->fd, c->out_head->rptr, c->out_head->wptr - c->out_head->rptr);
+    int r = send (c->fd, (const char *)c->out_head->rptr, c->out_head->wptr - c->out_head->rptr, 0);
     if (r >= 0) {
       x += r;
       c->out_head->rptr += r;
@@ -403,7 +407,7 @@ static void try_write (struct connection *c) {
       delete_connection_buffer (b);
     } else {
       if (errno != EAGAIN && errno != EWOULDBLOCK) {
-        info ("fail_connection: write_error %m\n");
+        info ("fail_connection: write_error %s\n", g_strerror(errno));
         fail_connection (c);
         return;
       } else {
@@ -464,7 +468,7 @@ static void try_read (struct connection *c) {
   #endif
   int x = 0;
   while (1) {
-    int r = read (c->fd, c->in_tail->wptr, c->in_tail->end - c->in_tail->wptr);
+    int r = recv (c->fd, (char *)c->in_tail->wptr, c->in_tail->end - c->in_tail->wptr, 0);
     if (r > 0) {
       c->last_receive_time = tglt_get_double_time ();
       stop_ping_timer (c);
@@ -481,7 +485,7 @@ static void try_read (struct connection *c) {
       c->in_tail = b;
     } else {
       if (errno != EAGAIN && errno != EWOULDBLOCK) {
-        debug ("fail_connection: read_error %m\n");
+        debug ("fail_connection: read_error %s\n", strerror(errno));
         fail_connection (c);
         return;
       } else {
