@@ -234,9 +234,11 @@ static void tgprpl_xfer_init_data (PurpleXfer *X, connection_data *conn, struct 
 }
 
 static void tgprpl_xfer_free_data (struct tgp_xfer_send_data *data) {
-    if (data->timer) { purple_input_remove(data->timer); }
-    data->timer = 0;
-    g_free (data);
+  if (data->timer) {
+    purple_input_remove(data->timer);
+  }
+  data->timer = 0;
+  g_free (data);
 }
 
 void tgprpl_xfer_free_all (connection_data *conn) {
@@ -252,34 +254,26 @@ void tgprpl_xfer_free_all (connection_data *conn) {
   }
 }
 
-PurpleXfer *tgprpl_new_xfer (PurpleConnection * gc, const char *who) {
+PurpleXfer *tgprpl_new_xfer (PurpleConnection *gc, const char *who) {
   debug ("tgprpl_new_xfer()");
-  
-  connection_data *conn = purple_connection_get_protocol_data (gc);
-  
-  PurpleXfer *X = purple_xfer_new (conn->pa, PURPLE_XFER_SEND, who);
+  PurpleXfer *X = purple_xfer_new (purple_connection_get_account (gc), PURPLE_XFER_SEND, who);
   if (X) {
     purple_xfer_set_init_fnc (X, tgprpl_xfer_send_init);
     purple_xfer_set_cancel_send_fnc (X, tgprpl_xfer_canceled);
     tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), NULL);
   }
-  
-  return (PurpleXfer *)X;
+  return X;
 }
 
-static PurpleXfer *tgprpl_new_xfer_recv (PurpleConnection * gc, const char *who) {
-  connection_data *conn = purple_connection_get_protocol_data (gc);
-  
-  PurpleXfer *X = purple_xfer_new (conn->pa, PURPLE_XFER_RECEIVE, who);
+static PurpleXfer *tgprpl_new_xfer_recv (PurpleConnection *gc, const char *who) {
+  PurpleXfer *X = purple_xfer_new (purple_connection_get_account (gc), PURPLE_XFER_RECEIVE, who);
   purple_xfer_set_init_fnc (X, tgprpl_xfer_recv_init);
   purple_xfer_set_cancel_recv_fnc (X, tgprpl_xfer_canceled);
-  
   return X;
 }
 
 void tgprpl_recv_file (PurpleConnection *gc, const char *who, struct tgl_message *M) {
   debug ("tgprpl_recv_file()");
-  
   g_return_if_fail (who);
   
   PurpleXfer *X = tgprpl_new_xfer_recv (gc, who);
@@ -306,16 +300,13 @@ void tgprpl_recv_file (PurpleConnection *gc, const char *who, struct tgl_message
   g_free (filename);
   
   purple_xfer_set_size (X, size);
-  
   tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), M);
   purple_xfer_request (X);
 }
 
 void tgprpl_send_file (PurpleConnection * gc, const char *who, const char *file) {
   debug ("tgprpl_send_file()");
-  
   PurpleXfer *X = tgprpl_new_xfer (gc, who);
-  
   if (file) {
     purple_xfer_request_accepted (X, file);
     debug ("starting xfer...");
