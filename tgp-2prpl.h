@@ -27,38 +27,25 @@
 #include "conversation.h"
 #include "prpl.h"
 
-PurpleAccount *tg_get_acc (struct tgl_state *TLS);
-PurpleConnection *tg_get_conn (struct tgl_state *TLS);
-
-connection_data *tg_get_data (struct tgl_state *TLS);
-connection_data *gc_get_conn (PurpleConnection *gc);
-connection_data *pa_get_conn (PurpleAccount *pa);
-connection_data *pbn_get_conn (PurpleBlistNode *node);
-connection_data *c_get_conn (struct connection *c);
-
-tgl_peer_t *p2tgl_get_peer (tgl_peer_id_t peer);
-tgl_peer_t *p2tgl_get_peer_by_id (int id);
+PurpleAccount *tls_get_pa (struct tgl_state *TLS);
+PurpleConnection *tls_get_conn (struct tgl_state *TLS);
+connection_data *tls_get_data (struct tgl_state *TLS);
+connection_data *gc_get_data (PurpleConnection *gc);
+connection_data *pa_get_data (PurpleAccount *pa);
+connection_data *pbn_get_data (PurpleBlistNode *node);
+struct tgl_state *gc_get_tls (PurpleConnection *gc);
 
 int p2tgl_status_is_present (PurpleStatus *status);
 int p2tgl_send_notifications (PurpleAccount *acct);
 
-void p2tgl_got_chat_invite (PurpleConnection *gc, tgl_peer_t *chat, tgl_peer_id_t inviter, const char *message);
-void p2tgl_got_chat_left (struct tgl_state *TLS, tgl_peer_id_t chat);
 void p2tgl_got_chat_in (struct tgl_state *TLS, tgl_peer_id_t chat, tgl_peer_id_t who, const char *message, int flags, time_t when);
 void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, int flags, time_t when);
-
-tgl_chat_id_t p2tgl_chat_get_id (PurpleChat *PC);
-void p2tgl_buddy_add_data (struct tgl_state *TLS, tgl_peer_id_t user, void *data);
 void p2tgl_prpl_got_user_status (struct tgl_state *TLS, tgl_peer_id_t user, struct tgl_user_status *status);
-
-void p2tgl_conv_add_users (PurpleConversation *conv, struct tgl_chat_user *list);
 void p2tgl_conv_add_user (struct tgl_state *TLS, PurpleConversation *conv, int user, char *message, int flags, int new_arrival);
 PurpleConversation *p2tgl_find_conversation_with_account (struct tgl_state *TLS, tgl_peer_id_t peer);
-
 PurpleNotifyUserInfo *p2tgl_notify_peer_info_new (struct tgl_state *TLS, tgl_peer_t *P);
 PurpleNotifyUserInfo *p2tgl_notify_user_info_new (struct tgl_user *U);
 PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TLS, struct tgl_secret_chat *secret, struct tgl_user *U);
-
 int p2tgl_imgstore_add_with_id (const char* filename);
 void p2tgl_buddy_icons_set_for_user (PurpleAccount *pa, tgl_peer_id_t id, const char* filename);
 

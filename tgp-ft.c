@@ -176,8 +176,7 @@ static void tgprpl_xfer_recv_init (PurpleXfer *X) {
         break;
         
       case tgl_message_media_document_encr:
-        tgl_do_load_encr_document (TLS, M->media.encr_document,
-                                   tgprpl_xfer_recv_on_finished, data);
+        tgl_do_load_encr_document (TLS, M->media.encr_document, tgprpl_xfer_recv_on_finished, data);
         break;
       
       case tgl_message_media_audio:
@@ -214,12 +213,10 @@ static void tgprpl_xfer_send_init (PurpleXfer *X) {
     purple_xfer_error (PURPLE_XFER_SEND, data->conn->pa, who, _("Sorry, sending documents to encrypted chats not yet supported."));
     return;
   }
-  
   if (P) {
-      tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL,
-                            0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, tgprpl_xfer_on_finished, data);
+      tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL, 0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO,
+          tgprpl_xfer_on_finished, data);
   }
-  
   data->timer = purple_timeout_add (100, tgprpl_xfer_upload_progress, X);
 }
 

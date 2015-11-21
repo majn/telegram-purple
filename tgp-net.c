@@ -283,7 +283,7 @@ static void net_on_connected_assert_success (gpointer arg, gint fd, const gchar 
   struct tgl_state *TLS = c->TLS;
   if (fd == -1) {
     info ("Connection to main data center (%d) %s:%d not possible\n", c->dc->id, c->ip, c->port);
-    purple_connection_error_reason (tg_get_conn (TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR, _("Cannot connect to server"));
+    purple_connection_error_reason (tls_get_conn (TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR, _("Cannot connect to server"));
     return;
   }
   net_on_connected (arg, fd, error_message);
@@ -312,7 +312,7 @@ struct connection *tgln_create_connection (struct tgl_state *TLS, const char *ho
   c->session = session;
   c->methods = methods;
 
-  c->prpl_data = purple_proxy_connect (tg_get_conn(TLS), tg_get_acc(TLS), host, port, 
+  c->prpl_data = purple_proxy_connect (tls_get_conn (TLS), tls_get_pa (TLS), host, port,
                     TLS->dc_working_num == dc->id ? net_on_connected_assert_success : net_on_connected, c);
 
   start_fail_timer (c);
@@ -323,12 +323,12 @@ struct connection *tgln_create_connection (struct tgl_state *TLS, const char *ho
 static void restart_connection (struct connection *c) {
   debug("restart_connection()");
   if (tglt_get_double_time () - c->last_receive_time > 6 * PING_TIMEOUT) {
-    purple_connection_error_reason (tg_get_conn (c->TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+    purple_connection_error_reason (tls_get_conn (c->TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
         _("Cannot connect to server"));
     return;
   }
   purple_proxy_connect_cancel (c->prpl_data);
-  c->prpl_data = purple_proxy_connect (tg_get_conn (c->TLS), tg_get_acc (c->TLS), c->ip, c->port, net_on_connected, c);
+  c->prpl_data = purple_proxy_connect (tls_get_conn (c->TLS), tls_get_pa (c->TLS), c->ip, c->port, net_on_connected, c);
 }
 
 static void fail_connection (struct connection *c) {
@@ -365,7 +365,7 @@ static void fail_connection (struct connection *c) {
   c->prpl_data = NULL;
 
   info ("Lost connection to server ... %s:%d\n", c->ip, c->port);
-  purple_connection_error_reason (tg_get_conn (c->TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+  purple_connection_error_reason (tls_get_conn (c->TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
       _("Lost connection to the server ..."));
 }
 

@@ -204,11 +204,11 @@ static gboolean tgp_msg_send_schedule_cb (gpointer data) {
 }
 
 static void tgp_msg_send_schedule (struct tgl_state *TLS, gchar *chunk, tgl_peer_id_t to) {
-  g_queue_push_tail (tg_get_data (TLS)->out_messages, tgp_msg_sending_init (TLS, chunk, to));
-  if (tg_get_data (TLS)->out_timer) {
-    purple_timeout_remove (tg_get_data (TLS)->out_timer);
+  g_queue_push_tail (tls_get_data (TLS)->out_messages, tgp_msg_sending_init (TLS, chunk, to));
+  if (tls_get_data (TLS)->out_timer) {
+    purple_timeout_remove (tls_get_data (TLS)->out_timer);
   }
-  tg_get_data (TLS)->out_timer = purple_timeout_add (0, tgp_msg_send_schedule_cb, tg_get_data (TLS));
+  tls_get_data (TLS)->out_timer = purple_timeout_add (0, tgp_msg_send_schedule_cb, tls_get_data (TLS));
 }
 
 static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
@@ -239,7 +239,7 @@ void tgp_msg_err_out (struct tgl_state *TLS, const char *error, tgl_peer_id_t to
         break;
       case TGL_PEER_USER:
       case TGL_PEER_ENCR_CHAT:
-        serv_got_im (tg_get_conn (TLS), tgp_blist_peer_get_purple_name (TLS, to), error, flags, now);
+        serv_got_im (tls_get_conn (TLS), tgp_blist_peer_get_purple_name (TLS, to), error, flags, now);
         break;
   }
 }
@@ -264,7 +264,7 @@ void tgp_msg_sys_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to_i
       g_return_if_fail (name);
 
       if (! conv) {
-        conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tg_get_acc (TLS), name);
+        conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tls_get_pa (TLS), name);
       }
       purple_conversation_write (conv, name, msg, flags, now);
       break;

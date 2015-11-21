@@ -40,13 +40,13 @@ static gint pending_reads_compare (gconstpointer a, gconstpointer b) {
 
 void pending_reads_send_all (struct tgl_state *TLS) {
   debug ("send all pending ack");
-  if (! p2tgl_status_is_present (purple_account_get_active_status (tg_get_acc (TLS))) ||
-      ! p2tgl_send_notifications (tg_get_acc (TLS))) {
+  if (! p2tgl_status_is_present (purple_account_get_active_status (tls_get_pa (TLS))) ||
+      ! p2tgl_send_notifications (tls_get_pa (TLS))) {
     return;
   }
   
   tgl_peer_id_t *pending;
-  GQueue *queue = tg_get_data (TLS)->pending_reads;
+  GQueue *queue = tls_get_data (TLS)->pending_reads;
   while ((pending = (tgl_peer_id_t*) g_queue_pop_head(queue))) {
     tgl_do_mark_read (TLS, *pending, tgp_notify_on_error_gw, NULL);
     debug ("tgl_do_mark_read (%d)", tgl_get_peer_id (*pending));

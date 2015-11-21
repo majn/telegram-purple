@@ -39,39 +39,38 @@
 #include <assert.h>
 
 
-PurpleAccount *tg_get_acc (struct tgl_state *TLS) {
-  return tg_get_data(TLS)->pa;
+PurpleAccount *tls_get_pa (struct tgl_state *TLS) {
+  return tls_get_data (TLS)->pa;
 }
 
-PurpleConnection *tg_get_conn (struct tgl_state *TLS) {
-  return tg_get_data (TLS)->gc;
+PurpleConnection *tls_get_conn (struct tgl_state *TLS) {
+  return tls_get_data (TLS)->gc;
 }
 
-connection_data *tg_get_data (struct tgl_state *TLS) {
+connection_data *tls_get_data (struct tgl_state *TLS) {
   return TLS->ev_base;
 }
 
-connection_data *gc_get_conn (PurpleConnection *gc) {
+connection_data *gc_get_data (PurpleConnection *gc) {
   return purple_connection_get_protocol_data (gc);
 }
 
-connection_data *pa_get_conn (PurpleAccount *pa) {
+struct tgl_state *gc_get_tls (PurpleConnection *gc) {
+  return ((connection_data *)purple_connection_get_protocol_data (gc))->TLS;
+}
+
+connection_data *pa_get_data (PurpleAccount *pa) {
   return purple_connection_get_protocol_data (purple_account_get_connection (pa));
 }
 
-connection_data *pbn_get_conn (PurpleBlistNode *node) {
+connection_data *pbn_get_data (PurpleBlistNode *node) {
   if (PURPLE_BLIST_NODE_IS_CHAT (node)) {
-    return pa_get_conn (purple_chat_get_account ((PurpleChat *)node));
+    return pa_get_data (purple_chat_get_account((PurpleChat *) node));
   }
   if (PURPLE_BLIST_NODE_IS_BUDDY (node)) {
-    return pa_get_conn (purple_buddy_get_account ((PurpleBuddy *)node));
+    return pa_get_data (purple_buddy_get_account((PurpleBuddy *) node));
   }
   return NULL;
-}
-
-connection_data *c_get_conn (struct connection *c) {
-  struct tgl_state *TLS = c->TLS;
-  return TLS->ev_base;
 }
 
 int p2tgl_status_is_present (PurpleStatus *status) {
@@ -85,13 +84,9 @@ int p2tgl_send_notifications (PurpleAccount *acct) {
   return ret;
 }
 
-void p2tgl_got_chat_left (struct tgl_state *TLS, tgl_peer_id_t chat) {
-  serv_got_chat_left (tg_get_conn(TLS), tgl_get_peer_id(chat));
-}
-
 void p2tgl_got_chat_in (struct tgl_state *TLS, tgl_peer_id_t chat, tgl_peer_id_t who,
                         const char *message, int flags, time_t when) {
-  serv_got_chat_in (tg_get_conn(TLS), tgl_get_peer_id (chat), tgp_blist_peer_get_purple_name (TLS, who), flags, message, when);
+  serv_got_chat_in (tls_get_conn (TLS), tgl_get_peer_id (chat), tgp_blist_peer_get_purple_name (TLS, who), flags, message, when);
 }
 
 void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, int flags, time_t when) {
@@ -130,8 +125,8 @@ PurpleConversation *p2tgl_find_conversation_with_account (struct tgl_state *TLS,
   if (tgl_get_peer_type (peer) == TGL_PEER_CHAT) {
     type = PURPLE_CONV_TYPE_CHAT;
   }
-  PurpleConversation *conv = purple_find_conversation_with_account (type,
-                                tgp_blist_peer_get_purple_name (TLS, peer), tg_get_acc (TLS));
+  PurpleConversation *conv = purple_find_conversation_with_account (type, tgp_blist_peer_get_purple_name (TLS, peer),
+      tls_get_pa (TLS));
   return conv;
 }
 
@@ -139,27 +134,18 @@ void p2tgl_prpl_got_user_status (struct tgl_state *TLS, tgl_peer_id_t user, stru
   connection_data *data = TLS->ev_base;
   
   if (status->online == 1) {
-    purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_purple_name (TLS, user), "available", NULL);
+    purple_prpl_got_user_status (tls_get_pa (TLS), tgp_blist_peer_get_purple_name (TLS, user), "available", NULL);
   } else {
     debug ("%d: when=%d", tgl_get_peer_id (user), status->when);
     if (tgp_time_n_days_ago (
           purple_account_get_int (data->pa, "inactive-days-offline", TGP_DEFAULT_INACTIVE_DAYS_OFFLINE)) > status->when && status->when) {
       debug ("offline");
-      purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_purple_name (TLS, user), "offline", NULL);
+      purple_prpl_got_user_status (tls_get_pa (TLS), tgp_blist_peer_get_purple_name (TLS, user), "offline", NULL);
     } else {
       debug ("mobile");
-      purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_purple_name (TLS, user), "mobile", NULL);
+      purple_prpl_got_user_status (tls_get_pa (TLS), tgp_blist_peer_get_purple_name (TLS, user), "mobile", NULL);
     }
   }
-}
-
-tgl_chat_id_t p2tgl_chat_get_id (PurpleChat *PC) {
-  char *name = g_hash_table_lookup (purple_chat_get_components (PC), "id");
-  if (! name || ! atoi (name)) {
-    warning ("p2tgl_chat_id_get: no id found in chat %s", PC->alias);
-    return TGL_MK_CHAT(0);
-  }
-  return TGL_MK_CHAT(atoi (name));
 }
 
 void p2tgl_conv_add_user (struct tgl_state *TLS, PurpleConversation *conv,
@@ -335,6 +321,6 @@ void p2tgl_buddy_icons_set_for_user (PurpleAccount *pa, tgl_peer_id_t id, const 
   size_t len;
   GError *err = NULL;
   g_file_get_contents (filename, &data, &len, &err);
-  purple_buddy_icons_set_for_user (pa, tgp_blist_peer_get_purple_name (pa_get_conn (pa)->TLS, id), data, len, NULL);
+  purple_buddy_icons_set_for_user (pa, tgp_blist_peer_get_purple_name (pa_get_data (pa)->TLS, id), data, len, NULL);
 }
 
