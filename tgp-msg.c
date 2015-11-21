@@ -197,20 +197,19 @@ static void tgp_msg_send_schedule (struct tgl_state *TLS, gchar *chunk, tgl_peer
 }
 
 static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
-  int max = TGP_DEFAULT_MAX_MSG_SPLIT_COUNT;
-  if (max < 1) {
-    max = 1;
-  }
-  int size = (int)g_utf8_strlen(message, -1);
-  if (size > TGP_MAX_MSG_SIZE * max) {
+  int size = (int)g_utf8_strlen (message, -1), start = 0;
+
+  if (size > TGP_MAX_MSG_SIZE * TGP_DEFAULT_MAX_MSG_SPLIT_COUNT) {
     return -E2BIG;
   }
-  int start = 0;
   while (size > start) {
-    int e = start + (int)TGP_MAX_MSG_SIZE;
-    gchar *chunk = g_utf8_substring (message, start, e);
+    int end = start + (int)TGP_MAX_MSG_SIZE;
+    if (end > size) {
+      end = size;
+    }
+    gchar *chunk = g_utf8_substringg (message, start, end);
     tgp_msg_send_schedule (TLS, chunk, to);
-    start = e;
+    start = end;
   }
   return 1;
 }
