@@ -177,7 +177,7 @@ PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TL
   PurpleNotifyUserInfo *info = p2tgl_notify_user_info_new (U);
   
   if (secret->state == sc_waiting) {
-    purple_notify_user_info_add_pair (info, "", _("Waiting for the user to get online ..."));
+    purple_notify_user_info_add_pair (info, "", _("Waiting for the user to get online..."));
     return info;
   }
   

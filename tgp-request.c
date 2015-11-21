@@ -178,7 +178,7 @@ void request_create_chat (struct tgl_state *TLS, const char *subject) {
   // the user to specify at least one other one.
   PurpleRequestFields* fields = purple_request_fields_new ();
   PurpleRequestFieldGroup* group = purple_request_field_group_new (
-      _("Invite at least one additional user by specifying their full name (autocompletion available).\nYou can add more users once"
+      _("Invite at least one additional user by specifying\n their full name (autocompletion available).\nYou can add more users once"
       " the chat was created."));
   
   PurpleRequestField *field = purple_request_field_string_new ("user1", _("Username"), NULL, FALSE);

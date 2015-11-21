@@ -355,7 +355,7 @@ static void fail_connection (struct connection *c) {
 
   info ("Lost connection to server ... %s:%d\n", c->ip, c->port);
   purple_connection_error_reason (tls_get_conn (c->TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
-      _("Lost connection to the server ..."));
+      _("Lost connection to the server..."));
 }
 
 //extern FILE *log_net_f;
