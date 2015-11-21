@@ -198,25 +198,28 @@ static void tgprpl_xfer_recv_init (PurpleXfer *X) {
 }
 
 static void tgprpl_xfer_send_init (PurpleXfer *X) {
-  struct tgp_xfer_send_data *data = X->data;
-  
+  struct tgp_xfer_send_data *data;
+  const char *file, *localfile, *who;
+  tgl_peer_t *P;
+
+  data = X->data;
   purple_xfer_start (X, -1, NULL, 0);
   
-  const char *file = purple_xfer_get_filename (X);
-  const char *localfile = purple_xfer_get_local_filename (X);
-  const char *who = purple_xfer_get_remote_user (X);
+  file = purple_xfer_get_filename (X);
+  localfile = purple_xfer_get_local_filename (X);
+  who = purple_xfer_get_remote_user (X);
   debug ("xfer_on_init (file=%s, local=%s, who=%s)", file, localfile, who);
-  
-  tgl_peer_t *P = tgp_blist_peer_find (data->conn->TLS, who);
-  
+
+  P = tgp_blist_peer_find (data->conn->TLS, who);
+  g_return_if_fail (P);
+
   if (tgl_get_peer_type (P->id) == TGL_PEER_ENCR_CHAT) {
-    purple_xfer_error (PURPLE_XFER_SEND, data->conn->pa, who, _("Sorry, sending documents to encrypted chats not yet supported."));
+    purple_xfer_error (PURPLE_XFER_SEND, data->conn->pa, who,
+        _("Sorry, sending documents to encrypted chats not yet supported."));
     return;
   }
-  if (P) {
-      tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL, 0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO,
-          tgprpl_xfer_on_finished, data);
-  }
+  tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL, 0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO,
+      tgprpl_xfer_on_finished, data);
   data->timer = purple_timeout_add (100, tgprpl_xfer_upload_progress, X);
 }
 
