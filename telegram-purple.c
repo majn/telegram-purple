@@ -81,7 +81,8 @@ static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum 
 static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_message *list[]);
 static void update_on_logged_in (struct tgl_state *TLS);
 static void update_on_ready (struct tgl_state *TLS);
-static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4);
+static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2, const char *a3,
+    const char *a4);
 static void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
 
 const char *config_dir = "telegram-purple";
@@ -266,38 +267,11 @@ static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_messa
   }
 }
 
-static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2, const char *a3, const char *a4) {
-  const char *d[4];
-  d[0] = a1; d[1] = a2; d[2] = a3; d[3] = a4;
-  static char buf[10000];
-  buf[0] = 0;
-  int i;
-  int p = 0;
-  for (i = 0; i < 4; i++) {
-    if (d[i] && strlen (d[i])) {
-      p += tgl_snprintf (buf + p, 9999 - p, "%s%s", p ? " " : "", d[i]);
-      assert (p < 9990);
-    }
-  }
-  char *s = buf;
-  while (*s) {
-    if (*s == '\n') { *s = ' '; }
-    if (*s == '#') { *s = '@'; }
-    s++;
-  }
-  s = buf;
-  int fl = (int)strlen (s);
-  int cc = 0;
-  while (1) {
-    tgl_peer_t *P = tgl_peer_get_by_name (TLS, s);
-    if (!P || !tgl_cmp_peer_id (P->id, id)) {
-      break;
-    }
-    cc ++;
-    assert (cc <= 9999);
-    tgl_snprintf (s + fl, 9999 - fl, " #%d", cc);
-  }
-  return tgl_strdup (s);
+static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2,
+    const char *a3, const char *a4) {
+  char *name = tgls_default_create_print_name (TLS, id, a1, a2, a3, a4);
+  tgp_replace (name, '_', ' ');
+  return name;
 }
 
 /*

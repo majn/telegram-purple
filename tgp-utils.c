@@ -126,3 +126,12 @@ int tgp_startswith (const char *str, const char *with) {
   }
   return TRUE;
 }
+
+void tgp_replace (char *string, char what, char with) {
+  char *p = string;
+  while (*(p ++)) {
+    if (*p == what) {
+      *p = with;
+    }
+  }
+}
