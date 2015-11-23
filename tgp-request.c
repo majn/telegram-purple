@@ -20,19 +20,6 @@
 
 #include "telegram-purple.h"
 
-#include <glib.h>
-#include <tgl.h>
-#include <tgl-binlog.h>
-#include <tgl-methods-in.h>
-#include <tgl-queries.h>
-
-#include "msglog.h"
-#include "tgp-request.h"
-#include "telegram-base.h"
-#include "tgp-2prpl.h"
-#include "tgp-utils.h"
-#include "tgp-structs.h"
-
 static struct request_values_data *request_values_data_init (struct tgl_state *TLS, void *callback, void *arg, int num_values) {
   struct request_values_data *data = talloc0 (sizeof (struct request_values_data));
   data->TLS = TLS;

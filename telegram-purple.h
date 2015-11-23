@@ -33,16 +33,25 @@
 #endif
 
 #include <tgl.h>
-#include <purple.h>
-#include <notify.h>
-#include <server.h>
-#include <plugin.h>
-#include <version.h>
-#include <account.h>
-#include <connection.h>
+#include <tgl-binlog.h>
+#include <tgl-queries.h>
+#include <tgl-structures.h>
 
+#include <glib.h>
+#include <purple.h>
+
+#include "telegram-base.h"
 #include "tgp-blist.h"
 #include "tgp-structs.h"
+#include "tgp-2prpl.h"
+#include "tgp-net.h"
+#include "tgp-timers.h"
+#include "tgp-utils.h"
+#include "tgp-chat.h"
+#include "tgp-ft.h"
+#include "tgp-msg.h"
+#include "tgp-request.h"
+#include "msglog.h"
 
 #define PLUGIN_ID "prpl-telegram"
 // FIXME: Name must be translated (for languages without latin script, it would look like gibberish. Just like Japanese script looks to me.)

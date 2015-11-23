@@ -22,9 +22,6 @@
 #define __telegram_adium__tgp_chat__
 
 #include "telegram-purple.h"
-#include "tgp-structs.h"
-#include "tgp-2prpl.h"
-#include <purple.h>
 
 PurpleChat *p2tgl_chat_new (struct tgl_state *TLS, struct tgl_chat *chat);
 

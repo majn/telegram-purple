@@ -20,11 +20,6 @@
 
 #include "telegram-purple.h"
 
-#include "tgp-utils.h"
-#include "msglog.h"
-
-#include <purple.h>
-
 const char *format_time (time_t date) {
   struct tm *datetime = localtime(&date);
   /* This should be the language's timestamp format.

@@ -25,20 +25,6 @@
 #include "lodepng/lodepng.h"
 #endif
 
-#include "tgp-2prpl.h"
-#include "tgp-structs.h"
-#include "telegram-purple.h"
-#include "tgp-utils.h"
-#include "telegram-base.h"
-#include "tgp-msg.h"
-#include "tgp-net.h"
-
-#include <server.h>
-#include <tgl.h>
-#include "msglog.h"
-#include <assert.h>
-
-
 PurpleAccount *tls_get_pa (struct tgl_state *TLS) {
   return tls_get_data (TLS)->pa;
 }

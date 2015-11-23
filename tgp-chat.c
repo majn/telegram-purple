@@ -18,16 +18,7 @@
  Copyright Matthias Jentsch 2014-2015
  */
 
-#include "msglog.h"
 #include "tgp-chat.h"
-#include "tgp-utils.h"
-#include "tgp-request.h"
-#include "telegram-base.h"
-#include "telegram-purple.h"
-
-#include <tgl.h>
-#include <tgl-queries.h>
-#include <assert.h>
 
 GHashTable *tgp_chat_info_new (struct tgl_state *TLS, struct tgl_chat *chat) {
   gchar *title = g_strdup (chat->print_title);

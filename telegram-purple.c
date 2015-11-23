@@ -20,53 +20,9 @@
 
 #include "telegram-purple.h"
 
-#include <glib.h>
-#include <string.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <assert.h>
-#include <unistd.h>
-#include <sys/types.h>
-
-#include "accountopt.h"
-#include "blist.h"
-#include "cmds.h"
-#include "conversation.h"
-#include "debug.h"
-#include "privacy.h"
-#include "prpl.h"
-#include "roomlist.h"
-#include "status.h"
-#include "util.h"
-#include "prpl.h"
-#include "prefs.h"
-#include "util.h"
-#include "eventloop.h"
-#include "request.h"
 #ifdef WIN32
 #include "win32/win32dep.h"
 #endif
-
-#include <tgl.h>
-#include <tgl-binlog.h>
-#include <tgl-queries.h>
-#include <tools.h>
-#include <tgl-methods-in.h>
-
-#include "msglog.h"
-#include "telegram-base.h"
-#include "tgp-2prpl.h"
-#include "tgp-net.h"
-#include "tgp-timers.h"
-#include "tgp-utils.h"
-#include "tgp-chat.h"
-#include "tgp-ft.h"
-#include "tgp-msg.h"
-#include "tgp-request.h"
-#include "tgp-blist.h"
-#include "tgp-structs.h"
 
 static void update_message_handler (struct tgl_state *TLS, struct tgl_message *M);
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *U, unsigned flags);
@@ -871,7 +827,6 @@ static PurplePluginProtocolInfo prpl_info = {
 };
 
 static void tgprpl_init (PurplePlugin *plugin) {
-  
   PurpleAccountOption *opt;
   
   // set domain name that is used for translation

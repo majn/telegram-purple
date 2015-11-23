@@ -19,16 +19,6 @@
  */
 
 #include "telegram-base.h"
-#include "tgp-structs.h"
-#include "purple.h"
-#include "msglog.h"
-#include "tgp-utils.h"
-#include "tgp-ft.h"
-#include "tgp-2prpl.h"
-
-#include <glib.h>
-#include <tgl.h>
-#include <tgl-queries.h>
 
 static void pending_reads_free_cb (gpointer data) {
   free (data);

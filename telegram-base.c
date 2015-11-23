@@ -21,31 +21,11 @@
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
-#include <stdio.h>
-#include <assert.h>
-
-#include <tgl.h>
-#include <tgl-binlog.h>
-#include <tgl-methods-in.h>
-#include <tgl-queries.h>
-
-#include <glib.h>
-#include <request.h>
 #include <gcrypt.h>
 
 #include "telegram-base.h"
-#include "telegram-purple.h"
-#include "msglog.h"
-#include "tgp-2prpl.h"
-#include "tgp-structs.h"
-#include "tgp-utils.h"
-#include "tgp-chat.h"
-#include "tgp-request.h"
 #include "lodepng/lodepng.h"
-
 
 // O_BINARY exists on windows and must be defined, but doesn't exist on unix-based systems
 #ifndef O_BINARY

@@ -16,13 +16,7 @@
  Copyright Matthias Jentsch 2015
  */
 
-#include "tgp-blist.h"
-#include "tgp-structs.h"
-#include "tgp-2prpl.h"
-
-#include <glib.h>
-#include <blist.h>
-#include <assert.h>
+#include "telegram-purple.h"
 
 const char *tgp_blist_peer_get_purple_name (struct tgl_state *TLS, tgl_peer_id_t id) {
   const char *name = g_hash_table_lookup (tls_get_data (TLS)->id_to_purple_name, GINT_TO_POINTER(tgl_get_peer_id (id)));

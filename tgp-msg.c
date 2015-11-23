@@ -20,12 +20,8 @@
 
 #include "telegram-purple.h"
 
-#include <assert.h>
-#include <tgl.h>
-#include <glib.h>
 #include <errno.h>
 #include <locale.h>
-#include <tgl-queries.h>
 
 #if !GLIB_CHECK_VERSION(2,30,0)
 gchar *
@@ -45,16 +41,6 @@ g_utf8_substring (const gchar *str,
   return out;
 }
 #endif
-
-#include "telegram-base.h"
-#include "tgp-structs.h"
-#include "tgp-msg.h"
-#include "tgp-ft.h"
-#include "tgp-2prpl.h"
-#include "tgp-chat.h"
-#include "tgp-utils.h"
-#include "tgp-chat.h"
-#include "msglog.h"
 
 static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
   assert (M && M->flags & TGLMF_SERVICE);

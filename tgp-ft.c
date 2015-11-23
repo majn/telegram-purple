@@ -18,17 +18,7 @@
  Copyright Matthias Jentsch 2014-2015
  */
 
-#include <tgl-queries.h>
-#include "tgp-utils.h"
-#include "tgp-ft.h"
-#include "tgp-structs.h"
-#include "msglog.h"
-
-#include <purple.h>
-#include <glib.h>
-#include <glib/gstdio.h>
 #include "telegram-purple.h"
-#include "telegram-base.h"
 
 static void tgprpl_xfer_free_data (struct tgp_xfer_send_data *data);
 

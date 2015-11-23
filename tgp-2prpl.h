@@ -23,9 +23,6 @@
 #include <stdio.h>
 
 #include "telegram-purple.h"
-#include "account.h"
-#include "conversation.h"
-#include "prpl.h"
 
 PurpleAccount *tls_get_pa (struct tgl_state *TLS);
 PurpleConnection *tls_get_conn (struct tgl_state *TLS);

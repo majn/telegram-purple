@@ -40,19 +40,8 @@
 #include <sys/time.h>
 #include <time.h>
 
-#include "tgp-net.h"
-#include "tgp-structs.h"
-#include "tgp-2prpl.h"
-#include "telegram-base.h"
-#include <tgl.h>
-#include <tgl-inner.h>
-#include <tools.h>
-#include <mtproto-client.h>
-
-#include <glib.h>
-#include <eventloop.h>
 #include "telegram-purple.h"
-#include "msglog.h"
+#include <mtproto-client.h>
 
 #ifndef POLLRDHUP
 #define POLLRDHUP 0
