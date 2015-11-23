@@ -19,15 +19,9 @@
 #import "TelegramAccount.h"
 #import "tgp-ft.h"
 
-#import <libpurple/conversation.h>
 #import <Adium/ESFileTransfer.h>
 #import <Adium/AIListContact.h>
-#import <Adium/AIToolbarControllerProtocol.h>
 #import <Adium/AIMenuControllerProtocol.h>
-#import <Adium/AIChat.h>
-
-#import <AIUtilities/AIToolbarUtilities.h>
-#import <AIUtilities/AIImageAdditions.h>
 #import <AIUtilities/AIMenuAdditions.h>
 
 #include "telegram-purple.h"

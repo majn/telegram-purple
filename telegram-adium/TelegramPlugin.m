@@ -23,7 +23,6 @@
 #import "TelegramPlugin.h"
 #import "TelegramService.h"
 #import "telegram-purple.h"
-#import <tgl.h>
 
 extern void purple_init_telegram_plugin();
 

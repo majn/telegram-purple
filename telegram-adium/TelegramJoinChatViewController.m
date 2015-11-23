@@ -16,19 +16,13 @@
  * Copyright Matthias Jentsch 2014-2015
  */
 
-#include <tgl.h>
 #include "telegram-purple.h"
-#include "tgp-structs.h"
-#include "tgp-chat.h"
-#include "telegram-base.h"
 
 #include "TelegramJoinChatViewController.h"
 #include "TelegramAutocompletionDelegate.h"
 
 #import <Adium/AIContactControllerProtocol.h>
-#import <AIUtilities/AICompletingTextField.h>
 #import <Adium/AIListContact.h>
-#import <Adium/AIWindowController.h>
 #import <AdiumLibpurple/CBPurpleAccount.h>
 
 @interface NSObject (JointChatViewDelegate)
