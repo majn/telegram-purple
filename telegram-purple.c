@@ -29,10 +29,6 @@
 #include <assert.h>
 #include <unistd.h>
 #include <sys/types.h>
-#ifndef WIN32
-#include <pwd.h>
-#include <regex.h>
-#endif
 
 #include "accountopt.h"
 #include "blist.h"
