@@ -226,19 +226,6 @@ static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const c
   return name;
 }
 
-/*
-static void on_contact_added (struct tgl_state *TLS,void *callback_extra, int success, int size, struct tgl_user *users[]) {
-  if (!success || !size) {
-    PurpleBuddy *buddy = callback_extra;
-    purple_blist_remove_buddy (buddy);
-    purple_notify_error (_telegram_protocol, "Adding Buddy Failed", "Buddy Not Found",
-                         "No contact with this phone number was found.");
-  } else {
-    _update_buddy (TLS, (tgl_peer_t *)users[0], TGL_UPDATE_PHOTO | TGL_UPDATE_NAME);
-  }
-}
-*/
-
 static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, const char *filename) {
   struct download_desc *dld = extra;
   struct tgl_user *U = dld->data;
@@ -501,10 +488,7 @@ static void update_on_logged_in (struct tgl_state *TLS) {
 
 static void update_on_ready (struct tgl_state *TLS) {
   info ("update_on_ready(): The account is done fetching new history");
-  
   purple_connection_set_display_name (tls_get_conn (TLS), purple_account_get_username (tls_get_pa (TLS)));
-  /* tgl_do_get_difference (TLS, purple_account_get_bool (tls_get_pa (TLS), "history-sync-all", FALSE),
-      tgp_notify_on_error_gw, NULL); */
   tgl_do_get_dialog_list (TLS, 200, 0, on_get_dialog_list_done, NULL);
   tgl_do_update_contact_list (TLS, 0, 0);
 }
@@ -718,22 +702,6 @@ static int tgprpl_send_chat (PurpleConnection *gc, int id, const char *message, 
   }
   return ret;
 }
-
-/*
-static void tgprpl_set_buddy_icon (PurpleConnection * gc, PurpleStoredImage * img) {
-  debug ("tgprpl_set_buddy_icon()");
-  
-  connection_data *conn = purple_connection_get_protocol_data (gc);
-  if (purple_imgstore_get_filename (img)) {
-    char* filename = g_strdup_printf ("%s/icons/%s", purple_user_dir(), purple_imgstore_get_filename (img));
-    debug (filename);
-    
-    tgl_do_set_profile_photo (conn->TLS, filename, tgp_notify_on_error_gw, NULL);
-    
-    g_free (filename);
-  }
-}
-*/
 
 static gboolean tgprpl_can_receive_file (PurpleConnection * gc, const char *who) {
   return TRUE;
