@@ -33,7 +33,6 @@ connection_data *pbn_get_data (PurpleBlistNode *node);
 struct tgl_state *gc_get_tls (PurpleConnection *gc);
 
 int p2tgl_status_is_present (PurpleStatus *status);
-int p2tgl_send_notifications (PurpleAccount *acct);
 
 void p2tgl_got_chat_in (struct tgl_state *TLS, tgl_peer_id_t chat, tgl_peer_id_t who, const char *message, int flags, time_t when);
 void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, int flags, time_t when);

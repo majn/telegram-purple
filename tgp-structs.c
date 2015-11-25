@@ -29,24 +29,33 @@ static gint pending_reads_compare (gconstpointer a, gconstpointer b) {
 }
 
 void pending_reads_send_all (struct tgl_state *TLS) {
-  debug ("send all pending ack");
-  if (! p2tgl_status_is_present (purple_account_get_active_status (tls_get_pa (TLS))) ||
-      ! p2tgl_send_notifications (tls_get_pa (TLS))) {
+  if (! purple_account_get_bool (tls_get_pa (TLS), TGP_KEY_SEND_READ_NOTIFICATIONS,
+      TGP_DEFAULT_SEND_READ_NOTIFICATIONS)) {
+    debug ("automatic read recipes disabled, not sending recipes");
     return;
   }
+  if (! p2tgl_status_is_present (purple_account_get_active_status (tls_get_pa (TLS)))) {
+    debug ("user is present, not sending recipes");
+    return;
+  }
+  debug ("sending all pending recipes");
   
   tgl_peer_id_t *pending;
   GQueue *queue = tls_get_data (TLS)->pending_reads;
-  while ((pending = (tgl_peer_id_t*) g_queue_pop_head(queue))) {
+  while ((pending = (tgl_peer_id_t*) g_queue_pop_head (queue))) {
     tgl_do_mark_read (TLS, *pending, tgp_notify_on_error_gw, NULL);
-    debug ("tgl_do_mark_read (%d)", tgl_get_peer_id (*pending));
+    info ("tgl_do_mark_read (%d)", tgl_get_peer_id (*pending));
     free (pending);
   }
 }
 
-void pending_reads_add (GQueue *queue, tgl_peer_id_t id) {
+void pending_reads_add (GQueue *queue, struct tgl_message *M) {
   tgl_peer_id_t *copy = malloc (sizeof(tgl_peer_id_t));
-  *copy = id;
+  if (tgl_get_peer_type(M->to_id) == TGL_PEER_USER) {
+    *copy = M->from_id;
+  } else {
+    *copy = M->to_id;
+  }
   if (! g_queue_find_custom (queue, copy, pending_reads_compare)) {
     g_queue_push_tail (queue, copy);
   }

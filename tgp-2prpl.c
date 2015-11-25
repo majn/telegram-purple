@@ -63,11 +63,6 @@ int p2tgl_status_is_present (PurpleStatus *status) {
   return !(strcmp (name, "unavailable") == 0 || strcmp (name, "away") == 0);
 }
 
-int p2tgl_send_notifications (PurpleAccount *acct) {
-  int ret = purple_account_get_bool (acct, TGP_KEY_SEND_READ_NOTIFICATIONS, TGP_DEFAULT_SEND_READ_NOTIFICATIONS);
-  debug ("sending notifications: %d", ret);
-  return ret;
-}
 
 void p2tgl_got_chat_in (struct tgl_state *TLS, tgl_peer_id_t chat, tgl_peer_id_t who,
                         const char *message, int flags, time_t when) {

@@ -535,12 +535,10 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
       if (tgp_chat_show (TLS, &P->chat)) {
         p2tgl_got_chat_in (TLS, M->to_id, M->from_id, text, flags, M->date);
       }
-      pending_reads_add (conn->pending_reads, M->to_id);
       break;
     }
     case TGL_PEER_ENCR_CHAT: {
       p2tgl_got_im_combo (TLS, M->to_id, text, flags, M->date);
-      pending_reads_add (conn->pending_reads, M->to_id);
       break;
     }
     case TGL_PEER_USER: {
@@ -550,7 +548,6 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         p2tgl_got_im_combo (TLS, M->to_id, text, flags, M->date);
       } else {
         p2tgl_got_im_combo (TLS, M->from_id, text, flags, M->date);
-        pending_reads_add (conn->pending_reads, M->from_id);
       }
       break;
     }
@@ -576,8 +573,10 @@ static void tgp_msg_process_in_ready (struct tgl_state *TLS) {
     }
     g_queue_pop_head (conn->new_messages);
     
-    pending_reads_send_all (TLS);
     tgp_msg_display (TLS, C);
+    pending_reads_add (conn->pending_reads, C->msg);
+    pending_reads_send_all (TLS);
+    
     if (C->data) {
       g_free (C->data);
     }
