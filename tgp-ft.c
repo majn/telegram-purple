@@ -18,6 +18,8 @@
  Copyright Matthias Jentsch 2014-2015
  */
 
+#include <glib/gstdio.h>
+
 #include "telegram-purple.h"
 
 static void tgprpl_xfer_free_data (struct tgp_xfer_send_data *data);
