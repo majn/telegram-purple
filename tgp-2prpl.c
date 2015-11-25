@@ -95,7 +95,7 @@ void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *m
   if (flags & PURPLE_MESSAGE_SEND) {
     PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, who);
     if (!conv) {
-      conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tg_get_acc (TLS),
+      conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tls_get_pa (TLS),
                                       tgp_blist_peer_get_purple_name (TLS, who));
     }
     purple_conv_im_write (purple_conversation_get_im_data (conv), tgp_blist_peer_get_purple_name (TLS, who),
