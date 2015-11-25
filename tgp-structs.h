@@ -47,7 +47,7 @@ typedef struct {
   GHashTable *id_to_purple_name;
 } connection_data;
 
-typedef struct { 
+typedef struct {
   int show_info; 
   tgl_peer_id_t peer;
 } get_user_info_data;

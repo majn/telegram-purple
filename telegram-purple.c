@@ -203,7 +203,7 @@ static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum 
 }
 
 static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_message *list[]) {
-  if (! purple_account_get_bool (tls_get_pa (TLS), "display-read-notifications", FALSE)) {
+  if (! purple_account_get_bool (tls_get_pa (TLS), TGP_KEY_DISPLAY_READ_NOTIFICATIONS, FALSE)) {
     return;
   }
   
@@ -246,7 +246,7 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
     p2tgl_buddy_icons_set_for_user (tls_get_pa (TLS), P->id, filename);
     if (dld->get_user_info_data->show_info == 1) {
       purple_notify_userinfo (tls_get_conn (TLS), tgp_blist_peer_get_purple_name (TLS, P->id),
-                              p2tgl_notify_peer_info_new (TLS, P), NULL, NULL);
+          p2tgl_notify_peer_info_new (TLS, P), NULL, NULL);
     }
   }
   free (dld->get_user_info_data);
@@ -378,7 +378,7 @@ static void create_secret_chat_done (struct tgl_state *TLS, void *callback_extra
 
 static void start_secret_chat (PurpleBlistNode *node, gpointer data) {
   tgl_do_create_secret_chat (pbn_get_data (node)->TLS, tgp_blist_buddy_get_id ((PurpleBuddy *)node),
-                             create_secret_chat_done, NULL);
+      create_secret_chat_done, NULL);
 }
 
 static void create_chat_link_done (struct tgl_state *TLS, void *extra, int success, const char *url) {
@@ -433,7 +433,7 @@ static void import_chat_link_done (struct tgl_state *TLS, void *extra, int succe
     return;
   }
   purple_notify_info (_telegram_protocol, _("Chat joined"), _("Chat joined"),
-                      _("Chat added to list of chat rooms."));
+      _("Chat added to list of chat rooms."));
 }
 
 void import_chat_link_checked (struct tgl_state *TLS, const char *link) {
@@ -618,8 +618,8 @@ static unsigned int tgprpl_send_typing (PurpleConnection *gc, const char *who, P
   debug ("tgprpl_send_typing()");
   tgl_peer_t *peer = tgp_blist_peer_find (gc_get_tls (gc), who);
   if (peer) {
-    tgl_do_send_typing (gc_get_tls (gc), peer->id,
-                        typing == PURPLE_TYPING ? tgl_typing_typing : tgl_typing_cancel, 0, 0);
+    tgl_do_send_typing (gc_get_tls (gc), peer->id, typing == PURPLE_TYPING ? tgl_typing_typing : tgl_typing_cancel,
+        0, 0);
   }
   return 0;
 }
@@ -665,7 +665,7 @@ static void tgprpl_add_buddy (PurpleConnection *gc, PurpleBuddy *buddy, PurpleGr
 
 static void tgprpl_remove_buddy (PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group) {
   debug ("tgprpl_remove_buddy()");
-  if (!buddy) {
+  if (! buddy) {
     return;
   }
 
@@ -686,9 +686,8 @@ static void tgprpl_chat_invite (PurpleConnection *gc, int id, const char *messag
   tgl_peer_t *user = tgp_blist_peer_find (gc_get_tls (gc), who);
   
   if (! chat || ! user) {
-    purple_notify_error (_telegram_protocol, _("Cannot invite buddy to chat"),
-                         _("Cannot invite buddy to chat"),
-                         _("Specified user does not exist."));
+    purple_notify_error (_telegram_protocol, _("Cannot invite buddy to chat"), _("Cannot invite buddy to chat"),
+        _("Specified user does not exist."));
     return;
   }
   
@@ -699,12 +698,13 @@ static int tgprpl_send_chat (PurpleConnection *gc, int id, const char *message, 
   debug ("tgprpl_send_chat()");
   int ret = tgp_msg_send (gc_get_tls (gc), message, TGL_MK_CHAT(id));
   if (ret != 0) {
-    p2tgl_got_chat_in (gc_get_tls (gc), TGL_MK_CHAT(id), gc_get_tls (gc)->our_id, message, PURPLE_MESSAGE_RECV, time (NULL));
+    p2tgl_got_chat_in (gc_get_tls (gc), TGL_MK_CHAT(id), gc_get_tls (gc)->our_id, message, PURPLE_MESSAGE_RECV,
+        time (NULL));
   }
   return ret;
 }
 
-static gboolean tgprpl_can_receive_file (PurpleConnection * gc, const char *who) {
+static gboolean tgprpl_can_receive_file (PurpleConnection *gc, const char *who) {
   return TRUE;
 }
 

@@ -63,10 +63,10 @@ int p2tgl_status_is_present (PurpleStatus *status) {
   return !(strcmp (name, "unavailable") == 0 || strcmp (name, "away") == 0);
 }
 
-
-void p2tgl_got_chat_in (struct tgl_state *TLS, tgl_peer_id_t chat, tgl_peer_id_t who,
-                        const char *message, int flags, time_t when) {
-  serv_got_chat_in (tls_get_conn (TLS), tgl_get_peer_id (chat), tgp_blist_peer_get_purple_name (TLS, who), flags, message, when);
+void p2tgl_got_chat_in (struct tgl_state *TLS, tgl_peer_id_t chat, tgl_peer_id_t who, const char *message, int flags,
+    time_t when) {
+  serv_got_chat_in (tls_get_conn (TLS), tgl_get_peer_id (chat), tgp_blist_peer_get_purple_name (TLS, who), flags,
+      message, when);
 }
 
 void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, int flags, time_t when) {
@@ -128,13 +128,10 @@ void p2tgl_prpl_got_user_status (struct tgl_state *TLS, tgl_peer_id_t user, stru
   }
 }
 
-void p2tgl_conv_add_user (struct tgl_state *TLS, PurpleConversation *conv,
-                          int user, char *message, int flags, int new_arrival) {
-  
+void p2tgl_conv_add_user (struct tgl_state *TLS, PurpleConversation *conv, int user, char *message, int flags,
+    int new_arrival) {
   const char *name = tgp_blist_peer_get_purple_name (TLS, TGL_MK_USER (user));
-  
   g_return_if_fail (name);
-  
   purple_conv_chat_add_user (purple_conversation_get_chat_data (conv), name, message, flags, new_arrival);
 }
 
@@ -168,7 +165,7 @@ PurpleNotifyUserInfo *p2tgl_notify_user_info_new (struct tgl_user *U) {
 }
 
 PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TLS, struct tgl_secret_chat *secret,
-                                                            struct tgl_user *U) {
+    struct tgl_user *U) {
   PurpleNotifyUserInfo *info = p2tgl_notify_user_info_new (U);
   
   if (secret->state == sc_waiting) {
@@ -203,12 +200,10 @@ PurpleNotifyUserInfo *p2tgl_notify_peer_info_new (struct tgl_state *TLS, tgl_pee
       struct tgl_secret_chat *chat = &P->encr_chat;
       tgl_peer_t *partner = tgp_encr_chat_get_partner (TLS, chat);
       return p2tgl_notify_encrypted_chat_info_new (TLS, chat, &partner->user);
-      break;
     }
       
     case TGL_PEER_USER:
       return p2tgl_notify_user_info_new (&P->user);
-      break;
       
     default:
       return purple_notify_user_info_new ();
