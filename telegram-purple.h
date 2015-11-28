@@ -81,9 +81,6 @@
 #define TGP_DEFAULT_JOIN_GROUP_CHATS FALSE
 #define TGP_KEY_JOIN_GROUP_CHATS "auto-join-group-chats"
 
-#define TGP_KEY_HISTORY_SYNC_ALL "history-sync-all"
-#define TGP_DEFAULT_HISTORY_SYNC_ALL FALSE
-
 #define TGP_DEFAULT_DISPLAY_READ_NOTIFICATIONS FALSE
 #define TGP_KEY_DISPLAY_READ_NOTIFICATIONS "display-read-notifications"
 

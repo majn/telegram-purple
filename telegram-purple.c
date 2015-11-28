@@ -837,11 +837,7 @@ static void tgprpl_init (PurplePlugin *plugin) {
   opt = purple_account_option_int_new (_("Display buddies offline after (days)"),
       TGP_KEY_INACTIVE_DAYS_OFFLINE, TGP_DEFAULT_INACTIVE_DAYS_OFFLINE);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
-  
-  opt = purple_account_option_bool_new (_("Fetch past history on first login"),
-      TGP_KEY_HISTORY_SYNC_ALL, TGP_DEFAULT_HISTORY_SYNC_ALL);
-  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
-  
+
   opt = purple_account_option_int_new (_("Don't fetch history older than (days)\n(0 for unlimited)"),
       TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD, TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);

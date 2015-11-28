@@ -91,12 +91,7 @@
                            [[self preferenceForKey:@"Telegram:"TGP_KEY_SEND_READ_NOTIFICATIONS
                                              group:GROUP_ACCOUNT_STATUS]
                             boolValue]);
-  
-  purple_account_set_bool (account, TGP_KEY_HISTORY_SYNC_ALL,
-                              [[self preferenceForKey:@"Telegram:"TGP_KEY_HISTORY_SYNC_ALL
-                                                group:GROUP_ACCOUNT_STATUS]
-                               boolValue]);
-  
+
   purple_account_set_int (account, TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD,
                               [[self preferenceForKey:@"Telegram:"TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD
                                                 group:GROUP_ACCOUNT_STATUS]
