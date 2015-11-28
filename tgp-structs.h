@@ -34,7 +34,7 @@ typedef struct {
   int updated;
   GQueue *new_messages;
   GQueue *out_messages;
-  GQueue *pending_reads;
+  GHashTable *pending_reads;
   GList *used_images;
   guint write_timer;
   guint login_timer;
@@ -78,7 +78,9 @@ struct tgp_msg_sending {
 };
 
 void pending_reads_send_all (struct tgl_state *TLS);
-void pending_reads_add (GQueue *queue, struct tgl_message *M);
+void pending_reads_add (struct tgl_state *TLS, struct tgl_message *M);
+void pending_reads_send_user (struct tgl_state *TLS, tgl_peer_id_t id);
+
 void used_images_add (connection_data *data, gint imgid);
 void *connection_data_free (connection_data *conn);
 connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *gc, PurpleAccount *pa);

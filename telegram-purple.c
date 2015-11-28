@@ -620,6 +620,9 @@ static unsigned int tgprpl_send_typing (PurpleConnection *gc, const char *who, P
   if (peer) {
     tgl_do_send_typing (gc_get_tls (gc), peer->id, typing == PURPLE_TYPING ? tgl_typing_typing : tgl_typing_cancel,
         0, 0);
+    
+    // when the other peer sees that the current user is typing it is obvious that the previous messages were read
+    pending_reads_send_user (gc_get_tls (gc), peer->id);
   }
   return 0;
 }

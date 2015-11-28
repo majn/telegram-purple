@@ -345,6 +345,9 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
   return ret;
 #endif
   
+  // at this point it is obvious to the other peer that the previous messages were read
+  pending_reads_send_user (TLS, to);
+  
   return tgp_msg_send_split (TLS, message, to);
 }
 
@@ -574,7 +577,7 @@ static void tgp_msg_process_in_ready (struct tgl_state *TLS) {
     g_queue_pop_head (conn->new_messages);
     
     tgp_msg_display (TLS, C);
-    pending_reads_add (conn->pending_reads, C->msg);
+    pending_reads_add (TLS, C->msg);
     pending_reads_send_all (TLS);
     
     if (C->data) {

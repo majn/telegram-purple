@@ -20,12 +20,10 @@
 
 #include "telegram-base.h"
 
-static void pending_reads_free_cb (gpointer data) {
-  free (data);
-}
-
-static gint pending_reads_compare (gconstpointer a, gconstpointer b) {
-  return !memcmp ((tgl_peer_id_t *)a, (tgl_peer_id_t *)b, sizeof(tgl_peer_id_t));
+static void tgl_do_mark_read_gw (gpointer key, gpointer value, gpointer data) {
+  tgl_peer_id_t to = * (tgl_peer_id_t *)value;
+  info ("tgl_do_mark_read (%d)", tgl_get_peer_id (to));
+  tgl_do_mark_read ((struct tgl_state *) data, to, tgp_notify_on_error_gw, NULL);
 }
 
 void pending_reads_send_all (struct tgl_state *TLS) {
@@ -35,35 +33,33 @@ void pending_reads_send_all (struct tgl_state *TLS) {
     return;
   }
   if (! p2tgl_status_is_present (purple_account_get_active_status (tls_get_pa (TLS)))) {
-    debug ("user is present, not sending recipes");
+    debug ("user is not present, not sending recipes");
     return;
   }
   debug ("sending all pending recipes");
-  
-  tgl_peer_id_t *pending;
-  GQueue *queue = tls_get_data (TLS)->pending_reads;
-  while ((pending = (tgl_peer_id_t*) g_queue_pop_head (queue))) {
-    tgl_do_mark_read (TLS, *pending, tgp_notify_on_error_gw, NULL);
-    info ("tgl_do_mark_read (%d)", tgl_get_peer_id (*pending));
-    free (pending);
+  g_hash_table_foreach (tls_get_data (TLS)->pending_reads, tgl_do_mark_read_gw, TLS);
+  g_hash_table_remove_all (tls_get_data (TLS)->pending_reads);
+}
+
+void pending_reads_send_user (struct tgl_state *TLS, tgl_peer_id_t id) {
+  if (g_hash_table_remove (tls_get_data (TLS)->pending_reads, GINT_TO_POINTER (tgl_get_peer_id (id)))) {
+    info ("tgl_do_mark_read (%d)", tgl_get_peer_id (id));
+    tgl_do_mark_read (TLS, id, tgp_notify_on_error_gw, NULL);
   }
 }
 
-void pending_reads_add (GQueue *queue, struct tgl_message *M) {
-  tgl_peer_id_t *copy = malloc (sizeof(tgl_peer_id_t));
-  if (tgl_get_peer_type(M->to_id) == TGL_PEER_USER) {
+void pending_reads_add (struct tgl_state *TLS, struct tgl_message *M) {
+  tgl_peer_id_t *copy = g_new (tgl_peer_id_t, 1);
+  if (tgl_get_peer_type (M->to_id) == TGL_PEER_USER) {
     *copy = M->from_id;
   } else {
     *copy = M->to_id;
   }
-  if (! g_queue_find_custom (queue, copy, pending_reads_compare)) {
-    g_queue_push_tail (queue, copy);
-  }
+  g_hash_table_replace (tls_get_data (TLS)->pending_reads, GINT_TO_POINTER (tgl_get_peer_id (*copy)), copy);
 }
 
 static void used_image_free (gpointer data) {
-  int id = GPOINTER_TO_INT(data);
-  purple_imgstore_unref_by_id (id);
+  purple_imgstore_unref_by_id (GPOINTER_TO_INT(data));
 }
 
 void used_images_add (connection_data *data, gint imgid) {
@@ -104,7 +100,7 @@ connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *
   conn->pa = pa;
   conn->new_messages = g_queue_new ();
   conn->out_messages = g_queue_new ();
-  conn->pending_reads = g_queue_new ();
+  conn->pending_reads = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
   conn->pending_chat_info = g_hash_table_new (g_direct_hash, g_direct_equal);
   conn->id_to_purple_name = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
   return conn;
@@ -114,11 +110,11 @@ void *connection_data_free (connection_data *conn) {
   if (conn->write_timer) { purple_timeout_remove (conn->write_timer); }
   if (conn->login_timer) { purple_timeout_remove (conn->login_timer); }
   if (conn->out_timer) { purple_timeout_remove (conn->out_timer); }
-  
-  tgp_g_queue_free_full (conn->pending_reads, pending_reads_free_cb);
+
   tgp_g_queue_free_full (conn->new_messages, tgp_msg_loading_free);
   tgp_g_queue_free_full (conn->out_messages, tgp_msg_sending_free);
   tgp_g_list_free_full (conn->used_images, used_image_free);
+  g_hash_table_destroy (conn->pending_reads);
   g_hash_table_destroy (conn->pending_chat_info);
   g_hash_table_destroy (conn->id_to_purple_name);
   tgprpl_xfer_free_all (conn);
