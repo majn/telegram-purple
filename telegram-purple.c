@@ -206,16 +206,18 @@ static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_messa
   if (! purple_account_get_bool (tls_get_pa (TLS), TGP_KEY_DISPLAY_READ_NOTIFICATIONS, FALSE)) {
     return;
   }
-  
   int i;
-  for (i = 0; i < num; i++) if (list[i]) {
-    tgl_peer_id_t to_id;
-    if (tgl_get_peer_type (list[i]->to_id) == TGL_PEER_USER && tgl_get_peer_id (list[i]->to_id) == tgl_get_peer_id (TLS->our_id)) {
-      to_id = list[i]->from_id;
-    } else {
-      to_id = list[i]->to_id;
+  for (i = 0; i < num; i++) {
+    if (list[i]) {
+      tgl_peer_id_t to_id;
+      if (tgl_get_peer_type (list[i]->to_id) == TGL_PEER_USER &&
+          tgl_get_peer_id (list[i]->to_id) == tgl_get_peer_id (TLS->our_id)) {
+        to_id = list[i]->from_id;
+      } else {
+        to_id = list[i]->to_id;
+      }
+      tgp_msg_sys_out (TLS , _("Message marked as read.") , to_id , TRUE);
     }
-    tgp_msg_sys_out (TLS, _("Message marked as read."), to_id, TRUE);
   }
 }
 
@@ -298,12 +300,11 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra
 void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U) {
   get_user_info_data *user_info_data = (get_user_info_data *)info_data;
   tgl_peer_t *P = tgl_peer_get (TLS, user_info_data->peer);
-  
+  g_return_if_fail (P);
   if (! success) {
     tgp_notify_on_error_gw (TLS, NULL, success);
     return;
   }
-
   if (!U->photo || U->photo->sizes_num == 0) {
     // No profile pic to load, display it right away
     if (user_info_data->show_info) {
@@ -331,10 +332,8 @@ static void tgprpl_tooltip_text (PurpleBuddy *buddy, PurpleNotifyUserInfo *info,
   }
   
   tgl_peer_t *P = tgl_peer_get (pbn_get_data (&buddy->node)->TLS, tgp_blist_buddy_get_id (buddy));
-  if (!P) {
-    failure ("Peer %s not found in tree.", buddy->name);
-    return;
-  }
+  g_return_if_fail (P);
+
   gchar *status = tgp_format_user_status (&P->user.status);
   purple_notify_user_info_add_pair (info, "last online: ", status);
   g_free (status);
@@ -368,7 +367,8 @@ static GList *tgprpl_status_types (PurpleAccount *acct) {
   return g_list_reverse (types);
 }
 
-static void create_secret_chat_done (struct tgl_state *TLS, void *callback_extra, int success, struct tgl_secret_chat *E) {
+static void create_secret_chat_done (struct tgl_state *TLS, void *callback_extra, int success,
+    struct tgl_secret_chat *E) {
   if (! success) {
     tgp_notify_on_error_gw (TLS, NULL, success);
     return;
@@ -596,11 +596,9 @@ static int tgprpl_send_im (PurpleConnection *gc, const char *who, const char *me
     gc_get_data (gc)->request_code_data = NULL;
     return 1;
   }
-  
-  /* 
-     Make sure that to only send messages to an existing peer by searching it in the peer tree, to give immediate
-     feedback by returning an error-code in case the peer doesn't exist.
-   */
+
+  // Make sure that to only send messages to an existing peer by searching it in the peer tree, to give immediate
+  // feedback by returning an error-code in case the peer doesn't exist.
   tgl_peer_t *peer = tgp_blist_peer_find (gc_get_tls (gc), who);
   if (peer) {
     if (tgl_get_peer_type (peer->id) == TGL_PEER_ENCR_CHAT && peer->encr_chat.state != sc_ok) {
@@ -633,19 +631,13 @@ static void tgprpl_get_info (PurpleConnection *gc, const char *who) {
   tgl_peer_t *peer = tgp_blist_peer_find (gc_get_data (gc)->TLS, who);
   if (peer) {
     get_user_info_data* info_data = get_user_info_data_new (1, peer->id);
-    switch (tgl_get_peer_type (peer->id)) {
-      case TGL_PEER_USER:
-      case TGL_PEER_CHAT:
-        tgl_do_get_user_info (gc_get_tls (gc), peer->id, 0, on_user_get_info, info_data);
-        break;
-        
-      case TGL_PEER_ENCR_CHAT: {
-        tgl_peer_t *parent_peer = tgp_encr_chat_get_partner (gc_get_tls (gc), &peer->encr_chat);
-        if (parent_peer) {
-          tgl_do_get_user_info (gc_get_tls (gc), parent_peer->id, 0, on_user_get_info, info_data);
-        }
-        break;
+    if (tgl_get_peer_type (peer->id) == TGL_PEER_ENCR_CHAT) {
+      tgl_peer_t *parent_peer = tgp_encr_chat_get_partner (gc_get_tls (gc), &peer->encr_chat);
+      if (parent_peer) {
+        tgl_do_get_user_info (gc_get_tls (gc), parent_peer->id, 0, on_user_get_info, info_data);
       }
+    } else {
+      tgl_do_get_user_info (gc_get_tls (gc), peer->id, 0, on_user_get_info, info_data);
     }
   }
 }

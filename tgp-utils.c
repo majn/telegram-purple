@@ -21,9 +21,9 @@
 #include "telegram-purple.h"
 
 const char *format_time (time_t date) {
-  /* TODO: Inline this function for better readability? */
+  // TODO: Inline this function for better readability?
   struct tm *datetime = localtime(&date);
-  /* This should be the language's timestamp format. This is preceded by a colon. */
+  // This should be the language's timestamp format. This is preceded by a colon.
   return purple_utf8_strftime (_("%d.%m.%Y %H:%M"), datetime);
 }
 
@@ -44,19 +44,19 @@ char *tgp_format_user_status (struct tgl_user_status *status) {
       when = g_strdup_printf ("%s", format_time (status->when));
       break;
     case -2:
-      /* This is preceded by a colon. */
+      // This is preceded by a colon.
       when = g_strdup (_("recently"));
       break;
     case -3:
-      /* This is preceded by a colon. */
+      // This is preceded by a colon.
       when = g_strdup (_("last week"));
       break;
     case -4:
-      /* This is preceded by a colon. */
+      // This is preceded by a colon.
       when = g_strdup (_("last month"));
       break;
     default:
-      /* This is preceded by a colon. It refers to a point on time. */
+      // This is preceded by a colon. It refers to a point on time.
       when = g_strdup (_("unknown"));
       break;
   }

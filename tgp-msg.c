@@ -100,9 +100,8 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
         tgl_peer_t *chatPeer = tgl_peer_get (TLS, M->to_id);
         assert (tgl_get_peer_type(chatPeer->id) == TGL_PEER_CHAT);
         
-        // make sure that the chat is showing before deleting the user, otherwise the
-        // chat will be initialised after removing the chat and the chat will still contain
-        // the deleted user
+        // make sure that the chat is showing before deleting the user, otherwise the chat will be
+        // initialised after removing the chat and the chat will still contain the deleted user
         PurpleConversation *conv = tgp_chat_show (TLS, &chatPeer->chat);
         if (conv) {
           char *alias = peer->print_name;
@@ -333,10 +332,8 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
    */
   stripped = purple_markup_strip_html (message);
   
-  /* 
-    now unescape the markup, so that html special chars will still show
-    up properly in Telegram
-   */
+   // now unescape the markup, so that html special chars will still show
+   // up properly in Telegram
   gchar *unescaped = purple_unescape_text (stripped);
   int ret = tgp_msg_send_split (TLS, stripped, to);
   
@@ -345,7 +342,7 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
   return ret;
 #endif
   
-  // at this point it is obvious to the other peer that the previous messages were read
+  // when the other peer receives a message it is obvious that the previous messages were read
   pending_reads_send_user (TLS, to);
   
   return tgp_msg_send_split (TLS, message, to);
@@ -562,7 +559,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
 static time_t tgp_msg_oldest_relevant_ts (struct tgl_state *TLS) {
   connection_data *conn = TLS->ev_base;
   int days = purple_account_get_int (conn->pa, TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD,
-                                     TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
+      TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
   return days > 0 ? tgp_time_n_days_ago (days) : 0;
 }
 

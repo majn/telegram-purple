@@ -43,7 +43,7 @@ static gboolean read_ui32 (int fd, unsigned int *ret) {
   if (4 != read (fd, buf, 4)) {
     return 0;
   }
-  /* Ugly but works. */
+  // Ugly but works.
   *ret = 0;
   *ret |= buf[0];
   *ret <<= 8;
@@ -56,7 +56,7 @@ static gboolean read_ui32 (int fd, unsigned int *ret) {
 }
 
 int read_pubkey_file (const char *name, struct rsa_pubkey *dst) {
-  /* Just to make sure nobody reads garbage. */
+  // Just to make sure nobody reads garbage.
   dst->e = 0;
   dst->n_len = 0;
   dst->n_raw = NULL;

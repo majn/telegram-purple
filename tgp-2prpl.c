@@ -221,25 +221,25 @@ int p2tgl_imgstore_add_with_id (const char* filename) {
 }
 
 int p2tgl_imgstore_add_with_id_raw (const unsigned char *raw_bgra, unsigned width, unsigned height) {
-  /* Heavily inspired by: https://github.com/EionRobb/pidgin-opensteamworks/blob/master/libsteamworks.cpp#L113 */
+  // Heavily inspired by: https://github.com/EionRobb/pidgin-opensteamworks/blob/master/libsteamworks.cpp#L113
   const unsigned char tga_header[] = {
-      /* No ID; no color map; uncompressed true color */
+      // No ID; no color map; uncompressed true color
       0,0,2,
-      /* No color map metadata */
+      // No color map metadata
       0,0,0,0,0,
-      /* No offsets */
+      // No offsets
       0,0,0,0,
-      /* Dimensions */
+      // Dimensions
       width&0xFF,(width/256)&0xFF,height&0xFF,(height/256)&0xFF,
-      /* 32 bits per pixel */
+      // 32 bits per pixel
       32,
-      /* "Origin in upper left-hand corner" */
+      // "Origin in upper left-hand corner"
       32};
   // Will be owned by libpurple imgstore, which uses glib functions for managing memory
   const unsigned tga_len = sizeof(tga_header) + width * height * 4;
   unsigned char *tga = g_malloc(tga_len);
   memcpy(tga, tga_header, sizeof(tga_header));
-  /* From the documentation: "The 4 byte entry contains 1 byte each of blue, green, red, and attribute." */
+  // From the documentation: "The 4 byte entry contains 1 byte each of blue, green, red, and attribute."
   memcpy(tga + sizeof(tga_header), raw_bgra, width * height * 4);
   return purple_imgstore_add_with_id (tga, tga_len, NULL);
 }
@@ -272,16 +272,16 @@ int p2tgl_imgstore_add_with_id_webp (const char *filename) {
     const float max_scale_width = MAX_W * 1.0f / config.options.scaled_width;
     const float max_scale_height = MAX_H * 1.0f / config.options.scaled_height;
     if (max_scale_width < max_scale_height) {
-      /* => the width is most limiting */
+      // => the width is most limiting
       config.options.scaled_width = MAX_W;
-      /* Can't use ' *= ', because we need to do the multiplication in float
-       * (or double), and only THEN cast back to int. */
+      // Can't use ' *= ', because we need to do the multiplication in float
+      // (or double), and only THEN cast back to int.
       config.options.scaled_height = (int) (config.options.scaled_height * max_scale_width);
     } else {
-      /* => the height is most limiting */
+      // => the height is most limiting
       config.options.scaled_height = MAX_H;
-      /* Can't use ' *= ', because we need to do the multiplication in float
-       * (or double), and only THEN cast back to int. */
+      // Can't use ' *= ', because we need to do the multiplication in float
+      // (or double), and only THEN cast back to int.
       config.options.scaled_width = (int) (config.options.scaled_width * max_scale_height);
     }
     config.options.use_scaling = 1;
