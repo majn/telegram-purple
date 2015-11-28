@@ -42,7 +42,6 @@
 		C4D12DF01BC534CF00C0F6E1 /* tgp-blist.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D12DEF1BC534CF00C0F6E1 /* tgp-blist.c */; settings = {ASSET_TAGS = (); }; };
 		C4D432D61BC2768C00561667 /* libgcrypt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C4D432D51BC2768C00561667 /* libgcrypt.dylib */; };
 		C4D432D81BC2783C00561667 /* tg-server.tglpub in Resources */ = {isa = PBXBuildFile; fileRef = C4D432D71BC2783C00561667 /* tg-server.tglpub */; };
-		C4D819031A5C85FE0044CBA9 /* lodepng.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D819011A5C85FE0044CBA9 /* lodepng.c */; };
 		C4D819061A5C862E0044CBA9 /* tgp-structs.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D819041A5C862E0044CBA9 /* tgp-structs.c */; };
 		C4E528111A8A907200C4B915 /* tgp-ft.c in Sources */ = {isa = PBXBuildFile; fileRef = C4E5280F1A8A907200C4B915 /* tgp-ft.c */; };
 		C4EA965A1B204C67006CBAD0 /* libwebp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C4EA96591B204C67006CBAD0 /* libwebp.a */; };
@@ -374,7 +373,6 @@
 				C41D58411A16D88E00B22448 /* tgp-2prpl.c in Sources */,
 				C479A8021BB69C2100C153DF /* tgp-request.c in Sources */,
 				C425F9181A7069C300361AFC /* tgp-utils.c in Sources */,
-				C4D819031A5C85FE0044CBA9 /* lodepng.c in Sources */,
 				C4D819061A5C862E0044CBA9 /* tgp-structs.c in Sources */,
 				C431EB7D1A76C737006521CB /* tgp-chat.c in Sources */,
 			);
