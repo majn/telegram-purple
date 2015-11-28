@@ -249,7 +249,6 @@ Telegram-Purple was written by:
     - Vitaly Valtman
     - Ben Wiederhake
     - Christopher Althaus <althaus.christopher@gmail.com>
-    - Markus Endres <endresma45241@th-nuernberg.de>
 
 
 Acknowledgements
