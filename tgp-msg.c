@@ -106,11 +106,12 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
         if (conv) {
           char *alias = peer->print_name;
           const char *aliasLeft = tgp_blist_peer_get_purple_name (TLS, TGL_MK_USER (M->action.user));
-          
-          txt = g_strdup_printf (_("%2$s deleted user %1$s."), alias, txt_user);
-          
-          g_return_val_if_fail (aliasLeft, txt);
-          
+
+          if (tgl_get_peer_id (M->from_id) != tgl_get_peer_id (peer->id)) {
+            txt = g_strdup_printf (_("%2$s deleted user %1$s."), alias, txt_user);
+          }
+          g_return_val_if_fail (aliasLeft, NULL);
+
           purple_conv_chat_remove_user (purple_conversation_get_chat_data (conv), aliasLeft, txt);
           if (M->action.user == tgl_get_peer_id (TLS->our_id)) {
             purple_conv_chat_left (purple_conversation_get_chat_data (conv));
@@ -122,7 +123,9 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
         }
         
         char *alias = peer->print_name;
-        txt = g_strdup_printf (_("%2$s deleted user %1$s."), alias, txt_user);
+        if (tgl_get_peer_id (M->from_id) != tgl_get_peer_id (peer->id)) {
+          txt = g_strdup_printf (_("%2$s deleted user %1$s."), alias, txt_user);
+        }
       }
       break;
     }
