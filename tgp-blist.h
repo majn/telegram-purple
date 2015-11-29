@@ -27,25 +27,21 @@
 #define TGP_BUDDY_KEY_PEER_ID "user_id"
 #define TGP_BUDDY_KEY_PEER_TYPE "peer_type"
 
-/*
- Functions for managing telegram contacts in the buddy list and performing id to purple-username and
- purple-username to id look-up.
+/* Functions for managing telegram contacts in the buddy list and performing id to purple-username and
+ purple-username to id look-ups.
  
  Purple prefers human-readable names for buddy user names, while Telegram uses numerical user ids.
  In older versions of this plugin, the user id was used as username and the print name as the users
  alias. This means that getting a useful username in the interface relied on the alias resolution,
  which unfortunately doesn't work when a user isn't in the buddy list, or in Adium group chats.
- Because of that, this plugin now uses the unique print names provided by libtgl as username instead.
- */
+ Because of that, this plugin now uses the unique print names provided by libtgl as username instead. */
 
 const char *tgp_blist_peer_get_purple_name (struct tgl_state *TLS, tgl_peer_id_t id);
 void tgp_blist_peer_add_purple_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *purple_name);
 tgl_peer_t *tgp_blist_peer_find (struct tgl_state *TLS, const char *purple_name);
 
-/*
- To make this new approach robust to names changes, it is necessary to store the user ID in each
- blist node to allow reliable buddy list look-ups by user ids.
- */
+/* To make this new approach robust to names changes, it is necessary to store the user ID in each
+ blist node to allow reliable buddy list look-ups by user ids. */
 
 void tgp_blist_buddy_set_id (PurpleBuddy *buddy, tgl_peer_id_t id);
 int tgp_blist_buddy_has_id (PurpleBuddy *buddy);
@@ -56,5 +52,8 @@ PurpleBuddy *tgp_blist_buddy_migrate (struct tgl_state *TLS, PurpleBuddy *buddy,
 PurpleBuddy *tgp_blist_buddy_find (struct tgl_state *TLS, tgl_peer_id_t user);
 PurpleChat *tgp_blist_chat_find (struct tgl_state *TLS, tgl_peer_id_t user);
 PurpleGroup *tgp_blist_group_init (const char *name);
+
+char *tgp_blist_create_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2,
+    const char *a3, const char *a4);
 
 #endif

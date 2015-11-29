@@ -58,7 +58,7 @@ struct tgl_update_callback tgp_callback = {
   .secret_chat_update = update_secret_chat_handler,
   .type_notification = update_user_typing,
   .marked_read = update_marked_read,
-  .create_print_name = format_print_name
+  .create_print_name = tgp_blist_create_print_name
 };
 
 static void _update_buddy (struct tgl_state *TLS, tgl_peer_t *user, unsigned flags) {
@@ -219,13 +219,6 @@ static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_messa
       tgp_msg_sys_out (TLS , _("Message marked as read.") , to_id , TRUE);
     }
   }
-}
-
-static char *format_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2,
-    const char *a3, const char *a4) {
-  char *name = tgls_default_create_print_name (TLS, id, a1, a2, a3, a4);
-  tgp_replace (name, '_', ' ');
-  return name;
 }
 
 static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, const char *filename) {

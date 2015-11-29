@@ -28,13 +28,13 @@ const char *tgp_blist_peer_get_purple_name (struct tgl_state *TLS, tgl_peer_id_t
 }
 
 void tgp_blist_peer_add_purple_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *purple_name) {
-  g_hash_table_replace (tls_get_data (TLS)->id_to_purple_name, GINT_TO_POINTER(tgl_get_peer_id (id)), g_strdup (purple_name));
+  g_hash_table_replace (tls_get_data (TLS)->id_to_purple_name, GINT_TO_POINTER(tgl_get_peer_id (id)),
+      g_strdup (purple_name));
 }
 
 tgl_peer_t *tgp_blist_peer_find (struct tgl_state *TLS, const char *purple_name) {
-  // buddies will keep the name they had when they were first added to the user list. The print_name
-  // of the peer may have changed since then, therefore the ID stored in the buddy is used to fetch
-  // the user name.
+  // buddies will keep the name they had when they were first added to the user list. The print_name of the peer
+  // may have changed since then, therefore the ID stored in the buddy is used to fetch the user name.
   PurpleBuddy *buddy = purple_find_buddy (tls_get_pa (TLS), purple_name);
   if (! buddy) {
     // foreign users are not in the buddy list by default, therefore the name used by libpurple and the
@@ -42,6 +42,7 @@ tgl_peer_t *tgp_blist_peer_find (struct tgl_state *TLS, const char *purple_name)
     return tgl_peer_get_by_name (TLS, purple_name);
   }
   if (! tgp_blist_buddy_has_id (buddy)) {
+    g_warn_if_reached ();
     return NULL;
   }
   return tgl_peer_get (TLS, tgp_blist_buddy_get_id (buddy));
@@ -139,3 +140,38 @@ PurpleGroup *tgp_blist_group_init (const char *name) {
   }
   return grp;
 }
+
+char *tgp_blist_create_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2,
+    const char *a3, const char *a4) {
+  // libtgl passes 0 for all unused strings, therefore the last passed string will always be followed
+  // by a NULL-termination as expected
+  gchar *name = g_strjoin (" ", a1, a2, a3, a4, NULL);
+
+  /* Assure that all print_names are unique by checking the following conditions:
+     1. No other peer with that print_name should exists. If those names are not unique it will not be possible
+        to uniquely refer to users by their print_name and assertions in libtgl will fail.
+     2. No BlistNode with that name should exists unless it is already corresponding to this peer ID. The rationale is
+        that this prpl uses the first print_name as permanent name for each user. Therefore it must be assured that no
+        foreign user will ever take this exact name again, otherwise the current users actions might be associated
+        with the old BlistNode. */
+  int i = 0;
+  gchar *n = NULL;
+  tgl_peer_t *B = tgp_blist_peer_find (TLS, name);
+  while (B && tgl_get_peer_id (B->id) != tgl_get_peer_id (id)) {
+    if (n) {
+      g_free (n);
+    }
+    n = g_strdup_printf ("%s #%d", name, ++ i);
+    B = tgp_blist_peer_find (TLS, n);
+  }
+  if (n) {
+    g_free (name);
+    name = n;
+  }
+
+  // the result is owned and freed by libtgl and must not be allocated by glib functions
+  char *S = tstrdup (name);
+  g_free (name);
+  return S;
+}
+
