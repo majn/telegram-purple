@@ -119,6 +119,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
           
           // conv_del_user already printed a message, prevent a redundant message
           // from being printed by returning NULL
+          g_free (txt);
           return NULL;
         }
         
