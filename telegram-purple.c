@@ -249,7 +249,8 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
 }
 
 static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra, int success, int size,
-                                     tgl_peer_id_t peers[], tgl_message_id_t *last_msg_id[], int unread_count[]) {
+    tgl_peer_id_t peers[], tgl_message_id_t *last_msg_id[], int unread_count[]) {
+  info ("Fetched dialogue list of size: %d", size);
   int i;
   for (i = size - 1; i >= 0; i--) {
     tgl_peer_t *UC = tgl_peer_get (TLS, peers[i]);
@@ -261,34 +262,30 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra
     if (tgl_get_peer_id (UC->id) == tgl_get_peer_id (TLS->our_id)) {
       continue;
     }
-    
-    switch (tgl_get_peer_type (peers[i])) {
-      case TGL_PEER_USER:
-        assert (UC);
-        if (! (UC->user.flags & TGLUF_DELETED)) {
-          PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, UC->id);
-          if (! buddy) {
-            buddy = tgp_blist_buddy_new (TLS, UC);
-            purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init ("Telegram"), NULL);
-            if (UC->user.photo_id) {
-              tgl_do_get_user_info (TLS, UC->id, 0, on_user_get_info, get_user_info_data_new (0, UC->id));
-            }
-          }
-          p2tgl_prpl_got_user_status (TLS, UC->id, &UC->user.status);
-        }
-        break;
-        
-      case TGL_PEER_CHAT:
-        assert (UC);
-        if (UC->chat.users_num > 0 &&
-            purple_account_get_bool (tls_get_data (TLS)->pa, TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS)) {
-          PurpleChat *PC = tgp_blist_chat_find (TLS, UC->id);
-          if (!PC) {
-            PC = p2tgl_chat_new (TLS, &UC->chat);
-            purple_blist_add_chat (PC, NULL, NULL);
+    if (tgl_get_peer_type (UC->id) == TGL_PEER_USER) {
+      if (! (UC->user.flags & TGLUF_DELETED)) {
+        PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, UC->id);
+        if (! buddy) {
+          info ("%s is in the dialogue list but not in the buddy list, add the user",
+              tgp_blist_peer_get_purple_name (TLS, UC->id));
+          buddy = tgp_blist_buddy_new (TLS, UC);
+          purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init ("Telegram"), NULL);
+          if (UC->user.photo_id) {
+            info ("%s has the photo %lld, fetch it.", buddy->name, UC->user.photo_id);
+            tgl_do_get_user_info (TLS, UC->id, 0, on_user_get_info, get_user_info_data_new (0, UC->id));
           }
         }
-        break;
+        p2tgl_prpl_got_user_status (TLS, UC->id, &UC->user.status);
+      }
+    } else if (tgl_get_peer_type (UC->id) == TGL_PEER_CHAT) {
+      if (UC->chat.users_num > 0 &&
+          purple_account_get_bool (tls_get_data (TLS)->pa, TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS)) {
+        PurpleChat *PC = tgp_blist_chat_find (TLS, UC->id);
+        if (!PC) {
+          PC = p2tgl_chat_new (TLS, &UC->chat);
+          purple_blist_add_chat (PC, NULL, NULL);
+        }
+      }
     }
   }
 }
