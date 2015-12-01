@@ -31,6 +31,7 @@ struct tgl_timer {
 
 static int timer_alarm (gpointer arg) {
   struct tgl_timer *t = arg;
+  t->fd = -1;
   t->cb (t->TLS, t->arg);
   return FALSE;
 }
