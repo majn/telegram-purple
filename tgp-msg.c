@@ -301,6 +301,10 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
       int imgid = atoi (id);
       if (imgid > 0) {
         PurpleStoredImage *psi = purple_imgstore_find_by_id (imgid);
+        if (! psi) {
+          failure ("Img %d not found in imgstore", imgid);
+          return -1;
+        }
         gchar *tmp = g_build_filename (g_get_tmp_dir(), purple_imgstore_get_filename (psi), NULL) ;
         GError *err = NULL;
         gconstpointer data = purple_imgstore_get_data (psi);
