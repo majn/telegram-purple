@@ -139,9 +139,9 @@ static void decline_secret_chat_cb (struct accept_secret_chat_data *data) {
 }
 
 void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *U) {
-  PurpleBuddy *who = tgp_blist_buddy_find (TLS, TGL_MK_USER (U->user_id));
-  g_return_if_fail(who);
-
+  tgl_peer_t *P = tgl_peer_get (TLS, TGL_MK_USER(U->user_id));
+  g_return_if_fail (P);
+  
   struct accept_secret_chat_data *data = talloc0 (sizeof (struct accept_secret_chat_data));
   data->TLS = TLS;
   data->U = U;
@@ -149,8 +149,8 @@ void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *
   gchar *message = g_strdup_printf (_("Accept secret chat '%s' on this device?"), U->print_name);
   purple_request_accept_cancel (tls_get_conn (TLS), _("Secret chat"), message, _("Secret chats can only have one "
       "end point. If you accept a secret chat on this device, its messages will not be available anywhere "
-      "else. If you decline, you can still accept the chat on other devices."), 0, tls_get_pa (TLS), who->name, NULL, data,
-      G_CALLBACK(accept_secret_chat_cb), G_CALLBACK(decline_secret_chat_cb));
+      "else. If you decline, you can still accept the chat on other devices."), 0, tls_get_pa (TLS), P->print_name,
+      NULL, data, G_CALLBACK(accept_secret_chat_cb), G_CALLBACK(decline_secret_chat_cb));
   g_free (message);
 }
 
