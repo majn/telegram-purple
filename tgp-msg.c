@@ -535,7 +535,44 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   if (! str_not_empty (text)) {
     return;
   }
-  
+
+  // Handle forwarded messages
+  if (tgl_get_peer_id (M->fwd_from_id) != TGL_PEER_UNKNOWN) {
+    const char *name;
+    tgl_peer_t *FP = tgl_peer_get (TLS, M->fwd_from_id);
+    if (FP) {
+      name = FP->print_name;
+    } else {
+      // FIXME: sometimes users aren't part of the response when receiving a forwarded message
+      name = "Unknown User";
+    }
+    g_free (text);
+    text = g_strdup_printf (_("<b>Forwarded from %s</b>: %s"), name, text);
+  }
+
+  /*
+  FIXME: message lookup doesn't work
+  // Handle replies
+  if (M->reply_id > 0) {
+    tgl_message_id_t id;
+    id.peer_type = TGL_PEER_USER;
+    id.id = M->reply_id;
+
+    const char *msg = "Unkown Message";
+    struct tgl_message *MM = tgl_message_get (TLS, &id);
+    if (MM) {
+      msg = MM->message;
+    }
+    const char *usr = "Unknown User";
+    if (MM) {
+      tgl_peer_t *P = tgl_peer_get (TLS, MM->from_id);
+      usr = P->print_name;
+    }
+    g_free (text);
+    text = g_strdup_printf (_("<b>%s: %s</b><br>%s"), msg, usr, M->message);
+  }
+  */
+
   // display the message to the user
   switch (tgl_get_peer_type (M->to_id)) {
     case TGL_PEER_CHAT: {
@@ -613,6 +650,14 @@ static void tgp_msg_on_loaded_chat_full (struct tgl_state *TLS, void *extra, int
   tgp_msg_process_in_ready (TLS);
 }
 
+static void tgp_msg_on_loaded_user_full (struct tgl_state *TLS, void *extra, int success, struct tgl_user *U) {
+  debug ("tgp_msg_on_loaded_user_full()");
+
+  struct tgp_msg_loading *C = extra;
+  -- C->pending;
+  tgp_msg_process_in_ready (TLS);
+}
+
 void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
   connection_data *conn = TLS->ev_base;
   if (M->flags & (TGLMF_EMPTY | TGLMF_DELETED)) {
@@ -670,6 +715,20 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
       }
     }
   }
+
+  /*
+  // for forwarded messages assure that the forwarded user is always loaded
+  if (tgl_get_peer_id (M->fwd_from_id) != TGL_PEER_UNKNOWN) {
+    tgl_peer_t *FP = tgl_peer_get (TLS , M->fwd_from_id);
+    if (! FP) {
+      ++ C->pending;
+      debug ("type=%d, id=%d, hash=%lld", M->fwd_from_id.peer_type, M->fwd_from_id.peer_id, M->fwd_from_id.access_hash);
+      
+      // FIXME: fwd_from_id.access_hash is always 0, submit fix to libtgl
+      tgl_do_get_user_info (TLS, M->fwd_from_id, FALSE, tgp_msg_on_loaded_user_full, C);
+    }
+  }
+  */
   
   if (tgl_get_peer_type (M->to_id) == TGL_PEER_CHAT) {
       
