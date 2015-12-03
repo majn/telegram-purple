@@ -37,6 +37,14 @@ Copyright: 2015 Matthias Jentsch <mtthsjntsch@gmail.com>
            2015 Markus Endres <endresma45241@th-nuernberg.de>
 License: GPL-2+
 
+Files: tgl/tl-parser/portable-endian.h
+Copyright: 2013-2014 Mathias Panzenböck <grosser.meister.morti@gmx.net>
+           2015 PkmX <pkmx.tw@gmail.com>
+License: public-domain-pe or BSD-2-clause or BSD-3-clause or BSD-4-clause or Expat or Apache
+# The licensing was meant to be "use whatever", but we have to keep it,
+# verbatim.  I took the freedom to interprete the term "the MIT licenses"
+# as "Expat" in order to keep it reasonably small.
+
 License: LGPL-2.1+
  This package is free software; you can redistribute it and/or
  modify it under the terms of the GNU Lesser General Public
@@ -107,3 +115,17 @@ License: Zlib
  .
  3. This notice may not be removed or altered from any source
  distribution.
+
+# The following licenses are used exclusively due to "portable-endian.h"
+# The mess this file causes here is justified by the mess in the code it avoids.
+
+License: public-domain-pe
+ I, Mathias Panzenböck, place this file hereby into the public domain.
+ Use it at your own risk for whatever you like. In case there are
+ jurisdictions that don't support putting things in the public domain
+ you can also consider it to be "dual licensed" under the BSD, MIT and
+ Apache licenses, if you want to. This code is trivial anyway. Consider
+ it an example on how to get the endian conversion functions on
+ different platforms.
+
+# Do I need to include "BSD-2-clause or BSD-3-clause or BSD-4-clause or Expat or Apache" parts?
