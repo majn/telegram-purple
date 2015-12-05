@@ -149,8 +149,7 @@ GIT_COMMIT=$(shell git rev-parse HEAD | cut -c1-10)
 GIT_COMMIT_H=commit.h
 .PHONY: commit
 commit:
-# avoid needles changes to commit.h, otherwise autodepent will *always* recompile
-# files that include commit.h
+# avoid needles changes to commit.h, otherwise autodepent will *always* recompile files that include it
 ifneq ($(shell cat commit.h |grep -c ${GIT_COMMIT}), 1)
 	echo '#ifndef GIT_COMMIT' > ${GIT_COMMIT_H}
 	echo '#  define GIT_COMMIT "${GIT_COMMIT}"' >> ${GIT_COMMIT_H}
