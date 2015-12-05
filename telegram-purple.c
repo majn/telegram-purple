@@ -25,14 +25,14 @@
 #endif
 
 static void update_message_handler (struct tgl_state *TLS, struct tgl_message *M);
-static void update_user_handler (struct tgl_state *TLS, struct tgl_user *U, unsigned flags);
-static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *U);
-static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *C, unsigned flags);
-static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *C, unsigned flags);
-static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status);
 static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_message *list[]);
 static void update_on_logged_in (struct tgl_state *TLS);
 static void update_on_ready (struct tgl_state *TLS);
+static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status);
+static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *U);
+static void update_user_handler (struct tgl_state *TLS, struct tgl_user *U, unsigned flags);
+static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *C, unsigned flags);
+static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *C, unsigned flags);
 static void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
 
 const char *config_dir = "telegram-purple";
@@ -44,19 +44,21 @@ const char *pk_path = "/etc/telegram-purple/server.tglpub";
 #endif
 
 struct tgl_update_callback tgp_callback = {
+  .new_msg = update_message_handler,
+  .marked_read = update_marked_read,
   .logprintf = debug,
   .get_values = request_value,
   .logged_in = update_on_logged_in,
   .started = update_on_ready,
-  .new_msg = update_message_handler,
-  .msg_receive = update_message_handler,
-  .user_update = update_user_handler,
-  .user_status_update = update_user_status_handler,
-  .chat_update = update_chat_handler,
-  .secret_chat_update = update_secret_chat_handler,
   .type_notification = update_user_typing,
-  .marked_read = update_marked_read,
+    // FIXME: what about type_in_secret_chat_notification, user_registred, user_activated, new_authorization, our_id ?
+  .chat_update = update_chat_handler,
+  .user_update = update_user_handler,
+  .secret_chat_update = update_secret_chat_handler,
+  .msg_receive = update_message_handler,
+  .user_status_update = update_user_status_handler,
   .create_print_name = tgp_blist_create_print_name
+    // FIXME: on_failed_login ?
 };
 
 static void _update_buddy (struct tgl_state *TLS, tgl_peer_t *user, unsigned flags) {
