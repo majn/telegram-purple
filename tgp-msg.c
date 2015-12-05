@@ -652,6 +652,7 @@ static void tgp_msg_on_loaded_chat_full (struct tgl_state *TLS, void *extra, int
   tgp_msg_process_in_ready (TLS);
 }
 
+/*
 static void tgp_msg_on_loaded_user_full (struct tgl_state *TLS, void *extra, int success, struct tgl_user *U) {
   debug ("tgp_msg_on_loaded_user_full()");
 
@@ -659,6 +660,7 @@ static void tgp_msg_on_loaded_user_full (struct tgl_state *TLS, void *extra, int
   -- C->pending;
   tgp_msg_process_in_ready (TLS);
 }
+*/
 
 void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
   connection_data *conn = TLS->ev_base;
