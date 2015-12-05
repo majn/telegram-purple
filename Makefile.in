@@ -47,7 +47,8 @@ DEPENDENCE_LIST=${DEPENDENCE}
 
 # The dependency on tgl/libs/libtgl.a ensures that "make -C tgl" was called,
 # and most importantly: It ensures that all automatic headers exist.
-${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c ${LIB}/libtgl.a | create_dirs
+# The dependency on commit.h ensures that the header is always created when the commit changes or doesn't exist
+${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c ${LIB}/libtgl.a | create_dirs commit
 	echo $@ && ${CC} ${CFLAGS} ${CPPFLAGS} -I ${srcdir}/tgl -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
 
 tgl/Makefile.in:
@@ -143,3 +144,16 @@ clean-here:
 .PHONY: clean
 clean: clean-here tgl/Makefile
 	+make -C tgl clean
+
+GIT_COMMIT=$(shell git rev-parse HEAD | cut -c1-10)
+GIT_COMMIT_H=commit.h
+.PHONY: commit
+commit:
+# avoid needles changes to commit.h, otherwise autodepent will *always* recompile
+# files that include commit.h
+ifneq ($(shell cat commit.h |grep -c ${GIT_COMMIT}), 1)
+	echo '#ifndef GIT_COMMIT' > ${GIT_COMMIT_H}
+	echo '#  define GIT_COMMIT "${GIT_COMMIT}"' >> ${GIT_COMMIT_H}
+	echo '#endif' >> ${GIT_COMMIT_H}
+endif
+
