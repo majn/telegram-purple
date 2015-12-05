@@ -11,6 +11,7 @@ FILE_PERM=0644
 
 CC=@CC@
 PKG_CONFIG=@PKG_CONFIG@
+MSGFMT_PATH=@MSGFMT_PATH@
 
 DEP=dep
 EXE=bin
@@ -21,7 +22,9 @@ DIR_LIST=${DEP} ${EXE} ${OBJ} ${LIB}
 PLUGIN_OBJECTS=${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/telegram-base.o ${OBJ}/telegram-purple.o ${OBJ}/tgp-2prpl.o ${OBJ}/tgp-structs.o ${OBJ}/tgp-utils.o ${OBJ}/tgp-chat.o ${OBJ}/tgp-ft.o ${OBJ}/tgp-msg.o ${OBJ}/tgp-request.o ${OBJ}/tgp-blist.o
 ALL_OBJS=${PLUGIN_OBJECTS}
 
+ifdef MSGFMT_PATH
 LOCALES=$(addprefix po/,$(addsuffix .mo,$(shell cat po/LINGUAS)))
+endif
 
 .SUFFIXES:
 
@@ -60,7 +63,7 @@ tgl/libs/libtgl.a: tgl/Makefile
 	+make -C tgl
 
 po/%.mo: po/%.po
-	msgfmt -cf -o $@ $<
+	${MSGFMT_PATH} -cf -o $@ $<
 
 ${LIB}/libtgl.a: tgl/libs/libtgl.a | create_dirs
 	cp $< $@
@@ -95,11 +98,13 @@ else
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48
 	install -m $(FILE_PERM) imgs/telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
 endif
+ifdef MSGFMT_PATH
 	@for lang in $(shell cat po/LINGUAS); do \
 		mkdir -p $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES; \
 		echo "installing po/$$lang.mo to $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
 		install -m $(FILE_PERM) po/$$lang.mo $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
 	done
+endif
 
 .PHONY: uninstall
 uninstall:
@@ -110,10 +115,12 @@ uninstall:
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
 # TODO: Delete all installed .mo's, no matter what LINGUAS says.
+ifdef MSGFMT_PATH
 	@for lang in $(shell cat po/LINGUAS); do \
 		echo "removing $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
 		rm -f $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
 	done
+endif
 
 .PHONY: local_install
 local_install:

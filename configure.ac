@@ -52,10 +52,15 @@ AC_SUBST(PURPLE_CFLAGS)
 AC_SUBST(PURPLE_CPPFLAGS)
 AC_SUBST(PURPLE_LIBS)
 
-AC_CHECK_PROG(GETTEXT_CHECK,msgfmt,yes)
-if test x"$GETTEXT_CHECK" != x"yes" ; then
-    AC_MSG_ERROR([msgfmt not found please install gettext])
-fi
+AC_ARG_ENABLE([translation],
+  AS_HELP_STRING([--disable-translation], [Disable gettext translation]))
+  AS_IF([test "x$enable_translation" != "xno"], [
+    AC_CHECK_PROG(CHECK_GETTEXT, msgfmt, "yes", "no", $PATH)
+    if test x"$CHECK_GETTEXT" != x"yes" ; then
+      AC_MSG_ERROR([no gettext found, use --disable-translation if you dont need it.])
+    fi
+    AC_SUBST(MSGFMT_PATH, $(which msgfmt))
+  ])
 
 # Define the domain name for the translated words 
 GETTEXT_PACKAGE=$PACKAGE_NAME
