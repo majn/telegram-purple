@@ -627,7 +627,6 @@ static int tgprpl_send_im (PurpleConnection *gc, const char *who, const char *me
 
   // workaround to support clients without the request API (request.h), see tgp-request.c:request_code()
   if (gc_get_data (gc)->request_code_data) {
-
     // OTR plugins may try to insert messages that don't contain the code
     if (tgp_startswith (message, "?OTR")) {
       info ("Fallback SMS auth, skipping OTR message: '%s'", message);
@@ -649,6 +648,14 @@ static int tgprpl_send_im (PurpleConnection *gc, const char *who, const char *me
       warning ("secret chat not ready for sending messages or deleted");
       return -1;
     }
+
+    // give a proper error message when attempting to send to a secret chat you don't own
+    if (tgl_get_peer_type (peer->id) == TGL_PEER_CHANNEL && ! (peer->flags & TGLCHF_CREATOR)) {
+      tgp_msg_special_out (gc_get_tls (gc), _("Only the creator of a channel can post messages."), peer->id,
+          PURPLE_MESSAGE_NO_LOG | PURPLE_MESSAGE_ERROR);
+      return -1;
+    }
+
     return tgp_msg_send (gc_get_tls (gc), message, peer->id);
   }
   
