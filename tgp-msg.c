@@ -298,9 +298,14 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
         gconstpointer data = purple_imgstore_get_data (psi);
         g_file_set_contents (tmp, data, purple_imgstore_get_size (psi), &err);
         if (! err) {
+
+          unsigned long long int flags = TGL_SEND_MSG_FLAG_DOCUMENT_AUTO;
+          if (tgl_get_peer_id (to) == TGL_PEER_CHANNEL) {
+            flags |= TGLMF_POST_AS_CHANNEL;
+          }
+
           stripped = g_strstrip(purple_markup_strip_html (message));
-          tgl_do_send_document (TLS, to, tmp, stripped, (int)strlen (stripped),
-                                TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, send_inline_picture_done, NULL);
+          tgl_do_send_document (TLS, to, tmp, stripped, (int)strlen (stripped), flags, send_inline_picture_done, NULL);
           g_free (stripped);
           
           // return 0 to assure that the picture is not echoed, since

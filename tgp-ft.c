@@ -210,8 +210,13 @@ static void tgprpl_xfer_send_init (PurpleXfer *X) {
         _("Sorry, sending documents to encrypted chats not yet supported."));
     return;
   }
-  tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL, 0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO,
-      tgprpl_xfer_on_finished, data);
+
+  unsigned long long int flags = TGL_SEND_MSG_FLAG_DOCUMENT_AUTO;
+  if (tgl_get_peer_type (P->id) == TGL_PEER_CHANNEL) {
+    flags |= TGLMF_POST_AS_CHANNEL;
+  }
+
+  tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL, 0, flags, tgprpl_xfer_on_finished, data);
   data->timer = purple_timeout_add (100, tgprpl_xfer_upload_progress, X);
 }
 
