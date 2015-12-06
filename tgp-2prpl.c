@@ -73,7 +73,7 @@ void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *m
   connection_data *conn = TLS->ev_base;
   
   if (flags & PURPLE_MESSAGE_SYSTEM) {
-    tgp_msg_sys_out (TLS, msg, who, flags & PURPLE_MESSAGE_NO_LOG);
+    tgp_msg_special_out (TLS, msg, who, flags & PURPLE_MESSAGE_NO_LOG);
     return;
   }
   

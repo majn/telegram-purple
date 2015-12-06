@@ -182,7 +182,7 @@ static void tgp_msg_send_done (struct tgl_state *TLS, void *callback_extra, int 
     char *err = _("Sending message failed.");
     warning (err);
     if (M) {
-      tgp_msg_err_out (TLS, err, M->to_id);
+      tgp_msg_special_out (TLS, err, M->to_id, PURPLE_MESSAGE_ERROR | PURPLE_MESSAGE_NO_LOG);
     } else {
       fatal (err);
     }
@@ -229,49 +229,25 @@ static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_p
     tgp_msg_send_schedule (TLS, chunk, to);
     start = end;
   }
+
   return 1;
 }
 
-void tgp_msg_err_out (struct tgl_state *TLS, const char *error, tgl_peer_id_t to) {
-  int flags = PURPLE_MESSAGE_ERROR | PURPLE_MESSAGE_SYSTEM;
-  time_t now;
-  time (&now);
-  switch (tgl_get_peer_type (to)) {
-      case TGL_PEER_CHAT:
-        p2tgl_got_chat_in (TLS, to, to, error, flags, now);
-        break;
-      case TGL_PEER_USER:
-      case TGL_PEER_ENCR_CHAT:
-        serv_got_im (tls_get_conn (TLS), tgp_blist_peer_get_purple_name (TLS, to), error, flags, now);
-        break;
-  }
-}
-
-void tgp_msg_sys_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to_id, int no_log) {
-  int flags = PURPLE_MESSAGE_SYSTEM;
-  if (no_log) {
-    flags |= PURPLE_MESSAGE_NO_LOG;
-  }
-  time_t now;
-  time (&now);
-  
-  switch (tgl_get_peer_type (to_id)) {
-    case TGL_PEER_CHAT:
-      p2tgl_got_chat_in (TLS, to_id, to_id, msg, flags, now);
-      break;
-    case TGL_PEER_USER:
-    case TGL_PEER_ENCR_CHAT: {
-      const char *name = tgp_blist_peer_get_purple_name (TLS, to_id);
-      PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, to_id);
-      
-      g_return_if_fail (name);
-
-      if (! conv) {
-        conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tls_get_pa (TLS), name);
-      }
-      purple_conversation_write (conv, name, msg, flags, now);
-      break;
+void tgp_msg_special_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to_id, int flags) {
+  if (tgl_get_peer_type (to_id) == TGL_PEER_CHAT) {
+    p2tgl_got_chat_in (TLS, to_id, to_id, msg, flags, 0);
+  } else {
+    // Regular IM conversations will not display specialized message flags like PURPLE_MESSAGE_ERROR or
+    // PURPLE_MESSAGE_SYSTEM correctly when using serv_got_in, therefore it is necessary to use the underlying
+    // conversation directly.
+    const char *name = tgp_blist_peer_get_purple_name (TLS, to_id);
+    PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, to_id);
+    g_return_if_fail (name);
+    if (! conv) {
+      // if the conversation isn't open yet, create one with that name
+      conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tls_get_pa (TLS), name);
     }
+    purple_conversation_write (conv, name, msg, flags, 0);
   }
 }
 
@@ -293,7 +269,8 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
   
   if ((img = g_strrstr (message, "<IMG")) || (img = g_strrstr (message, "<img"))) {
     if (tgl_get_peer_type(to) == TGL_PEER_ENCR_CHAT) {
-      tgp_msg_err_out (TLS, _("Sorry, sending documents to encrypted chats not yet supported."), to);
+      tgp_msg_special_out (TLS, _("Sorry, sending documents to encrypted chats not yet supported."), to,
+          PURPLE_MESSAGE_ERROR | PURPLE_MESSAGE_SYSTEM);
       return 0;
     }
     debug ("img found: %s", img);

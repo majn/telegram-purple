@@ -145,14 +145,14 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
     if (flags & TGL_UPDATE_WORKING) {
       write_secret_chat_file (TLS);
       if (U->state == sc_ok) {
-        tgp_msg_sys_out (TLS, _("Secret chat ready."), U->id, TRUE);
+        tgp_msg_special_out (TLS , _("Secret chat ready.") , U->id , TRUE);
       }
     }
     if (buddy) {
       if (flags & TGL_UPDATE_DELETED) {
         U->state = sc_deleted;
         write_secret_chat_file (TLS);
-        tgp_msg_sys_out (TLS, _("Secret chat terminated."), U->id, FALSE);
+        tgp_msg_special_out (TLS , _("Secret chat terminated.") , U->id , FALSE);
         purple_prpl_got_user_status (tls_get_pa (TLS), tgp_blist_peer_get_purple_name (TLS, U->id), "offline", NULL);
       } else {
         _update_buddy (TLS, (tgl_peer_t *)U, flags);
@@ -219,7 +219,7 @@ static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_messa
       } else {
         to_id = list[i]->to_id;
       }
-      tgp_msg_sys_out (TLS , _("Message marked as read.") , to_id , TRUE);
+      tgp_msg_special_out (TLS , _("Message marked as read.") , to_id , TRUE);
     }
   }
 }
