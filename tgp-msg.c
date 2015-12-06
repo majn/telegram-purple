@@ -199,8 +199,12 @@ static gboolean tgp_msg_send_schedule_cb (gpointer data) {
   while ((D = g_queue_peek_head (conn->out_messages))) {
     g_queue_pop_head (conn->out_messages);
 
+    unsigned long long flags = 0;
+    if (tgl_get_peer_type (D->to) == TGL_PEER_CHANNEL) {
+      flags |= TGLMF_POST_AS_CHANNEL;
+    }
     // TODO: option for disable_msg_preview
-    tgl_do_send_message (D->TLS, D->to, D->msg, (int)strlen (D->msg), 0, NULL, tgp_msg_send_done, NULL);
+    tgl_do_send_message (D->TLS, D->to, D->msg, (int)strlen (D->msg), flags, NULL, tgp_msg_send_done, NULL);
     tgp_msg_sending_free (D);
   }
   return FALSE;
@@ -230,6 +234,11 @@ static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_p
     start = end;
   }
 
+  // Prevent client from automatically printing the outgoing message. Channel messages are always printed by the
+  // channel user, not by ourselves to emulate behavior similar to the other Telegram clients.
+  if (tgl_get_peer_type (to) == TGL_PEER_CHANNEL) {
+    return 0;
+  }
   return 1;
 }
 
@@ -388,8 +397,23 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     return;
   }
 
-  // only display new messages, ignore updates or deletions
-  if (!M->message || tgp_outgoing_msg (TLS, M) || !tgl_get_peer_type (M->to_id)) {
+  // TODO: return 0 for all messages, so this isn't necessary and rely on this code to display all outgoing messages
+  if (tgp_outgoing_msg (TLS, M) && tgl_get_peer_type (M->to_id) != TGL_PEER_CHANNEL) {
+    return;
+  }
+
+#ifdef __ADIUM_
+  /* Adium ignores when this plugin returns 0 in prpl_send_im, even though that flag indicates that an outgoing
+    message shouldn't be printed to the conversation. This will still look messy, cause some posts will show up
+    with the current user's name, while external post will show up with the actual channel name, but there is no
+    way to prevent outgoing messages in Adium. */
+  if (tgp_outgoing_msg (TLS, M)) {
+    return;
+  }
+#endif
+
+  // filter empty or messages with invalid recipients
+  if (! M->message || !tgl_get_peer_type (M->to_id)) {
     return;
   }
   
@@ -508,6 +532,14 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   if (tgl_get_peer_type (M->to_id) != TGL_PEER_ENCR_CHAT && ! (M->flags & TGLMF_UNREAD)) {
     flags |= PURPLE_MESSAGE_DELAYED;
   }
+
+#ifdef __ADIUM_
+  /* (oh boy, here we go again...) Adium will print DELAYED messages with a custom layout, which causes the
+     already fucked-up layout (see ifdef __ADIUM_ above) to be even more confusing. */
+  if (! (M->flags & TGLMF_UNREAD) && tgl_get_peer_type (M->to_id) == TGL_PEER_CHANNEL) {
+    flags ^= PURPLE_MESSAGE_DELAYED;
+  }
+#endif
   
   // some service messages (like removing/adding users from chats) might print the message 
   // text through other means and leave the text empty
@@ -575,8 +607,10 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
       }
       break;
     }
+    case TGL_PEER_CHANNEL:
+      p2tgl_got_im_combo (TLS, M->to_id, text, flags, M->date);
+      break;
   }
-  
   g_free (text);
 }
 

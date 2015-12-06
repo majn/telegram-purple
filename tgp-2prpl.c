@@ -164,6 +164,38 @@ PurpleNotifyUserInfo *p2tgl_notify_user_info_new (struct tgl_user *U) {
   return info;
 }
 
+PurpleNotifyUserInfo *p2tgl_notify_channel_info_new (struct tgl_channel *C) {
+  PurpleNotifyUserInfo *info = purple_notify_user_info_new();
+
+  if (str_not_empty (C->about)) {
+    purple_notify_user_info_add_pair (info, _("Description"), C->about);
+  }
+
+  if (str_not_empty (C->username)) {
+    char *link = g_strdup_printf ("https://telegram.me/%s", C->username);
+    purple_notify_user_info_add_pair (info, _("Link"), link);
+    g_free (link);
+  }
+
+  if (str_not_empty (C->print_title)) {
+    purple_notify_user_info_add_pair (info, _("Print Title"), C->print_title);
+  }
+
+  char *admins = g_strdup_printf ("%d", C->admins_count);
+  purple_notify_user_info_add_pair (info, _("Administrators"), admins);
+  g_free (admins);
+
+  char *participants = g_strdup_printf ("%d", C->participants_count);
+  purple_notify_user_info_add_pair (info, _("Participants"), participants);
+  g_free (participants);
+
+  char *kicked = g_strdup_printf ("%d", C->kicked_count);
+  purple_notify_user_info_add_pair (info, _("Kicked"), kicked);
+  g_free (kicked);
+
+  return info;
+}
+
 PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TLS, struct tgl_secret_chat *secret,
     struct tgl_user *U) {
   PurpleNotifyUserInfo *info = p2tgl_notify_user_info_new (U);
@@ -204,7 +236,10 @@ PurpleNotifyUserInfo *p2tgl_notify_peer_info_new (struct tgl_state *TLS, tgl_pee
       
     case TGL_PEER_USER:
       return p2tgl_notify_user_info_new (&P->user);
-      
+
+    case TGL_PEER_CHANNEL:
+      return p2tgl_notify_channel_info_new (&P->channel);
+
     default:
       return purple_notify_user_info_new ();
   }

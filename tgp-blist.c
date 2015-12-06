@@ -65,8 +65,7 @@ PurpleBuddy *tgp_blist_buddy_migrate (struct tgl_state *TLS, PurpleBuddy *buddy,
 void tgp_blist_buddy_set_id (PurpleBuddy *buddy, tgl_peer_id_t id) {
   int uid = tgl_get_peer_id (id),
      type = tgl_get_peer_type (id);
-  assert (type == TGL_PEER_ENCR_CHAT || type == TGL_PEER_USER);
-  
+  assert (type == TGL_PEER_ENCR_CHAT || type == TGL_PEER_USER || type == TGL_PEER_CHANNEL);
   purple_blist_node_set_int (&buddy->node, TGP_BUDDY_KEY_PEER_ID, uid);
   purple_blist_node_set_int (&buddy->node, TGP_BUDDY_KEY_PEER_TYPE, type);
 }
@@ -78,11 +77,12 @@ int tgp_blist_buddy_has_id (PurpleBuddy *buddy) {
 tgl_peer_id_t tgp_blist_buddy_get_id (PurpleBuddy *buddy) {
   int id = purple_blist_node_get_int (&buddy->node, TGP_BUDDY_KEY_PEER_ID),
     type = purple_blist_node_get_int (&buddy->node, TGP_BUDDY_KEY_PEER_TYPE);
-
   if (type == TGL_PEER_USER) {
     return TGL_MK_USER (id);
   } else if (type == TGL_PEER_ENCR_CHAT) {
     return TGL_MK_ENCR_CHAT (id);
+  } else if (type == TGL_PEER_CHANNEL) {
+    return TGL_MK_CHANNEL (id);
   } else {
     assert (FALSE);
     // avoid compiler errors for missing return value
@@ -175,4 +175,3 @@ char *tgp_blist_create_print_name (struct tgl_state *TLS, tgl_peer_id_t id, cons
   g_free (name);
   return S;
 }
-
