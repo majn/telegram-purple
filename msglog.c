@@ -72,9 +72,65 @@ void fatal(const char* format, ...) {
   info ("\n");
 }
 
-const char *print_flags_update (unsigned flags) {
+const char *print_flags (const char **names, int len, unsigned flags) {
   static char *text = NULL;
-  const char *names[16] = {
+  if (text) {
+    g_free (text);
+    text = NULL;
+  }
+  int i;
+  for (i = 0; i < len; i ++) {
+    if (flags & 1) {
+      char *new;
+      if (text) {
+        new = g_strconcat (text, " ", names[i], NULL);
+        g_free (text);
+      } else {
+        new = g_strdup (names[i]);
+      }
+      text = new;
+    }
+    flags >>= 1;
+  }
+  return (const char*)text;
+}
+
+const char *print_flags_peer (unsigned flags) {
+  const char *names[] = {
+      "CREATED",
+      "HAS_PHOTO",
+      "DELETED",
+      "OFFICIAL",
+      "KICKED",
+      "ADMIN",
+      "CREATOR",
+      "LEFT",
+      "DEACTIVATED"
+  };
+  return print_flags (names, 9, flags);
+}
+
+const char *print_flags_channel (unsigned flags) {
+  static char *text;
+  if (text) {
+    g_free (text);
+    text = NULL;
+  }
+  const char *names[] = {
+      "BROADCAST",
+      "EDITOR",
+      "MODERATOR",
+      "MEGAGROUP"
+  };
+  text = g_strdup (print_flags_peer (flags));
+  char *old = text;
+  text = g_strconcat (text, " ", print_flags (names, 4, flags >> 16), NULL);
+  g_free (old);
+  return text;
+}
+
+const char *print_flags_update (unsigned flags) {
+  const char *names[] = {
     "CREATED",
     "DELETED",
     "PHONE",
@@ -92,23 +148,5 @@ const char *print_flags_update (unsigned flags) {
     "ACCESS_HASH",
     "USERNAME"
   };
-  if (text) {
-    g_free (text);
-    text = NULL;
-  }
-  int i;
-  for (i = 0; i < 16; i ++) {
-    if (flags & 1) {
-      char *new;
-      if (text) {
-        new = g_strconcat (text, " ", names[i], NULL);
-        g_free (text);
-      } else {
-        new = g_strdup (names[i]);
-      }
-      text = new;
-    }
-    flags >>= 1;
-  }
-  return (const char*)text;
+  return print_flags (names, 16, flags);
 }

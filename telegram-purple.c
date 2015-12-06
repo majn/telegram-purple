@@ -92,6 +92,7 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
   if (flags & TGL_UPDATE_CREATED) {
     // new user was allocated, fetch the corresponding buddy from the buddy list
     PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, user->id);
+    debug ("new user %s allocated flags: %s", user->print_name, print_flags_peer (flags));
     
     // the buddy doesn't exist, if it is stored in the legacy naming format find and migrate it. This
     // should only happen when making the switch from a version < 1.2.2 to a version >= 1.2.2
@@ -182,6 +183,7 @@ static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, u
   debug ("update_chat_handler() flags: %s", print_flags_update(flags));
   
   if (flags & TGL_UPDATE_CREATED) {
+    debug ("new chat '%s' allocated flags: %s", chat->title, print_flags_peer (chat->flags));
     tgp_blist_peer_add_purple_name (TLS, chat->id, chat->print_title);
   }
   if (! (flags & TGL_UPDATE_CREATED)) {
