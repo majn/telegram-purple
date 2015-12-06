@@ -644,8 +644,15 @@ static int tgprpl_send_im (PurpleConnection *gc, const char *who, const char *me
   // feedback by returning an error-code in case the peer doesn't exist.
   tgl_peer_t *peer = tgp_blist_peer_find (gc_get_tls (gc), who);
   if (peer) {
+    // give a proper error message when attempting to send to a secret chat that is not usable
     if (tgl_get_peer_type (peer->id) == TGL_PEER_ENCR_CHAT && peer->encr_chat.state != sc_ok) {
-      warning ("secret chat not ready for sending messages or deleted");
+      const char *msg;
+      if (peer->encr_chat.state == sc_deleted) {
+        msg = _("Secret chat was already deleted");
+      } else {
+        msg = _("Secret chat is not ready");
+      }
+      tgp_msg_special_out (gc_get_tls (gc), msg, peer->id, PURPLE_MESSAGE_NO_LOG | PURPLE_MESSAGE_ERROR);
       return -1;
     }
 
