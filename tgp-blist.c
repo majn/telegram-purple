@@ -133,10 +133,21 @@ PurpleChat *tgp_blist_chat_find (struct tgl_state *TLS, tgl_peer_id_t user) {
 }
 
 PurpleGroup *tgp_blist_group_init (const char *name) {
-  PurpleGroup *grp = purple_find_group (name);
-  if (grp == NULL) {
-    grp = purple_group_new (name);
+  const char *translation = gettext (name);
+  PurpleGroup *grp = purple_find_group (translation);
+  if (! grp) {
+    grp = purple_group_new (translation);
     purple_blist_add_group (grp, NULL);
+  }
+
+  // purple group names weren't translated in earlier versions, to avoid duplicated groups and messing up the buddy
+  // list migrate all those groups manually
+  if (0 != strcmp (name, translation)) {
+    PurpleGroup *old = purple_find_group (name);
+    if (old) {
+      info ("group: non-translated group detected, migrating from %s to %s", name, translation);
+      purple_blist_rename_group (old, translation);
+    }
   }
   return grp;
 }

@@ -163,7 +163,7 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
   if (!(flags & TGL_UPDATE_DELETED)) {
     if (! buddy) {
       buddy = tgp_blist_buddy_new (TLS, (tgl_peer_t *)U);
-      purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init ("Telegram"), NULL);
+      purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init (N_("Telegram")), NULL);
       purple_blist_alias_buddy (buddy, U->print_name);
     }
     purple_prpl_got_user_status (tls_get_pa (TLS), tgp_blist_peer_get_purple_name (TLS, U->id), "mobile", NULL);
@@ -272,7 +272,7 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra
           info ("%s is in the dialogue list but not in the buddy list, add the user",
               tgp_blist_peer_get_purple_name (TLS, UC->id));
           buddy = tgp_blist_buddy_new (TLS, UC);
-          purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init ("Telegram"), NULL);
+          purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init (N_("Telegram")), NULL);
           if (UC->user.photo_id) {
             info ("%s has the photo %lld, fetch it.", buddy->name, UC->user.photo_id);
             tgl_do_get_user_info (TLS, UC->id, 0, on_user_get_info, get_user_info_data_new (0, UC->id));

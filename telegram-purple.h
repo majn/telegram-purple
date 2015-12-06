@@ -32,6 +32,8 @@
 #else
 #  define _(String) String
 #  define P_(Singular,Plural,N) Plural
+#  define N_(String) String
+#  define gettext(String) String
 #endif
 
 #include <tgl.h>
