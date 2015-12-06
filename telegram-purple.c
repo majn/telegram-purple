@@ -862,10 +862,10 @@ static PurplePluginInfo plugin_info = {
   PURPLE_PRIORITY_DEFAULT,
   PLUGIN_ID,
   "Telegram",
-  PACKAGE_VERSION " libtgl: " TGL_VERSION,
+  PACKAGE_VERSION "\n\t\t\tcommit: " GIT_COMMIT "\n\t\t\tlibtgl: " TGL_VERSION,
   "Telegram",
-  TG_DESCRIPTION,
-  TG_AUTHOR,
+  N_("Telegram Protocol Plugin."),
+  PLUGIN_AUTHOR,
   "https://github.com/majn/telegram-purple",
   NULL,           // on load
   NULL,           // on unload
