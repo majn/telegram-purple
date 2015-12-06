@@ -4,7 +4,7 @@ Telegram-Purple Unofficial (Beta)
 Telegram-purple is a Libpurple protocol plugin that adds support for the Telegram messenger.
 
 I keep getting many questions about this plugin in my E-mail, so I've created a
-[telegram group chat](https://telegram.me/joinchat/01fb53f301b67d3c7a5532908dfa9a89) for
+[telegram group chat](https://goo.gl/bhmM7N) for
 telegram-purple related discussions or questions.
 
 OS Support
@@ -231,7 +231,7 @@ If you are interested in developing a non-OpenSSL-licensed converter, look into 
 
 Telegram group chat for telegram-purple or libtgl related discussions or questions:
 
-    - https://telegram.me/joinchat/01fb53f301b67d3c7a5532908dfa9a89
+    - https://goo.gl/bhmM7N
 
 
 Empathy / libtelepathy
