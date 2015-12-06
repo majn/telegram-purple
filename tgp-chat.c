@@ -46,7 +46,7 @@ void tgp_chat_on_loaded_chat_full (struct tgl_state *TLS, struct tgl_chat *C) {
   if (!PC) {
     PC = p2tgl_chat_new (TLS, C);
     if (purple_account_get_bool (tls_get_pa (TLS), TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS)) {
-      purple_blist_add_chat (PC, tgp_blist_group_init ("Telegram Chats"), NULL);
+      purple_blist_add_chat (PC, tgp_blist_group_init (_("Telegram Chats")), NULL);
     }
   }
   p2tgl_chat_update (TLS, PC, C->id, C->admin_id, C->print_title);

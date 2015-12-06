@@ -58,7 +58,7 @@ PurpleBuddy *tgp_blist_buddy_migrate (struct tgl_state *TLS, PurpleBuddy *buddy,
   purple_blist_remove_buddy (buddy);
   buddy = purple_buddy_new (tls_get_pa (TLS), user->print_name, NULL);
   tgp_blist_buddy_set_id (buddy, user->id);
-  purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init ("Telegram"), NULL);
+  purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init (_("Telegram")), NULL);
   return buddy;
 }
 
@@ -133,24 +133,14 @@ PurpleChat *tgp_blist_chat_find (struct tgl_state *TLS, tgl_peer_id_t user) {
 }
 
 PurpleGroup *tgp_blist_group_init (const char *name) {
-  const char *translation = gettext (name);
-  PurpleGroup *grp = purple_find_group (translation);
+  PurpleGroup *grp = purple_find_group (name);
   if (! grp) {
-    grp = purple_group_new (translation);
+    grp = purple_group_new (name);
     purple_blist_add_group (grp, NULL);
-  }
-
-  // purple group names weren't translated in earlier versions, to avoid duplicated groups and messing up the buddy
-  // list migrate all those groups manually
-  if (0 != strcmp (name, translation)) {
-    PurpleGroup *old = purple_find_group (name);
-    if (old) {
-      info ("group: non-translated group detected, migrating from %s to %s", name, translation);
-      purple_blist_rename_group (old, translation);
-    }
   }
   return grp;
 }
+
 
 char *tgp_blist_create_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2,
     const char *a3, const char *a4) {
