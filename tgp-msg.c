@@ -255,7 +255,7 @@ static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_p
 
 void tgp_msg_special_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to_id, int flags) {
   if (tgl_get_peer_type (to_id) == TGL_PEER_CHAT) {
-    p2tgl_got_chat_in (TLS, to_id, to_id, msg, flags, 0);
+    p2tgl_got_chat_in (TLS, to_id, to_id, msg, flags, time(0));
   } else {
     // Regular IM conversations will not display specialized message flags like PURPLE_MESSAGE_ERROR or
     // PURPLE_MESSAGE_SYSTEM correctly when using serv_got_in, therefore it is necessary to use the underlying
@@ -267,7 +267,7 @@ void tgp_msg_special_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t 
       // if the conversation isn't open yet, create one with that name
       conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tls_get_pa (TLS), name);
     }
-    purple_conversation_write (conv, name, msg, flags, 0);
+    purple_conversation_write (conv, name, msg, flags, time(0));
   }
 }
 
