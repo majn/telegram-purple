@@ -93,5 +93,6 @@ extern PurplePlugin *_telegram_protocol;
 void export_chat_link_checked (struct tgl_state *TLS, const char *name);
 void import_chat_link_checked (struct tgl_state *TLS, const char *link);
 void leave_and_delete_chat (struct tgl_state *TLS, tgl_peer_t *P);
+void channel_load_photo (struct tgl_state *TLS, void *extra, int success, struct tgl_channel *C);
 
 #endif

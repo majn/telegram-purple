@@ -144,16 +144,20 @@ static void update_channel_handler (struct tgl_state *TLS, struct tgl_channel *C
     } else {
       tgp_blist_peer_add_purple_name (TLS, C->id, C->title);
     }
+  } else {
+    if (flags & TGL_UPDATE_FLAGS) {
+      debug ("channel updated flags '%s': new flags %s", C->title, print_flags_channel (C->flags));
+      if (C->flags & TGLCHF_LEFT) {
+        PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, C->id);
+        if (buddy) {
+          purple_blist_remove_buddy (buddy);
+        }
+      }
+    }
+    if (flags & TGL_UPDATE_PHOTO) {
+      tgl_do_get_channel_info (TLS, C->id, FALSE, channel_load_photo, NULL);
+    }
   }
-}
-
-static void update_message_handler (struct tgl_state *TLS, struct tgl_message *M) {
-  write_files_schedule (TLS);
-  tgp_msg_recv (TLS, M);
-}
-
-static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *U) {
-  p2tgl_prpl_got_user_status (TLS, U->id, &U->status);
 }
 
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *U, unsigned flags) {
@@ -219,6 +223,15 @@ static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, u
   }
 }
 
+static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *U) {
+  p2tgl_prpl_got_user_status (TLS, U->id, &U->status);
+}
+
+static void update_message_handler (struct tgl_state *TLS, struct tgl_message *M) {
+  write_files_schedule (TLS);
+  tgp_msg_recv (TLS, M);
+}
+
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status) {
   g_return_if_fail (tgp_blist_peer_get_purple_name (TLS, U->id));
   if (status == tgl_typing_typing) {
@@ -274,15 +287,20 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
 
 static void on_channel_loaded_photo (struct tgl_state *TLS, void *extra, int success, const char *filename) {
   g_return_if_fail (success);
+  struct tgl_channel *C = extra;
+  
   int img = p2tgl_imgstore_add_with_id (filename);
-  if (img > 0) {
-    used_images_add (tls_get_data (TLS), img);
-    p2tgl_buddy_icons_set_for_user (tls_get_pa (TLS), ((struct tgl_channel *) extra)->id, filename);
-  }
+  g_return_if_fail (img > 0);
+  info ("succesfully loaded photo for channel %s into imgstore %d", filename, C->title, img);
+  
+  used_images_add (tls_get_data (TLS), img);
+  p2tgl_buddy_icons_set_for_user (tls_get_pa (TLS), C->id, filename);
 }
 
-static void channel_load_photo (struct tgl_state *TLS, void *extra, int success, struct tgl_channel *C) {
+void channel_load_photo (struct tgl_state *TLS, void *extra, int success, struct tgl_channel *C) {
   g_return_if_fail (success);
+
+  info ("loading photo for channel %s (%s)", C->title, print_flags_channel (C->flags));
   if (C->photo && C->photo->sizes_num > 0) {
     tgl_do_load_photo (TLS, C->photo, on_channel_loaded_photo, C);
   }
@@ -328,7 +346,7 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *extra, int suc
         }
       }
     } else if (tgl_get_peer_type (UC->id) == TGL_PEER_CHANNEL) {
-      // FIXME: find a way to identify LEFT channels and don't add them
+      // unlike the other peer types, deleted and left channels will not show up in the dialogue list
       PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, UC->id);
       if (! buddy) {
         info ("%s is in the dialogue list but not in the buddy list, add the channel", UC->print_name);
@@ -336,7 +354,8 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *extra, int suc
         purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init (_("Telegram Channels")), NULL);
         tgl_do_get_channel_info (TLS, UC->id, FALSE, channel_load_photo, NULL);
       }
-      p2tgl_prpl_got_user_status (TLS, UC->id, "available");
+      purple_prpl_got_user_status (tls_get_pa (TLS), tgp_blist_peer_get_purple_name (TLS, UC->id), "available",
+          NULL);
     }
   }
 }
