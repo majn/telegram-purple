@@ -12,3 +12,4 @@ bin/
 config.log
 config.status
 Makefile
+commit.h
