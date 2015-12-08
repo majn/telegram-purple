@@ -81,7 +81,7 @@ static void _update_buddy (struct tgl_state *TLS, tgl_peer_t *user, unsigned fla
 }
 
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, unsigned flags) {
-  debug ("update_user_handler() flags: %s", print_flags_update (flags));
+  debug ("update_user_handler() (%s)", print_flags_update (flags));
   
   if (tgl_get_peer_id (TLS->our_id) == tgl_get_peer_id (user->id) && (flags & (TGL_UPDATE_NAME | TGL_UPDATE_CONTACT))) {
     // own user object, do not add that user to the buddy list but make the ID known to the name lookup and
@@ -94,7 +94,7 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
   if (flags & TGL_UPDATE_CREATED) {
     // new user was allocated, fetch the corresponding buddy from the buddy list
     PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, user->id);
-    debug ("new user %s allocated flags: %s", user->print_name, print_flags_peer (flags));
+    debug ("new user %s allocated (%s)", user->print_name, print_flags_user (user->flags));
     
     // the buddy doesn't exist, if it is stored in the legacy naming format find and migrate it. This
     // should only happen when making the switch from a version < 1.2.2 to a version >= 1.2.2
@@ -129,12 +129,12 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
 }
 
 static void update_channel_handler (struct tgl_state *TLS, struct tgl_channel *C, unsigned flags) {
-  debug ("update_channel_handler() flags: %s", print_flags_update (flags));
+  debug ("update_channel_handler() (%s)", print_flags_update (flags));
   assert (TLS);
 
   if (flags & TGL_UPDATE_CREATED) {
     PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, C->id);
-    debug ("new channel '%s' allocated flags: %s", C->title, print_flags_channel (C->flags));
+    debug ("channel allocated '%s' (%s)", C->title, print_flags_channel (C->flags));
     if (buddy) {
       tgp_blist_peer_add_purple_name (TLS, C->id, purple_buddy_get_name (buddy));
       if (C->title && strcmp (C->title, purple_buddy_get_name (buddy))) {
@@ -146,7 +146,7 @@ static void update_channel_handler (struct tgl_state *TLS, struct tgl_channel *C
     }
   } else {
     if (flags & TGL_UPDATE_FLAGS) {
-      debug ("channel updated flags '%s': new flags %s", C->title, print_flags_channel (C->flags));
+      debug ("channel updated flags '%s' to (%s)", C->title, print_flags_channel (C->flags));
       if (C->flags & TGLCHF_LEFT) {
         PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, C->id);
         if (buddy) {
@@ -161,7 +161,7 @@ static void update_channel_handler (struct tgl_state *TLS, struct tgl_channel *C
 }
 
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *U, unsigned flags) {
-  debug ("update_secret_chat_handler() flags: %s", print_flags_update (flags));
+  debug ("update_secret_chat_handler() (%s)", print_flags_update (flags));
   PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, U->id);
 
   if (flags & TGL_UPDATE_CREATED) {
@@ -205,10 +205,10 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
 }
 
 static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *chat, unsigned flags) {
-  debug ("update_chat_handler() flags: %s", print_flags_update(flags));
+  debug ("update_chat_handler() (%s)", print_flags_update(flags));
   
   if (flags & TGL_UPDATE_CREATED) {
-    debug ("new chat '%s' allocated flags: %s", chat->title, print_flags_peer (chat->flags));
+    debug ("new chat '%s' allocated (%s)", chat->title, print_flags_peer (chat->flags));
     tgp_blist_peer_add_purple_name (TLS, chat->id, chat->print_title);
   }
   if (! (flags & TGL_UPDATE_CREATED)) {

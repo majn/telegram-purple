@@ -27,3 +27,4 @@ void fatal(const char* format, ...);
 const char *print_flags_update (unsigned update);
 const char *print_flags_channel (unsigned flags);
 const char *print_flags_peer (unsigned flags);
+const char *print_flags_user (unsigned flags);

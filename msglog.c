@@ -129,6 +129,26 @@ const char *print_flags_channel (unsigned flags) {
   return text;
 }
 
+const char *print_flags_user (unsigned flags) {
+  static char *text;
+  if (text) {
+    g_free (text);
+    text = NULL;
+  }
+  const char *names[] = {
+    "CONTACT",
+    "MUTUAL_CONTACT",
+    "BLOCKED",
+    "SELF",
+    "BOT"
+  };
+  text = g_strdup (print_flags_peer (flags));
+  char *old = text;
+  text = g_strconcat (text, " ", print_flags (names, 5, flags >> 16), NULL);
+  g_free (old);
+  return text;
+}
+
 const char *print_flags_update (unsigned flags) {
   const char *names[] = {
     "CREATED",
