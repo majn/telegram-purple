@@ -469,8 +469,8 @@ void write_secret_chat_gw (struct tgl_state *TLS, void *extra, int success, stru
   write_secret_chat_file (TLS);
 }
 
-void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *title, const char **users, int num_users,
-                                         int use_print_names) {
+void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *title, const char **users,
+      int num_users, int use_print_names) {
   tgl_peer_id_t ids[num_users + 1];
   int i, j = 0;
   ids[j++] = TLS->our_id;
@@ -489,11 +489,11 @@ void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *titl
     }
   }
   if (i > 0) {
-    tgl_do_create_group_chat (TLS, j, ids, title, (int) strlen(title),
-                              tgp_notify_on_error_gw, g_strdup (title));
+    tgl_do_create_group_chat (TLS, j, ids, title, (int) strlen (title), tgp_notify_on_error_gw,
+        g_strdup (title));
   } else {
-    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, _("Couldn't create group"), _("Please select at least one other user."), NULL,
-                           NULL, NULL);
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, _("Couldn't create group"),
+        _("Please select at least one other user."), NULL, NULL, NULL);
   }
 }
 
