@@ -41,6 +41,17 @@ void p2tgl_chat_update (struct tgl_state *TLS, PurpleChat *chat, tgl_peer_id_t i
   g_hash_table_replace (ht, g_strdup ("subject"), g_strdup (subject));
 }
 
+int tgp_chat_has_id (PurpleChat *C) {
+  const char *id = g_hash_table_lookup (purple_chat_get_components (C), "id");
+  return id && *id;
+}
+
+tgl_peer_id_t tgp_chat_get_id (PurpleChat *C) {
+  const char *id = g_hash_table_lookup (purple_chat_get_components (C), "id");
+  assert (id && *id);
+  return TGL_MK_CHAT(atoi (id));
+}
+
 void tgp_chat_on_loaded_chat_full (struct tgl_state *TLS, struct tgl_chat *C) {
   PurpleChat *PC = tgp_blist_chat_find (TLS, C->id);
   if (!PC) {

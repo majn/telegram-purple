@@ -25,6 +25,9 @@
 
 PurpleChat *p2tgl_chat_new (struct tgl_state *TLS, struct tgl_chat *chat);
 
+tgl_peer_id_t tgp_chat_get_id (PurpleChat *C);
+int tgp_chat_has_id (PurpleChat *C);
+
 void tgp_chat_on_loaded_chat_full (struct tgl_state *TLS, struct tgl_chat *C);
 PurpleConversation *tgp_chat_show (struct tgl_state *TLS, struct tgl_chat *C);
 void tgp_chat_users_update (struct tgl_state *TLS, struct tgl_chat *C);
