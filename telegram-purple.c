@@ -671,7 +671,12 @@ static int tgprpl_send_im (PurpleConnection *gc, const char *who, const char *me
         info ("Fallback SMS auth, skipping OTR message: '%s'", message);
         return -1;
     }
-    request_code_entered (gc_get_conn (gc)->TLS, message);
+
+    struct request_password_data *data = malloc (sizeof(struct request_password_data));
+    data->TLS = gc_get_conn (gc)->TLS;
+    data->arg = gc_get_conn (gc);
+    data->callback = telegram_export_authorization;
+    request_code_entered (data, message);
     gc_get_conn (gc)->in_fallback_chat = 0;
     return 1;
   }
