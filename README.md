@@ -10,7 +10,7 @@ telegram-purple related discussions or questions.
 OS Support
 ----------
 
-This plugin is tested and works on **Linux** and **OS X**. As of right now, **Windows is not supported** although there's a plan to port it in the near future.
+This plugin is tested and works on **Linux** and **OS X**. Right now the Windows port is **still under development and needs some testing**, check out the discussion for the [pull request](https://github.com/majn/telegram-purple/pull/149) for additional info.
 
 1.2.2
 -----
