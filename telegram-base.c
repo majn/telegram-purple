@@ -380,10 +380,10 @@ void read_secret_chat (struct tgl_state *TLS, int fd, int v) {
     assert (read (fd, sha, 20) == 20);
   } else {
     PurpleCipher *sha1_cipher = purple_ciphers_find_cipher("sha1");
-  	PurpleCipherContext *sha1_ctx = purple_cipher_context_new(sha1_cipher, NULL);
-  	purple_cipher_context_append(sha1_ctx, key, 256);
-  	purple_cipher_context_digest(sha1_ctx, 20, sha, NULL);
-  	purple_cipher_context_destroy(sha1_ctx);
+    PurpleCipherContext *sha1_ctx = purple_cipher_context_new(sha1_cipher, NULL);
+    purple_cipher_context_append(sha1_ctx, key, 256);
+    purple_cipher_context_digest(sha1_ctx, 20, sha, NULL);
+    purple_cipher_context_destroy(sha1_ctx);
   }
   int in_seq_no = 0, out_seq_no = 0, last_in_seq_no = 0;
   if (v >= 1) {
