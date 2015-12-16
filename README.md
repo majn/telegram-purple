@@ -234,6 +234,17 @@ Telegram group chat for telegram-purple or libtgl related discussions or questio
     - https://goo.gl/bhmM7N
 
 
+Submitting Bug Reports
+----------------------
+
+**IMPORTANT**: if you report bugs PLEASE make sure to always **include as much information as possible**. This should always include **at least the telegram-purple version and (if possible) commit**, where you got telegram-purple from (Source build, package repository, etc.), the Pidgin version (if you use a different messenger please state that too!) and your OS Version.
+
+If you describe some issue please be as precise as possible. Descriptions like "XY doesn't work" will not help me. Describe what you are doing what kind of issue you are experiencing: "If I click on X, Y happens, but instead I would expect Z to happen".
+
+For error reports please include the application logs. To get Pidgin to print a log, [start it from command line, specifying the -d option](https://developer.pidgin.im/wiki/GetABacktrace#TheEasyWay). **ATTENTION**: This log will contain personal information like your phone number, message content or contact or chat names. If you plan on uploading it somewhere public mask those entries in the log.
+
+Bug reports regarding crashes should include a backtrace if possible, there is extended documentation available on [how to get a backtrace for crashes](https://developer.pidgin.im/wiki/GetABacktrace)
+
 Empathy / libtelepathy
 ----------------------
 
