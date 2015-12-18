@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-11-21 14:37+0100\n"
+"POT-Creation-Date: 2015-12-18 13:44+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,71 +18,79 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: ../telegram-base.c:515
+#: ../telegram-base.c:495
 msgid "Couldn't create group"
 msgstr ""
 
-#: ../telegram-base.c:515
+#: ../telegram-base.c:495
 msgid "Please select at least one other user."
 msgstr ""
 
-#: ../telegram-base.c:570
+#: ../telegram-base.c:550
 msgid "Query Failed"
 msgstr ""
 
-#: ../telegram-purple.c:193
+#: ../telegram-purple.c:173
 msgid "Secret chat ready."
 msgstr ""
 
-#: ../telegram-purple.c:200
+#: ../telegram-purple.c:180
 msgid "Secret chat terminated."
 msgstr ""
 
-#: ../telegram-purple.c:268
+#: ../telegram-purple.c:191 ../telegram-purple.c:330
+msgid "Telegram"
+msgstr ""
+
+#: ../telegram-purple.c:256
 msgid "Message marked as read."
 msgstr ""
 
-#: ../telegram-purple.c:486
+#: ../telegram-purple.c:354 ../tgp-msg.c:165
+msgid "Telegram Channels"
+msgstr ""
+
+#: ../telegram-purple.c:454
 #, c-format
 msgid "Invite link: %s"
 msgstr ""
 
-#: ../telegram-purple.c:506 ../telegram-purple.c:507
+#: ../telegram-purple.c:474
 msgid "Creating chat link failed"
 msgstr ""
 
-#: ../telegram-purple.c:508
+#: ../telegram-purple.c:475
 msgid "You need to be admin of the group  to do that."
 msgstr ""
 
-#: ../telegram-purple.c:531
+#: ../telegram-purple.c:498
 msgid "Chat joined"
 msgstr ""
 
-#: ../telegram-purple.c:532
+#: ../telegram-purple.c:499
 msgid "Chat added to list of chat rooms."
 msgstr ""
 
-#: ../telegram-purple.c:552
+#: ../telegram-purple.c:519
 msgid "Start secret chat..."
 msgstr ""
 
 #. Generate Public Link
-#: ../telegram-purple.c:558
+#: ../telegram-purple.c:525
 msgid "Invite users by link..."
 msgstr ""
 
 #. Delete self from chat
-#: ../telegram-purple.c:564
+#: ../telegram-purple.c:531
 msgid "Delete and exit..."
 msgstr ""
 
-#: ../telegram-purple.c:632
+#: ../telegram-purple.c:596
 #, c-format
 msgid "Unable to sign on as %s: pubkey not found."
 msgstr ""
 
-#: ../telegram-purple.c:636
+#: ../telegram-purple.c:600
 #, c-format
 msgid ""
 "Make sure telegram-purple is installed properly,\n"
@@ -92,345 +100,391 @@ msgid ""
 "%1$s to %2$s."
 msgstr ""
 
-#: ../telegram-purple.c:657
+#: ../telegram-purple.c:621
 #, c-format
 msgid ""
 "Unable to sign on as %s: phone number lacks country prefix. Numbers must "
 "start with the full international prefix code, e.g. +49 for Germany."
 msgstr ""
 
-#: ../telegram-purple.c:662
+#: ../telegram-purple.c:626
 msgid "Incomplete phone number"
 msgstr ""
 
-#: ../telegram-purple.c:788 ../telegram-purple.c:789
+#: ../telegram-purple.c:670
+msgid "Secret chat was already deleted"
+msgstr ""
+
+#: ../telegram-purple.c:672
+msgid "Secret chat is not ready"
+msgstr ""
+
+#: ../telegram-purple.c:680
+msgid "Only the creator of a channel can post messages."
+msgstr ""
+
+#: ../telegram-purple.c:774
 msgid "Cannot invite buddy to chat"
 msgstr ""
 
-#: ../telegram-purple.c:790
+#: ../telegram-purple.c:775
 msgid "Specified user does not exist."
 msgstr ""
 
 #. Login
-#: ../telegram-purple.c:932
+#: ../telegram-purple.c:900
 msgid "Password (two factor authentication)"
 msgstr ""
 
-#: ../telegram-purple.c:938
+#: ../telegram-purple.c:905
 msgid ""
 "Fallback SMS verification\n"
 "(Helps when not using Pidgin and you aren't being prompted for the code)"
 msgstr ""
 
-#: ../telegram-purple.c:946
+#: ../telegram-purple.c:911
 msgid "ask"
 msgstr ""
 
-#: ../telegram-purple.c:947
+#: ../telegram-purple.c:912
 msgid "always"
 msgstr ""
 
-#: ../telegram-purple.c:948
+#: ../telegram-purple.c:913
 msgid "never"
 msgstr ""
 
-#: ../telegram-purple.c:950
+#: ../telegram-purple.c:915
 msgid "Accept secret chats"
 msgstr ""
 
-#: ../telegram-purple.c:955
+#: ../telegram-purple.c:919
 msgid "Display buddies offline after (days)"
 msgstr ""
 
-#: ../telegram-purple.c:960
-msgid "Fetch past history on first login"
-msgstr ""
-
-#: ../telegram-purple.c:965
+#: ../telegram-purple.c:923
 msgid ""
 "Don't fetch history older than (days)\n"
 "(0 for unlimited)"
 msgstr ""
 
 #. Chats
-#: ../telegram-purple.c:973
+#: ../telegram-purple.c:928
 msgid "Add all group chats to buddy list"
 msgstr ""
 
 #. Read notifications
-#: ../telegram-purple.c:981
+#: ../telegram-purple.c:933
 msgid "Display notices of receipt"
 msgstr ""
 
-#: ../telegram-purple.c:986
+#: ../telegram-purple.c:937
 msgid "Send notices of receipt when present"
 msgstr ""
 
-#: ../tgp-2prpl.c:178 ../tgp-request.c:108
+#: ../telegram-purple.c:961
+msgid "Telegram Protocol Plugin."
+msgstr ""
+
+#: ../tgp-2prpl.c:142 ../tgp-request.c:95
 msgid "First name"
 msgstr ""
 
-#: ../tgp-2prpl.c:179 ../tgp-request.c:111
+#: ../tgp-2prpl.c:143 ../tgp-request.c:98
 msgid "Last name"
 msgstr ""
 
-#: ../tgp-2prpl.c:181
+#: ../tgp-2prpl.c:145
 msgid "Name"
 msgstr ""
 
-#: ../tgp-2prpl.c:186 ../tgp-request.c:197 ../tgp-request.c:201
-#: ../tgp-request.c:205
+#: ../tgp-2prpl.c:150 ../tgp-request.c:184 ../tgp-request.c:188
+#: ../tgp-request.c:192
 msgid "Username"
 msgstr ""
 
-#: ../tgp-2prpl.c:191
+#: ../tgp-2prpl.c:155
 msgid "Last seen"
 msgstr ""
 
-#: ../tgp-2prpl.c:196
+#: ../tgp-2prpl.c:160
 msgid "Phone"
 msgstr ""
 
-#: ../tgp-2prpl.c:208
+#: ../tgp-2prpl.c:171
+msgid "Description"
+msgstr ""
+
+#: ../tgp-2prpl.c:176
+msgid "Link"
+msgstr ""
+
+#: ../tgp-2prpl.c:181
+msgid "Print Title"
+msgstr ""
+
+#: ../tgp-2prpl.c:185
+msgid "Administrators"
+msgstr ""
+
+#: ../tgp-2prpl.c:189
+msgid "Participants"
+msgstr ""
+
+#: ../tgp-2prpl.c:193
+msgid "Kicked"
+msgstr ""
+
+#: ../tgp-2prpl.c:204
 msgid "Waiting for the user to get online..."
 msgstr ""
 
-#: ../tgp-2prpl.c:212
+#: ../tgp-2prpl.c:208
 msgid "Self destruction timer"
 msgstr ""
 
-#: ../tgp-2prpl.c:218
+#: ../tgp-2prpl.c:214
 msgid "Timer is not enabled."
 msgstr ""
 
-#: ../tgp-2prpl.c:225
+#: ../tgp-2prpl.c:221
 msgid "Secret key"
 msgstr ""
 
-#: ../tgp-msg.c:72
+#: ../tgp-msg.c:58
 #, c-format
 msgid "%2$s created chat %1$s."
 msgstr ""
 
-#: ../tgp-msg.c:75
+#: ../tgp-msg.c:61
 #, c-format
 msgid "%2$s changed title to %1$s."
 msgstr ""
 
-#: ../tgp-msg.c:78
+#: ../tgp-msg.c:64
 #, c-format
 msgid "%s changed photo."
 msgstr ""
 
-#: ../tgp-msg.c:81
+#: ../tgp-msg.c:67
 #, c-format
 msgid "%s deleted photo."
 msgstr ""
 
-#: ../tgp-msg.c:89
+#: ../tgp-msg.c:75
 #, c-format
 msgid "%1$s added user %2$s by link."
 msgstr ""
 
-#: ../tgp-msg.c:102
+#: ../tgp-msg.c:89
 #, c-format
 msgid "%2$s added user %1$s."
 msgstr ""
 
-#: ../tgp-msg.c:125 ../tgp-msg.c:140
+#: ../tgp-msg.c:113 ../tgp-msg.c:130
 #, c-format
 msgid "%2$s deleted user %1$s."
 msgstr ""
 
-#: ../tgp-msg.c:146
+#: ../tgp-msg.c:137
 #, c-format
 msgid "%2$s set self destruction timer to %1$d second."
 msgid_plural "%2$s set self destruction timer to %1$d seconds."
 msgstr[0] ""
 msgstr[1] ""
 
-#: ../tgp-msg.c:152
+#: ../tgp-msg.c:143
 #, c-format
 msgid "%2$s marked %1$d message read."
 msgid_plural "%2$s marked %1$d messages read."
 msgstr[0] ""
 msgstr[1] ""
 
-#: ../tgp-msg.c:158
+#: ../tgp-msg.c:149
 #, c-format
 msgid "%2$s deleted %1$d message."
 msgid_plural "%2$s deleted %1$d messages."
 msgstr[0] ""
 msgstr[1] ""
 
-#: ../tgp-msg.c:164
+#: ../tgp-msg.c:155
 #, c-format
 msgid "%2$s made a screenshot of %1$d message."
 msgid_plural "%2$s made a screenshot of %1$d messages."
 msgstr[0] ""
 msgstr[1] ""
 
-#: ../tgp-msg.c:191
+#: ../tgp-msg.c:161
+#, c-format
+msgid "Channel %1$s created"
+msgstr ""
+
+#: ../tgp-msg.c:193
 msgid "Sending message failed."
 msgstr ""
 
-#: ../tgp-msg.c:296
+#: ../tgp-msg.c:278
 msgid "Sending image failed."
 msgstr ""
 
-#: ../tgp-msg.c:310
+#: ../tgp-msg.c:292
 msgid "Sorry, sending documents to encrypted chats not yet supported."
 msgstr ""
 
-#: ../tgp-msg.c:400
+#: ../tgp-msg.c:393
 #, c-format
 msgid "%s sent a sticker."
 msgstr ""
 
-#: ../tgp-net.c:286
+#: ../tgp-msg.c:577
+#, c-format
+msgid "<b>Forwarded from %s</b>: %s"
+msgstr ""
+
+#: ../tgp-net.c:275
 msgid "Cannot connect to main server"
 msgstr ""
 
-#: ../tgp-net.c:342
+#: ../tgp-net.c:316
 msgid "Cannot connect to server: Ping timeout."
 msgstr ""
 
-#: ../tgp-net.c:387
+#: ../tgp-net.c:358
 msgid "Lost connection to the server..."
 msgstr ""
 
-#: ../tgp-request.c:64
+#: ../tgp-request.c:51
 msgid ""
 "Telegram wants to verify your identity. Please enter the login code that you "
 "have received via SMS."
 msgstr ""
 
-#: ../tgp-request.c:67
+#: ../tgp-request.c:54
 msgid "Login code"
 msgstr ""
 
-#: ../tgp-request.c:67
+#: ../tgp-request.c:54
 msgid "Enter login code"
 msgstr ""
 
-#: ../tgp-request.c:67
+#: ../tgp-request.c:54
 msgid "the code"
 msgstr ""
 
-#: ../tgp-request.c:67 ../tgp-request.c:116 ../tgp-request.c:210
-#: ../tgp-request.c:245 ../tgp-request.c:275
+#: ../tgp-request.c:54 ../tgp-request.c:103 ../tgp-request.c:197
+#: ../tgp-request.c:232 ../tgp-request.c:262
 msgid "OK"
 msgstr ""
 
-#: ../tgp-request.c:68 ../tgp-request.c:116 ../tgp-request.c:135
-#: ../tgp-request.c:211 ../tgp-request.c:246 ../tgp-request.c:276
+#: ../tgp-request.c:55 ../tgp-request.c:103 ../tgp-request.c:122
+#: ../tgp-request.c:198 ../tgp-request.c:233 ../tgp-request.c:263
 msgid "Cancel"
 msgstr ""
 
-#: ../tgp-request.c:107
+#: ../tgp-request.c:94
 msgid "Registration"
 msgstr ""
 
-#: ../tgp-request.c:115
+#: ../tgp-request.c:102
 msgid "Register"
 msgstr ""
 
-#: ../tgp-request.c:115
+#: ../tgp-request.c:102
 msgid "Please register your phone number."
 msgstr ""
 
 #. purple_request API not available
-#: ../tgp-request.c:120
+#: ../tgp-request.c:107
 msgid ""
 "Phone number is not registered. Please register your phone on a different "
 "client."
 msgstr ""
 
-#: ../tgp-request.c:122
+#: ../tgp-request.c:109
 msgid "Not registered"
 msgstr ""
 
-#: ../tgp-request.c:134
+#: ../tgp-request.c:121
 msgid "Password needed"
 msgstr ""
 
-#: ../tgp-request.c:134
+#: ../tgp-request.c:121
 msgid "Enter password for two factor authentication"
 msgstr ""
 
-#: ../tgp-request.c:135
+#: ../tgp-request.c:122
 msgid "Ok"
 msgstr ""
 
-#: ../tgp-request.c:137
+#: ../tgp-request.c:124
 msgid ""
 "No password set for two factor authentication. Please enter it in the "
 "extended settings."
 msgstr ""
 
-#: ../tgp-request.c:139
+#: ../tgp-request.c:126
 msgid "Password invalid"
 msgstr ""
 
-#: ../tgp-request.c:162
+#: ../tgp-request.c:149
 #, c-format
 msgid "Accept secret chat '%s' on this device?"
 msgstr ""
 
-#: ../tgp-request.c:163
+#: ../tgp-request.c:150
 msgid "Secret chat"
 msgstr ""
 
-#: ../tgp-request.c:163
+#: ../tgp-request.c:150
 msgid ""
 "Secret chats can only have one end point. If you accept a secret chat on "
 "this device, its messages will not be available anywhere else. If you "
 "decline, you can still accept the chat on other devices."
 msgstr ""
 
-#: ../tgp-request.c:194
+#: ../tgp-request.c:181
 msgid ""
 "Invite at least one additional user by specifying\n"
 " their full name (autocompletion available).\n"
 "You can add more users once the chat was created."
 msgstr ""
 
-#: ../tgp-request.c:210
+#: ../tgp-request.c:197
 msgid "Create group chat"
 msgstr ""
 
-#: ../tgp-request.c:210
+#: ../tgp-request.c:197
 msgid "Invite users"
 msgstr ""
 
-#: ../tgp-request.c:229 ../tgp-request.c:244
+#: ../tgp-request.c:216 ../tgp-request.c:231
 msgid "Change password"
 msgstr ""
 
-#: ../tgp-request.c:231
+#: ../tgp-request.c:218
 msgid "Current"
 msgstr ""
 
-#: ../tgp-request.c:235 ../tgp-request.c:265
+#: ../tgp-request.c:222 ../tgp-request.c:252
 msgid "Password"
 msgstr ""
 
-#: ../tgp-request.c:239 ../tgp-request.c:269
+#: ../tgp-request.c:226 ../tgp-request.c:256
 msgid "Confirm"
 msgstr ""
 
-#: ../tgp-request.c:263 ../tgp-request.c:274
+#: ../tgp-request.c:250 ../tgp-request.c:261
 msgid "New password"
 msgstr ""
 
 #. if we arrive here for the second time the specified phone number is not valid. We do not
 #. ask for the phone number directly, cause in that case the account would still be created
 #. named with the invalid phone number, even though the login will work
-#: ../tgp-request.c:312
+#: ../tgp-request.c:299
 msgid "Invalid phone number"
 msgstr ""
 
-#: ../tgp-request.c:313
+#: ../tgp-request.c:300
 msgid ""
 "Please enter only numbers in the international phone number format, a "
 "leading + following by the country prefix and the phone number.\n"
@@ -438,46 +492,50 @@ msgid ""
 msgstr ""
 
 #. This should be the language's timestamp format. This is preceded by a colon.
-#: ../tgp-utils.c:32
+#: ../tgp-utils.c:27
 msgid "%d.%m.%Y %H:%M"
 msgstr ""
 
 #. This is preceded by a colon.
-#: ../tgp-utils.c:53
+#: ../tgp-utils.c:48
 msgid "recently"
 msgstr ""
 
 #. This is preceded by a colon.
-#: ../tgp-utils.c:57
+#: ../tgp-utils.c:52
 msgid "last week"
 msgstr ""
 
 #. This is preceded by a colon.
-#: ../tgp-utils.c:61
+#: ../tgp-utils.c:56
 msgid "last month"
 msgstr ""
 
 #. This is preceded by a colon. It refers to a point on time.
-#: ../tgp-utils.c:65
+#: ../tgp-utils.c:60
 msgid "unknown"
 msgstr ""
 
-#: ../tgp-chat.c:79
+#: ../tgp-chat.c:49
+msgid "Telegram Chats"
+msgstr ""
+
+#: ../tgp-chat.c:67
 msgid "You have already left this chat."
 msgstr ""
 
-#: ../tgp-chat.c:127
+#: ../tgp-chat.c:114
 msgid "Subject:"
 msgstr ""
 
-#: ../tgp-chat.c:133
+#: ../tgp-chat.c:120
 msgid "Invite link:"
 msgstr ""
 
-#: ../tgp-chat.c:139
+#: ../tgp-chat.c:126
 msgid "Chat ID:"
 msgstr ""
 
-#: ../tgp-chat.c:238
+#: ../tgp-chat.c:222
 msgid "Users in chat"
 msgstr ""
