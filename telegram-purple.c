@@ -251,6 +251,11 @@ static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, 
 static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra, int success, int size,
     tgl_peer_id_t peers[], tgl_message_id_t *last_msg_id[], int unread_count[]) {
   info ("Fetched dialogue list of size: %d", size);
+  if (tgp_error_if_false (TLS, success, "Fetching dialogue list failed", TLS->error)) {
+    return;
+  }
+  
+  // add all peers in the dialogue list to the buddy list
   int i;
   for (i = size - 1; i >= 0; i--) {
     tgl_peer_t *UC = tgl_peer_get (TLS, peers[i]);
@@ -288,6 +293,10 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra
       }
     }
   }
+  
+  // now that the dialogue list is loaded, handle all pending chat joins
+  tls_get_data (TLS)->dialogues_ready = TRUE;
+  tgp_chat_join_all_pending (TLS);
 }
 
 void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U) {
@@ -318,7 +327,6 @@ static const char *tgprpl_list_icon (PurpleAccount *acct, PurpleBuddy *buddy) {
 }
 
 static void tgprpl_tooltip_text (PurpleBuddy *buddy, PurpleNotifyUserInfo *info, gboolean full) {
-  
   // buddy in old format that didn't migrate
   if (! tgp_blist_buddy_has_id (buddy)) {
     return;
@@ -497,7 +505,13 @@ static void update_on_logged_in (struct tgl_state *TLS) {
 
 static void update_on_ready (struct tgl_state *TLS) {
   info ("update_on_ready(): The account is done fetching new history");
-  purple_connection_set_display_name (tls_get_conn (TLS), purple_account_get_username (tls_get_pa (TLS)));
+  
+  tgl_peer_t *P = tgl_peer_get (TLS, TLS->our_id);
+  g_warn_if_fail(P);
+  if (P) {
+    purple_connection_set_display_name (tls_get_conn (TLS), P->print_name);
+  }
+  
   tgl_do_get_dialog_list (TLS, 200, 0, on_get_dialog_list_done, NULL);
   tgl_do_update_contact_list (TLS, 0, 0);
 }

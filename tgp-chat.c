@@ -156,6 +156,19 @@ GHashTable *tgprpl_chat_info_defaults (PurpleConnection *gc, const char *chat_na
 
 void tgprpl_chat_join (PurpleConnection *gc, GHashTable *data) {
   debug ("tgprpl_chat_join()");
+  g_return_if_fail(data);
+  
+  // auto joins will cause chat joins at a time when the dialogue list is not ready, remember
+  // those chats and join them once the dialogue list is fetched
+  if (! gc_get_data (gc)->dialogues_ready) {
+    g_return_if_fail (data);
+    const char *id = g_hash_table_lookup (data, "id");
+    if (id) {
+      debug ("attempting to join chat %s while not ready, queue up for later", id);
+      gc_get_data (gc)->pending_joins = g_list_append (gc_get_data (gc)->pending_joins, g_strdup (id));
+    }
+    return;
+  }
 
   // join existing chat by id when the user clicks on a chat in the buddy list
   void *value = g_hash_table_lookup (data, "id");
@@ -251,5 +264,19 @@ void tgprpl_roomlist_cancel (PurpleRoomlist *list) {
   if (conn->roomlist == list) {
     conn->roomlist = NULL;
     purple_roomlist_unref (list);
+  }
+}
+
+void tgp_chat_join_all_pending (struct tgl_state *TLS) {
+  GList *pending;
+  for (pending = tls_get_data (TLS)->pending_joins; pending != NULL; pending = g_list_next(pending)) {
+    GHashTable *data = g_hash_table_new (g_str_hash, g_str_equal);
+    g_hash_table_insert (data, "id", pending->data);
+    tgprpl_chat_join (tls_get_conn (TLS), data);
+    g_hash_table_destroy (data);
+  }
+  if (tls_get_data (TLS)->pending_joins) {
+    g_list_free (tls_get_data (TLS)->pending_joins);
+    tls_get_data (TLS)->pending_joins = NULL;
   }
 }
