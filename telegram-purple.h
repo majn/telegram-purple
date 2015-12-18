@@ -57,7 +57,7 @@
 
 #define PLUGIN_ID "prpl-telegram"
 // FIXME: Name must be translated (for languages without latin script, it would look like gibberish. Just like Japanese script looks to me.)
-#define TG_AUTHOR "Matthias Jentsch <mtthsjntsch@gmail.com>, Vitaly Valtman, Ben Wiederhake, Christopher Althaus <althaus.christopher@gmail.com>, Based on libtgl by Vitaly Valtman."
+#define TG_AUTHOR "Matthias Jentsch <mtthsjntsch@gmail.com>, Vitaly Valtman, Ben Wiederhake <BenWiederhake.GitHub@gmx.de>, Christopher Althaus <althaus.christopher@gmail.com>, based on libtgl by Vitaly Valtman."
 #define TG_DESCRIPTION "Telegram protocol."
 #define TG_BUILD "13"
   
