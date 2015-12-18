@@ -21,7 +21,7 @@ DIR_LIST=${DEP} ${EXE} ${OBJ} ${LIB}
 PLUGIN_OBJECTS=${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/telegram-base.o ${OBJ}/telegram-purple.o ${OBJ}/tgp-2prpl.o ${OBJ}/tgp-structs.o ${OBJ}/tgp-utils.o ${OBJ}/tgp-chat.o ${OBJ}/tgp-ft.o ${OBJ}/tgp-msg.o ${OBJ}/tgp-request.o ${OBJ}/tgp-blist.o
 ALL_OBJS=${PLUGIN_OBJECTS}
 
-LOCALES=$(patsubst %.po, %.mo, $(wildcard po/*.po))
+LOCALES=$(addprefix po/,$(addsuffix .mo,$(shell cat po/LINGUAS)))
 
 .SUFFIXES:
 
