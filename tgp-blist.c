@@ -147,6 +147,10 @@ char *tgp_blist_create_print_name (struct tgl_state *TLS, tgl_peer_id_t id, cons
   // libtgl passes 0 for all unused strings, therefore the last passed string will always be followed
   // by a NULL-termination as expected
   gchar *name = g_strjoin (" ", a1, a2, a3, a4, NULL);
+  
+  // When the user doesn't provide some input (like last name) ugly trailing or leading
+  // whitespaces may occur due to empty strings in the join operator
+  name = g_strstrip(name);
 
   /* Assure that all print_names are unique by checking the following conditions:
      1. No other peer with that print_name should exists. If those names are not unique it will not be possible

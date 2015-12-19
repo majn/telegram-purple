@@ -93,8 +93,10 @@ void tgp_g_queue_free_full (GQueue *queue, GDestroyNotify free_func) {
 }
 
 void tgp_g_list_free_full (GList *list, GDestroyNotify free_func) {
-  g_list_foreach (list, (GFunc)free_func, NULL);
-  g_list_free (list);
+  if (list) {
+    g_list_foreach (list, (GFunc)free_func, NULL);
+    g_list_free (list);
+  }
 }
 
 const char *tgp_mime_to_filetype (const char *mime) {

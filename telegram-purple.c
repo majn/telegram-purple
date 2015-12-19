@@ -310,6 +310,11 @@ void channel_load_photo (struct tgl_state *TLS, void *extra, int success, struct
 static void on_get_dialog_list_done (struct tgl_state *TLS, void *extra, int success, int size,
     tgl_peer_id_t peers[], tgl_message_id_t *last_msg_id[], int unread_count[]) {
   info ("Fetched dialogue list of size: %d", size);
+  if (tgp_error_if_false (TLS, success, "Fetching dialogue list failed", TLS->error)) {
+    return;
+  }
+  
+  // add all peers in the dialogue list to the buddy list
   int i;
   for (i = size - 1; i >= 0; i--) {
     tgl_peer_t *UC = tgl_peer_get (TLS, peers[i]);
@@ -359,6 +364,10 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *extra, int suc
           NULL);
     }
   }
+  
+  // now that the dialogue list is loaded, handle all pending chat joins
+  tls_get_data (TLS)->dialogues_ready = TRUE;
+  tgp_chat_join_all_pending (TLS);
 }
 
 void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U) {
@@ -389,7 +398,6 @@ static const char *tgprpl_list_icon (PurpleAccount *acct, PurpleBuddy *buddy) {
 }
 
 static void tgprpl_tooltip_text (PurpleBuddy *buddy, PurpleNotifyUserInfo *info, gboolean full) {
-  
   // buddy in old format that didn't migrate
   if (! tgp_blist_buddy_has_id (buddy)) {
     return;
@@ -460,7 +468,7 @@ static void create_chat_link_done (struct tgl_state *TLS, void *extra, int succe
   }
 }
 
-static void create_chat_link (PurpleBlistNode *node, gpointer data) {
+static void export_chat_link_checked_gw (PurpleBlistNode *node, gpointer data) {
   PurpleChat *chat = (PurpleChat*)node;
   export_chat_link_checked (pbn_get_data (node)->TLS, purple_chat_get_name (chat));
 }
@@ -477,6 +485,13 @@ void export_chat_link_checked (struct tgl_state *TLS, const char *name) {
     return;
   }
   tgl_do_export_chat_link (TLS, C->id, create_chat_link_done, C);
+}
+
+static void leave_and_delete_chat_gw (PurpleBlistNode *node, gpointer data) {
+  PurpleChat *C = (PurpleChat *)node;
+  g_return_if_fail(tgp_chat_has_id (C));
+  
+  leave_and_delete_chat (pbn_get_data (node)->TLS, tgl_peer_get (pbn_get_data (node)->TLS, tgp_chat_get_id (C)));
 }
 
 void leave_and_delete_chat (struct tgl_state *TLS, tgl_peer_t *P) {
@@ -507,29 +522,38 @@ void import_chat_link_checked (struct tgl_state *TLS, const char *link) {
 static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
   debug ("tgprpl_blist_node_menu()");
 
-  // orphaned buddy in "old" format that didn't migrate
-  if (! tgp_blist_buddy_has_id ((PurpleBuddy *)node)) {
+  // skip orphaned buddies in "old" format that didn't migrate and don't have an ID
+  if (PURPLE_BLIST_NODE_IS_BUDDY(node) && ! tgp_blist_buddy_has_id ((PurpleBuddy *)node)) {
+    return NULL;
+  }
+  
+  // chats that dont have a proper ID arent usable
+  if (PURPLE_BLIST_NODE_IS_CHAT(node) && ! tgp_chat_has_id ((PurpleChat *)node)) {
     return NULL;
   }
   
   GList* menu = NULL;
   if (PURPLE_BLIST_NODE_IS_BUDDY(node) &&
       tgl_get_peer_type (tgp_blist_buddy_get_id ((PurpleBuddy *)node)) == TGL_PEER_USER) {
+    
     // Add encrypted chat option to the right click menu of all buddies
-    PurpleBuddy* buddy = (PurpleBuddy*)node;
+    PurpleBuddy* buddy = (PurpleBuddy *)node;
     PurpleMenuAction* action = purple_menu_action_new (_("Start secret chat..."), PURPLE_CALLBACK(start_secret_chat),
         buddy, NULL);
     menu = g_list_append (menu, (gpointer)action);
   }
   if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
+
      // Generate Public Link
-    PurpleMenuAction* action = purple_menu_action_new (_("Invite users by link..."), PURPLE_CALLBACK(create_chat_link),
-        NULL, NULL);
+    PurpleMenuAction* action = purple_menu_action_new (_("Invite users by link..."),
+        PURPLE_CALLBACK(export_chat_link_checked_gw), NULL, NULL);
     menu = g_list_append (menu, (gpointer)action);
   }
+  
   if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
+    
     // Delete self from chat
-    PurpleMenuAction* action = purple_menu_action_new (_("Delete and exit..."), PURPLE_CALLBACK(leave_and_delete_chat),
+    PurpleMenuAction* action = purple_menu_action_new (_("Delete and exit..."), PURPLE_CALLBACK(leave_and_delete_chat_gw),
         NULL, NULL);
     menu = g_list_append (menu, (gpointer)action);
   }
@@ -552,7 +576,13 @@ static void update_on_logged_in (struct tgl_state *TLS) {
 
 static void update_on_ready (struct tgl_state *TLS) {
   info ("update_on_ready(): The account is done fetching new history");
-  purple_connection_set_display_name (tls_get_conn (TLS), purple_account_get_username (tls_get_pa (TLS)));
+  
+  tgl_peer_t *P = tgl_peer_get (TLS, TLS->our_id);
+  g_warn_if_fail(P);
+  if (P) {
+    purple_connection_set_display_name (tls_get_conn (TLS), P->print_name);
+  }
+  
   tgl_do_get_dialog_list (TLS, 200, 0, on_get_dialog_list_done, NULL);
   tgl_do_update_contact_list (TLS, 0, 0);
 }

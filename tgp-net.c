@@ -269,8 +269,14 @@ static void net_on_connected (gpointer arg, gint fd, const gchar *error_message)
 
 static void net_on_connected_assert_success (gpointer arg, gint fd, const gchar *error_message) { 
   struct connection *c = arg;
-  struct tgl_state *TLS = c->TLS;
+  
+  if (c->fail_ev >= 0) {
+    purple_timeout_remove (c->fail_ev);
+    c->fail_ev = -1;
+  }
+  
   if (fd == -1) {
+    struct tgl_state *TLS = c->TLS;
     info ("Connection to main data center (%d) %s:%d not possible\n", c->dc->id, c->ip, c->port);
     purple_connection_error_reason (tls_get_conn (TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR, _("Cannot connect to main server"));
     return;
@@ -302,7 +308,7 @@ struct connection *tgln_create_connection (struct tgl_state *TLS, const char *ho
   c->methods = methods;
 
   c->prpl_data = purple_proxy_connect (tls_get_conn (TLS), tls_get_pa (TLS), host, port,
-                    TLS->dc_working_num == dc->id ? net_on_connected_assert_success : net_on_connected, c);
+      TLS->dc_working_num == dc->id ? net_on_connected_assert_success : net_on_connected, c);
 
   start_fail_timer (c);
   
@@ -317,7 +323,8 @@ static void restart_connection (struct connection *c) {
     return;
   }
   purple_proxy_connect_cancel (c->prpl_data);
-  c->prpl_data = purple_proxy_connect (tls_get_conn (c->TLS), tls_get_pa (c->TLS), c->ip, c->port, net_on_connected, c);
+  c->prpl_data = purple_proxy_connect (tls_get_conn (c->TLS), tls_get_pa (c->TLS), c->ip, c->port,
+      c->TLS->dc_working_num == c->dc->id ? net_on_connected_assert_success : net_on_connected, c);
 }
 
 static void fail_connection (struct connection *c) {
@@ -358,7 +365,6 @@ static void fail_connection (struct connection *c) {
       _("Lost connection to the server..."));
 }
 
-//extern FILE *log_net_f;
 static void try_write (struct connection *c) {
   // debug ("try write: fd = %d\n", c->fd);
   int x = 0;

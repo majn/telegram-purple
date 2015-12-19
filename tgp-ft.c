@@ -55,7 +55,7 @@ static char *tgp_strdup_determine_filename (const char *mime, const char *captio
       type = "bin";
     }
   }
-  return g_strdup_printf ("%" G_GINT64_MODIFIER "d.%s", ABS(hash), type);
+  return g_strdup_printf ("%" G_GINT64_MODIFIER "d.%s", (gint64) ABS(hash), type);
 }
 
 static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, int success, const char *filename) {

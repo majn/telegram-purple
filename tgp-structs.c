@@ -114,12 +114,14 @@ void *connection_data_free (connection_data *conn) {
   tgp_g_queue_free_full (conn->new_messages, tgp_msg_loading_free);
   tgp_g_queue_free_full (conn->out_messages, tgp_msg_sending_free);
   tgp_g_list_free_full (conn->used_images, used_image_free);
+  tgp_g_list_free_full (conn->pending_joins, g_free);
   g_hash_table_destroy (conn->pending_reads);
   g_hash_table_destroy (conn->pending_chat_info);
   g_hash_table_destroy (conn->id_to_purple_name);
   tgprpl_xfer_free_all (conn);
-  tgl_free_all (conn->TLS);
   g_free (conn->TLS->base_path);
+  tgl_free_all (conn->TLS);
+ 
   free (conn);
   return NULL;
 }
