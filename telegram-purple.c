@@ -758,10 +758,7 @@ static void tgprpl_remove_buddy (PurpleConnection *gc, PurpleBuddy *buddy, Purpl
   tgl_peer_t *peer = tgp_blist_buddy_get_peer (buddy);
   if (peer) {
     if (tgl_get_peer_type (peer->id) == TGL_PEER_ENCR_CHAT) {
-      /* TODO: implement the api call cancel secret chats. Currently the chat will only be marked as
-       deleted on our side so that it won't be added on startup
-       (when the secret chat file is loaded) */
-      bl_do_peer_delete (gc_get_tls (gc), peer->encr_chat.id);
+      tgl_do_discard_secret_chat (gc_get_tls (gc), &peer->encr_chat, NULL, NULL);
     }
   }
 }
