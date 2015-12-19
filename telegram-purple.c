@@ -179,6 +179,7 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
         write_secret_chat_file (TLS);
         tgp_msg_special_out (TLS , _("Secret chat terminated.") , U->id , FALSE);
         purple_prpl_got_user_status (tls_get_pa (TLS), tgp_blist_peer_get_purple_name (TLS, U->id), "offline", NULL);
+        purple_blist_remove_buddy (buddy);
       } else {
         _update_buddy (TLS, (tgl_peer_t *)U, flags);
       }
