@@ -78,7 +78,8 @@ static void request_name_code_entered (struct request_values_data *data, PurpleR
   } else {
     request_name (data->TLS, data->callback, data->arg);
   }
-  for (int j = 0; j < 3; ++j) {
+  int j;
+  for (j = 0; j < 3; ++j) {
     g_free (names[j]);
   }
   free (data);
