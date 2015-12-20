@@ -207,14 +207,11 @@ static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_messa
   int i;
   for (i = 0; i < num; i++) {
     if (list[i]) {
-      tgl_peer_id_t to_id;
-      if (tgl_get_peer_type (list[i]->to_id) == TGL_PEER_USER &&
-          tgl_get_peer_id (list[i]->to_id) == tgl_get_peer_id (TLS->our_id)) {
-        to_id = list[i]->from_id;
-      } else {
-        to_id = list[i]->to_id;
+      // only display the read recipes for messages that we sent ourselves
+      if (tgl_get_peer_id (list[i]->from_id) == tgl_get_peer_id (TLS->our_id)) {
+        debug ("update_mark_read to=%d", tgl_get_peer_id (list[i]->to_id));
+        tgp_msg_sys_out (TLS, _("Message marked as read."), list[i]->to_id, TRUE);
       }
-      tgp_msg_sys_out (TLS , _("Message marked as read.") , to_id , TRUE);
     }
   }
 }
