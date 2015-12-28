@@ -18,38 +18,77 @@
 
 #include "telegram-purple.h"
 
-const char *tgp_blist_peer_get_purple_name (struct tgl_state *TLS, tgl_peer_id_t id) {
-  const char *name = g_hash_table_lookup (tls_get_data (TLS)->id_to_purple_name, GINT_TO_POINTER(tgl_get_peer_id (id)));
-  if (! name) {
-    g_warn_if_reached();
-    return NULL;
+// utilities
+
+PurpleBlistNode *tgp_blist_iterate (struct tgl_state *TLS,
+      int (* callback) (PurpleBlistNode *node, void *extra), void *extra) {
+  PurpleBlistNode *node = purple_blist_get_root ();
+  while (node) {
+    if ((PURPLE_BLIST_NODE_IS_BUDDY(node) && purple_buddy_get_account ((PurpleBuddy *)node) == tls_get_pa (TLS))
+        || (PURPLE_BLIST_NODE_IS_CHAT(node) && purple_chat_get_account ((PurpleChat *)node) == tls_get_pa (TLS))) {
+      if (callback (node, extra)) {
+        return node;
+      }
+    }
+    node = purple_blist_node_next (node, FALSE);
   }
+  return NULL;
+}
+
+// lookup
+
+const char *tgp_blist_lookup_purple_name (struct tgl_state *TLS, tgl_peer_id_t id) {
+  const char *name = g_hash_table_lookup (tls_get_data (TLS)->id_to_purple_name,
+      GINT_TO_POINTER(tgl_get_peer_id (id)));
+  g_warn_if_fail(name);
   return name;
 }
 
-void tgp_blist_peer_add_purple_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *purple_name) {
+void tgp_blist_lookup_add (struct tgl_state *TLS, tgl_peer_id_t id, const char *purple_name) {
+
   g_hash_table_replace (tls_get_data (TLS)->id_to_purple_name, GINT_TO_POINTER(tgl_get_peer_id (id)),
-      g_strdup (purple_name));
+      g_strdup (name));
+  g_hash_table_replace (tls_get_data (TLS)->purple_name_to_id, g_strdup (name),
+      g_memdup (&id, sizeof(tgl_peer_id_t)));
 }
 
-tgl_peer_t *tgp_blist_peer_find (struct tgl_state *TLS, const char *purple_name) {
-  // buddies will keep the name they had when they were first added to the user list. The print_name of the peer
-  // may have changed since then, therefore the ID stored in the buddy is used to fetch the user name.
-  PurpleBuddy *buddy = purple_find_buddy (tls_get_pa (TLS), purple_name);
-  if (! buddy) {
-    // foreign users are not in the buddy list by default, therefore the name used by libpurple and the
-    // print name is always identical
-    return tgl_peer_get_by_name (TLS, purple_name);
-  }
-  if (! tgp_blist_buddy_has_id (buddy)) {
-    g_warn_if_reached ();
-    return NULL;
-  }
-  return tgl_peer_get (TLS, tgp_blist_buddy_get_id (buddy));
+static tgl_peer_id_t *tgp_blist_lookup_get_id (struct tgl_state *TLS, const char *purple_name) {
+  return g_hash_table_lookup (tls_get_data (TLS)->purple_name_to_id, purple_name);
 }
+
+tgl_peer_t *tgp_blist_lookup_peer_get (struct tgl_state *TLS, const char *purple_name) {
+  tgl_peer_id_t *id = tgp_blist_lookup_get_id (TLS, purple_name);
+  g_return_val_if_fail(id, NULL);
+  return tgl_peer_get (TLS, *id);
+}
+
+static int tgp_blist_lookup_init_cb (PurpleBlistNode *node, void *extra) {
+  if (PURPLE_BLIST_NODE_IS_BUDDY(node)) {
+    PurpleBuddy *buddy = (PurpleBuddy *) node;
+    if (tgl_get_peer_type (tgp_blist_buddy_get_id (buddy)) != TGL_PEER_UNKNOWN) {
+      tgp_blist_lookup_add (pbn_get_data (node)->TLS, tgp_blist_buddy_get_id (buddy),
+          purple_buddy_get_name (buddy));
+    }
+  }
+  if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
+    PurpleChat *chat = (PurpleChat *) node;
+    if (tgp_chat_has_id (chat)) {
+      tgp_blist_lookup_add (pbn_get_data (node)->TLS, tgp_chat_get_id (chat),
+          purple_chat_get_name (chat));
+    }
+  }
+  return FALSE;
+}
+
+void tgp_blist_lookup_init (struct tgl_state *TLS) {
+  info ("loading known ids from buddy list ...");
+  tgp_blist_iterate (TLS, tgp_blist_lookup_init_cb, 0);
+}
+
+// buddies
 
 PurpleBuddy *tgp_blist_buddy_new  (struct tgl_state *TLS, tgl_peer_t *user) {
-  PurpleBuddy *buddy = purple_buddy_new (tls_get_pa (TLS), tgp_blist_peer_get_purple_name (TLS, user->id), NULL);
+  PurpleBuddy *buddy = purple_buddy_new (tls_get_pa (TLS), tgp_blist_lookup_purple_name (TLS, user->id), NULL);
   tgp_blist_buddy_set_id (buddy, user->id);
   return buddy;
 }
@@ -84,9 +123,7 @@ tgl_peer_id_t tgp_blist_buddy_get_id (PurpleBuddy *buddy) {
   } else if (type == TGL_PEER_ENCR_CHAT) {
     return TGL_MK_ENCR_CHAT (id);
   } else {
-    assert (FALSE);
-    // avoid compiler errors for missing return value
-    return TGL_MK_USER(0);
+    return tgl_set_peer_id (TGL_PEER_UNKNOWN, 0);
   }
 }
 
@@ -98,39 +135,33 @@ tgl_peer_t *tgp_blist_buddy_get_peer (PurpleBuddy *buddy) {
   return tgl_peer_get (pbn_get_data (&buddy->node)->TLS, tgp_blist_buddy_get_id (buddy));
 }
 
+static int tgp_blist_buddy_find_cb (PurpleBlistNode *node, void *extra) {
+  return PURPLE_BLIST_NODE_IS_BUDDY(node)
+      && purple_blist_node_get_int (node, TGP_BUDDY_KEY_PEER_ID) == GPOINTER_TO_INT(extra);
+}
+
 PurpleBuddy *tgp_blist_buddy_find (struct tgl_state *TLS, tgl_peer_id_t user) {
-  PurpleBlistNode *node = purple_blist_get_root ();
-  while (node) {
-    if (PURPLE_BLIST_NODE_IS_BUDDY(node)) {
-      PurpleBuddy *buddy = PURPLE_BUDDY(node);
-      if (purple_buddy_get_account (buddy) == tls_get_pa (TLS)) {
-        if (purple_blist_node_get_int (node, TGP_BUDDY_KEY_PEER_ID) == tgl_get_peer_id (user)) {
-          assert (tgl_get_peer_type (user) == purple_blist_node_get_int (node, TGP_BUDDY_KEY_PEER_TYPE));
-          return buddy;
-        }
-      }
+  return (PurpleBuddy *) tgp_blist_iterate (TLS, tgp_blist_buddy_find_cb, GINT_TO_POINTER(tgl_get_peer_id (user)));
+}
+
+// chats
+
+static int tgp_blist_chat_find_cb (PurpleBlistNode *node, void *extra) {
+  if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
+    PurpleChat *chat = PURPLE_CHAT(node);
+    const char *id = g_hash_table_lookup (purple_chat_get_components (chat), "id");
+    if (id && *id && atoi (id) == GPOINTER_TO_INT(extra)) {
+      return TRUE;
     }
-    node = purple_blist_node_next (node, FALSE);
   }
-  return NULL;
+  return FALSE;
 }
 
 PurpleChat *tgp_blist_chat_find (struct tgl_state *TLS, tgl_peer_id_t user) {
-  PurpleBlistNode *node = purple_blist_get_root ();
-  while (node) {
-    if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
-      PurpleChat *chat = PURPLE_CHAT(node);
-      if (purple_chat_get_account (chat) == tls_get_pa (TLS)) {
-        const char *id = g_hash_table_lookup (purple_chat_get_components (chat), "id");
-        if (id && *id && atoi (id) == tgl_get_peer_id (user)) {
-          return chat;
-        }
-      }
-    }
-    node = purple_blist_node_next (node, FALSE);
-  }
-  return NULL;
+  return (PurpleChat *) tgp_blist_iterate (TLS, tgp_blist_chat_find_cb, GINT_TO_POINTER(tgl_get_peer_id (user)));
 }
+
+// groups
 
 PurpleGroup *tgp_blist_group_init (const char *name) {
   PurpleGroup *grp = purple_find_group (name);
@@ -141,8 +172,11 @@ PurpleGroup *tgp_blist_group_init (const char *name) {
   return grp;
 }
 
+// names
+
 char *tgp_blist_create_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2,
     const char *a3, const char *a4) {
+  
   // libtgl passes 0 for all unused strings, therefore the last passed string will always be followed
   // by a NULL-termination as expected
   gchar *name = g_strjoin (" ", a1, a2, a3, a4, NULL);
@@ -160,13 +194,14 @@ char *tgp_blist_create_print_name (struct tgl_state *TLS, tgl_peer_id_t id, cons
         with the old BlistNode. */
   int i = 0;
   gchar *n = NULL;
-  tgl_peer_t *B = tgp_blist_peer_find (TLS, name);
-  while (B && tgl_get_peer_id (B->id) != tgl_get_peer_id (id)) {
+  tgl_peer_id_t *id2 = tgp_blist_lookup_get_id (TLS, name);
+  while (id2 && tgl_get_peer_id (*id2) != tgl_get_peer_id (id)) {
     if (n) {
       g_free (n);
     }
     n = g_strdup_printf ("%s #%d", name, ++ i);
-    B = tgp_blist_peer_find (TLS, n);
+    debug ("resolving duplicate for %s, assigning: %s", name, n);
+    id2 = tgp_blist_lookup_get_id (TLS, n);
   }
   if (n) {
     g_free (name);

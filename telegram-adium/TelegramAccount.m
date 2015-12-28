@@ -164,7 +164,7 @@
   AIChat *chat = adium.interfaceController.activeChat;
   if (chat) {
     const char *name = [chat.name UTF8String];
-    tgl_peer_t *P = tgl_peer_get_by_name (conn->TLS, name);
+    tgl_peer_t *P = tgp_blist_lookup_peer_get (conn->TLS, name);
     if (P) {
       leave_and_delete_chat (conn->TLS, P);
     }
@@ -207,7 +207,7 @@
   connection_data *conn = purple_connection_get_protocol_data (purple_conversation_get_gc (conv));
   
   const char *name = purple_conversation_get_name (conv);
-  tgl_peer_t *P = tgl_peer_get_by_name (conn->TLS, purple_conversation_get_title (conv));
+  tgl_peer_t *P = tgp_blist_lookup_peer_get (conn->TLS, purple_conversation_get_title (conv));
   if (P) {
     return [NSMutableDictionary dictionaryWithObjectsAndKeys:
             [NSString stringWithFormat:@"%d", tgl_get_peer_id(P->id)], @"id",

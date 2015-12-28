@@ -45,6 +45,7 @@ typedef struct {
   PurpleRoomlist *roomlist;
   GHashTable *pending_chat_info;
   GHashTable *id_to_purple_name;
+  GHashTable *purple_name_to_id;
   GList *pending_joins;
   int dialogues_ready;
 } connection_data;
