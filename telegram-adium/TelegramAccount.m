@@ -103,19 +103,6 @@
                                intValue]);
 }
 
-/**!
- * @brief Returns the name passed to new_purple_buddy, when adding a new contact
- *
- * This function is called when creating a new contact from the purple GUI.
- */
-- (NSString *)_UIDForAddingObject:(AIListContact *)object
-{
-  // The contact UID in Adium was encoded with decomposoed unicode codepoints (see http://unicode.org/reports/tr15/).
-  // Since libtgl and libpurple (and apparently the rest of the world) encode with composed code points, the name
-  // needs to be converted to the composed format to prevent inequality in binary string comparison.
-  return [object.UID precomposedStringWithCanonicalMapping];
-}
-
 #pragma mark Action Menu
 -(NSMenu*)actionMenuForChat:(AIChat*)chat
 {
