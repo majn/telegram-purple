@@ -122,7 +122,7 @@ PurpleConversation *tgp_chat_show (struct tgl_state *TLS, struct tgl_chat *C) {
   return conv;
 }
 
-GList *tgprpl_chat_join_info (PurpleConnection * gc) {
+GList *tgprpl_chat_join_info (PurpleConnection *gc) {
   struct proto_chat_entry *pce;
   pce = g_new0 (struct proto_chat_entry, 1);
   pce->label = _("Subject:");
