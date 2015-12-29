@@ -69,3 +69,6 @@ AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, ["$GETTEXT_PACKAGE"], [Define the gettext pa
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
+
+rm -f tgl/Makefile
+
