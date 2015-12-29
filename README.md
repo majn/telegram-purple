@@ -12,17 +12,26 @@ OS Support
 
 This plugin is tested and works on **Linux** and **OS X**. As of right now, **Windows is not supported** although there's a plan to port it in the near future.
 
-1.2.2
+1.2.3
 -----
 
-    - fix some licensing issues by not depending on OpenSSL any longer (thanks Ben!)
-    - add tons of translations (thanks to anyone helping!)
-    - fix issue that caused empty files
-    - fix pidgin not reconnecting after hibernation
-    - fix adium not reconnecting after hibernation
-    - fix secret chat fingerprint not being displayed after restart
-    - fix secret chat name not being displayed after restart
+- Build: Allow compilation on Windows (#52 Thanks Rob!)
+- Build: Drop dependency on LodePNG (Thanks Ben!)
+- Build: Gettext is now optional
 
+- Fix issue that prevented to send messages to deleted users in certain cases (#174)
+- Fix own user being added to the buddy list in certain cases
+- Fix that read recipes of own messages are being displayed (#139)
+- Fix encoding inconsistencies with Unicode characters (#177)
+- Fix auto-joining for chats (#179)
+- Fix client not reconnecting anymore under certain circumstances (#173)
+- Fix crash on compat-verification (PullRequest #183)
+
+- Remove pointless "create chat" confirmation dialogue
+- Improve logging messages
+- Always send read recipes when the user is typing or sending a message
+- Improve translation and user messages (#139)
+- Use native password prompts (Adium)
 
 Build
 -----
@@ -236,6 +245,13 @@ You can also write your own conversion tool if you prefer. The format is really 
 3. `n_raw`, the raw modulus, encoded as big endian, using the previously indicated length (e.g. `0xC1 50 02 3E [248 bytes omitted] 21 79 25 1F` in the case of telegram's public RSA key.)
 
 If you are interested in developing a non-OpenSSL-licensed converter, look into [insane-triangle-banana](https://github.com/BenWiederhake/insane-triangle-banana).
+
+
+FAQ
+---
+
+- I receive pictures in a chat, but they aren't showing up
+  * A: Make sure that you don't have a plugin like "Conversation Colors" that strips HTML from messages and removes the pictures.
 
 #### Group chat
 
