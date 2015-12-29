@@ -844,9 +844,9 @@ static void tgprpl_init (PurplePlugin *plugin) {
 
   // Messaging
   GList *verification_values = NULL;
-  ADD_VALUE(verification_values, _("ask"), "ask");
   ADD_VALUE(verification_values, _("always"), "always");
   ADD_VALUE(verification_values, _("never"), "never");
+  ADD_VALUE(verification_values, _("ask"), "ask");
   
   opt = purple_account_option_list_new (_("Accept secret chats"),
       TGP_KEY_ACCEPT_SECRET_CHATS, verification_values);
