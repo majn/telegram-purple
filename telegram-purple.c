@@ -291,7 +291,7 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *callback_extra
         PurpleChat *PC = tgp_blist_chat_find (TLS, UC->id);
         if (!PC) {
           PC = p2tgl_chat_new (TLS, &UC->chat);
-          purple_blist_add_chat (PC, NULL, NULL);
+          purple_blist_add_chat (PC, tgp_blist_group_init ("Telegram Chats"), NULL);
         }
       }
     }
