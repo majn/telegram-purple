@@ -115,9 +115,8 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
         
         // the id isn't known to the lookup yet since the user is not in the buddy list. Add the id to the
         // lookup to allow sending messages to this user based on the purple name.
-        if (user->print_name) {
-          tgp_blist_lookup_add (TLS, user->id, user->print_name);
-        }
+        tgp_blist_lookup_add (TLS, user->id, user->print_name);
+        
       } else {
         // Keep the users name up-to-date. Changing the actual user name would imply making the history
         // inacessible, therefore name changes should only affect the alias.
