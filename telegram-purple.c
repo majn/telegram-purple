@@ -113,7 +113,6 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
           }
         }
         
-        // TODO: Migration testen, ASSERT entfernen ...
         // the id isn't known to the lookup yet since the user is not in the buddy list. Add the id to the
         // lookup to allow sending messages to this user based on the purple name.
         assert (! tgp_blist_lookup_purple_name (TLS, user->id));
@@ -675,7 +674,6 @@ static void tgprpl_get_info (PurpleConnection *gc, const char *who) {
 
 static void tgprpl_set_status (PurpleAccount *acct, PurpleStatus *status) {
   debug ("tgprpl_set_status(%s)", purple_status_get_name (status));
-  debug ("tgprpl_set_status(currstatus=%s)", purple_status_get_name (purple_account_get_active_status (acct)));
   
   pending_reads_send_all (pa_get_data (acct)->TLS);
 }
