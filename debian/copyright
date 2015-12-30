@@ -80,7 +80,7 @@ License: GPL-3+
  Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
 
 License: BSD-3-clause
- On Debian systems, the complete text of the Revised BSD License 
+ On Debian systems, the complete text of the Revised BSD License
  (3-clause) can be found in "/usr/share/common-licenses/GPL-3".
 
 License: Apache-2
@@ -88,7 +88,7 @@ License: Apache-2
  can be found in ‘/usr/share/common-licenses/Apache-2.0’.
 
 License: GFDL-NIV
- On Debian systems, the complete text of version 1.3 of the GNU Free 
+ On Debian systems, the complete text of version 1.3 of the GNU Free
  Document License ‘/usr/share/common-licenses/GFDL-1.3’.
 
 License: Expat

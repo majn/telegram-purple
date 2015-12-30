@@ -2,17 +2,28 @@ Source: telegram-purple
 Section: net
 Priority: optional
 Maintainer: Ben Wiederhake <Ben.Wiederhake@gmail.com>
-Uploaders: Hugues Morisset <morisset.hugues@gmail.com>
-Build-Depends: debhelper (>= 9), autotools-dev, libpurple-dev, zlib1g-dev, libgcrypt20-dev, libwebp-dev, libglib2.0-dev, pkg-config
+Uploaders:
+ Hugues Morisset <morisset.hugues@gmail.com>
+Build-Depends:
+ autotools-dev,
+ debhelper (>= 9),
+ libgcrypt20-dev,
+ libglib2.0-dev,
+ libpurple-dev,
+ libwebp-dev,
+ pkg-config,
+ zlib1g-dev
 Standards-Version: 3.9.6
 Homepage: https://github.com/majn/telegram-purple
 Vcs-Git: https://github.com/majn/telegram-purple.git
-#Vcs-Browser: https://anonscm.debian.org/gitweb/?p=collab-maint/telegram-purple.git;a=summary
 
 Package: telegram-purple
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests: pidgin | finch
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends}
+Suggests:
+ pidgin | finch
 Description: Purple plugin to support Telegram
  Plugin for purple which lets you use and manage your Telegram account
  like any other account in purple. Some features like self-destruct
