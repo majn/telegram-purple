@@ -7,7 +7,7 @@ License:	GPLv2+
 URL:		https://github.com/majn/telegram-purple
 Source0:	https://codeload.github.com/majn/telegram-purple/tar.gz/v%{version}.tar.gz
 
-BuildRequires:	gettext, libgcrypt-devel >= 1.6, pkgconfig(zlib), pkgconfig(purple), pkgconfig(libwebp)
+BuildRequires:	gettext, pkgconfig(openssl), pkgconfig(zlib), pkgconfig(purple), pkgconfig(libwebp)
 
 %description
 Adds support for Telegram to Pidgin, Adium, Finch 
