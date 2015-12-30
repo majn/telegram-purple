@@ -16,7 +16,6 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 # package maintainers to append LDFLAGS
 #export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
-
 # main packaging script based on dh7 syntax
 %:
 	dh $@ --parallel
@@ -26,3 +25,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 #override_dh_auto_configure:
 #	dh_auto_configure -- \
 #	-DCMAKE_LIBRARY_PATH=$(DEB_HOST_MULTIARCH)
+
+# dh_auto_clean tries to "make distclean", but we don't have that target.
+override_dh_auto_clean:
+	test ! -e Makefile || $(MAKE) clean
