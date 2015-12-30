@@ -36,7 +36,7 @@ AC_CHECK_LIB([rt], [clock_gettime])
 AC_SUBST([CRYPTO_FLAG], [--disable-openssl])
 AC_ARG_ENABLE([gcrypt],
   AS_HELP_STRING([--disable-gcrypt], [Disable gcrypt, use OpenSSL instead. DO NOT DISTRIBUTE BINARIES!]))
-AS_IF([test "x$enable_gcrypt" != "xno"], [
+AS_IF([test "x$enable_gcrypt" == "xno"], [
   # Let tgl/configure.ac handle OpenSSL- or gcrypt-detection.
   AC_SUBST([CRYPTO_FLAG], [ ])
 ])

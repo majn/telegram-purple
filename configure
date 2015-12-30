@@ -3328,7 +3328,7 @@ if test "${enable_gcrypt+set}" = set; then :
   enableval=$enable_gcrypt;
 fi
 
-if test "x$enable_gcrypt" != "xno"; then :
+if test "x$enable_gcrypt" == "xno"; then :
 
   # Let tgl/configure.ac handle OpenSSL- or gcrypt-detection.
   CRYPTO_FLAG=
