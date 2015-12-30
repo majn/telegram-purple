@@ -56,7 +56,6 @@ all: ${PRPL_LIBNAME} $(LOCALE_MOS)
 PLUGIN_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=plugindir purple)
 DATA_ROOT_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=datarootdir purple)
 COPY_ICONS=@COPY_ICONS@
-CRYPTO_FLAG=@CRYPTO_FLAG@
 
 create_dirs: ${DIR_LIST}
 
@@ -77,7 +76,7 @@ tgl/Makefile.in:
 	@echo "tgl/Makefile.in not found. Maybe you need to 'git submodule update --init --recursive' ?" && exit 1
 
 tgl/Makefile: tgl/Makefile.in
-	cd tgl && ./configure -q ${CRYPTO_FLAG} --disable-extf CFLAGS="@CFLAGS@" LDFLAGS="@LDFLAGS@"
+	cd tgl && ./configure -q --disable-openssl --disable-extf CFLAGS="@CFLAGS@" LDFLAGS="@LDFLAGS@"
 
 tgl/libs/libtgl.a: tgl/Makefile
 	+make -C tgl
