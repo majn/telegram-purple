@@ -23,7 +23,8 @@ PLUGIN_OBJECTS=${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/teleg
 ALL_OBJS=${PLUGIN_OBJECTS}
 
 ifdef MSGFMT_PATH
-LOCALES=$(addprefix po/,$(addsuffix .mo,$(shell cat po/LINGUAS)))
+LOCALES=$(shell cat po/LINGUAS)
+LOCALE_MOS=$(addprefix po/,$(addsuffix .mo,$(LOCALES)))
 endif
 
 .SUFFIXES:
@@ -32,7 +33,7 @@ endif
 
 PRPL_NAME=telegram-purple.so
 PRPL_LIBNAME=${EXE}/${PRPL_NAME}
-all: ${PRPL_LIBNAME} ${LOCALES}
+all: ${PRPL_LIBNAME} $(LOCALE_MOS)
 
 PLUGIN_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=plugindir purple)
 DATA_ROOT_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=datarootdir purple)
@@ -80,7 +81,7 @@ strip: $(PRPL_LIBNAME)
 	$(STRIP) --strip-unneeded $(PRPL_LIBNAME)
 
 .PHONY: install
-install: $(PRPL_LIBNAME) $(LOCALES)
+install: $(PRPL_LIBNAME) $(LOCALE_MOS)
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(PLUGIN_DIR_PURPLE)
 	install -m $(FILE_PERM) $(PRPL_LIBNAME) $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)/etc/telegram-purple
@@ -98,13 +99,11 @@ else
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48
 	install -m $(FILE_PERM) imgs/telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
 endif
-ifdef MSGFMT_PATH
-	@for lang in $(shell cat po/LINGUAS); do \
+	@for lang in $(LOCALES); do \
 		mkdir -p $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES; \
 		echo "installing po/$$lang.mo to $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
 		install -m $(FILE_PERM) po/$$lang.mo $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
 	done
-endif
 
 .PHONY: uninstall
 uninstall:
@@ -115,12 +114,10 @@ uninstall:
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
 # TODO: Delete all installed .mo's, no matter what LINGUAS says.
-ifdef MSGFMT_PATH
-	@for lang in $(shell cat po/LINGUAS); do \
+	@for lang in $(LOCALES); do \
 		echo "removing $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
 		rm -f $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
 	done
-endif
 
 .PHONY: local_install
 local_install:
