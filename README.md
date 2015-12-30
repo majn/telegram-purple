@@ -10,12 +10,12 @@ telegram-purple related discussions or questions.
 OS Support
 ----------
 
-This plugin is tested and works on **Linux** and **OS X**. Right now the Windows port is **still under development and needs some testing**, check out the discussion for the [pull request](https://github.com/majn/telegram-purple/pull/149) for additional info.
+This plugin is tested and compiles on **Linux**, **OS X** and **Windows**. Packages for those platform will be provided soon.
 
 1.2.3
 -----
 
-- Build: Allow compilation on Windows (#52 Thanks Rob!)
+- Build: Allow compilation on Windows (#52 Thanks Eion!)
 - Build: Drop dependency on LodePNG (Thanks Ben!)
 - Build: Gettext is now optional
 
