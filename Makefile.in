@@ -23,7 +23,7 @@ PLUGIN_OBJECTS=${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/teleg
 ALL_OBJS=${PLUGIN_OBJECTS}
 
 ifdef MSGFMT_PATH
-LOCALES=$(patsubst %.po, %.mo, $(wildcard po/*.po))
+LOCALES=$(addprefix po/,$(addsuffix .mo,$(shell cat po/LINGUAS)))
 endif
 
 .SUFFIXES:

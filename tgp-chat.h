@@ -30,7 +30,6 @@ int tgp_chat_has_id (PurpleChat *C);
 
 void tgp_chat_on_loaded_chat_full (struct tgl_state *TLS, struct tgl_chat *C);
 PurpleConversation *tgp_chat_show (struct tgl_state *TLS, struct tgl_chat *C);
-void tgp_chat_users_update (struct tgl_state *TLS, struct tgl_chat *C);
 
 char *tgprpl_get_chat_name (GHashTable *data);
 void tgprpl_chat_join (PurpleConnection *gc, GHashTable *data);

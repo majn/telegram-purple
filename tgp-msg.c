@@ -107,7 +107,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
         PurpleConversation *conv = tgp_chat_show (TLS, &chatPeer->chat);
         if (conv) {
           char *alias = peer->print_name;
-          const char *aliasLeft = tgp_blist_peer_get_purple_name (TLS, TGL_MK_USER (M->action.user));
+          const char *aliasLeft = tgp_blist_lookup_purple_name (TLS, TGL_MK_USER (M->action.user));
 
           if (tgl_get_peer_id (M->from_id) != tgl_get_peer_id (peer->id)) {
             txt = g_strdup_printf (_("%2$s deleted user %1$s."), alias, txt_user);
@@ -164,7 +164,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
       PurpleBuddy *buddy = tgp_blist_buddy_new (TLS, fromPeer);
       purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init (_("Telegram Channels")), NULL);
       tgl_do_get_channel_info (TLS, fromPeer->id, FALSE, channel_load_photo, NULL);
-      purple_prpl_got_user_status (tls_get_pa (TLS), tgp_blist_peer_get_purple_name (TLS, fromPeer->id),
+      purple_prpl_got_user_status (tls_get_pa (TLS), tgp_blist_lookup_purple_name (TLS, fromPeer->id),
           "available", NULL);
       break;
     }
@@ -260,7 +260,7 @@ void tgp_msg_special_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t 
     // Regular IM conversations will not display specialized message flags like PURPLE_MESSAGE_ERROR or
     // PURPLE_MESSAGE_SYSTEM correctly when using serv_got_in, therefore it is necessary to use the underlying
     // conversation directly.
-    const char *name = tgp_blist_peer_get_purple_name (TLS, to_id);
+    const char *name = tgp_blist_lookup_purple_name (TLS, to_id);
     PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, to_id);
     g_return_if_fail (name);
     if (! conv) {
@@ -286,6 +286,7 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
   // search for outgoing embedded image tags and send them
   gchar *img = NULL;
   gchar *stripped = NULL;
+  debug ("tgp_msg_send='%s'", message);
   
   if ((img = g_strrstr (message, "<IMG")) || (img = g_strrstr (message, "<img"))) {
     if (tgl_get_peer_type(to) == TGL_PEER_ENCR_CHAT) {
@@ -386,7 +387,7 @@ static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from,
   text = tgp_format_img (img);
   *flags |= PURPLE_MESSAGE_IMAGES;
 #else
-  const char *txt_user = tgp_blist_peer_get_purple_name (TLS, from);
+  const char *txt_user = tgp_blist_lookup_purple_name (TLS, from);
   
   g_return_val_if_fail (txt_user, NULL);
   
@@ -470,7 +471,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
           text = tgp_msg_photo_display (TLS, C->data, &flags);
         } else {
           if (! tgp_our_msg(TLS, M)) {
-            tgprpl_recv_file (conn->gc, tgp_blist_peer_get_purple_name (TLS, M->from_id), M);
+            tgprpl_recv_file (conn->gc, tgp_blist_lookup_purple_name (TLS, M->from_id), M);
           }
           return;
         }
@@ -479,7 +480,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
       case tgl_message_media_video:
       case tgl_message_media_audio: {
         if (! tgp_our_msg(TLS, M)) {
-          tgprpl_recv_file (conn->gc, tgp_blist_peer_get_purple_name (TLS, M->from_id), M);
+          tgprpl_recv_file (conn->gc, tgp_blist_lookup_purple_name (TLS, M->from_id), M);
         }
       }
       break;
@@ -493,7 +494,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
           text = tgp_msg_photo_display (TLS, C->data, &flags);
         } else {
           if (! tgp_our_msg(TLS, M)) {
-            tgprpl_recv_file (conn->gc, tgp_blist_peer_get_purple_name (TLS, M->to_id), M);
+            tgprpl_recv_file (conn->gc, tgp_blist_lookup_purple_name (TLS, M->to_id), M);
           }
           return;
         }

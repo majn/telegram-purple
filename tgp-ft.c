@@ -160,7 +160,7 @@ static void tgprpl_xfer_recv_init (PurpleXfer *X) {
   
   purple_xfer_start (X, -1, NULL, 0);
   const char *who = purple_xfer_get_remote_user (X);
-  P = tgp_blist_peer_find (TLS, who);
+  P = tgp_blist_lookup_peer_get (TLS, who);
   if (P) {
     switch (M->media.type) {
       case tgl_message_media_document:
@@ -202,7 +202,7 @@ static void tgprpl_xfer_send_init (PurpleXfer *X) {
   who = purple_xfer_get_remote_user (X);
   debug ("xfer_on_init (file=%s, local=%s, who=%s)", file, localfile, who);
 
-  P = tgp_blist_peer_find (data->conn->TLS, who);
+  P = tgp_blist_lookup_peer_get (data->conn->TLS, who);
   g_return_if_fail (P);
 
   if (tgl_get_peer_type (P->id) == TGL_PEER_ENCR_CHAT) {

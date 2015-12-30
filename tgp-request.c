@@ -78,7 +78,8 @@ static void request_name_code_entered (struct request_values_data *data, PurpleR
   } else {
     request_name (data->TLS, data->callback, data->arg);
   }
-  for (int j = 0; j < 3; ++j) {
+  int j;
+  for (j = 0; j < 3; ++j) {
     g_free (names[j]);
   }
   free (data);
@@ -196,7 +197,7 @@ void request_create_chat (struct tgl_state *TLS, const char *subject) {
   purple_request_fields_add_group (fields, group);
   purple_request_fields (tls_get_conn (TLS), _("Create group chat"), _("Invite users"), NULL, fields, _("OK"),
       G_CALLBACK(create_group_chat_cb), _("Cancel"), G_CALLBACK(cancel_group_chat_cb), tls_get_pa (TLS), NULL, NULL,
-      request_values_data_init (TLS, NULL, (void *) subject, 0));
+      request_values_data_init (TLS, NULL, (void *) g_strdup (subject), 0));
 }
 
 static void request_cur_and_new_password_ok (struct request_values_data *data, PurpleRequestFields* fields) {

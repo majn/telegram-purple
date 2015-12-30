@@ -477,9 +477,10 @@ void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *titl
   for (i = 0; i < num_users; i++) if (str_not_empty (users[i])) {
     tgl_peer_t *P = NULL;
     if (use_print_names) {
+       // used by Adium autocompletion that is based on print_names
       P = tgl_peer_get_by_name (TLS, users[i]);
     } else {
-      P = tgp_blist_peer_find (TLS, users[i]);
+      P = tgp_blist_lookup_peer_get (TLS, users[i]);
     }
     if (P && tgl_get_peer_id (P->id) != tgl_get_peer_id (TLS->our_id)) {
       debug ("Adding %s: %d", P->print_name, tgl_get_peer_id (P->id));

@@ -36,9 +36,10 @@
  which unfortunately doesn't work when a user isn't in the buddy list, or in Adium group chats.
  Because of that, this plugin now uses the unique print names provided by libtgl as username instead. */
 
-const char *tgp_blist_peer_get_purple_name (struct tgl_state *TLS, tgl_peer_id_t id);
-void tgp_blist_peer_add_purple_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *purple_name);
-tgl_peer_t *tgp_blist_peer_find (struct tgl_state *TLS, const char *purple_name);
+const char *tgp_blist_lookup_purple_name (struct tgl_state *TLS, tgl_peer_id_t id);
+void tgp_blist_lookup_add (struct tgl_state *TLS, tgl_peer_id_t id, const char *purple_name);
+tgl_peer_t *tgp_blist_lookup_peer_get (struct tgl_state *TLS, const char *purple_name);
+void tgp_blist_lookup_init (struct tgl_state *TLS);
 
 /* To make this new approach robust to names changes, it is necessary to store the user ID in each
  blist node to allow reliable buddy list look-ups by user ids. */

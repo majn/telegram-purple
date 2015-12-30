@@ -103,6 +103,7 @@ connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *
   conn->pending_reads = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
   conn->pending_chat_info = g_hash_table_new (g_direct_hash, g_direct_equal);
   conn->id_to_purple_name = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
+  conn->purple_name_to_id = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
   return conn;
 }
 
@@ -118,6 +119,7 @@ void *connection_data_free (connection_data *conn) {
   g_hash_table_destroy (conn->pending_reads);
   g_hash_table_destroy (conn->pending_chat_info);
   g_hash_table_destroy (conn->id_to_purple_name);
+  g_hash_table_destroy (conn->purple_name_to_id);
   tgprpl_xfer_free_all (conn);
   g_free (conn->TLS->base_path);
   tgl_free_all (conn->TLS);

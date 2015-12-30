@@ -87,7 +87,7 @@ static void tgp_chat_add_all_users (struct tgl_state *TLS, PurpleConversation *c
   int i = 0;
   for (; i < C->user_list_size; i++) {
     struct tgl_chat_user *uid = (C->user_list + i);
-    const char *name = tgp_blist_peer_get_purple_name (TLS, TGL_MK_USER(uid->user_id));
+    const char *name = tgp_blist_lookup_purple_name (TLS, TGL_MK_USER(uid->user_id));
     if (! name) {
       g_warn_if_reached();
       continue;
@@ -100,26 +100,29 @@ static void tgp_chat_add_all_users (struct tgl_state *TLS, PurpleConversation *c
   g_list_free (flags);
 }
 
-void tgp_chat_users_update (struct tgl_state *TLS, struct tgl_chat *C) {
-  PurpleConversation *pc = purple_find_chat (tls_get_conn (TLS), tgl_get_peer_id (C->id));
-  if (pc) {
-    purple_conv_chat_clear_users (purple_conversation_get_chat_data (pc));
-    tgp_chat_add_all_users (TLS, pc, C);
-  }
-}
-
 PurpleConversation *tgp_chat_show (struct tgl_state *TLS, struct tgl_chat *C) {
-  PurpleConversation *convo = purple_find_chat (tls_get_conn (TLS), tgl_get_peer_id (C->id));
-  PurpleConvChat *chat = purple_conversation_get_chat_data (convo);
+  PurpleConvChat *chat = NULL;
   
-  if (! convo || (chat && purple_conv_chat_has_left (chat))) {
-    convo = serv_got_joined_chat (tls_get_conn (TLS), tgl_get_peer_id (C->id), C->print_title);
-    tgp_chat_users_update (TLS, C);
+  // check if chat is already shown
+  PurpleConversation *conv = purple_find_chat (tls_get_conn (TLS), tgl_get_peer_id (C->id));
+  if (conv) {
+    chat = purple_conversation_get_chat_data (conv);
+    if (chat && ! purple_conv_chat_has_left (chat)) {
+      return conv;
+    }
   }
-  return convo;
+  
+  // join the chat now
+  conv = serv_got_joined_chat (tls_get_conn (TLS), tgl_get_peer_id (C->id), C->print_title);
+  g_return_val_if_fail(conv, NULL);
+  
+  purple_conv_chat_clear_users (purple_conversation_get_chat_data (conv));
+  tgp_chat_add_all_users (TLS, conv, C);
+  
+  return conv;
 }
 
-GList *tgprpl_chat_join_info (PurpleConnection * gc) {
+GList *tgprpl_chat_join_info (PurpleConnection *gc) {
   struct proto_chat_entry *pce;
   pce = g_new0 (struct proto_chat_entry, 1);
   pce->label = _("Subject:");
