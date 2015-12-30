@@ -48,5 +48,6 @@ void tgp_g_queue_free_full (GQueue *queue, GDestroyNotify free_func);
 void tgp_g_list_free_full (GList *list, GDestroyNotify free_func);
 const char *tgp_mime_to_filetype (const char *mime);
 int tgp_startswith (const char *str, const char *with);
+void tgp_replace (char *string, char what, char with);
 
 #endif

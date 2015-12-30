@@ -22,16 +22,14 @@
 #define __telegram_adium__tgp_chat__
 
 #include "telegram-purple.h"
-#include "tgp-structs.h"
-#include "tgp-2prpl.h"
-#include <purple.h>
 
 PurpleChat *p2tgl_chat_new (struct tgl_state *TLS, struct tgl_chat *chat);
 
+tgl_peer_id_t tgp_chat_get_id (PurpleChat *C);
+int tgp_chat_has_id (PurpleChat *C);
+
 void tgp_chat_on_loaded_chat_full (struct tgl_state *TLS, struct tgl_chat *C);
 PurpleConversation *tgp_chat_show (struct tgl_state *TLS, struct tgl_chat *C);
-void tgp_chat_users_update (struct tgl_state *TLS, struct tgl_chat *C);
-int chat_add_message (struct tgl_state *TLS, struct tgl_message *M, char *text);
 
 char *tgprpl_get_chat_name (GHashTable *data);
 void tgprpl_chat_join (PurpleConnection *gc, GHashTable *data);
@@ -39,4 +37,5 @@ GList *tgprpl_chat_join_info (PurpleConnection *gc);
 PurpleRoomlist *tgprpl_roomlist_get_list (PurpleConnection *gc);
 void tgprpl_roomlist_cancel (PurpleRoomlist *list);
 GHashTable *tgprpl_chat_info_defaults (PurpleConnection *gc, const char *chat_name);
+void tgp_chat_join_all_pending (struct tgl_state *TLS);
 #endif

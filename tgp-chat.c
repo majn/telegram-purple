@@ -18,16 +18,7 @@
  Copyright Matthias Jentsch 2014-2015
  */
 
-#include "msglog.h"
 #include "tgp-chat.h"
-#include "tgp-utils.h"
-#include "tgp-request.h"
-#include "telegram-base.h"
-#include "telegram-purple.h"
-
-#include <tgl.h>
-#include <tgl-queries.h>
-#include <assert.h>
 
 GHashTable *tgp_chat_info_new (struct tgl_state *TLS, struct tgl_chat *chat) {
   gchar *title = g_strdup (chat->print_title);
@@ -40,7 +31,7 @@ GHashTable *tgp_chat_info_new (struct tgl_state *TLS, struct tgl_chat *chat) {
 }
 
 PurpleChat *p2tgl_chat_new (struct tgl_state *TLS, struct tgl_chat *chat) {
-  return purple_chat_new (tg_get_acc(TLS), chat->title, tgp_chat_info_new (TLS, chat));
+  return purple_chat_new (tls_get_pa (TLS), chat->title, tgp_chat_info_new (TLS, chat));
 }
 
 void p2tgl_chat_update (struct tgl_state *TLS, PurpleChat *chat, tgl_peer_id_t id, int admin_id, const char *subject) {
@@ -50,21 +41,29 @@ void p2tgl_chat_update (struct tgl_state *TLS, PurpleChat *chat, tgl_peer_id_t i
   g_hash_table_replace (ht, g_strdup ("subject"), g_strdup (subject));
 }
 
+int tgp_chat_has_id (PurpleChat *C) {
+  const char *id = g_hash_table_lookup (purple_chat_get_components (C), "id");
+  return id && *id;
+}
+
+tgl_peer_id_t tgp_chat_get_id (PurpleChat *C) {
+  const char *id = g_hash_table_lookup (purple_chat_get_components (C), "id");
+  assert (id && *id);
+  return TGL_MK_CHAT(atoi (id));
+}
+
 void tgp_chat_on_loaded_chat_full (struct tgl_state *TLS, struct tgl_chat *C) {
-  connection_data *conn = TLS->ev_base;
-  
   PurpleChat *PC = tgp_blist_chat_find (TLS, C->id);
   if (!PC) {
     PC = p2tgl_chat_new (TLS, C);
-    if (purple_account_get_bool (conn->pa, TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS)) {
+    if (purple_account_get_bool (tls_get_pa (TLS), TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS)) {
       purple_blist_add_chat (PC, tgp_blist_group_init ("Telegram Chats"), NULL);
     }
   }
   p2tgl_chat_update (TLS, PC, C->id, C->admin_id, C->print_title);
 }
 
-static void tgp_chat_on_loaded_chat_full_joining (struct tgl_state *TLS, void *_,
-                                                  int success, struct tgl_chat *C) {
+static void tgp_chat_on_loaded_chat_full_joining (struct tgl_state *TLS, void *_, int success, struct tgl_chat *C) {
   debug ("tgp_chat_on_loaded_chat_full_joining()");
   if (! success) {
     tgp_notify_on_error_gw (TLS, NULL, success);
@@ -76,19 +75,19 @@ static void tgp_chat_on_loaded_chat_full_joining (struct tgl_state *TLS, void *_
   
   // Check if the users attempts to join an empty chat
   if (! C->user_list_size) {
-    p2tgl_got_chat_in (TLS, C->id, C->id, _("You have already left this chat."),
-                       PURPLE_MESSAGE_SYSTEM, time (NULL));
+    p2tgl_got_chat_in (TLS, C->id, C->id, _("You have already left this chat."), PURPLE_MESSAGE_SYSTEM, time (NULL));
   }
 }
 
 static void tgp_chat_add_all_users (struct tgl_state *TLS, PurpleConversation *conv, struct tgl_chat *C) {
   GList *users = NULL,
         *flags = NULL;
+  debug ("tgp_chat_add_all_users()");
   
   int i = 0;
   for (; i < C->user_list_size; i++) {
     struct tgl_chat_user *uid = (C->user_list + i);
-    const char *name = tgp_blist_peer_get_purple_name (TLS, TGL_MK_USER(uid->user_id));
+    const char *name = tgp_blist_lookup_purple_name (TLS, TGL_MK_USER(uid->user_id));
     if (! name) {
       g_warn_if_reached();
       continue;
@@ -101,27 +100,29 @@ static void tgp_chat_add_all_users (struct tgl_state *TLS, PurpleConversation *c
   g_list_free (flags);
 }
 
-void tgp_chat_users_update (struct tgl_state *TLS, struct tgl_chat *C) {
-  PurpleConversation *pc = purple_find_chat (tg_get_conn (TLS), tgl_get_peer_id (C->id));
-  if (pc) {
-    purple_conv_chat_clear_users (purple_conversation_get_chat_data (pc));
-    tgp_chat_add_all_users (TLS, pc, C);
-  }
-}
-
 PurpleConversation *tgp_chat_show (struct tgl_state *TLS, struct tgl_chat *C) {
-  connection_data *conn = TLS->ev_base;
-  PurpleConversation *convo = purple_find_chat (conn->gc, tgl_get_peer_id (C->id));
-  PurpleConvChat *chat = purple_conversation_get_chat_data (convo);
+  PurpleConvChat *chat = NULL;
   
-  if (! convo || (chat && purple_conv_chat_has_left (chat))) {
-    convo = serv_got_joined_chat (conn->gc, tgl_get_peer_id (C->id), C->print_title);
-    tgp_chat_users_update (conn->TLS, C);
+  // check if chat is already shown
+  PurpleConversation *conv = purple_find_chat (tls_get_conn (TLS), tgl_get_peer_id (C->id));
+  if (conv) {
+    chat = purple_conversation_get_chat_data (conv);
+    if (chat && ! purple_conv_chat_has_left (chat)) {
+      return conv;
+    }
   }
-  return convo;
+  
+  // join the chat now
+  conv = serv_got_joined_chat (tls_get_conn (TLS), tgl_get_peer_id (C->id), C->print_title);
+  g_return_val_if_fail(conv, NULL);
+  
+  purple_conv_chat_clear_users (purple_conversation_get_chat_data (conv));
+  tgp_chat_add_all_users (TLS, conv, C);
+  
+  return conv;
 }
 
-GList *tgprpl_chat_join_info (PurpleConnection * gc) {
+GList *tgprpl_chat_join_info (PurpleConnection *gc) {
   struct proto_chat_entry *pce;
   pce = g_new0 (struct proto_chat_entry, 1);
   pce->label = _("Subject:");
@@ -145,31 +146,41 @@ GList *tgprpl_chat_join_info (PurpleConnection * gc) {
 
 GHashTable *tgprpl_chat_info_defaults (PurpleConnection *gc, const char *chat_name) {
   debug ("tgprpl_chat_info_defaults()");
-  
-  connection_data *conn = purple_connection_get_protocol_data (gc);
   if (chat_name) {
-    tgl_peer_t *P = tgl_peer_get_by_name (conn->TLS, chat_name);
+    tgl_peer_t *P = tgl_peer_get_by_name (gc_get_tls (gc), chat_name);
     if (P) {
       debug ("found chat...");
-      return tgp_chat_info_new (conn->TLS, &P->chat);
+      return tgp_chat_info_new (gc_get_tls (gc), &P->chat);
     }
     warning ("Chat not found, returning empty defaults...");
   }
-  return g_hash_table_new_full (g_str_hash, *g_str_equal, NULL, g_free);
+  return g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
 }
 
-void tgprpl_chat_join (PurpleConnection * gc, GHashTable *data) {
+void tgprpl_chat_join (PurpleConnection *gc, GHashTable *data) {
   debug ("tgprpl_chat_join()");
-  connection_data *conn = purple_connection_get_protocol_data (gc);
+  g_return_if_fail(data);
   
+  // auto joins will cause chat joins at a time when the dialogue list is not ready, remember
+  // those chats and join them once the dialogue list is fetched
+  if (! gc_get_data (gc)->dialogues_ready) {
+    g_return_if_fail (data);
+    const char *id = g_hash_table_lookup (data, "id");
+    if (id) {
+      debug ("attempting to join chat %s while not ready, queue up for later", id);
+      gc_get_data (gc)->pending_joins = g_list_append (gc_get_data (gc)->pending_joins, g_strdup (id));
+    }
+    return;
+  }
+
   // join existing chat by id when the user clicks on a chat in the buddy list
   void *value = g_hash_table_lookup (data, "id");
   if (value && atoi (value)) {
     tgl_peer_id_t cid = TGL_MK_CHAT(atoi (value));
-    tgl_peer_t *P = tgl_peer_get (conn->TLS, cid);
+    tgl_peer_t *P = tgl_peer_get (gc_get_tls (gc), cid);
     if (P) {
       debug ("joining chat by id %d ...", tgl_get_peer_id (cid));
-      tgl_do_get_chat_info (conn->TLS, cid, FALSE, tgp_chat_on_loaded_chat_full_joining, NULL);
+      tgl_do_get_chat_info (gc_get_tls (gc), cid, FALSE, tgp_chat_on_loaded_chat_full_joining, NULL);
     } else {
       warning ("Cannot join chat %d, peer not found...", tgl_get_peer_id (cid));
       purple_serv_got_join_chat_failed (gc, data);
@@ -180,25 +191,25 @@ void tgprpl_chat_join (PurpleConnection * gc, GHashTable *data) {
   // join chat by invite link provided in the chat join window
   const char *link = g_hash_table_lookup (data, "link");
   if (str_not_empty (link)) {
-    tgl_do_import_chat_link (conn->TLS, link, (int)strlen (link), tgp_notify_on_error_gw, NULL);
+    tgl_do_import_chat_link (gc_get_tls (gc), link, (int)strlen (link), tgp_notify_on_error_gw, NULL);
     return;
   }
   
   // if a chat with this name doesn't exist yet, prompt to create one
   const char *subject = g_hash_table_lookup (data, "subject");
   if (str_not_empty (subject)) {
-    tgl_peer_t *P = tgl_peer_get_by_name (conn->TLS, subject);
+    tgl_peer_t *P = tgl_peer_get_by_name (gc_get_tls (gc), subject);
     
     // handle joining chats by print_names as used by the Adium plugin
     if (P && tgl_get_peer_type (P->id) == TGL_PEER_CHAT) {
       debug ("joining chat by subject %s ...", subject);
       
-      tgl_do_get_chat_info (conn->TLS, P->id, FALSE, tgp_chat_on_loaded_chat_full_joining, NULL);
+      tgl_do_get_chat_info (gc_get_tls (gc), P->id, FALSE, tgp_chat_on_loaded_chat_full_joining, NULL);
       return;
     }
     
     // user creates a new chat by providing its subject the chat join window
-    request_create_chat (conn->TLS, subject);
+    request_create_chat (gc_get_tls (gc), subject);
   }
 }
 
@@ -235,7 +246,7 @@ PurpleRoomlist *tgprpl_roomlist_get_list (PurpleConnection *gc) {
   PurpleRoomlistField *f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_STRING, "", "id", TRUE);
   fields = g_list_append (fields, f);
   
-  f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_INT, _("Users"), "users", FALSE);
+  f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_INT, _("Users in chat"), "users", FALSE);
   fields = g_list_append (fields, f);
   
   purple_roomlist_set_fields (conn->roomlist, fields);
@@ -256,5 +267,19 @@ void tgprpl_roomlist_cancel (PurpleRoomlist *list) {
   if (conn->roomlist == list) {
     conn->roomlist = NULL;
     purple_roomlist_unref (list);
+  }
+}
+
+void tgp_chat_join_all_pending (struct tgl_state *TLS) {
+  GList *pending;
+  for (pending = tls_get_data (TLS)->pending_joins; pending != NULL; pending = g_list_next(pending)) {
+    GHashTable *data = g_hash_table_new (g_str_hash, g_str_equal);
+    g_hash_table_insert (data, "id", pending->data);
+    tgprpl_chat_join (tls_get_conn (TLS), data);
+    g_hash_table_destroy (data);
+  }
+  if (tls_get_data (TLS)->pending_joins) {
+    g_list_free (tls_get_data (TLS)->pending_joins);
+    tls_get_data (TLS)->pending_joins = NULL;
   }
 }

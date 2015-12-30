@@ -19,7 +19,6 @@
 */
 #include <stdio.h>
 #include <stdarg.h>
-#include <debug.h>
 #include "telegram-purple.h"
 
 /*
@@ -71,4 +70,45 @@ void fatal(const char* format, ...) {
   log_level_printf (format, ap, PURPLE_DEBUG_FATAL);
   va_end (ap);
   info ("\n");
+}
+
+const char *print_flags_update (unsigned flags) {
+  static char *text = NULL;
+  const char *names[16] = {
+    "CREATED",
+    "DELETED",
+    "PHONE",
+    "CONTACT",
+    "PHOTO",
+    "BLOCKED",
+    "REAL_NAME",
+    "NAME",
+    "REQUESTED",
+    "WORKING",
+    "FLAGS",
+    "TITLE",
+    "ADMIN",
+    "MEMBERS",
+    "ACCESS_HASH",
+    "USERNAME"
+  };
+  if (text) {
+    g_free (text);
+    text = NULL;
+  }
+  int i;
+  for (i = 0; i < 16; i ++) {
+    if (flags & 1) {
+      char *new;
+      if (text) {
+        new = g_strconcat (text, " ", names[i], NULL);
+        g_free (text);
+      } else {
+        new = g_strdup (names[i]);
+      }
+      text = new;
+    }
+    flags >>= 1;
+  }
+  return (const char*)text;
 }

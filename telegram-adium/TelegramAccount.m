@@ -19,15 +19,9 @@
 #import "TelegramAccount.h"
 #import "tgp-ft.h"
 
-#import <libpurple/conversation.h>
 #import <Adium/ESFileTransfer.h>
 #import <Adium/AIListContact.h>
-#import <Adium/AIToolbarControllerProtocol.h>
 #import <Adium/AIMenuControllerProtocol.h>
-#import <Adium/AIChat.h>
-
-#import <AIUtilities/AIToolbarUtilities.h>
-#import <AIUtilities/AIImageAdditions.h>
 #import <AIUtilities/AIMenuAdditions.h>
 
 #include "telegram-purple.h"
@@ -97,12 +91,7 @@
                            [[self preferenceForKey:@"Telegram:"TGP_KEY_SEND_READ_NOTIFICATIONS
                                              group:GROUP_ACCOUNT_STATUS]
                             boolValue]);
-  
-  purple_account_set_bool (account, TGP_KEY_HISTORY_SYNC_ALL,
-                              [[self preferenceForKey:@"Telegram:"TGP_KEY_HISTORY_SYNC_ALL
-                                                group:GROUP_ACCOUNT_STATUS]
-                               boolValue]);
-  
+
   purple_account_set_int (account, TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD,
                               [[self preferenceForKey:@"Telegram:"TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD
                                                 group:GROUP_ACCOUNT_STATUS]
@@ -162,7 +151,7 @@
   AIChat *chat = adium.interfaceController.activeChat;
   if (chat) {
     const char *name = [chat.name UTF8String];
-    tgl_peer_t *P = tgl_peer_get_by_name (conn->TLS, name);
+    tgl_peer_t *P = tgp_blist_lookup_peer_get (conn->TLS, name);
     if (P) {
       leave_and_delete_chat (conn->TLS, P);
     }
@@ -205,7 +194,7 @@
   connection_data *conn = purple_connection_get_protocol_data (purple_conversation_get_gc (conv));
   
   const char *name = purple_conversation_get_name (conv);
-  tgl_peer_t *P = tgl_peer_get_by_name (conn->TLS, purple_conversation_get_title (conv));
+  tgl_peer_t *P = tgp_blist_lookup_peer_get (conn->TLS, purple_conversation_get_title (conv));
   if (P) {
     return [NSMutableDictionary dictionaryWithObjectsAndKeys:
             [NSString stringWithFormat:@"%d", tgl_get_peer_id(P->id)], @"id",

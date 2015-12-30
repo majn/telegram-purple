@@ -23,32 +23,25 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <sys/types.h>
+#ifndef WIN32
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <sys/fcntl.h>
 #include <sys/socket.h>
+#include <poll.h>
+#include <arpa/inet.h>
+#else
+#include <winsock2.h>
+#endif
+#include <sys/fcntl.h>
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <poll.h>
-#include <arpa/inet.h>
 #include <sys/time.h>
 #include <time.h>
 
-#include "tgp-net.h"
-#include "tgp-structs.h"
-#include "tgp-2prpl.h"
-#include "telegram-base.h"
-#include <tgl.h>
-#include <tgl-inner.h>
-#include <tools.h>
-#include <mtproto-client.h>
-
-#include <glib.h>
-#include <eventloop.h>
 #include "telegram-purple.h"
-#include "msglog.h"
+#include <mtproto-client.h>
 
 #ifndef POLLRDHUP
 #define POLLRDHUP 0
@@ -259,7 +252,7 @@ static void net_on_connected (gpointer arg, gint fd, const gchar *error_message)
   
   if (fd == -1) {
     const char *msg = "Connection not possible, either your network or a Telegram data center is down, or the"
-    " Telegram network configuratio has changed.";
+    " Telegram network configuration has changed.";
     warning (msg);
     return;
   }
@@ -267,7 +260,7 @@ static void net_on_connected (gpointer arg, gint fd, const gchar *error_message)
   c->fd = fd;
   c->read_ev = purple_input_add (fd, PURPLE_INPUT_READ, conn_try_read, c);
   
-  char byte = 0xef;
+  unsigned char byte = 0xef;
   assert (tgln_write_out (c, &byte, 1) == 1);
   
   c->last_receive_time = tglt_get_double_time ();
@@ -276,10 +269,16 @@ static void net_on_connected (gpointer arg, gint fd, const gchar *error_message)
 
 static void net_on_connected_assert_success (gpointer arg, gint fd, const gchar *error_message) { 
   struct connection *c = arg;
-  struct tgl_state *TLS = c->TLS;
+  
+  if (c->fail_ev >= 0) {
+    purple_timeout_remove (c->fail_ev);
+    c->fail_ev = -1;
+  }
+  
   if (fd == -1) {
+    struct tgl_state *TLS = c->TLS;
     info ("Connection to main data center (%d) %s:%d not possible\n", c->dc->id, c->ip, c->port);
-    purple_connection_error_reason (tg_get_conn (TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR, _("Cannot connect to server"));
+    purple_connection_error_reason (tls_get_conn (TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR, _("Cannot connect to main server"));
     return;
   }
   net_on_connected (arg, fd, error_message);
@@ -308,8 +307,8 @@ struct connection *tgln_create_connection (struct tgl_state *TLS, const char *ho
   c->session = session;
   c->methods = methods;
 
-  c->prpl_data = purple_proxy_connect (tg_get_conn(TLS), tg_get_acc(TLS), host, port, 
-                    TLS->dc_working_num == dc->id ? net_on_connected_assert_success : net_on_connected, c);
+  c->prpl_data = purple_proxy_connect (tls_get_conn (TLS), tls_get_pa (TLS), host, port,
+      TLS->dc_working_num == dc->id ? net_on_connected_assert_success : net_on_connected, c);
 
   start_fail_timer (c);
   
@@ -318,34 +317,17 @@ struct connection *tgln_create_connection (struct tgl_state *TLS, const char *ho
 
 static void restart_connection (struct connection *c) {
   debug("restart_connection()");
-  struct tgl_state *TLS = c->TLS;
-  connection_data *conn = TLS->ev_base;
-
-  /*
-  if (strcmp (c->ip, c->dc->ip) != 0 || c->port != c->dc->port) {
-    info ("DC%d address changed from %s:%d to %s:%d, updating settings.\n",
-          c->dc->id, c->ip, c->port, c->dc->ip, c->dc->port);
-    if (c->ip) {
-      free (c->ip);
-    }
-    c->ip = strdup (c->dc->ip);
-    c->port = c->dc->port;
-  }
-   */
-  
   if (tglt_get_double_time () - c->last_receive_time > 6 * PING_TIMEOUT) {
-    purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
-                                    _("Cannot connect to server"));
+    purple_connection_error_reason (tls_get_conn (c->TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+        _("Cannot connect to server: Ping timeout."));
     return;
   }
   purple_proxy_connect_cancel (c->prpl_data);
-  c->prpl_data = purple_proxy_connect (conn->gc, conn->pa, c->ip, c->port, net_on_connected, c);
+  c->prpl_data = purple_proxy_connect (tls_get_conn (c->TLS), tls_get_pa (c->TLS), c->ip, c->port,
+      c->TLS->dc_working_num == c->dc->id ? net_on_connected_assert_success : net_on_connected, c);
 }
 
 static void fail_connection (struct connection *c) {
-  struct tgl_state *TLS = c->TLS;
-  connection_data *conn = TLS->ev_base;
-  
   if (c->state == conn_ready) {
     stop_ping_timer (c);
   }
@@ -379,16 +361,15 @@ static void fail_connection (struct connection *c) {
   c->prpl_data = NULL;
 
   info ("Lost connection to server ... %s:%d\n", c->ip, c->port);
-  purple_connection_error_reason (conn->gc, PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
-                                  _("Lost connection to the server ..."));
+  purple_connection_error_reason (tls_get_conn (c->TLS), PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+      _("Lost connection to the server..."));
 }
 
-//extern FILE *log_net_f;
 static void try_write (struct connection *c) {
   // debug ("try write: fd = %d\n", c->fd);
   int x = 0;
   while (c->out_head) {
-    int r = write (c->fd, c->out_head->rptr, c->out_head->wptr - c->out_head->rptr);
+    int r = send (c->fd, (const char *)c->out_head->rptr, c->out_head->wptr - c->out_head->rptr, 0);
     if (r >= 0) {
       x += r;
       c->out_head->rptr += r;
@@ -403,7 +384,7 @@ static void try_write (struct connection *c) {
       delete_connection_buffer (b);
     } else {
       if (errno != EAGAIN && errno != EWOULDBLOCK) {
-        info ("fail_connection: write_error %m\n");
+        info ("fail_connection: write_error %s\n", g_strerror(errno));
         fail_connection (c);
         return;
       } else {
@@ -464,7 +445,7 @@ static void try_read (struct connection *c) {
   #endif
   int x = 0;
   while (1) {
-    int r = read (c->fd, c->in_tail->wptr, c->in_tail->end - c->in_tail->wptr);
+    int r = recv (c->fd, (char *)c->in_tail->wptr, c->in_tail->end - c->in_tail->wptr, 0);
     if (r > 0) {
       c->last_receive_time = tglt_get_double_time ();
       stop_ping_timer (c);
@@ -481,7 +462,7 @@ static void try_read (struct connection *c) {
       c->in_tail = b;
     } else {
       if (errno != EAGAIN && errno != EWOULDBLOCK) {
-        debug ("fail_connection: read_error %m\n");
+        debug ("fail_connection: read_error %s\n", strerror(errno));
         fail_connection (c);
         return;
       } else {

@@ -18,17 +18,9 @@
  Copyright Matthias Jentsch 2014-2015
  */
 
-#include <tgl-queries.h>
-#include "tgp-utils.h"
-#include "tgp-ft.h"
-#include "tgp-structs.h"
-#include "msglog.h"
-
-#include <purple.h>
-#include <glib.h>
 #include <glib/gstdio.h>
+
 #include "telegram-purple.h"
-#include "telegram-base.h"
 
 static void tgprpl_xfer_free_data (struct tgp_xfer_send_data *data);
 
@@ -63,7 +55,7 @@ static char *tgp_strdup_determine_filename (const char *mime, const char *captio
       type = "bin";
     }
   }
-  return g_strdup_printf ("%lld.%s", ABS(hash), type);
+  return g_strdup_printf ("%" G_GINT64_MODIFIER "d.%s", (gint64) ABS(hash), type);
 }
 
 static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, int success, const char *filename) {
@@ -168,7 +160,7 @@ static void tgprpl_xfer_recv_init (PurpleXfer *X) {
   
   purple_xfer_start (X, -1, NULL, 0);
   const char *who = purple_xfer_get_remote_user (X);
-  P = tgp_blist_peer_find (TLS, who);
+  P = tgp_blist_lookup_peer_get (TLS, who);
   if (P) {
     switch (M->media.type) {
       case tgl_message_media_document:
@@ -176,8 +168,7 @@ static void tgprpl_xfer_recv_init (PurpleXfer *X) {
         break;
         
       case tgl_message_media_document_encr:
-        tgl_do_load_encr_document (TLS, M->media.encr_document,
-                                   tgprpl_xfer_recv_on_finished, data);
+        tgl_do_load_encr_document (TLS, M->media.encr_document, tgprpl_xfer_recv_on_finished, data);
         break;
       
       case tgl_message_media_audio:
@@ -199,27 +190,28 @@ static void tgprpl_xfer_recv_init (PurpleXfer *X) {
 }
 
 static void tgprpl_xfer_send_init (PurpleXfer *X) {
-  struct tgp_xfer_send_data *data = X->data;
-  
+  struct tgp_xfer_send_data *data;
+  const char *file, *localfile, *who;
+  tgl_peer_t *P;
+
+  data = X->data;
   purple_xfer_start (X, -1, NULL, 0);
   
-  const char *file = purple_xfer_get_filename (X);
-  const char *localfile = purple_xfer_get_local_filename (X);
-  const char *who = purple_xfer_get_remote_user (X);
+  file = purple_xfer_get_filename (X);
+  localfile = purple_xfer_get_local_filename (X);
+  who = purple_xfer_get_remote_user (X);
   debug ("xfer_on_init (file=%s, local=%s, who=%s)", file, localfile, who);
-  
-  tgl_peer_t *P = tgp_blist_peer_find (data->conn->TLS, who);
-  
+
+  P = tgp_blist_lookup_peer_get (data->conn->TLS, who);
+  g_return_if_fail (P);
+
   if (tgl_get_peer_type (P->id) == TGL_PEER_ENCR_CHAT) {
-    purple_xfer_error (PURPLE_XFER_SEND, data->conn->pa, who, _("Sorry, sending documents to encrypted chats not yet supported."));
+    purple_xfer_error (PURPLE_XFER_SEND, data->conn->pa, who,
+        _("Sorry, sending documents to encrypted chats not yet supported."));
     return;
   }
-  
-  if (P) {
-      tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL,
-                            0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, tgprpl_xfer_on_finished, data);
-  }
-  
+  tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL, 0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO,
+      tgprpl_xfer_on_finished, data);
   data->timer = purple_timeout_add (100, tgprpl_xfer_upload_progress, X);
 }
 
@@ -234,9 +226,11 @@ static void tgprpl_xfer_init_data (PurpleXfer *X, connection_data *conn, struct 
 }
 
 static void tgprpl_xfer_free_data (struct tgp_xfer_send_data *data) {
-    if (data->timer) { purple_input_remove(data->timer); }
-    data->timer = 0;
-    g_free (data);
+  if (data->timer) {
+    purple_input_remove(data->timer);
+  }
+  data->timer = 0;
+  g_free (data);
 }
 
 void tgprpl_xfer_free_all (connection_data *conn) {
@@ -252,34 +246,26 @@ void tgprpl_xfer_free_all (connection_data *conn) {
   }
 }
 
-PurpleXfer *tgprpl_new_xfer (PurpleConnection * gc, const char *who) {
+PurpleXfer *tgprpl_new_xfer (PurpleConnection *gc, const char *who) {
   debug ("tgprpl_new_xfer()");
-  
-  connection_data *conn = purple_connection_get_protocol_data (gc);
-  
-  PurpleXfer *X = purple_xfer_new (conn->pa, PURPLE_XFER_SEND, who);
+  PurpleXfer *X = purple_xfer_new (purple_connection_get_account (gc), PURPLE_XFER_SEND, who);
   if (X) {
     purple_xfer_set_init_fnc (X, tgprpl_xfer_send_init);
     purple_xfer_set_cancel_send_fnc (X, tgprpl_xfer_canceled);
     tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), NULL);
   }
-  
-  return (PurpleXfer *)X;
+  return X;
 }
 
-static PurpleXfer *tgprpl_new_xfer_recv (PurpleConnection * gc, const char *who) {
-  connection_data *conn = purple_connection_get_protocol_data (gc);
-  
-  PurpleXfer *X = purple_xfer_new (conn->pa, PURPLE_XFER_RECEIVE, who);
+static PurpleXfer *tgprpl_new_xfer_recv (PurpleConnection *gc, const char *who) {
+  PurpleXfer *X = purple_xfer_new (purple_connection_get_account (gc), PURPLE_XFER_RECEIVE, who);
   purple_xfer_set_init_fnc (X, tgprpl_xfer_recv_init);
   purple_xfer_set_cancel_recv_fnc (X, tgprpl_xfer_canceled);
-  
   return X;
 }
 
 void tgprpl_recv_file (PurpleConnection *gc, const char *who, struct tgl_message *M) {
   debug ("tgprpl_recv_file()");
-  
   g_return_if_fail (who);
   
   PurpleXfer *X = tgprpl_new_xfer_recv (gc, who);
@@ -306,16 +292,13 @@ void tgprpl_recv_file (PurpleConnection *gc, const char *who, struct tgl_message
   g_free (filename);
   
   purple_xfer_set_size (X, size);
-  
   tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), M);
   purple_xfer_request (X);
 }
 
 void tgprpl_send_file (PurpleConnection * gc, const char *who, const char *file) {
   debug ("tgprpl_send_file()");
-  
   PurpleXfer *X = tgprpl_new_xfer (gc, who);
-  
   if (file) {
     purple_xfer_request_accepted (X, file);
     debug ("starting xfer...");

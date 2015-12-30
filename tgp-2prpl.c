@@ -22,56 +22,40 @@
 
 #ifdef HAVE_LIBWEBP
 #include <webp/decode.h>
-#include "lodepng/lodepng.h"
 #endif
 
-#include "tgp-2prpl.h"
-#include "tgp-structs.h"
-#include "telegram-purple.h"
-#include "tgp-utils.h"
-#include "telegram-base.h"
-#include "tgp-msg.h"
-#include "tgp-net.h"
-
-#include <server.h>
-#include <tgl.h>
-#include "msglog.h"
-#include <assert.h>
-
-
-PurpleAccount *tg_get_acc (struct tgl_state *TLS) {
-  return tg_get_data(TLS)->pa;
+PurpleAccount *tls_get_pa (struct tgl_state *TLS) {
+  return tls_get_data (TLS)->pa;
 }
 
-PurpleConnection *tg_get_conn (struct tgl_state *TLS) {
-  return tg_get_data (TLS)->gc;
+PurpleConnection *tls_get_conn (struct tgl_state *TLS) {
+  return tls_get_data (TLS)->gc;
 }
 
-connection_data *tg_get_data (struct tgl_state *TLS) {
+connection_data *tls_get_data (struct tgl_state *TLS) {
   return TLS->ev_base;
 }
 
-connection_data *gc_get_conn (PurpleConnection *gc) {
+connection_data *gc_get_data (PurpleConnection *gc) {
   return purple_connection_get_protocol_data (gc);
 }
 
-connection_data *pa_get_conn (PurpleAccount *pa) {
+struct tgl_state *gc_get_tls (PurpleConnection *gc) {
+  return ((connection_data *)purple_connection_get_protocol_data (gc))->TLS;
+}
+
+connection_data *pa_get_data (PurpleAccount *pa) {
   return purple_connection_get_protocol_data (purple_account_get_connection (pa));
 }
 
-connection_data *pbn_get_conn (PurpleBlistNode *node) {
+connection_data *pbn_get_data (PurpleBlistNode *node) {
   if (PURPLE_BLIST_NODE_IS_CHAT (node)) {
-    return pa_get_conn (purple_chat_get_account ((PurpleChat *)node));
+    return pa_get_data (purple_chat_get_account((PurpleChat *) node));
   }
   if (PURPLE_BLIST_NODE_IS_BUDDY (node)) {
-    return pa_get_conn (purple_buddy_get_account ((PurpleBuddy *)node));
+    return pa_get_data (purple_buddy_get_account((PurpleBuddy *) node));
   }
   return NULL;
-}
-
-connection_data *c_get_conn (struct connection *c) {
-  struct tgl_state *TLS = c->TLS;
-  return TLS->ev_base;
 }
 
 int p2tgl_status_is_present (PurpleStatus *status) {
@@ -79,19 +63,10 @@ int p2tgl_status_is_present (PurpleStatus *status) {
   return !(strcmp (name, "unavailable") == 0 || strcmp (name, "away") == 0);
 }
 
-int p2tgl_send_notifications (PurpleAccount *acct) {
-  int ret = purple_account_get_bool (acct, TGP_KEY_SEND_READ_NOTIFICATIONS, TGP_DEFAULT_SEND_READ_NOTIFICATIONS);
-  debug ("sending notifications: %d", ret);
-  return ret;
-}
-
-void p2tgl_got_chat_left (struct tgl_state *TLS, tgl_peer_id_t chat) {
-  serv_got_chat_left (tg_get_conn(TLS), tgl_get_peer_id(chat));
-}
-
-void p2tgl_got_chat_in (struct tgl_state *TLS, tgl_peer_id_t chat, tgl_peer_id_t who,
-                        const char *message, int flags, time_t when) {
-  serv_got_chat_in (tg_get_conn(TLS), tgl_get_peer_id (chat), tgp_blist_peer_get_purple_name (TLS, who), flags, message, when);
+void p2tgl_got_chat_in (struct tgl_state *TLS, tgl_peer_id_t chat, tgl_peer_id_t who, const char *message, int flags,
+    time_t when) {
+  serv_got_chat_in (tls_get_conn (TLS), tgl_get_peer_id (chat), tgp_blist_lookup_purple_name (TLS, who), flags,
+      message, when);
 }
 
 void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, int flags, time_t when) {
@@ -114,15 +89,15 @@ void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *m
   if (flags & PURPLE_MESSAGE_SEND) {
     PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, who);
     if (!conv) {
-      conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tg_get_acc (TLS),
-                                      tgp_blist_peer_get_purple_name (TLS, who));
+      conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tls_get_pa (TLS),
+          tgp_blist_lookup_purple_name (TLS, who));
     }
-    purple_conv_im_write (purple_conversation_get_im_data (conv), tgp_blist_peer_get_purple_name (TLS, who),
-                          msg, PURPLE_MESSAGE_SEND, when);
+    purple_conv_im_write (purple_conversation_get_im_data (conv), tgp_blist_lookup_purple_name (TLS, who),
+        msg, PURPLE_MESSAGE_SEND, when);
     return;
   }
 #endif
-  serv_got_im (conn->gc, tgp_blist_peer_get_purple_name (TLS, who), msg, flags, when);
+  serv_got_im (conn->gc, tgp_blist_lookup_purple_name (TLS, who), msg, flags, when);
 }
 
 PurpleConversation *p2tgl_find_conversation_with_account (struct tgl_state *TLS, tgl_peer_id_t peer) {
@@ -130,8 +105,8 @@ PurpleConversation *p2tgl_find_conversation_with_account (struct tgl_state *TLS,
   if (tgl_get_peer_type (peer) == TGL_PEER_CHAT) {
     type = PURPLE_CONV_TYPE_CHAT;
   }
-  PurpleConversation *conv = purple_find_conversation_with_account (type,
-                                tgp_blist_peer_get_purple_name (TLS, peer), tg_get_acc (TLS));
+  PurpleConversation *conv = purple_find_conversation_with_account (type, tgp_blist_lookup_purple_name (TLS, peer),
+      tls_get_pa (TLS));
   return conv;
 }
 
@@ -139,36 +114,24 @@ void p2tgl_prpl_got_user_status (struct tgl_state *TLS, tgl_peer_id_t user, stru
   connection_data *data = TLS->ev_base;
   
   if (status->online == 1) {
-    purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_purple_name (TLS, user), "available", NULL);
+    purple_prpl_got_user_status (tls_get_pa (TLS), tgp_blist_lookup_purple_name (TLS, user), "available", NULL);
   } else {
     debug ("%d: when=%d", tgl_get_peer_id (user), status->when);
     if (tgp_time_n_days_ago (
           purple_account_get_int (data->pa, "inactive-days-offline", TGP_DEFAULT_INACTIVE_DAYS_OFFLINE)) > status->when && status->when) {
       debug ("offline");
-      purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_purple_name (TLS, user), "offline", NULL);
+      purple_prpl_got_user_status (tls_get_pa (TLS), tgp_blist_lookup_purple_name (TLS, user), "offline", NULL);
     } else {
       debug ("mobile");
-      purple_prpl_got_user_status (tg_get_acc (TLS), tgp_blist_peer_get_purple_name (TLS, user), "mobile", NULL);
+      purple_prpl_got_user_status (tls_get_pa (TLS), tgp_blist_lookup_purple_name (TLS, user), "mobile", NULL);
     }
   }
 }
 
-tgl_chat_id_t p2tgl_chat_get_id (PurpleChat *PC) {
-  char *name = g_hash_table_lookup (purple_chat_get_components (PC), "id");
-  if (! name || ! atoi (name)) {
-    warning ("p2tgl_chat_id_get: no id found in chat %s", PC->alias);
-    return TGL_MK_CHAT(0);
-  }
-  return TGL_MK_CHAT(atoi (name));
-}
-
-void p2tgl_conv_add_user (struct tgl_state *TLS, PurpleConversation *conv,
-                          int user, char *message, int flags, int new_arrival) {
-  
-  const char *name = tgp_blist_peer_get_purple_name (TLS, TGL_MK_USER (user));
-  
+void p2tgl_conv_add_user (struct tgl_state *TLS, PurpleConversation *conv, int user, char *message, int flags,
+    int new_arrival) {
+  const char *name = tgp_blist_lookup_purple_name (TLS, TGL_MK_USER (user));
   g_return_if_fail (name);
-  
   purple_conv_chat_add_user (purple_conversation_get_chat_data (conv), name, message, flags, new_arrival);
 }
 
@@ -202,11 +165,11 @@ PurpleNotifyUserInfo *p2tgl_notify_user_info_new (struct tgl_user *U) {
 }
 
 PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TLS, struct tgl_secret_chat *secret,
-                                                            struct tgl_user *U) {
+    struct tgl_user *U) {
   PurpleNotifyUserInfo *info = p2tgl_notify_user_info_new (U);
   
   if (secret->state == sc_waiting) {
-    purple_notify_user_info_add_pair (info, "", _("Waiting for the user to get online ..."));
+    purple_notify_user_info_add_pair (info, "", _("Waiting for the user to get online..."));
     return info;
   }
   
@@ -216,7 +179,7 @@ PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TL
     purple_notify_user_info_add_pair (info, ttl_key, ttl);
     g_free (ttl);
   } else {
-    purple_notify_user_info_add_pair (info, ttl_key, _("Off"));
+    purple_notify_user_info_add_pair (info, ttl_key, _("Timer is not enabled."));
   }
   
   if (secret->first_key_sha[0]) {
@@ -237,12 +200,10 @@ PurpleNotifyUserInfo *p2tgl_notify_peer_info_new (struct tgl_state *TLS, tgl_pee
       struct tgl_secret_chat *chat = &P->encr_chat;
       tgl_peer_t *partner = tgp_encr_chat_get_partner (TLS, chat);
       return p2tgl_notify_encrypted_chat_info_new (TLS, chat, &partner->user);
-      break;
     }
       
     case TGL_PEER_USER:
       return p2tgl_notify_user_info_new (&P->user);
-      break;
       
     default:
       return purple_notify_user_info_new ();
@@ -259,13 +220,36 @@ int p2tgl_imgstore_add_with_id (const char* filename) {
   return id;
 }
 
+int p2tgl_imgstore_add_with_id_raw (const unsigned char *raw_bgra, unsigned width, unsigned height) {
+  // Heavily inspired by: https://github.com/EionRobb/pidgin-opensteamworks/blob/master/libsteamworks.cpp#L113
+  const unsigned char tga_header[] = {
+      // No ID; no color map; uncompressed true color
+      0,0,2,
+      // No color map metadata
+      0,0,0,0,0,
+      // No offsets
+      0,0,0,0,
+      // Dimensions
+      width&0xFF,(width/256)&0xFF,height&0xFF,(height/256)&0xFF,
+      // 32 bits per pixel
+      32,
+      // "Origin in upper left-hand corner"
+      32};
+  // Will be owned by libpurple imgstore, which uses glib functions for managing memory
+  const unsigned tga_len = sizeof(tga_header) + width * height * 4;
+  unsigned char *tga = g_malloc(tga_len);
+  memcpy(tga, tga_header, sizeof(tga_header));
+  // From the documentation: "The 4 byte entry contains 1 byte each of blue, green, red, and attribute."
+  memcpy(tga + sizeof(tga_header), raw_bgra, width * height * 4);
+  return purple_imgstore_add_with_id (tga, tga_len, NULL);
+}
+
 #ifdef HAVE_LIBWEBP
 
 static const int MAX_W = 256;
 static const int MAX_H = 256;
 
 int p2tgl_imgstore_add_with_id_webp (const char *filename) {
-  
   const uint8_t *data = NULL;
   size_t len;
   GError *err = NULL;
@@ -288,21 +272,21 @@ int p2tgl_imgstore_add_with_id_webp (const char *filename) {
     const float max_scale_width = MAX_W * 1.0f / config.options.scaled_width;
     const float max_scale_height = MAX_H * 1.0f / config.options.scaled_height;
     if (max_scale_width < max_scale_height) {
-      /* => the width is most limiting */
+      // => the width is most limiting
       config.options.scaled_width = MAX_W;
-      /* Can't use ' *= ', because we need to do the multiplication in float
-       * (or double), and only THEN cast back to int. */
+      // Can't use ' *= ', because we need to do the multiplication in float
+      // (or double), and only THEN cast back to int.
       config.options.scaled_height = (int) (config.options.scaled_height * max_scale_width);
     } else {
-      /* => the height is most limiting */
+      // => the height is most limiting
       config.options.scaled_height = MAX_H;
-      /* Can't use ' *= ', because we need to do the multiplication in float
-       * (or double), and only THEN cast back to int. */
+      // Can't use ' *= ', because we need to do the multiplication in float
+      // (or double), and only THEN cast back to int.
       config.options.scaled_width = (int) (config.options.scaled_width * max_scale_height);
     }
     config.options.use_scaling = 1;
   }
-  config.output.colorspace = MODE_RGBA;
+  config.output.colorspace = MODE_BGRA;
   if (! WebPDecode(data, len, &config) == VP8_STATUS_OK) {
     warning ("error decoding webp: %s", filename);
     g_free ((gchar *)data);
@@ -311,21 +295,9 @@ int p2tgl_imgstore_add_with_id_webp (const char *filename) {
   g_free ((gchar *)data);
   const uint8_t *decoded = config.output.u.RGBA.rgba;
 
-  // convert to png
-  unsigned char* png = NULL;
-  size_t pnglen;
-  unsigned error = lodepng_encode32 (&png, &pnglen, decoded, config.options.scaled_width, config.options.scaled_height);
+  // convert and add
+  int imgStoreId = p2tgl_imgstore_add_with_id_raw(decoded, config.options.scaled_width, config.options.scaled_height);
   WebPFreeDecBuffer (&config.output);
-  if (error) {
-    warning ("error encoding webp as png: %s", filename);
-    return 0;
-  }
-
-  // will be owned by libpurple imgstore, which uses glib functions for managing memory
-  void *pngdub = g_memdup (png, (guint)pnglen);
-  free (png);
-
-  int imgStoreId = purple_imgstore_add_with_id (pngdub, pnglen, NULL);
   return imgStoreId;
 }
 #endif
@@ -335,6 +307,6 @@ void p2tgl_buddy_icons_set_for_user (PurpleAccount *pa, tgl_peer_id_t id, const 
   size_t len;
   GError *err = NULL;
   g_file_get_contents (filename, &data, &len, &err);
-  purple_buddy_icons_set_for_user (pa, tgp_blist_peer_get_purple_name (pa_get_conn (pa)->TLS, id), data, len, NULL);
+  purple_buddy_icons_set_for_user (pa, tgp_blist_lookup_purple_name (pa_get_data (pa)->TLS, id), data, len, NULL);
 }
 

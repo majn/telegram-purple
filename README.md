@@ -4,25 +4,34 @@ Telegram-Purple Unofficial (Beta)
 Telegram-purple is a Libpurple protocol plugin that adds support for the Telegram messenger.
 
 I keep getting many questions about this plugin in my E-mail, so I've created a
-[telegram group chat](https://telegram.me/joinchat/01fb53f301b67d3c7a5532908dfa9a89) for
+[telegram group chat](https://goo.gl/bhmM7N) for
 telegram-purple related discussions or questions.
 
 OS Support
 ----------
 
-This plugin is tested and works on **Linux** and **OS X**. As of right now, **Windows is not supported** although there's a plan to port it in the near future.
+This plugin is tested and works on **Linux** and **OS X**. Right now the Windows port is **still under development and needs some testing**, check out the discussion for the [pull request](https://github.com/majn/telegram-purple/pull/149) for additional info.
 
-1.2.2
+1.2.3
 -----
 
-    - fix some licensing issues by not depending on OpenSSL any longer (thanks Ben!)
-    - add tons of translations (thanks to anyone helping!)
-    - fix issue that caused empty files
-    - fix pidgin not reconnecting after hibernation
-    - fix adium not reconnecting after hibernation
-    - fix secret chat fingerprint not being displayed after restart
-    - fix secret chat name not being displayed after restart
+- Build: Allow compilation on Windows (#52 Thanks Rob!)
+- Build: Drop dependency on LodePNG (Thanks Ben!)
+- Build: Gettext is now optional
 
+- Fix issue that prevented to send messages to deleted users in certain cases (#174)
+- Fix own user being added to the buddy list in certain cases
+- Fix that read recipes of own messages are being displayed (#139)
+- Fix encoding inconsistencies with Unicode characters (#177)
+- Fix auto-joining for chats (#179)
+- Fix client not reconnecting anymore under certain circumstances (#173)
+- Fix crash on compat-verification (PullRequest #183)
+
+- Remove pointless "create chat" confirmation dialogue
+- Improve logging messages
+- Always send read recipes when the user is typing or sending a message
+- Improve translation and user messages (#139)
+- Use native password prompts (Adium)
 
 Build
 -----
@@ -152,19 +161,29 @@ Compiling with XCode is a little bit problematic, since it requires you to compi
 1. Get the Adium source, compile it with XCode and copy the build output into telegram-adium/Frameworks/Adium. It should contain at least Adium.framework, AdiumLibpurple.framework and AIUitilies.framework
 2. Open the Adium source code, go to ./Frameworks and copy libglib.framework and libpurple.framework into telegram-adium/Frameworks/Adium
 3. Build the tgl submodule and delete libtgl.so from libs/ (it should only contain libtgl.a)
-4. Install libwebp with homebrew and copy it into your project:
+4. Install libwebp, libgcrypt and gnupg with homebrew:
 
-      brew install webp
-      cp /usr/local/Cellar/webp/0.4.3/lib/libwebp.a ./telegram-adium/Frameworks/
+    brew install webp
+    brew install libgcrypt libgpg-error
 
-5. Install libgcrypt with homebrew and make sure that libgcrypt.dylib is present in /usr/local/lib
+5. If you already downloaded libwebp/libgcrypt in previous builds make sure that the binaries are up-to-date
 
-      brew install libgcrypt
+    brew update
+    brew upgrade webp libgcrypt
 
-6. If you already downloaded libwebp/libgcrypt in previous builds make sure that the binaries are up-to-date
+6. Installwith homebrew and move it into the appropriate directory so that XCode can find them. Note that the versions might differ, use the one that is 
 
-      brew update
-      brew upgrade webp libgcrypt
+    mkdir -p ./telegram-adium/Frameworks/Adium
+    cp /usr/local/Cellar/webp/0.4.3/lib/libwebp.a ./telegram-adium/Frameworks
+    cp /usr/local/Cellar/libgcrypt/1.6.4/lib/libgcrypt.20.dylib ./telegram-adium/Frameworks/Adium
+    cp /usr/local/Cellar/libgpg-error/1.20_1/lib/libgpg-error.0.dylib ./telegram-adium/Frameworks/Adium
+
+7. Update the paths in the dylibs, to assure that the resulting binary will load them form within the bundle.
+
+    cd ./telegram-adium/Frameworks/Adium
+    install_name_tool -id "@loader_path/../Resources/libgcrypt.20.dylib" ./libgcrypt.20.dylib
+    install_name_tool -id "@loader_path/../Resources/libgpg-error.0.dylib" ./libgpg-error.0.dylib
+    install_name_tool -change "/usr/local/lib/libgpg-error.0.dylib" "@loader_path/../Resources/libgpg-error.0.dylib" ./libgcrypt.20.dylib
 
 7. Build the XCode-Project and execute the created bundle
 
@@ -227,12 +246,30 @@ You can also write your own conversion tool if you prefer. The format is really 
 
 If you are interested in developing a non-OpenSSL-licensed converter, look into [insane-triangle-banana](https://github.com/BenWiederhake/insane-triangle-banana).
 
+
+FAQ
+---
+
+- I receive pictures in a chat, but they aren't showing up
+  * A: Make sure that you don't have a plugin like "Conversation Colors" that strips HTML from messages and removes the pictures.
+
 #### Group chat
 
 Telegram group chat for telegram-purple or libtgl related discussions or questions:
 
-    - https://telegram.me/joinchat/01fb53f301b67d3c7a5532908dfa9a89
+    - https://goo.gl/bhmM7N
 
+
+Submitting Bug Reports
+----------------------
+
+**IMPORTANT**: if you report bugs PLEASE make sure to always **include as much information as possible**. This should always include **at least the telegram-purple version and (if possible) commit**, where you got telegram-purple from (Source build, package repository, etc.), the Pidgin version (if you use a different messenger please state that too!) and your OS Version.
+
+If you describe some issue please be as precise as possible. Descriptions like "XY doesn't work" will not help me. Describe what you are doing what kind of issue you are experiencing: "If I click on X, Y happens, but instead I would expect Z to happen".
+
+For error reports please include the application logs. To get Pidgin to print a log, [start it from command line, specifying the -d option](https://developer.pidgin.im/wiki/GetABacktrace#TheEasyWay). **ATTENTION**: This log will contain personal information like your phone number, message content or contact or chat names. If you plan on uploading it somewhere public mask those entries in the log.
+
+Bug reports regarding crashes should include a backtrace if possible, there is extended documentation available on [how to get a backtrace for crashes](https://developer.pidgin.im/wiki/GetABacktrace)
 
 Empathy / libtelepathy
 ----------------------
@@ -249,12 +286,9 @@ Telegram-Purple was written by:
     - Vitaly Valtman
     - Ben Wiederhake
     - Christopher Althaus <althaus.christopher@gmail.com>
-    - Markus Endres <endresma45241@th-nuernberg.de>
 
 
 Acknowledgements
 ----------------
 
 This software is based on the library [Libtgl](https://github.com/vysheng/tgl), which was written by Vitaly Valtman <mail@vysheng.ru> and others, see (https://github.com/vysheng/tgl/)
-
-For PNG rendering, it includes the [lodepng library](http://lodev.org/lodepng/).

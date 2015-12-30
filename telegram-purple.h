@@ -28,25 +28,36 @@
 // libintl.h. If this is not the case a dummy macro is defined to bypass the translation functions
 #ifdef ENABLE_NLS
 #  include <glib/gi18n-lib.h>
+#  define P_(Singular,Plural,N) ((char *) g_dngettext (GETTEXT_PACKAGE, Singular, Plural, N))
 #else
 #  define _(String) String
+#  define P_(Singular,Plural,N) Plural
 #endif
 
 #include <tgl.h>
-#include <purple.h>
-#include <notify.h>
-#include <server.h>
-#include <plugin.h>
-#include <version.h>
-#include <account.h>
-#include <connection.h>
+#include <tgl-binlog.h>
+#include <tgl-queries.h>
+#include <tgl-structures.h>
 
+#include <glib.h>
+#include <purple.h>
+
+#include "telegram-base.h"
 #include "tgp-blist.h"
 #include "tgp-structs.h"
+#include "tgp-2prpl.h"
+#include "tgp-net.h"
+#include "tgp-timers.h"
+#include "tgp-utils.h"
+#include "tgp-chat.h"
+#include "tgp-ft.h"
+#include "tgp-msg.h"
+#include "tgp-request.h"
+#include "msglog.h"
 
 #define PLUGIN_ID "prpl-telegram"
 // FIXME: Name must be translated (for languages without latin script, it would look like gibberish. Just like Japanese script looks to me.)
-#define TG_AUTHOR "Matthias Jentsch <mtthsjntsch@gmail.com>, Vitaly Valtman, Christopher Althaus <althaus.christopher@gmail.com>, Markus Endres <endresma45241@th-nuernberg.de>. Based on libtgl by Vitaly Valtman."
+#define TG_AUTHOR "Matthias Jentsch <mtthsjntsch@gmail.com>, Vitaly Valtman, Ben Wiederhake <BenWiederhake.GitHub@gmx.de>, Christopher Althaus <althaus.christopher@gmail.com>, based on libtgl by Vitaly Valtman."
 #define TG_DESCRIPTION "Telegram protocol."
 #define TG_BUILD "13"
   
@@ -70,16 +81,12 @@
 #define TGP_DEFAULT_JOIN_GROUP_CHATS FALSE
 #define TGP_KEY_JOIN_GROUP_CHATS "auto-join-group-chats"
 
-#define TGP_KEY_HISTORY_SYNC_ALL "history-sync-all"
-#define TGP_DEFAULT_HISTORY_SYNC_ALL FALSE
-
 #define TGP_DEFAULT_DISPLAY_READ_NOTIFICATIONS FALSE
 #define TGP_KEY_DISPLAY_READ_NOTIFICATIONS "display-read-notifications"
 
 #define TGP_DEFAULT_SEND_READ_NOTIFICATIONS TRUE
 #define TGP_KEY_SEND_READ_NOTIFICATIONS "send-read-notifications"
 
-void on_ready (struct tgl_state *TLS);
 extern const char *pk_path;
 extern const char *user_pk_filename;
 extern const char *config_dir;

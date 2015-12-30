@@ -16,8 +16,6 @@
  * Copyright Matthias Jentsch 2014-2015
  */
 
-#import <Foundation/Foundation.h>
-
 #import "TelegramAutocompletionDelegate.h"
 
 @implementation TelegramAutocompletionDelegate

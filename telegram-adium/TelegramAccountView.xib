@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="8191" systemVersion="15A284" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="8191" systemVersion="15B42" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="8191"/>
     </dependencies>
@@ -7,7 +7,6 @@
         <customObject id="-2" userLabel="File's Owner" customClass="TelegramAccountViewController">
             <connections>
                 <outlet property="checkbox_displayReadNotifications" destination="Tat-1e-jqI" id="1m9-1n-bKm"/>
-                <outlet property="checkbox_historySyncAll" destination="Qob-Rq-UJj" id="1dM-ig-DQa"/>
                 <outlet property="checkbox_sendReadNotifications" destination="4Xx-hY-Mzh" id="OMa-pG-ePd"/>
                 <outlet property="radio_Encryption" destination="RGC-Jo-M5e" id="gMv-Gj-Dyg"/>
                 <outlet property="textField_accountUID" destination="Mv3-b8-21b" id="Cxi-GZ-5oi"/>
@@ -87,11 +86,11 @@
             <point key="canvasLocation" x="380.5" y="38"/>
         </customView>
         <customView id="DGa-mQ-g3C" userLabel="Options">
-            <rect key="frame" x="0.0" y="6" width="272" height="248"/>
+            <rect key="frame" x="0.0" y="0.0" width="272" height="206"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zRH-KJ-uvC" userLabel="Accept Secret Chats">
-                    <rect key="frame" x="6" y="60" width="168" height="17"/>
+                    <rect key="frame" x="6" y="52" width="168" height="17"/>
                     <animations/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Ignore history older than" id="MSN-Hj-aRS">
                         <font key="font" metaFont="system"/>
@@ -100,7 +99,7 @@
                     </textFieldCell>
                 </textField>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="C4T-Hq-g5C" userLabel="Accept Secret Chats">
-                    <rect key="frame" x="6" y="42" width="138" height="17"/>
+                    <rect key="frame" x="6" y="0.0" width="138" height="17"/>
                     <animations/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" id="ARj-qB-Q5Z">
                         <font key="font" metaFont="system"/>
@@ -109,7 +108,7 @@
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gKj-Oj-qll">
-                    <rect key="frame" x="176" y="55" width="49" height="22"/>
+                    <rect key="frame" x="176" y="47" width="49" height="22"/>
                     <animations/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="lVr-43-iAS">
                         <numberFormatter key="formatter" formatterBehavior="default10_4" numberStyle="decimal" minimumIntegerDigits="1" maximumIntegerDigits="2000000000" maximumFractionDigits="3" id="tH1-pY-m7Q"/>
@@ -119,7 +118,7 @@
                     </textFieldCell>
                 </textField>
                 <matrix verticalHuggingPriority="750" fixedFrame="YES" allowsEmptySelection="NO" autorecalculatesCellSize="YES" translatesAutoresizingMaskIntoConstraints="NO" id="RGC-Jo-M5e">
-                    <rect key="frame" x="176" y="177" width="76" height="58"/>
+                    <rect key="frame" x="176" y="135" width="76" height="58"/>
                     <animations/>
                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     <size key="cellSize" width="66" height="18"/>
@@ -146,7 +145,7 @@
                     </cells>
                 </matrix>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="sb8-oa-s84">
-                    <rect key="frame" x="231" y="60" width="126" height="14"/>
+                    <rect key="frame" x="231" y="52" width="126" height="14"/>
                     <animations/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Days" id="cOl-DG-CvA">
                         <font key="font" metaFont="smallSystem"/>
@@ -155,7 +154,7 @@
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EEO-n2-kS3">
-                    <rect key="frame" x="6" y="45" width="126" height="14"/>
+                    <rect key="frame" x="6" y="37" width="126" height="14"/>
                     <animations/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="(0 days for unlimited)" id="TQS-UR-EnH">
                         <font key="font" metaFont="smallSystem"/>
@@ -164,23 +163,15 @@
                     </textFieldCell>
                 </textField>
                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4Xx-hY-Mzh">
-                    <rect key="frame" x="6" y="117" width="251" height="24"/>
+                    <rect key="frame" x="6" y="75" width="251" height="24"/>
                     <animations/>
                     <buttonCell key="cell" type="check" title="Send read notifications when present" bezelStyle="regularSquare" imagePosition="left" scrollable="YES" lineBreakMode="clipping" state="on" inset="2" id="vdV-Ig-yub">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
                 </button>
-                <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Qob-Rq-UJj">
-                    <rect key="frame" x="6" y="90" width="213" height="18"/>
-                    <animations/>
-                    <buttonCell key="cell" type="check" title="Fetch past history on first login" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="uu6-Td-pzN">
-                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                        <font key="font" metaFont="system"/>
-                    </buttonCell>
-                </button>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4Mf-Qx-mrn" userLabel="Accept Secret Chats">
-                    <rect key="frame" x="6" y="218" width="135" height="17"/>
+                    <rect key="frame" x="6" y="176" width="135" height="17"/>
                     <animations/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" userInterfaceLayoutDirection="rightToLeft" alignment="left" title="Accept secret chats?" id="t4Q-j1-35n">
                         <font key="font" metaFont="system"/>
@@ -189,7 +180,7 @@
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Nvv-1I-L31">
-                    <rect key="frame" x="176" y="20" width="49" height="22"/>
+                    <rect key="frame" x="176" y="12" width="49" height="22"/>
                     <animations/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="Pm0-Jw-ayL">
                         <numberFormatter key="formatter" formatterBehavior="default10_4" numberStyle="decimal" minimumIntegerDigits="1" maximumIntegerDigits="2000000000" maximumFractionDigits="3" id="L9W-52-Xg9"/>
@@ -199,7 +190,7 @@
                     </textFieldCell>
                 </textField>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="m95-No-oJH" userLabel="Accept Secret Chats">
-                    <rect key="frame" x="6" y="25" width="168" height="17"/>
+                    <rect key="frame" x="6" y="17" width="168" height="17"/>
                     <animations/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" userInterfaceLayoutDirection="rightToLeft" alignment="left" title="Display users offline after" id="zJx-0I-fdw">
                         <font key="font" metaFont="system"/>
@@ -208,7 +199,7 @@
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="TaV-3x-dxE">
-                    <rect key="frame" x="231" y="25" width="126" height="14"/>
+                    <rect key="frame" x="231" y="17" width="126" height="14"/>
                     <animations/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Days" id="Aav-dA-OrQ">
                         <font key="font" metaFont="smallSystem"/>
@@ -217,7 +208,7 @@
                     </textFieldCell>
                 </textField>
                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Tat-1e-jqI">
-                    <rect key="frame" x="6" y="147" width="178" height="24"/>
+                    <rect key="frame" x="6" y="105" width="178" height="24"/>
                     <animations/>
                     <buttonCell key="cell" type="check" title="Display read notifications" bezelStyle="regularSquare" imagePosition="left" scrollable="YES" lineBreakMode="clipping" state="on" inset="2" id="l1g-r5-pNb">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -226,7 +217,7 @@
                 </button>
             </subviews>
             <animations/>
-            <point key="canvasLocation" x="356" y="323"/>
+            <point key="canvasLocation" x="356" y="302"/>
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="OjL-yD-9te"/>
     </objects>
