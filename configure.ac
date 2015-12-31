@@ -32,10 +32,15 @@ AC_PROG_CC
 AC_PROG_INSTALL
 
 AC_CHECK_LIB([rt], [clock_gettime])
-AC_CHECK_LIB([gcrypt], [gcry_mpi_snatch], [], [
-  echo "no libgcrypt >= 1.60 found"
-  exit -1
+
+AC_SUBST([CRYPTO_FLAG], [--disable-openssl])
+AC_ARG_ENABLE([gcrypt],
+  AS_HELP_STRING([--disable-gcrypt], [Disable gcrypt, use OpenSSL instead. DO NOT DISTRIBUTE BINARIES!]))
+AS_IF([test "x$enable_gcrypt" != "xno"], [
+  # Let tgl/configure.ac handle OpenSSL- or gcrypt-detection.
+  AC_SUBST([CRYPTO_FLAG], [ ])
 ])
+
 AX_CHECK_ZLIB(, [AC_MSG_ERROR([No zlib found])])
 
 PKG_CHECK_MODULES([PURPLE], [purple])
