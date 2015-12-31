@@ -5,8 +5,8 @@ git:
 before_install:
   - git submodule update --init --recursive
   - sudo apt-get update -qq
-  - sudo apt-get install -qq libgcrypt20-dev libssl-dev libpurple-dev libwebp-dev
-script: ./configure && make
+  - sudo apt-get install -qq libssl-dev libpurple-dev libwebp-dev
+script: ./configure --disable-gcrypt && make
 compiler:
   - clang
   - gcc
