@@ -24,6 +24,7 @@ AC_INIT([telegram-purple], [1.2.3])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
 
+m4_include([m4_ax_check_openssl.m4])
 m4_include([m4_ax_check_zlib.m4])
 m4_include([m4_ax_pkg_config.m4])
 
@@ -39,11 +40,14 @@ AC_ARG_ENABLE([gcrypt],
 AS_IF([test "x$enable_gcrypt" != "xno"], [
   # Even though tgl/configure will do this too, still call our own libgcrypt check to assure that -lgcrypt is added to our makefile
   AC_CHECK_LIB([gcrypt], [gcry_mpi_snatch], [], [
-    echo "no libgcrypt >= 1.60 found"
+    echo "no libgcrypt >= 1.60 found. If its not available try --disable-gcrypt to link against openssl, but in that case YOU MAY NOT REDISTRIBUTE THE BINARY due to licensing restrictions."
     exit -1
   ])
   AC_SUBST([CRYPTO_FLAG], [--disable-openssl])
+], [
+  AX_CHECK_OPENSSL([], [No openssl found.])
 ])
+
 
 AX_CHECK_ZLIB(, [AC_MSG_ERROR([No zlib found])])
 
