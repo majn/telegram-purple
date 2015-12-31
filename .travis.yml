@@ -1,4 +1,8 @@
 language: c
+# Select Trusty Tahr.
+sudo: required
+dist: trusty
+# Travis' git submodule support is ... broken? half-broken? Maybe intentional?
 git:
   submodules: false
   depth: 3
