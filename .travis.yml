@@ -1,0 +1,6 @@
+language: c
+install: libgcrypt20-dev libssl-dev libpurple-dev libwebp-dev
+script: ./configure && make
+compiler:
+  - clang
+  - gcc
