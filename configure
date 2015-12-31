@@ -3321,17 +3321,66 @@ _ACEOF
 fi
 
 
-CRYPTO_FLAG=--disable-openssl
-
 # Check whether --enable-gcrypt was given.
 if test "${enable_gcrypt+set}" = set; then :
   enableval=$enable_gcrypt;
 fi
 
-if test "x$enable_gcrypt" == "xno"; then :
 
-  # Let tgl/configure.ac handle OpenSSL- or gcrypt-detection.
-  CRYPTO_FLAG=
+if test "x$enable_gcrypt" != "xno"; then :
+
+  # Even though tgl/configure will do this too, still call our own libgcrypt check to assure that -lgcrypt is added to our makefile
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gcry_mpi_snatch in -lgcrypt" >&5
+$as_echo_n "checking for gcry_mpi_snatch in -lgcrypt... " >&6; }
+if ${ac_cv_lib_gcrypt_gcry_mpi_snatch+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgcrypt  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gcry_mpi_snatch ();
+int
+main ()
+{
+return gcry_mpi_snatch ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_gcrypt_gcry_mpi_snatch=yes
+else
+  ac_cv_lib_gcrypt_gcry_mpi_snatch=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gcrypt_gcry_mpi_snatch" >&5
+$as_echo "$ac_cv_lib_gcrypt_gcry_mpi_snatch" >&6; }
+if test "x$ac_cv_lib_gcrypt_gcry_mpi_snatch" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBGCRYPT 1
+_ACEOF
+
+  LIBS="-lgcrypt $LIBS"
+
+else
+
+    echo "no libgcrypt >= 1.60 found"
+    exit -1
+
+fi
+
+  CRYPTO_FLAG=--disable-openssl
 
 
 fi
@@ -4086,7 +4135,8 @@ if test "${enable_libwebp+set}" = set; then :
   enableval=$enable_libwebp;
 fi
 
-  if test "x$enable_libwebp" != "xno"; then :
+
+if test "x$enable_libwebp" != "xno"; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabled" >&5
 $as_echo "enabled" >&6; }
