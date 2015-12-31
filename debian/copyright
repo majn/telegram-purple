@@ -39,7 +39,7 @@ Copyright: 2015 Matthias Jentsch <mtthsjntsch@gmail.com>
            2015 Markus Endres <endresma45241@th-nuernberg.de>
 License: GPL-2+
 
-Files: tgl/tl-parser/portable-endian.h
+Files: tgl/tl-parser/portable_endian.h
 Copyright: 2013-2014 Mathias Panzenböck <grosser.meister.morti@gmx.net>
            2015 PkmX <pkmx.tw@gmail.com>
 License: BSD-3-clause or Expat or Apache-2
