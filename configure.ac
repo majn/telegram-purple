@@ -24,6 +24,7 @@ AC_INIT([telegram-purple], [1.2.3])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
 
+m4_include([m4_ax_check_openssl.m4])
 m4_include([m4_ax_check_zlib.m4])
 m4_include([m4_ax_pkg_config.m4])
 
@@ -33,13 +34,20 @@ AC_PROG_INSTALL
 
 AC_CHECK_LIB([rt], [clock_gettime])
 
-AC_SUBST([CRYPTO_FLAG], [--disable-openssl])
 AC_ARG_ENABLE([gcrypt],
   AS_HELP_STRING([--disable-gcrypt], [Disable gcrypt, use OpenSSL instead. DO NOT DISTRIBUTE BINARIES!]))
+
 AS_IF([test "x$enable_gcrypt" != "xno"], [
-  # Let tgl/configure.ac handle OpenSSL- or gcrypt-detection.
-  AC_SUBST([CRYPTO_FLAG], [ ])
+  # Even though tgl/configure will do this too, still call our own libgcrypt check to assure that -lgcrypt is added to our makefile
+  AC_CHECK_LIB([gcrypt], [gcry_mpi_snatch], [], [
+    echo "no libgcrypt >= 1.60 found. If its not available try --disable-gcrypt to link against openssl, but in that case YOU MAY NOT REDISTRIBUTE THE BINARY due to licensing restrictions."
+    exit -1
+  ])
+  AC_SUBST([CRYPTO_FLAG], [--disable-openssl])
+], [
+  AX_CHECK_OPENSSL([], [No openssl found.])
 ])
+
 
 AX_CHECK_ZLIB(, [AC_MSG_ERROR([No zlib found])])
 
@@ -48,7 +56,8 @@ PKG_CHECK_MODULES([PURPLE], [purple])
 AC_MSG_CHECKING([for libwebp])
 AC_ARG_ENABLE([libwebp],
   AS_HELP_STRING([--disable-libwebp], [Disable libwebp, stickers won't be displayed in the chat]))
-  AS_IF([test "x$enable_libwebp" != "xno"], [
+
+AS_IF([test "x$enable_libwebp" != "xno"], [
     AC_MSG_RESULT([enabled])
     AC_CHECK_LIB([webp], [WebPDecodeRGBA], [], [AC_MSG_ERROR([no libwebp found, try --disable-libwebp, but stickers won't be displayed in the chat])])
   ])
