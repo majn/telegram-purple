@@ -82,7 +82,8 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
       break;
     }
     case tgl_message_action_chat_add_users: {
-      for (int i = 0; i < M->action.user_num; ++i) {
+      int i;
+      for (i = 0; i < M->action.user_num; ++i) {
         tgl_peer_t *peer = tgl_peer_get (TLS, TGL_MK_USER (M->action.users[i]));
         if (peer) {
           char *alias = peer->print_name;
