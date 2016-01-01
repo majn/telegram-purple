@@ -1,4 +1,4 @@
-PLUGIN_TESTS:=inittest
+PLUGIN_TESTS:=probetest
 PLUGIN_TEST_BINS:=$(addprefix test/bin/,${PLUGIN_TESTS})
 
 test/bin:

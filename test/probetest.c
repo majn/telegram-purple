@@ -23,11 +23,11 @@
 
 #include <purple.h>
 
-// Just try to call the init function. If that's successful, then probably a lot of stuff works.
-int main(int argc, char **argv) {
+// Just try to probe (pre-load) the plugin. If that's successful, then probably a lot of stuff works.
+int main (int argc, char **argv) {
   assert(argc == 2);
-  printf ("Running inittest on %s.\n", argv[1]);
-  PurplePlugin *tgp = purple_plugin_probe(argv[1]);
+  printf ("Running probetest on %s.\n", argv[1]);
+  PurplePlugin *tgp = purple_plugin_probe (argv[1]);
   if (!tgp) {
       printf ("Looks like there was a problem! Aborting.\n");
       return 1;

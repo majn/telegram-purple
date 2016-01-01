@@ -164,7 +164,9 @@ debug: install
 clean-here:
 	rm -rf ${DIR_LIST} config.log config.status $(PRPL_C_OBJS) $(PRPL_LIBNAME) po/*.mo
 
-.PHONY: clean
+-include test/Makefile
+
+.PHONY: clean clean-test
 clean: clean-here tgl/Makefile
 	+make -C tgl clean
 
@@ -178,5 +180,3 @@ ifneq ($(shell cat commit.h |grep -c ${GIT_COMMIT}), 1)
 	echo '#  define GIT_COMMIT "${GIT_COMMIT}"' >> ${GIT_COMMIT_H}
 	echo '#endif' >> ${GIT_COMMIT_H}
 endif
-
--include test/Makefile
