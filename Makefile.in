@@ -1,3 +1,21 @@
+# This file is part of telegram-purple
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
+#
+# Copyright Matthias Jentsch, Vitaly Valtman, Christopher Althaus, Markus Endres 2014-2015
+
 srcdir=@srcdir@
 prefix=@prefix@
 datarootdir=@datarootdir@
@@ -5,7 +23,7 @@ localedir=@localedir@
 gettext_package=@GETTEXT_PACKAGE@
 
 CFLAGS=@CFLAGS@ @PURPLE_CFLAGS@ @DEFS@ -DENABLE_NLS -DLOCALEDIR='"$(localedir)"' -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing -fPIC
-LDFLAGS=@LDFLAGS@ @PURPLE_LIBS@ @LIBS@ -rdynamic -ggdb
+LDFLAGS=@LDFLAGS@ @OPENSSL_LIBS@ @PURPLE_LIBS@ @LIBS@ -rdynamic -ggdb
 DIR_PERM=0755
 FILE_PERM=0644
 
@@ -23,7 +41,8 @@ PLUGIN_OBJECTS=${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/teleg
 ALL_OBJS=${PLUGIN_OBJECTS}
 
 ifdef MSGFMT_PATH
-LOCALES=$(addprefix po/,$(addsuffix .mo,$(shell cat po/LINGUAS)))
+LOCALES=$(shell cat po/LINGUAS)
+LOCALE_MOS=$(addprefix po/,$(addsuffix .mo,$(LOCALES)))
 endif
 
 .SUFFIXES:
@@ -32,11 +51,12 @@ endif
 
 PRPL_NAME=telegram-purple.so
 PRPL_LIBNAME=${EXE}/${PRPL_NAME}
-all: ${PRPL_LIBNAME} ${LOCALES}
+all: ${PRPL_LIBNAME} $(LOCALE_MOS)
 
 PLUGIN_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=plugindir purple)
 DATA_ROOT_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=datarootdir purple)
 COPY_ICONS=@COPY_ICONS@
+CRYPTO_FLAG=@CRYPTO_FLAG@
 
 create_dirs: ${DIR_LIST}
 
@@ -58,7 +78,7 @@ tgl/Makefile.in:
 	@echo "tgl/Makefile.in not found. Maybe you need to 'git submodule update --init --recursive' ?" && exit 1
 
 tgl/Makefile: tgl/Makefile.in
-	cd tgl && ./configure -q --disable-openssl --disable-extf CFLAGS="@CFLAGS@" LDFLAGS="@LDFLAGS@"
+	cd tgl && ./configure -q ${CRYPTO_FLAG} --disable-extf CFLAGS="@CFLAGS@" LDFLAGS="@LDFLAGS@"
 
 tgl/libs/libtgl.a: tgl/Makefile
 	+make -C tgl
@@ -81,7 +101,7 @@ strip: $(PRPL_LIBNAME)
 	$(STRIP) --strip-unneeded $(PRPL_LIBNAME)
 
 .PHONY: install
-install: $(PRPL_LIBNAME) $(LOCALES)
+install: $(PRPL_LIBNAME) $(LOCALE_MOS)
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(PLUGIN_DIR_PURPLE)
 	install -m $(FILE_PERM) $(PRPL_LIBNAME) $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)/etc/telegram-purple
@@ -99,13 +119,11 @@ else
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48
 	install -m $(FILE_PERM) imgs/telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
 endif
-ifdef MSGFMT_PATH
-	@for lang in $(shell cat po/LINGUAS); do \
+	@for lang in $(LOCALES); do \
 		mkdir -p $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES; \
 		echo "installing po/$$lang.mo to $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
 		install -m $(FILE_PERM) po/$$lang.mo $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
 	done
-endif
 
 .PHONY: uninstall
 uninstall:
@@ -116,12 +134,10 @@ uninstall:
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
 	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
 # TODO: Delete all installed .mo's, no matter what LINGUAS says.
-ifdef MSGFMT_PATH
-	@for lang in $(shell cat po/LINGUAS); do \
+	@for lang in $(LOCALES); do \
 		echo "removing $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
 		rm -f $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
 	done
-endif
 
 .PHONY: local_install
 local_install:

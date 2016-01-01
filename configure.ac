@@ -1,3 +1,21 @@
+# This file is part of telegram-purple
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
+#
+# Copyright Matthias Jentsch, Vitaly Valtman, Christopher Althaus, Markus Endres 2014-2015
+
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
@@ -6,6 +24,7 @@ AC_INIT([telegram-purple], [1.2.3])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
 
+m4_include([m4_ax_check_openssl.m4])
 m4_include([m4_ax_check_zlib.m4])
 m4_include([m4_ax_pkg_config.m4])
 
@@ -14,10 +33,22 @@ AC_PROG_CC
 AC_PROG_INSTALL
 
 AC_CHECK_LIB([rt], [clock_gettime])
-AC_CHECK_LIB([gcrypt], [gcry_mpi_snatch], [], [
-  echo "no libgcrypt >= 1.60 found"
-  exit -1
+
+AC_ARG_ENABLE([gcrypt],
+  AS_HELP_STRING([--disable-gcrypt], [Disable gcrypt, use OpenSSL instead. DO NOT DISTRIBUTE BINARIES!]))
+
+AS_IF([test "x$enable_gcrypt" != "xno"], [
+  # Even though tgl/configure will do this too, still call our own libgcrypt check to assure that -lgcrypt is added to our makefile
+  AC_CHECK_LIB([gcrypt], [gcry_mpi_snatch], [], [
+    echo "no libgcrypt >= 1.60 found. If its not available try --disable-gcrypt to link against openssl, but in that case YOU MAY NOT REDISTRIBUTE THE BINARY due to licensing restrictions."
+    exit -1
+  ])
+  AC_SUBST([CRYPTO_FLAG], [--disable-openssl])
+], [
+  AX_CHECK_OPENSSL([], [No openssl found.])
 ])
+
+
 AX_CHECK_ZLIB(, [AC_MSG_ERROR([No zlib found])])
 
 PKG_CHECK_MODULES([PURPLE], [purple])
@@ -25,7 +56,8 @@ PKG_CHECK_MODULES([PURPLE], [purple])
 AC_MSG_CHECKING([for libwebp])
 AC_ARG_ENABLE([libwebp],
   AS_HELP_STRING([--disable-libwebp], [Disable libwebp, stickers won't be displayed in the chat]))
-  AS_IF([test "x$enable_libwebp" != "xno"], [
+
+AS_IF([test "x$enable_libwebp" != "xno"], [
     AC_MSG_RESULT([enabled])
     AC_CHECK_LIB([webp], [WebPDecodeRGBA], [], [AC_MSG_ERROR([no libwebp found, try --disable-libwebp, but stickers won't be displayed in the chat])])
   ])

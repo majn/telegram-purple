@@ -283,6 +283,8 @@ void send_inline_picture_done (struct tgl_state *TLS, void *extra, int success, 
 }
 
 int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
+
+#ifndef __ADIUM_
   // search for outgoing embedded image tags and send them
   gchar *img = NULL;
   gchar *stripped = NULL;
@@ -334,7 +336,6 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
     return -1;
   }
   
-#ifndef __ADIUM_
   /*
     Adium won't escape any HTML markup and just pass any user-input through,
     while Pidgin will replace special chars with the escape chars and also add 

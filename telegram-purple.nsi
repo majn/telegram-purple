@@ -1,5 +1,22 @@
-; Script based on the Skype4Pidgin and Off-the-Record Messaging NSI files
+; This file is part of telegram-purple
+;
+; This program is free software; you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as published by
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version.
+;
+; This program is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with this program; if not, write to the Free Software
+; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
+;
+; Copyright Matthias Jentsch, Eion Robb 2014-2015
 
+; Script based on the Skype4Pidgin and Off-the-Record Messaging NSI files
 
 SetCompress off
 
@@ -74,11 +91,13 @@ Section "MainSection" SEC01
 	after_copy:
 	
 	SetOutPath "$PidginDir\locale"
-	File /nonfatal "/oname=de\LC_MESSAGES\telegram-purple.mo" "po\de.mo"
+	File /nonfatal "/oname=de_DE\LC_MESSAGES\telegram-purple.mo" "po\de_DE.mo"
 	File /nonfatal "/oname=es_AR\LC_MESSAGES\telegram-purple.mo" "po\es_AR.mo"
-	File /nonfatal "/oname=pl\LC_MESSAGES\telegram-purple.mo" "po\pl.mo"
-	File /nonfatal "/oname=ru\LC_MESSAGES\telegram-purple.mo" "po\ru.mo"
+	File /nonfatal "/oname=pl_PL\LC_MESSAGES\telegram-purple.mo" "po\pl_PL.mo"
+	File /nonfatal "/oname=pt_BR\LC_MESSAGES\telegram-purple.mo" "po\pt_BR.mo"
+	File /nonfatal "/oname=ru_RU\LC_MESSAGES\telegram-purple.mo" "po\ru_RU.mo"
 	File /nonfatal "/oname=sq\LC_MESSAGES\telegram-purple.mo" "po\sq.mo"
+	File /nonfatal "/oname=uk\LC_MESSAGES\telegram-purple.mo" "po\uk.mo"
 	
 	SetOutPath "$PidginDir"
 	File "/oname=server.tglpub" "tg-server.tglpub"
