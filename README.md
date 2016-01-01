@@ -70,7 +70,7 @@ This repository has submodules, so you need to clone recursively.
         sudo dnf install gcc gettext libgcrypt-devel libwebp-devel libpurple-devel zlib-devel
 
 
-###### Debian / Ubuntu
+##### Debian / Ubuntu
 
 We are working on a Debian package! Please first check if it's already available to you: `sudo apt-get install telegram-purple`
 
@@ -80,7 +80,7 @@ If the above fails: Don't worry, just continue building it by yourself. Next you
 
         sudo apt-get install libgcrypt20-dev libpurple-dev libwebp-dev
 
-###### OpenSUSE
+##### OpenSUSE
 
         sudo zypper install gcc glib glib-devel libpurple libpurple-devel zlib-devel libwebp-devel
 
