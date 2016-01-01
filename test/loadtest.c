@@ -169,12 +169,18 @@ static void tdf_inject_plugin (void) {
   }
 }
 
+gboolean tdf_is_in_ci (void) {
+  gchar* envvar = getenv ("CONTINUOUS_INTEGRATION");
+  return envvar && g_str_equal ("true", envvar);
+}
+
 static void init_libpurple (void) {
   // Set a custom user directory (optional)
   purple_util_set_user_dir ("test/tmp/user");
 
   // We *do* want debugging. However, this is just too much noise.
-  purple_debug_set_enabled (FALSE);
+  // Then again, this doesn't hurt if Travis does it. Query the environment to check whether we're in CI or not.
+  purple_debug_set_enabled (tdf_is_in_ci ());
 
   /* Set the core-uiops, which is used to
    * - initialize the ui specific preferences.
@@ -205,7 +211,10 @@ static void init_libpurple (void) {
   // Find our plugin
   printf ("Checking version:\n");
   tgp = purple_plugins_find_with_id (PLUGIN_ID);
-  assert (tgp);
+  if (!tgp) {
+    printf ("Huh! Can't find plugin! Expected ID \"" PLUGIN_ID "\"");
+    abort ();
+  }
 
   // Make sure we loaded the correct plugin
   printf ("This is what we loaded:\n\t\t\tversion: %s\n", tgp->info->version);
