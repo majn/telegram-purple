@@ -179,3 +179,4 @@ ifneq ($(shell cat commit.h |grep -c ${GIT_COMMIT}), 1)
 	echo '#endif' >> ${GIT_COMMIT_H}
 endif
 
+-include test/Makefile
