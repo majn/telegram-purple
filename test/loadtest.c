@@ -157,7 +157,7 @@ static void tdf_inject_plugin (void) {
   purple_plugins_init ();
   GList *search_paths = purple_plugins_get_search_paths ();
   assert (!search_paths->prev && !search_paths->next && search_paths->data);
-  GList *new_paths = g_list_append (search_paths, g_strdup ("/home/eispin/workspace/telegram-purple/bin/"));
+  GList *new_paths = g_list_append (search_paths, g_strdup ("bin/"));
   assert (new_paths == search_paths);
   // Load "my" path before the default.
   assert (search_paths->next && search_paths->next->data);
