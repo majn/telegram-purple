@@ -10,7 +10,10 @@ before_install:
   - git submodule update --init --recursive
   - sudo apt-get update -qq
   - sudo apt-get install -qq libssl-dev libgcrypt20-dev libpurple-dev libwebp-dev
-script: ./configure $CONFIGURE_FLAGS && make
+script:
+  - ./configure $CONFIGURE_FLAGS
+  - make -j2
+  - make check
 compiler:
   - clang
   - gcc
