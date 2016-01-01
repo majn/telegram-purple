@@ -7,36 +7,52 @@ I keep getting many questions about this plugin in my E-mail, so I've created a
 [telegram group chat](https://goo.gl/bhmM7N) for
 telegram-purple related discussions or questions.
 
-OS Support
-----------
+Installation
+------------
 
-This plugin is tested and compiles on **Linux**, **OS X** and **Windows**. Packages for those platform will be provided soon.
+If you are just interested in using the plugin you probably want to use one of the following binary distributions. Please note that I do not control most of those package sources and the version may lag behind.
 
-1.2.3
------
+If your plattform is not supported or you want to contribute by testing or development, scroll down to "Building form Source".
 
-- Build: Allow compilation on Windows (#52 Thanks Eion!)
-- Build: Drop dependency on LodePNG (Thanks Ben!)
-- Build: Gettext is now optional
 
-- Fix issue that prevented to send messages to deleted users in certain cases (#174)
-- Fix own user being added to the buddy list in certain cases
-- Fix that read recipes of own messages are being displayed (#139)
-- Fix encoding inconsistencies with Unicode characters (#177)
-- Fix auto-joining for chats (#179)
-- Fix client not reconnecting anymore under certain circumstances (#173)
-- Fix crash on compat-verification (PullRequest #183)
+#### OSX (Adium)
 
-- Remove pointless "create chat" confirmation dialogue
-- Improve logging messages
-- Always send read recipes when the user is typing or sending a message
-- Improve translation and user messages (#139)
-- Use native password prompts (Adium)
+1. Download and execute the [Telegram-Adium bundle] (https://github.com/majn/telegram-purple/releases/download/v1.2.3/telegram-adium-1.2.3.zip)
+2. Restart Adium
 
-Build
------
+#### Windows
 
-Below, you will find the instructions for how to build the libpurple protocol plugin. If you just want to use the plugin in Adium, [download the precompiled packages here.](https://github.com/majn/telegram-purple/releases).
+Eion Robb provides a binary for Windows users:
+
+1. Download and execute the setup from http://eion.robbmob.com/telegram/
+2. Restart Pidgin
+
+#### Fedora (22, 23)
+
+The package is available in the Fedora 22 and 23 testing repositories:
+
+     dnf config-manager --set-enabled updates-testing
+     dnf install purple-telegram
+
+
+#### Ubuntu/Mint PPA
+
+Webupd8 provides PPAs for installation, see the [article](http://www.webupd8.org/2014/11/add-telegram-support-to-pidgin-with.html) for additional instructions:
+
+    sudo add-apt-repository ppa:nilarimogard/webupd8
+    sudo apt-get update
+    sudo apt-get install telegram-purple
+
+
+#### Arch Linux (AUR)
+
+https://aur.archlinux.org/packages/telegram-purple/
+
+
+Building From Source
+--------------------
+
+Below, you will find the instructions for how to build the libpurple protocol plugin from source.
 
 #### 1. Clone
 
@@ -79,26 +95,6 @@ Please note that this is usually not necessary.
         ./configure
         make
         sudo make install
-
-
-
-Unofficial Packages
--------------------
-
-##### Fedora 21, 22, 23 / CentOS7
-
-https://copr.fedoraproject.org/coprs/eischmann/purple-telegram/
-
-
-##### Arch AUR
-
-https://aur.archlinux.org/packages/telegram-purple/
-
-
-##### Ubuntu PPA (webupd8)
-
-https://launchpad.net/~nilarimogard/+archive/ubuntu/webupd8
-
 
 
 Pulling Updates
@@ -228,6 +224,29 @@ and `.dsc` files, do this:
     ( cd .. && dpkg-source -b telegram-purple )
 
 Note that the parenthesis are important.
+
+
+1.2.3
+-----
+
+- Build: Allow compilation on Windows #52 Thanks Eion!
+- Build: Drop dependency on LodePNG, Thanks Ben!
+- Build: Gettext is now optional
+
+- Fix issue that prevented to send messages to deleted users in certain cases (#174)
+- Fix own user being added to the buddy list in certain cases
+- Fix that read recipes of own messages are being displayed (#139)
+- Fix encoding inconsistencies with Unicode characters (#177)
+- Fix auto-joining for chats (#179)
+- Fix client not reconnecting anymore under certain circumstances (#173)
+- Fix crash on compat-verification (PullRequest #183)
+
+- Remove pointless "create chat" confirmation dialogue
+- Improve logging messages
+- Always send read recipes when the user is typing or sending a message
+- Improve translation and user messages (#139)
+- Use native password prompts (Adium)
+
 
 Discussion / Help
 -----------------
