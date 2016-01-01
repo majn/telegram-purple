@@ -1,7 +1,10 @@
-PLUGIN_TESTS:=probetest
+PLUGIN_TESTS:=probetest loadtest
 PLUGIN_TEST_BINS:=$(addprefix test/bin/,${PLUGIN_TESTS})
 
 test/bin:
+	mkdir -p $@
+
+test/tmp/%:
 	mkdir -p $@
 
 test/bin/%: test/%.c test/bin bin/telegram-purple.so
@@ -19,4 +22,4 @@ recheck: clean-test check
 
 .PHONY: clean-test
 clean-test:
-	rm -f bin
+	rm -f bin tmp
