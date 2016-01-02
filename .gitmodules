@@ -1,4 +1,4 @@
 [submodule "tgl"]
 	path = tgl
     branch = test
-	url = https://github.com/vysheng/tgl
+	url = https://github.com/majn/tgl
