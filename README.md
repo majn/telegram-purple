@@ -104,6 +104,7 @@ This repository contains submodules, and a simple pull just won't be enough to u
 
 
         git pull
+        git submodule sync # just in case the configuration has changed 
         git submodule update --recursive
 
 
