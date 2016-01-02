@@ -226,6 +226,11 @@ and `.dsc` files, do this:
 
 Note that the parenthesis are important.
 
+1.2.4
+-----
+
+- Fix crash on unknown media type
+- Fix crash on logout after cancelling a file transfer
 
 1.2.3
 -----
