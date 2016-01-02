@@ -61,10 +61,10 @@ static char *tgp_strdup_determine_filename (const char *mime, const char *captio
 static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, int success, const char *filename) {
   debug ("tgprpl_xfer_recv_on_finished()");
   struct tgp_xfer_send_data *data = _data;
-  char *selected = g_strdup(purple_xfer_get_local_filename (data->xfer));
+  char *selected = g_strdup (purple_xfer_get_local_filename (data->xfer));
 
   if (success) {
-    if (!data->done) {
+    if (! data->done && ! purple_xfer_is_canceled (data->xfer)) {
       debug ("purple_xfer_set_completed");
       purple_xfer_set_bytes_sent (data->xfer, purple_xfer_get_size (data->xfer));
       purple_xfer_set_completed (data->xfer, TRUE);
@@ -76,6 +76,7 @@ static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, in
   }
 
   data->xfer->data = NULL;
+  purple_xfer_unref (data->xfer);
   tgprpl_xfer_free_data (data);
 
   debug ("moving transferred file from tgl directory %s to selected target %s", selected, filename);
@@ -84,30 +85,36 @@ static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, in
   g_free (selected);
 }
 
-static void tgprpl_xfer_on_finished (struct tgl_state *TLS, void *_data, int success, struct tgl_message *M) {
+static void tgprpl_xfer_send_on_finished (struct tgl_state *TLS, void *_data, int success, struct tgl_message *M) {
   debug ("tgprpl_xfer_on_finished()");
   struct tgp_xfer_send_data *data = _data;
-  
+
   if (success) {
-    if (!data->done) {
+    if (! data->done && ! purple_xfer_is_canceled (data->xfer)) {
       debug ("purple_xfer_set_completed");
       purple_xfer_set_bytes_sent (data->xfer, purple_xfer_get_size (data->xfer));
       purple_xfer_set_completed (data->xfer, TRUE);
-      purple_xfer_end(data->xfer);
+      purple_xfer_end (data->xfer);
     }
     write_secret_chat_file (TLS);
   } else {
     tgp_notify_on_error_gw (TLS, NULL, success);
     failure ("ERROR xfer failed");
   }
-  
+
   data->xfer->data = NULL;
+  purple_xfer_unref (data->xfer);
   tgprpl_xfer_free_data (data);
 }
 
 static void tgprpl_xfer_canceled (PurpleXfer *X) {
+  debug ("tgprpl_xfer_canceled()");
+  /* TODO: implement cancelling file transfers
+   
   struct tgp_xfer_send_data *data = X->data;
+  data->xfer->data = NULL;
   tgprpl_xfer_free_data (data);
+   */
 }
 
 static gboolean tgprpl_xfer_upload_progress (gpointer _data) {
@@ -208,10 +215,11 @@ static void tgprpl_xfer_send_init (PurpleXfer *X) {
   if (tgl_get_peer_type (P->id) == TGL_PEER_ENCR_CHAT) {
     purple_xfer_error (PURPLE_XFER_SEND, data->conn->pa, who,
         _("Sorry, sending documents to encrypted chats not yet supported."));
+    purple_xfer_cancel_local (X);
     return;
   }
   tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL, 0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO,
-      tgprpl_xfer_on_finished, data);
+      tgprpl_xfer_send_on_finished, data);
   data->timer = purple_timeout_add (100, tgprpl_xfer_upload_progress, X);
 }
 
@@ -227,7 +235,7 @@ static void tgprpl_xfer_init_data (PurpleXfer *X, connection_data *conn, struct 
 
 static void tgprpl_xfer_free_data (struct tgp_xfer_send_data *data) {
   if (data->timer) {
-    purple_input_remove(data->timer);
+    purple_input_remove (data->timer);
   }
   data->timer = 0;
   g_free (data);
@@ -237,23 +245,45 @@ void tgprpl_xfer_free_all (connection_data *conn) {
   GList *xfers = purple_xfers_get_all();
   while (xfers) {
     PurpleXfer *xfer = xfers->data;
-    struct tgp_xfer_send_data *data = xfer->data;
-    
-    if (data) {
-      purple_xfer_cancel_local (xfer);
+
+    if (purple_xfer_get_account (xfer) == conn->pa) {
+      debug ("xfer: %s", xfer->filename);
+
+      // free remaining xfer data of non-completed file transfers
+      struct tgp_xfer_send_data *data = xfer->data;
+      if (data) {
+        debug ("xfer has data! freeing...", xfer->filename);
+        struct tgp_xfer_send_data *data = xfer->data;
+        xfer->data = NULL;
+        tgprpl_xfer_free_data (data);
+      }
+
+      // cancel all non-completed file tranfsers to avoid them from being called
+      // in future sessions, as they still contain references to already freed data.
+      if (! purple_xfer_is_canceled (xfer) && ! purple_xfer_is_completed (xfer)) {
+        purple_xfer_cancel_local (xfer);
+        purple_xfer_unref (xfer);
+      }
     }
+
     xfers = g_list_next(xfers);
   }
 }
 
 PurpleXfer *tgprpl_new_xfer (PurpleConnection *gc, const char *who) {
   debug ("tgprpl_new_xfer()");
+
   PurpleXfer *X = purple_xfer_new (purple_connection_get_account (gc), PURPLE_XFER_SEND, who);
   if (X) {
     purple_xfer_set_init_fnc (X, tgprpl_xfer_send_init);
     purple_xfer_set_cancel_send_fnc (X, tgprpl_xfer_canceled);
     tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), NULL);
   }
+
+  // Prevent the xfer data from getting freed after cancelling, to allow the file transfer
+  // to complete without crashing.
+  purple_xfer_ref (X);
+
   return X;
 }
 
@@ -261,6 +291,9 @@ static PurpleXfer *tgprpl_new_xfer_recv (PurpleConnection *gc, const char *who) 
   PurpleXfer *X = purple_xfer_new (purple_connection_get_account (gc), PURPLE_XFER_RECEIVE, who);
   purple_xfer_set_init_fnc (X, tgprpl_xfer_recv_init);
   purple_xfer_set_cancel_recv_fnc (X, tgprpl_xfer_canceled);
+
+  purple_xfer_ref (X);
+
   return X;
 }
 
