@@ -625,7 +625,6 @@ MSGFMT_PATH
 CHECK_GETTEXT
 PURPLE_CPPFLAGS
 LIBOBJS
-COPY_ICONS
 PURPLE_LIBS
 PURPLE_CFLAGS
 PKG_CONFIG_LIBDIR
@@ -1323,10 +1322,8 @@ Optional Features:
                           DISTRIBUTE BINARIES!
   --disable-libwebp       Disable libwebp, stickers won't be displayed in the
                           chat
-  --disable-icons         Don't copy the protocol icons for Pidgin. Only
-                          useful if you're using Finch of telepathy-haze.
-                          (Adium users shouldn't be using this build system at
-                          all.)
+  --disable-icons         Unsupported option. Use 'make noicon_install'
+                          instead.
   --disable-translation   Disable gettext translation
 
 Optional Packages:
@@ -4407,19 +4404,14 @@ fi
 
 fi
 
-COPY_ICONS=yes
-
 # Check whether --enable-icons was given.
 if test "${enable_icons+set}" = set; then :
   enableval=$enable_icons;
 fi
 
-  if test "x$enable_icons" == "xno"; then :
+if test "x$enable_icons" == "xno"; then :
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Icons are deactivated. Pidgin needs icons. Finch and telepathy-haze don't." >&5
-$as_echo "$as_me: WARNING: Icons are deactivated. Pidgin needs icons. Finch and telepathy-haze don't." >&2;}
-    COPY_ICONS=no
-
+  as_fn_error $? "--disable-icons is now obsolete. Please use 'make noicon_install' for the same effect." "$LINENO" 5
 
 fi
 

@@ -62,13 +62,11 @@ AS_IF([test "x$enable_libwebp" != "xno"], [
     AC_CHECK_LIB([webp], [WebPDecodeRGBA], [], [AC_MSG_ERROR([no libwebp found, try --disable-libwebp, but stickers won't be displayed in the chat])])
   ])
 
-AC_SUBST([COPY_ICONS], [yes])
 AC_ARG_ENABLE([icons],
-  AS_HELP_STRING([--disable-icons], [Don't copy the protocol icons for Pidgin. Only useful if you're using Finch of telepathy-haze. (Adium users shouldn't be using this build system at all.)]))
-  AS_IF([test "x$enable_icons" == "xno"], [
-    AC_WARN([Icons are deactivated. Pidgin needs icons. Finch and telepathy-haze don't.])
-    AC_SUBST([COPY_ICONS], [no])
-  ])
+  AS_HELP_STRING([--disable-icons], [Unsupported option. Use 'make noicon_install' instead.]))
+AS_IF([test "x$enable_icons" == "xno"], [
+  AC_MSG_ERROR([--disable-icons is now obsolete. Please use 'make noicon_install' for the same effect.])
+])
 
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])

@@ -55,12 +55,12 @@ all: ${PRPL_LIBNAME} $(LOCALE_MOS)
 
 PLUGIN_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=plugindir purple)
 DATA_ROOT_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=datarootdir purple)
-COPY_ICONS=@COPY_ICONS@
 CRYPTO_FLAG=@CRYPTO_FLAG@
 
 
 ### == Building and 'magic' targets == ###
 
+.PHONY: create_dirs
 create_dirs: ${DIR_LIST}
 
 ${DIR_LIST}:
@@ -107,49 +107,52 @@ ifneq ($(shell cat commit.h |grep -c ${GIT_COMMIT}), 1)
 endif
 
 
-### == Main {,un}install targets. This should satisfy most needs. == ###
+### == noicon_{,un}install targets. Use only if you know that you don't need icons. Note that pidgin uses those files. == ###
 
-.PHONY: install
-install: $(PRPL_LIBNAME) $(LOCALE_MOS)
+.PHONY: noicon_install
+noicon_install: $(PRPL_LIBNAME) $(LOCALE_MOS)
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(PLUGIN_DIR_PURPLE)
 	install -m $(FILE_PERM) $(PRPL_LIBNAME) $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)/etc/telegram-purple
 	install -m $(FILE_PERM) tg-server.tglpub $(DESTDIR)/etc/telegram-purple/server.tglpub
-	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(datarootdir)/appdata
-	install -m $(FILE_PERM) telegram-purple.metainfo.xml $(DESTDIR)$(datarootdir)/appdata/telegram-purple.metainfo.xml
-ifeq ($(COPY_ICONS),no)
-	@echo "Not copying icons due to configure-option --disable-icons."
-	@echo " If you're using Finch, Empathy, or Telepathy, then this is a good idea."
-	@echo " If you're using Pidgin, then this is a bad idea."
-	@echo " If you're using Adium, read the README.md: You're using the wrong build system!"
-else
-	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16
-	install -m $(FILE_PERM) imgs/telegram16.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
-	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22
-	install -m $(FILE_PERM) imgs/telegram22.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
-	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48
-	install -m $(FILE_PERM) imgs/telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
-endif
+	# Assume that the user does not use AppStream if she doesn't want icons
 	@for lang in $(LOCALES); do \
 		mkdir -p $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES; \
 		echo "installing po/$$lang.mo to $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
 		install -m $(FILE_PERM) po/$$lang.mo $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
 	done
 
-.PHONY: uninstall
-uninstall:
+.PHONY: noicon_uninstall
+noicon_uninstall:
 	rm -f $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
 	rm -f $(DESTDIR)/etc/telegram-purple/server.pub # TODO: Remove this in later versions
 	rm -f $(DESTDIR)/etc/telegram-purple/server.tglpub
-	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
-	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
-	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
-	rm -f $(DESTDIR)$(datarootdir)/appdata/telegram-purple.metainfo.xml
 # TODO: Delete all installed .mo's, no matter what LINGUAS says.
 	@for lang in $(LOCALES); do \
 		echo "removing $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
 		rm -f $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
 	done
+
+
+### == Main {,un}install targets. This should satisfy most needs. == ###
+
+.PHONY: install
+install: noicon_install
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16
+	install -m $(FILE_PERM) imgs/telegram16.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22
+	install -m $(FILE_PERM) imgs/telegram22.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48
+	install -m $(FILE_PERM) imgs/telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(datarootdir)/appdata
+	install -m $(FILE_PERM) telegram-purple.metainfo.xml $(DESTDIR)$(datarootdir)/appdata/telegram-purple.metainfo.xml
+
+.PHONY: uninstall
+uninstall: noicon_uninstall
+	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
+	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
+	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
+	rm -f $(DESTDIR)$(datarootdir)/appdata/telegram-purple.metainfo.xml
 
 
 ### == The local_{,un}install targets, in case you're not root. == ###
