@@ -46,7 +46,7 @@ The last item can be considered a bug, which is why I don't recommend
 anyone to use out genorigtar.sh script for other projects.
 
 The following approaches do NOT work:
-- githubs "download source tar", as this leaves out submodules.
+- Github's "download source tar", as this leaves out submodules.
 - git-buildpackage (gpb). No support for submodules-within-submodules.
 
 The file README.md of the project contains some hints about how to 
