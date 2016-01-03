@@ -127,11 +127,3 @@ void *connection_data_free (connection_data *conn) {
   free (conn);
   return NULL;
 }
-
-get_user_info_data* get_user_info_data_new (int show_info, tgl_peer_id_t peer) {
-  get_user_info_data *info_data = malloc (sizeof(get_user_info_data));
-  info_data->show_info = show_info;
-  info_data->peer = peer;
-  return info_data;
-}
-

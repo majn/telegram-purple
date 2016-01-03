@@ -35,7 +35,6 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *U, unsi
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *C, unsigned flags);
 static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *C, unsigned flags);
 static void update_channel_handler (struct tgl_state *TLS, struct tgl_channel *C, unsigned flags);
-static void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U);
 
 const char *config_dir = "telegram-purple";
 const char *user_pk_filename = "server.tglpub";
@@ -73,8 +72,10 @@ static void _update_buddy (struct tgl_state *TLS, tgl_peer_t *user, unsigned fla
       if (flags & TGL_UPDATE_CONTACT) {
         purple_blist_alias_buddy (buddy, user->print_name);
       }
+    
       if (flags & TGL_UPDATE_PHOTO) {
-        tgl_do_get_user_info (TLS, user->id, 0, on_user_get_info, get_user_info_data_new (0, user->id));
+        debug ("update photo");
+        tgp_info_update_photo (buddy, user);
       }
     }
   }
@@ -114,9 +115,6 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
         if (buddy) {
           info ("migrating buddy from old name %s to %s", purple_buddy_get_name (buddy), user->print_name);
           buddy = tgp_blist_buddy_migrate (TLS, buddy, user);
-          if (user->photo_id) {
-            tgl_do_get_user_info (TLS, user->id, 0, on_user_get_info, get_user_info_data_new (0, user->id));
-          }
         }
         
         // the id isn't known to the lookup yet since the user is not in the buddy list. Add the id to the
@@ -129,7 +127,14 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
         if (strcmp (purple_buddy_get_alias (buddy), user->print_name)) {
           serv_got_alias (tls_get_conn (TLS), purple_buddy_get_name (buddy), user->print_name);
         }
+      }
+      
+      if (buddy) {
         p2tgl_prpl_got_user_status (TLS, user->id, &user->status);
+        
+        if (flags & TGL_UPDATE_PHOTO) {
+          tgp_info_update_photo (buddy, tgl_peer_get (TLS, user->id));
+        }
       }
     }
   } else {
@@ -140,10 +145,10 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
 
 static void update_channel_handler (struct tgl_state *TLS, struct tgl_channel *C, unsigned flags) {
   debug ("update_channel_handler() (%s)", print_flags_update (flags));
-  assert (TLS);
+  
+  PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, C->id);
 
   if (flags & TGL_UPDATE_CREATED) {
-    PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, C->id);
     debug ("channel allocated '%s' (%s)", C->title, print_flags_channel (C->flags));
     if (buddy) {
       tgp_blist_lookup_add (TLS, C->id, purple_buddy_get_name (buddy));
@@ -155,17 +160,16 @@ static void update_channel_handler (struct tgl_state *TLS, struct tgl_channel *C
       tgp_blist_lookup_add (TLS, C->id, C->title);
     }
   } else {
-    if (flags & TGL_UPDATE_FLAGS) {
-      debug ("channel updated flags '%s' to (%s)", C->title, print_flags_channel (C->flags));
-      if (C->flags & TGLCHF_LEFT) {
-        PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, C->id);
-        if (buddy) {
+    if (buddy) {
+      if (flags & TGL_UPDATE_FLAGS) {
+        debug ("channel updated flags '%s' to (%s)", C->title, print_flags_channel (C->flags));
+        if (C->flags & TGLCHF_LEFT) {
           purple_blist_remove_buddy (buddy);
         }
       }
-    }
-    if (flags & TGL_UPDATE_PHOTO) {
-      tgl_do_get_channel_info (TLS, C->id, FALSE, channel_load_photo, NULL);
+      if (flags & TGL_UPDATE_PHOTO) {
+        tgp_info_update_photo (buddy, tgl_peer_get (TLS, C->id));
+      }
     }
   }
 }
@@ -265,54 +269,6 @@ static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_messa
   }
 }
 
-static void on_userpic_loaded (struct tgl_state *TLS, void *extra, int success, const char *filename) {
-  struct download_desc *dld = extra;
-  struct tgl_user *U = dld->data;
-  tgl_peer_t *P = tgl_peer_get (TLS, dld->get_user_info_data->peer);
-  
-  if (!success || !P) {
-    warning ("Can not load userpic for user %s %s", U->first_name, U->last_name);
-    tgp_notify_on_error_gw (TLS, NULL, success);
-    free (dld->get_user_info_data);
-    free (dld);
-    return;
-  }
-  
-  int imgStoreId = p2tgl_imgstore_add_with_id (filename);
-  if (imgStoreId > 0) {
-    used_images_add (tls_get_data (TLS), imgStoreId);
-
-    p2tgl_buddy_icons_set_for_user (tls_get_pa (TLS), P->id, filename);
-    if (dld->get_user_info_data->show_info == 1) {
-      purple_notify_userinfo (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, P->id),
-          p2tgl_notify_peer_info_new (TLS, P), NULL, NULL);
-    }
-  }
-  free (dld->get_user_info_data);
-  free (dld);
-}
-
-static void on_channel_loaded_photo (struct tgl_state *TLS, void *extra, int success, const char *filename) {
-  g_return_if_fail (success);
-  struct tgl_channel *C = extra;
-  
-  int img = p2tgl_imgstore_add_with_id (filename);
-  g_return_if_fail (img > 0);
-  info ("succesfully loaded photo for channel %s into imgstore %d", filename, C->title, img);
-  
-  used_images_add (tls_get_data (TLS), img);
-  p2tgl_buddy_icons_set_for_user (tls_get_pa (TLS), C->id, filename);
-}
-
-void channel_load_photo (struct tgl_state *TLS, void *extra, int success, struct tgl_channel *C) {
-  g_return_if_fail (success);
-
-  info ("loading photo for channel %s (%s)", C->title, print_flags_channel (C->flags));
-  if (C->photo && C->photo->sizes_num > 0) {
-    tgl_do_load_photo (TLS, C->photo, on_channel_loaded_photo, C);
-  }
-}
-
 static void on_get_dialog_list_done (struct tgl_state *TLS, void *extra, int success, int size,
     tgl_peer_id_t peers[], tgl_message_id_t *last_msg_id[], int unread_count[]) {
   info ("Fetched dialogue list of size: %d", size);
@@ -364,7 +320,7 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *extra, int suc
         info ("%s is in the dialogue list but not in the buddy list, add the channel", UC->print_name);
         buddy = tgp_blist_buddy_new (TLS, UC);
         purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init (_("Telegram Channels")), NULL);
-        tgl_do_get_channel_info (TLS, UC->id, FALSE, channel_load_photo, NULL);
+        tgp_info_update_photo (buddy, UC);
       }
       purple_prpl_got_user_status (tls_get_pa (TLS), tgp_blist_lookup_purple_name (TLS, UC->id), "available",
           NULL);
@@ -374,29 +330,6 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *extra, int suc
   // now that the dialogue list is loaded, handle all pending chat joins
   tls_get_data (TLS)->dialogues_ready = TRUE;
   tgp_chat_join_all_pending (TLS);
-}
-
-void on_user_get_info (struct tgl_state *TLS, void *info_data, int success, struct tgl_user *U) {
-  get_user_info_data *user_info_data = (get_user_info_data *)info_data;
-  tgl_peer_t *P = tgl_peer_get (TLS, user_info_data->peer);
-  g_return_if_fail (P);
-  if (! success) {
-    tgp_notify_on_error_gw (TLS, NULL, success);
-    return;
-  }
-  if (!U->photo || U->photo->sizes_num == 0) {
-    // No profile pic to load, display it right away
-    if (user_info_data->show_info) {
-      purple_notify_userinfo (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, P->id),
-          p2tgl_notify_peer_info_new (TLS, P), NULL, NULL);
-    }
-    g_free (user_info_data);
-  } else {
-    struct download_desc *dld = malloc (sizeof (struct download_desc));
-    dld->data = U;
-    dld->get_user_info_data = info_data;
-    tgl_do_load_photo (TLS, U->photo, on_userpic_loaded, dld);
-  }
 }
 
 static const char *tgprpl_list_icon (PurpleAccount *acct, PurpleBuddy *buddy) {
@@ -741,36 +674,6 @@ static unsigned int tgprpl_send_typing (PurpleConnection *gc, const char *who, P
   return 0;
 }
 
-static void channel_show_info (struct tgl_state *TLS, void *extra, int success, struct tgl_channel *C) {
-  if (! success) {
-    tgp_notify_on_error_gw (TLS, NULL, FALSE);
-    return;
-  }
-  tgl_peer_t *P = tgl_peer_get (TLS, C->id);
-  g_return_if_fail (P);
-  purple_notify_userinfo (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, P->id),
-      p2tgl_notify_peer_info_new (TLS, P), NULL, NULL);
-}
-
-static void tgprpl_get_info (PurpleConnection *gc, const char *who) {
-  debug ("tgprpl_get_info()");
-  
-  tgl_peer_t *peer = tgp_blist_lookup_peer_get (gc_get_data (gc)->TLS, who);
-  if (peer) {
-    if (tgl_get_peer_type (peer->id) == TGL_PEER_ENCR_CHAT) {
-      tgl_peer_t *parent_peer = tgp_encr_chat_get_partner (gc_get_tls (gc), &peer->encr_chat);
-      if (parent_peer) {
-        tgl_do_get_user_info (gc_get_tls (gc), parent_peer->id, 0, on_user_get_info,
-            get_user_info_data_new (TRUE, peer->id));
-      }
-    } else if (tgl_get_peer_type (peer->id) == TGL_PEER_CHANNEL) {
-      tgl_do_get_channel_info (gc_get_tls (gc), peer->id, FALSE, channel_show_info, NULL);
-    } else {
-      tgl_do_get_user_info (gc_get_tls (gc), peer->id, 0, on_user_get_info, get_user_info_data_new (TRUE, peer->id));
-    }
-  }
-}
-
 static void tgprpl_set_status (PurpleAccount *acct, PurpleStatus *status) {
   debug ("tgprpl_set_status(%s)", purple_status_get_name (status));
   
@@ -855,7 +758,7 @@ static PurplePluginProtocolInfo prpl_info = {
   tgprpl_send_im,
   NULL,                    // set_info
   tgprpl_send_typing,
-  tgprpl_get_info,
+  tgprpl_info_show,
   tgprpl_set_status,
   NULL,                    // set_idle
   NULL,                    // change_passwd

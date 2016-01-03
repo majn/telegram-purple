@@ -50,22 +50,12 @@ typedef struct {
   int dialogues_ready;
 } connection_data;
 
-typedef struct {
-  int show_info; 
-  tgl_peer_id_t peer;
-} get_user_info_data;
-
 struct tgp_xfer_send_data {
   int timer;
   int loading;
   PurpleXfer *xfer;
   connection_data *conn;
   struct tgl_message *msg;
-};
-
-struct download_desc {
-  get_user_info_data *get_user_info_data;
-  void *data;
 };
 
 struct tgp_msg_loading {
@@ -87,7 +77,6 @@ void pending_reads_send_user (struct tgl_state *TLS, tgl_peer_id_t id);
 void used_images_add (connection_data *data, gint imgid);
 void *connection_data_free (connection_data *conn);
 connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *gc, PurpleAccount *pa);
-get_user_info_data* get_user_info_data_new (int show_info, tgl_peer_id_t peer);
 struct tgp_msg_loading *tgp_msg_loading_init (struct tgl_message *M);
 struct tgp_msg_sending *tgp_msg_sending_init (struct tgl_state *TLS, char *M, tgl_peer_id_t to);
 void tgp_msg_loading_free (gpointer data);

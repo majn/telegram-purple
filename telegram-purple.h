@@ -55,6 +55,7 @@
 #include "tgp-ft.h"
 #include "tgp-msg.h"
 #include "tgp-request.h"
+#include "tgp-info.h"
 #include "msglog.h"
 
 #define PLUGIN_ID "prpl-telegram"

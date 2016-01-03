@@ -164,7 +164,8 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
       // Add the new channel to the buddy list
       PurpleBuddy *buddy = tgp_blist_buddy_new (TLS, fromPeer);
       purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init (_("Telegram Channels")), NULL);
-      tgl_do_get_channel_info (TLS, fromPeer->id, FALSE, channel_load_photo, NULL);
+      tgp_info_update_photo (buddy, fromPeer);
+      
       purple_prpl_got_user_status (tls_get_pa (TLS), tgp_blist_lookup_purple_name (TLS, fromPeer->id),
           "available", NULL);
       break;
