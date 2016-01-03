@@ -58,6 +58,9 @@ DATA_ROOT_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=datarootdir purple)
 COPY_ICONS=@COPY_ICONS@
 CRYPTO_FLAG=@CRYPTO_FLAG@
 
+
+### == Building and 'magic' targets == ###
+
 create_dirs: ${DIR_LIST}
 
 ${DIR_LIST}:
@@ -92,13 +95,19 @@ ${LIB}/libtgl.a: tgl/libs/libtgl.a | create_dirs
 ${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} ${LIB}/libtgl.a | create_dirs
 	${CC} -shared -o $@ $^ ${LDFLAGS}
 
-.PHONY: plugin
-plugin: $(PRPL_LIBNAME)
+GIT_COMMIT=$(shell git rev-parse HEAD | cut -c1-10)
+GIT_COMMIT_H=commit.h
+.PHONY: commit
+commit:
+# avoid needles changes to commit.h, otherwise autodepent will *always* recompile files that include it
+ifneq ($(shell cat commit.h |grep -c ${GIT_COMMIT}), 1)
+	echo '#ifndef GIT_COMMIT' > ${GIT_COMMIT_H}
+	echo '#  define GIT_COMMIT "${GIT_COMMIT}"' >> ${GIT_COMMIT_H}
+	echo '#endif' >> ${GIT_COMMIT_H}
+endif
 
 
-.PHONY: strip
-strip: $(PRPL_LIBNAME)
-	$(STRIP) --strip-unneeded $(PRPL_LIBNAME)
+### == Main {,un}install targets. This should satisfy most needs. == ###
 
 .PHONY: install
 install: $(PRPL_LIBNAME) $(LOCALE_MOS)
@@ -142,6 +151,9 @@ uninstall:
 		rm -f $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
 	done
 
+
+### == The local_{,un}install targets, in case you're not root. == ###
+
 .PHONY: local_install
 local_install:
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(HOME)/.purple/plugins
@@ -155,6 +167,16 @@ local_uninstall:
 	rm -f $(DESTDIR)$(HOME)/.purple/plugins/$(PRPL_NAME)
 	rm -f $(DESTDIR)$(HOME)/.purple/telegram-purple/server.tglpub
 
+
+### == Handling and maintenance. Subject to rapid change, shouldn't be used in scripts. == ###
+
+.PHONY: plugin
+plugin: $(PRPL_LIBNAME)
+
+.PHONY: strip
+strip: $(PRPL_LIBNAME)
+	$(STRIP) --strip-unneeded $(PRPL_LIBNAME)
+
 .PHONY: run
 run:
 	pidgin -d | grep 'telegram\|plugin\|proxy'
@@ -162,6 +184,9 @@ run:
 .PHONY: debug
 debug: install
 	ddd pidgin
+
+
+### == Cleaning in various flavors == ###
 
 .PHONY: clean-here
 clean-here:
@@ -172,14 +197,3 @@ clean-here:
 .PHONY: clean clean-test
 clean: clean-here tgl/Makefile
 	+make -C tgl clean
-
-GIT_COMMIT=$(shell git rev-parse HEAD | cut -c1-10)
-GIT_COMMIT_H=commit.h
-.PHONY: commit
-commit:
-# avoid needles changes to commit.h, otherwise autodepent will *always* recompile files that include it
-ifneq ($(shell cat commit.h |grep -c ${GIT_COMMIT}), 1)
-	echo '#ifndef GIT_COMMIT' > ${GIT_COMMIT_H}
-	echo '#  define GIT_COMMIT "${GIT_COMMIT}"' >> ${GIT_COMMIT_H}
-	echo '#endif' >> ${GIT_COMMIT_H}
-endif
