@@ -1,0 +1,61 @@
+This file explains how to do the following steps, as per Policy §4.14:
+
+
+1. Generate the fully patched source, in a form ready for editing, that 
+   would be built to create Debian packages.
+
+This step does not need any special attention. The standard invocation 
+of "dpkg-source -x" does exactly what is needed.
+
+2. Modify the source and save those modifications so that they will be 
+   applied when building the package.
+ == AND ==
+3. Remove source modifications that are currently being applied when 
+building the package.
+
+There is no standard procedure for this package. Please note that:
+- quilt seems to be the default tool for this kind of work.
+- git-buildpackage (gbp) might not work as expected, so I refrained 
+  from trying it for this task. See below.
+
+So far, issues reported against the project have been resolved quickly 
+enough to avoid scenarios that usually need the d/patches/ directory.
+
+4. Generate a *.orig.tar.gz from the git repository, e.g., upgrade the 
+   Debian source package to a new upstream version.
+
+    ~$ git clone --recursive --branch debian-master \
+           https://github.com/majn/telegram-purple.git
+    ~& cd telegram-purple
+    ~/telegram-purple$ debian/genorigtar.sh
+
+The output should look like this:
+
+    Debian version seems to be 1.2.3. Expecting a tag v1.2.3
+    Resolved to ffca726ca1cd22f87a48ca3fe042802302e82837
+
+Note that the script builds on the following assumptions that are *not* 
+verified:
+- d/changelog is in a current state
+- d/changelog refers to an existing version tag known by the local git 
+  repository
+- there have been no modifications in the tgl/ folder, and most 
+  importantly: the debian-* branch didn't change the submodule commit
+
+The last item can be considered a bug, which is why I don't recommend 
+anyone to use out genorigtar.sh script for other projects.
+
+The following approaches do NOT work:
+- githubs "download source tar", as this leaves out submodules.
+- git-buildpackage (gpb). No support for submodules-within-submodules.
+
+The file README.md of the project contains some hints about how to 
+build packages, so here's a cheat sheet:
+- Just build a *.deb, ideal for local use:
+  fakeroot ./debian/rules binary
+- Build the package for analysis, e.g. lintian:
+  dpkg-buildpackage
+- Only produce a *.dsc and *.debian.tar.xz file:
+  ( cd .. && dpkg-source -b telegram-purple )
+- Run pbuilder (needs the previous step):
+  ( cd .. && sudo pbuilder --build telegram-purple_*.dsc )
