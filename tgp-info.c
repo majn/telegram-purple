@@ -160,7 +160,6 @@ void tgp_info_update_photo (PurpleBuddy *buddy, tgl_peer_t *P) {
 static void tgp_info_load_channel_done (struct tgl_state *TLS, void *extra, int success, struct tgl_channel *C) {
   g_return_if_fail(success);
   
-  
   PurpleNotifyUserInfo *info = purple_notify_user_info_new ();
   
   if (str_not_empty (C->about)) {
