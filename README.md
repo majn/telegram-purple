@@ -17,7 +17,7 @@ If your plattform is not supported or you want to contribute by testing or devel
 
 #### OSX (Adium)
 
-1. Download and execute the [Telegram-Adium bundle] (https://github.com/majn/telegram-purple/releases/download/v1.2.3/telegram-adium-1.2.3.zip)
+1. Download and execute the [Telegram-Adium bundle] (https://github.com/majn/telegram-purple/releases/download/v1.2.4/telegram-adium-1.2.4.AdiumLibpurplePlugin.zip)
 2. Restart Adium
 
 #### Windows
