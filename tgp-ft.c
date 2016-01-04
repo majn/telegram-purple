@@ -25,7 +25,8 @@
 static void tgprpl_xfer_free_data (struct tgp_xfer_send_data *data);
 
 static char *tgp_strdup_determine_filename (const char *mime, const char *caption,
-                                            int flags, long long hash) {
+      int flags, long long hash) {
+
   if (caption) {
     return g_strdup (caption);
   }
@@ -64,16 +65,24 @@ static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, in
   char *selected = g_strdup (purple_xfer_get_local_filename (data->xfer));
 
   if (success) {
-    if (! data->done && ! purple_xfer_is_canceled (data->xfer)) {
-      debug ("purple_xfer_set_completed");
-      purple_xfer_set_bytes_sent (data->xfer, purple_xfer_get_size (data->xfer));
-      purple_xfer_set_completed (data->xfer, TRUE);
+    debug ("purple_xfer_set_completed");
+
+    // always completed the file transfer to avoid a warning dialogue when closing (Adium)
+    purple_xfer_set_bytes_sent (data->xfer, purple_xfer_get_size (data->xfer));
+    purple_xfer_set_completed (data->xfer, TRUE);
+
+    if (! purple_xfer_is_canceled (data->xfer)) {
       purple_xfer_end (data->xfer);
     }
   } else {
     tgp_notify_on_error_gw (TLS, NULL, success);
-    failure ("ERROR xfer failed");
+    if (! purple_xfer_is_canceled (data->xfer)) {
+      purple_xfer_cancel_remote (data->xfer);
+    }
+    failure ("recv xfer failed");
   }
+
+  data->loading = FALSE;
 
   data->xfer->data = NULL;
   purple_xfer_unref (data->xfer);
@@ -90,7 +99,7 @@ static void tgprpl_xfer_send_on_finished (struct tgl_state *TLS, void *_data, in
   struct tgp_xfer_send_data *data = _data;
 
   if (success) {
-    if (! data->done && ! purple_xfer_is_canceled (data->xfer)) {
+    if (! purple_xfer_is_canceled (data->xfer)) {
       debug ("purple_xfer_set_completed");
       purple_xfer_set_bytes_sent (data->xfer, purple_xfer_get_size (data->xfer));
       purple_xfer_set_completed (data->xfer, TRUE);
@@ -99,8 +108,13 @@ static void tgprpl_xfer_send_on_finished (struct tgl_state *TLS, void *_data, in
     write_secret_chat_file (TLS);
   } else {
     tgp_notify_on_error_gw (TLS, NULL, success);
-    failure ("ERROR xfer failed");
+    if (! purple_xfer_is_canceled (data->xfer)) {
+      purple_xfer_cancel_remote (data->xfer);
+    }
+    failure ("send xfer failed");
   }
+
+  data->loading = FALSE;
 
   data->xfer->data = NULL;
   purple_xfer_unref (data->xfer);
@@ -109,12 +123,15 @@ static void tgprpl_xfer_send_on_finished (struct tgl_state *TLS, void *_data, in
 
 static void tgprpl_xfer_canceled (PurpleXfer *X) {
   debug ("tgprpl_xfer_canceled()");
-  /* TODO: implement cancelling file transfers
-   
   struct tgp_xfer_send_data *data = X->data;
-  data->xfer->data = NULL;
-  tgprpl_xfer_free_data (data);
-   */
+
+  // the xfer data must not be freed when the transfer is still running, since there is no way to cancel
+  // the running transfer and the callback still needs the xfer data. In that case transfer data will
+  // be freed once the transfer finished or the account goes offline and all loading transfers are aborted.
+  if (! data->loading) {
+    data->xfer->data = NULL;
+    tgprpl_xfer_free_data (data);
+  }
 }
 
 static gboolean tgprpl_xfer_upload_progress (gpointer _data) {
@@ -122,7 +139,7 @@ static gboolean tgprpl_xfer_upload_progress (gpointer _data) {
   struct tgp_xfer_send_data *data = X->data;
   connection_data *conn = data->conn;
   
-  PurpleXferType type = purple_xfer_get_type(X);
+  PurpleXferType type = purple_xfer_get_type (X);
   switch (type) {
     case PURPLE_XFER_SEND:
       purple_xfer_set_size (X, conn->TLS->cur_uploading_bytes);
@@ -158,52 +175,59 @@ static gboolean tgprpl_xfer_upload_progress (gpointer _data) {
 }
 
 static void tgprpl_xfer_recv_init (PurpleXfer *X) {
-  debug ("tgprpl_xfer_recv_init");
+  debug ("tgprpl_xfer_recv_init(): receiving xfer accepted.");
+
   struct tgp_xfer_send_data *data = X->data;
   struct tgl_state *TLS = data->conn->TLS;
   struct tgl_message *M = data->msg;
   struct tgl_document *D = M->media.document;
   tgl_peer_t *P = NULL;
-  
+
   purple_xfer_start (X, -1, NULL, 0);
   const char *who = purple_xfer_get_remote_user (X);
   P = tgp_blist_lookup_peer_get (TLS, who);
-  if (P) {
-    switch (M->media.type) {
-      case tgl_message_media_document:
-        tgl_do_load_document (TLS, D, tgprpl_xfer_recv_on_finished, data);
-        break;
-        
-      case tgl_message_media_document_encr:
-        tgl_do_load_encr_document (TLS, M->media.encr_document, tgprpl_xfer_recv_on_finished, data);
-        break;
-      
-      case tgl_message_media_audio:
-        tgl_do_load_audio (TLS, D, tgprpl_xfer_recv_on_finished, data);
-        break;
-        
-      case tgl_message_media_video:
-        tgl_do_load_video (TLS, D, tgprpl_xfer_recv_on_finished, data);
-        break;
+  g_return_if_fail(P);
 
-      default:
-        failure ("Unknown message media type: %d, XFER not possible.", M->media.type);
-        break;
-    }
-  } else {
-    warning ("User not found, not downloading...");
+  switch (M->media.type) {
+    case tgl_message_media_document:
+      tgl_do_load_document (TLS, D, tgprpl_xfer_recv_on_finished, data);
+      break;
+
+    case tgl_message_media_document_encr:
+      tgl_do_load_encr_document (TLS, M->media.encr_document, tgprpl_xfer_recv_on_finished, data);
+      break;
+
+    case tgl_message_media_audio:
+      tgl_do_load_audio (TLS, D, tgprpl_xfer_recv_on_finished, data);
+      break;
+
+    case tgl_message_media_video:
+      tgl_do_load_video (TLS, D, tgprpl_xfer_recv_on_finished, data);
+      break;
+
+    default:
+      failure ("Unknown message media type: %d, XFER not possible.", M->media.type);
+      return;
   }
+
+  // Prevent the xfer data from getting freed after cancelling to allow the file transfer to complete
+  // without crashing. This is necessary cause loading the file in libtgl cannot be aborted once started.
+  purple_xfer_ref (X);
+
   data->timer = purple_timeout_add (100, tgprpl_xfer_upload_progress, X);
+  data->loading = TRUE;
 }
 
 static void tgprpl_xfer_send_init (PurpleXfer *X) {
+  debug ("tgprpl_xfer_send_init(): sending xfer accepted.");
+
   struct tgp_xfer_send_data *data;
   const char *file, *localfile, *who;
   tgl_peer_t *P;
 
   data = X->data;
   purple_xfer_start (X, -1, NULL, 0);
-  
+
   file = purple_xfer_get_filename (X);
   localfile = purple_xfer_get_local_filename (X);
   who = purple_xfer_get_remote_user (X);
@@ -218,9 +242,15 @@ static void tgprpl_xfer_send_init (PurpleXfer *X) {
     purple_xfer_cancel_local (X);
     return;
   }
-  tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL, 0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO,
-      tgprpl_xfer_send_on_finished, data);
+
+  tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL, 0,
+      TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, tgprpl_xfer_send_on_finished, data);
+
+  // see comment in tgprpl_xfer_recv_init()
+  purple_xfer_ref (X);
+
   data->timer = purple_timeout_add (100, tgprpl_xfer_upload_progress, X);
+  data->loading = TRUE;
 }
 
 static void tgprpl_xfer_init_data (PurpleXfer *X, connection_data *conn, struct tgl_message *msg) {
@@ -242,27 +272,31 @@ static void tgprpl_xfer_free_data (struct tgp_xfer_send_data *data) {
 }
 
 void tgprpl_xfer_free_all (connection_data *conn) {
-  GList *xfers = purple_xfers_get_all();
+  GList *xfers = purple_xfers_get_all ();
   while (xfers) {
     PurpleXfer *xfer = xfers->data;
 
     if (purple_xfer_get_account (xfer) == conn->pa) {
       debug ("xfer: %s", xfer->filename);
 
-      // free remaining xfer data of non-completed file transfers
-      struct tgp_xfer_send_data *data = xfer->data;
-      if (data) {
-        debug ("xfer has data! freeing...", xfer->filename);
-        struct tgp_xfer_send_data *data = xfer->data;
-        xfer->data = NULL;
-        tgprpl_xfer_free_data (data);
-      }
-
       // cancel all non-completed file tranfsers to avoid them from being called
       // in future sessions, as they still contain references to already freed data.
       if (! purple_xfer_is_canceled (xfer) && ! purple_xfer_is_completed (xfer)) {
         purple_xfer_cancel_local (xfer);
-        purple_xfer_unref (xfer);
+      }
+
+      // if a file transfer is still running while going offline, it will be canceled when
+      // cleaning up libtgl memory. Since canceled file transfers are being kept (see
+      // tgprpl_xfer_canceled() and tgprpl_xfer_recv_init()) those need to be freed now.
+      struct tgp_xfer_send_data *data = xfer->data;
+      if (data) {
+        if (data->loading) {
+          tgprpl_xfer_free_data (data);
+          xfer->data = NULL;
+          purple_xfer_unref (xfer);
+        } else {
+          g_warn_if_reached();
+        }
       }
     }
 
@@ -280,10 +314,6 @@ PurpleXfer *tgprpl_new_xfer (PurpleConnection *gc, const char *who) {
     tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), NULL);
   }
 
-  // Prevent the xfer data from getting freed after cancelling, to allow the file transfer
-  // to complete without crashing.
-  purple_xfer_ref (X);
-
   return X;
 }
 
@@ -291,8 +321,6 @@ static PurpleXfer *tgprpl_new_xfer_recv (PurpleConnection *gc, const char *who) 
   PurpleXfer *X = purple_xfer_new (purple_connection_get_account (gc), PURPLE_XFER_RECEIVE, who);
   purple_xfer_set_init_fnc (X, tgprpl_xfer_recv_init);
   purple_xfer_set_cancel_recv_fnc (X, tgprpl_xfer_canceled);
-
-  purple_xfer_ref (X);
 
   return X;
 }
