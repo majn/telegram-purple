@@ -12,7 +12,7 @@ Installation
 
 If you are just interested in using the plugin you probably want to use one of the following binary distributions. Please note that I do not control most of those package sources and the version may lag behind.
 
-If your plattform is not supported or you want to contribute by testing or development, scroll down to "Building form Source".
+If your platform is not supported or you want to contribute by testing or development, scroll down to "Building form Source".
 
 
 #### OSX (Adium)
@@ -104,9 +104,9 @@ Usage
 
 #### First Login
 
-The username is your current phone number, including your full country prefix. For Germany, this would be '+49', resulting in a user name like '+49151123456'. Telegram will verify your phone number by sending you a code via sms. You will be prompted for this code, once that happens.
+The username is your current phone number, including your full country prefix. For Germany, this would be '+49', resulting in a user name like '+49151123456'. Telegram will verify your phone number by sending you a code via SMS. You will be prompted for this code, once that happens.
 
-#### Buddy List 
+#### Buddy List
 
 Like in the official Telegram apps, the displayed buddy list consists of all active conversations.
 
@@ -124,7 +124,7 @@ Self destructive messages will be ignored, since I don't know any way to delete 
 
 ##### Confirming the key authenticity
 
-Click on the buddy in the buddy list and click on "Show Info" to visualize the key fingerprint.  
+Click on the buddy in the buddy list and click on "Show Info" to visualize the key fingerprint.
 
 ##### Initiate secret chats
 
@@ -159,7 +159,7 @@ Compiling with XCode is a little bit problematic, since it requires you to compi
     brew update
     brew upgrade webp libgcrypt
 
-6. Installwith homebrew and move it into the appropriate directory so that XCode can find them. Note that the versions might differ, use the one that is 
+6. Install with homebrew and move it into the appropriate directory so that XCode can find them. Note that the versions might differ, use the one that is
 
     mkdir -p ./telegram-adium/Frameworks/Adium
     cp /usr/local/Cellar/webp/0.4.3/lib/libwebp.a ./telegram-adium/Frameworks
@@ -252,7 +252,7 @@ Discussion / Help
 
 As we want to avoid OpenSSL, it has become necessary to replace the PEM file format. This means that if you use a custom pubkey (which you really REALLY shouldn't be doing), you have to adapt, sorry.
 
-We no longer ship `tg-server.pub` (old format), but instead `tg-server.tlgpub` (new format). If you have a `.pub` and want to continue using telegram-purple, please use this (hopefully highly portable) tool: [pem2bignum](https://github.com/BenWiederhake/pem2bignum)
+We no longer ship `tg-server.pub` (old format), but instead `tg-server.tglpub` (new format). If you have a `.pub` and want to continue using telegram-purple, please use this (hopefully highly portable) tool: [pem2bignum](https://github.com/BenWiederhake/pem2bignum)
 
 You can also write your own conversion tool if you prefer. The format is really simple:
 
@@ -291,7 +291,7 @@ Empathy / libtelepathy
 ----------------------
 
 Empathy doesn't natively support libpurple plugins since its based on libtelepathy, but there is a compatibillity layer called telepathy-haze that can be used to execute libpurple
-plugins. This means that you can basically run this plugin thanks to telepathy-haze but you will usually get less features and worse usabillity compared to real libpurple clients. If you use Empathy (or anything else based on libtelepathy) I recommend [telepathy-morse](https://projects.kde.org/projects/playground/network/telepathy/telepathy-morse/repository) which is a connection manager written specifically for your messenger.
+plugins. This means that you can basically run this plugin thanks to telepathy-haze but you will usually get less features and worse usability compared to real libpurple clients. If you use Empathy (or anything else based on libtelepathy) I recommend [telepathy-morse](https://projects.kde.org/projects/playground/network/telepathy/telepathy-morse/repository) which is a connection manager written specifically for your messenger.
 
 Authors
 -------
@@ -300,9 +300,8 @@ Telegram-Purple was written by:
 
     - Matthias Jentsch <mtthsjntsch@gmail.com>
     - Vitaly Valtman
-    - Ben Wiederhake
+    - Ben Wiederhake <Ben.Wiederhake@gmail.com>
     - Christopher Althaus <althaus.christopher@gmail.com>
-
 
 Acknowledgements
 ----------------
