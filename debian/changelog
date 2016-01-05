@@ -1,4 +1,4 @@
-telegram-purple (1.2.3-1) UNRELEASED; urgency=medium
+telegram-purple (1.2.4-1) UNRELEASED; urgency=medium
 
   [ Hugues Morisset ]
   * Initial Release (Closes: #800771)
@@ -13,6 +13,6 @@ telegram-purple (1.2.3-1) UNRELEASED; urgency=medium
     - Fix lots of bugs around secret chats (still not perfect, though)
     - Fix behavior around hibernation
     - Fix display errors and false warnings
-  * Fix debian/{watch, copyright}
+    - Fix crash on 'unsupported' media
 
  -- Ben Wiederhake <Ben.Wiederhake@gmail.com>  Wed, 30 Dec 2015 16:38:02 +0100

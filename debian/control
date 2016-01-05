@@ -29,7 +29,7 @@ Description: Purple plugin to support Telegram
  Plugin for purple which lets you use and manage your Telegram account
  like any other account in purple. Some features like self-destruct
  messages are currently in development.
-Comment: Traditionally, this plugin should be named "telegram-pidgin".
+X-Comment: Traditionally, this plugin should be named "telegram-pidgin".
  However, this plugin is also designed to work with at least Adium,
  Finch, and hopefully all other libpurple-frontends, so this name would
  be highly misleading. Furthermore, the plugin refers to itself as
