@@ -57,7 +57,7 @@ typedef struct {
 
 struct tgp_xfer_send_data {
   int timer;
-  int done;
+  int loading;
   PurpleXfer *xfer;
   connection_data *conn;
   struct tgl_message *msg;
