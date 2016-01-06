@@ -17,7 +17,7 @@ If your plattform is not supported or you want to contribute by testing or devel
 
 #### OSX (Adium)
 
-1. Download and execute the [Telegram-Adium bundle] (https://github.com/majn/telegram-purple/releases/download/v1.2.3/telegram-adium-1.2.3.zip)
+1. Download and execute the [Telegram-Adium bundle] (https://github.com/majn/telegram-purple/releases/download/v1.2.4/telegram-adium-1.2.4.AdiumLibpurplePlugin.zip)
 2. Restart Adium
 
 #### Windows
@@ -33,15 +33,6 @@ The package is available in the Fedora 22 and 23 testing repositories:
 
      dnf config-manager --set-enabled updates-testing
      dnf install purple-telegram
-
-
-#### Ubuntu/Mint PPA
-
-Webupd8 provides PPAs for installation, see the [article](http://www.webupd8.org/2014/11/add-telegram-support-to-pidgin-with.html) for additional instructions:
-
-    sudo add-apt-repository ppa:nilarimogard/webupd8
-    sudo apt-get update
-    sudo apt-get install telegram-purple
 
 
 #### Arch Linux (AUR)
@@ -70,7 +61,7 @@ This repository has submodules, so you need to clone recursively.
         sudo dnf install gcc gettext libgcrypt-devel libwebp-devel libpurple-devel zlib-devel
 
 
-###### Debian / Ubuntu
+##### Debian / Ubuntu
 
 We are working on a Debian package! Please first check if it's already available to you: `sudo apt-get install telegram-purple`
 
@@ -80,7 +71,7 @@ If the above fails: Don't worry, just continue building it by yourself. Next you
 
         sudo apt-get install libgcrypt20-dev libpurple-dev libwebp-dev
 
-###### OpenSUSE
+##### OpenSUSE
 
         sudo zypper install gcc glib glib-devel libpurple libpurple-devel zlib-devel libwebp-devel
 
@@ -104,6 +95,7 @@ This repository contains submodules, and a simple pull just won't be enough to u
 
 
         git pull
+        git submodule sync # just in case the configuration has changed 
         git submodule update --recursive
 
 
@@ -225,6 +217,11 @@ and `.dsc` files, do this:
 
 Note that the parenthesis are important.
 
+1.2.4
+-----
+
+- Fix crash on unknown media type
+- Fix crash on logout after cancelling a file transfer
 
 1.2.3
 -----
