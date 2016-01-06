@@ -35,15 +35,6 @@ The package is available in the Fedora 22 and 23 testing repositories:
      dnf install purple-telegram
 
 
-#### Ubuntu/Mint PPA
-
-Webupd8 provides PPAs for installation, see the [article](http://www.webupd8.org/2014/11/add-telegram-support-to-pidgin-with.html) for additional instructions:
-
-    sudo add-apt-repository ppa:nilarimogard/webupd8
-    sudo apt-get update
-    sudo apt-get install telegram-purple
-
-
 #### Arch Linux (AUR)
 
 https://aur.archlinux.org/packages/telegram-purple/
