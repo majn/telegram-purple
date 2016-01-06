@@ -143,7 +143,7 @@ install: noicon_install
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48
 	install -m $(FILE_PERM) imgs/telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(datarootdir)/appdata
-	install -m $(FILE_PERM) telegram-purple.metainfo.xml $(DESTDIR)$(datarootdir)/appdata/telegram-purple.metainfo.xml
+	install -m $(FILE_PERM) AppStream/telegram-purple.metainfo.xml $(DESTDIR)$(datarootdir)/appdata/telegram-purple.metainfo.xml
 
 .PHONY: uninstall
 uninstall: noicon_uninstall
