@@ -973,6 +973,7 @@ static void tgprpl_init (PurplePlugin *plugin) {
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
   _telegram_protocol = plugin;
+  debug ("tgprpl_init finished: This is " PACKAGE_VERSION "+g" GIT_COMMIT " on libtgl " TGL_VERSION);
 }
 
 static GList *tgprpl_actions (PurplePlugin *plugin, gpointer context) {
