@@ -98,11 +98,11 @@ GIT_COMMIT_H=commit.h
 .PHONY: commit
 commit:
 # avoid needles changes to commit.h, otherwise autodepent will *always* recompile files that include it
-ifneq ($(shell cat commit.h |grep -c ${GIT_COMMIT}), 1)
-	echo '#ifndef GIT_COMMIT' > ${GIT_COMMIT_H}
-	echo '#  define GIT_COMMIT "${GIT_COMMIT}"' >> ${GIT_COMMIT_H}
-	echo '#endif' >> ${GIT_COMMIT_H}
-endif
+	@(test -r commit.h && cat commit.h | grep -qc ${GIT_COMMIT} ) || \
+	( echo "Refresh commit.h"; \
+	echo '#ifndef GIT_COMMIT' > ${GIT_COMMIT_H}; \
+	echo '#  define GIT_COMMIT "${GIT_COMMIT}"' >> commit.h; \
+	echo '#endif' >> ${GIT_COMMIT_H} )
 
 
 ### == noicon_{,un}install targets. Use only if you know that you don't need icons. Note that pidgin uses those files. == ###
