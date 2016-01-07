@@ -190,12 +190,21 @@ DIST_ERR_MSG="Working directory is not git clean.\
 Run 'git status' to show what files are causing this.\
 Please note that 'make dist' packages the state in git, not the one on your disk."
 
-.PHONY: check-clean
-check-clean:
-	test "x" = x"`git status --porcelain`" || (echo ${DIST_ERR_MSG}; exit 1)
+SUBMOD_ERR_MSG="Couldn't find tgl/tl-parser/tl-parser.c\
+Are all submodules properly initialized and updated?"
 
+# Not PHONY
+.git:
+	@echo "Not in a git folder. Features that require git are disabled."; exit 1
+
+.PHONY: check-clean
+check-clean: .git
+	@test "x" = x"`git status --porcelain`" || (echo ${DIST_ERR_MSG}; exit 1)
+	@test -r tgl/tl-parser/.git || (echo ${SUBMOD_ERR_MSG}; exit 1)
+
+# Feel free to remove the "check-clean" dependency if you know what you're doing.
 .PHONY: dist
-dist: check-clean create_dirs
+dist: check-clean .git create_dirs
 # Abuse the "bin" dir for temporary files.
 	@rm -f bin/tgl_tl-parser.tar bin/tgl.tar bin/result.tar bin/result.tar.gz
 	( cd tgl/tl-parser && git archive --prefix=telegram-purple/tgl/tl-parser/ --output=../../bin/tgl_tl-parser.tar HEAD )
