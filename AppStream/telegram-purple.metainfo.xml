@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright 2015 Jiri Eischmann <eischmann@redhat.com>
      It is very important that this file does *not* receive any
      Invariant Sections as per GFDL.
@@ -9,7 +9,8 @@
     <name>Telegram</name>
     <summary>A plugin that adds support for Telegram</summary>
     <url type="homepage">https://github.com/majn/telegram-purple</url>
+    <url type="bugtracker">https://github.com/majn/telegram-purple/issues/</url>
     <metadata_license>GFDL-1.3</metadata_license>
     <project_license>GPL-2.0+</project_license>
-    <updatecontact>eischmann_at_redhat.com</updatecontact>
+    <update_contact>eischmann_at_redhat.com</update_contact>
 </component>
