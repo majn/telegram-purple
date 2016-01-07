@@ -34,8 +34,7 @@ MSGFMT_PATH=@MSGFMT_PATH@
 DEP=dep
 EXE=bin
 OBJ=objs
-LIB=libs
-DIR_LIST=${DEP} ${EXE} ${OBJ} ${LIB}
+DIR_LIST=${DEP} ${EXE} ${OBJ}
 
 PLUGIN_OBJECTS=${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/telegram-base.o ${OBJ}/telegram-purple.o ${OBJ}/tgp-2prpl.o ${OBJ}/tgp-structs.o ${OBJ}/tgp-utils.o ${OBJ}/tgp-chat.o ${OBJ}/tgp-ft.o ${OBJ}/tgp-msg.o ${OBJ}/tgp-request.o ${OBJ}/tgp-blist.o
 ALL_OBJS=${PLUGIN_OBJECTS}
@@ -74,7 +73,7 @@ DEPENDENCE_LIST=${DEPENDENCE}
 # The dependency on tgl/libs/libtgl.a ensures that "make -C tgl" was called,
 # and most importantly: It ensures that all automatic headers exist.
 # The dependency on commit.h ensures that the header is always created when the commit changes or doesn't exist
-${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c ${LIB}/libtgl.a | create_dirs commit
+${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c tgl/libs/libtgl.a | create_dirs commit
 	echo $@ && ${CC} ${CFLAGS} ${CPPFLAGS} -I ${srcdir}/tgl -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
 
 tgl/Makefile.in:
@@ -83,16 +82,15 @@ tgl/Makefile.in:
 tgl/Makefile: tgl/Makefile.in
 	cd tgl && ./configure -q ${CRYPTO_FLAG} --disable-extf CFLAGS="@CFLAGS@" LDFLAGS="@LDFLAGS@"
 
+# Always invoke make on tgl
+.PHONY: tgl/libs/libtgl.a
 tgl/libs/libtgl.a: tgl/Makefile
 	+make -C tgl
 
 po/%.mo: po/%.po
 	${MSGFMT_PATH} -cf -o $@ $<
 
-${LIB}/libtgl.a: tgl/libs/libtgl.a | create_dirs
-	cp $< $@
-
-${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} ${LIB}/libtgl.a | create_dirs
+${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} tgl/libs/libtgl.a | create_dirs
 	${CC} -shared -o $@ $^ ${LDFLAGS}
 
 GIT_COMMIT=$(shell git rev-parse HEAD | cut -c1-10)
