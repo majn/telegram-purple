@@ -191,7 +191,7 @@ debug: install
 
 .PHONY: clean-here
 clean-here:
-	rm -rf ${DIR_LIST} config.log config.status $(PRPL_C_OBJS) $(PRPL_LIBNAME) po/*.mo
+	rm -rf ${DIR_LIST} $(PRPL_LIBNAME) po/*.mo commit.h autom4te.cache
 
 -include test/Makefile
 
