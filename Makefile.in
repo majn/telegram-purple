@@ -186,6 +186,30 @@ run:
 debug: install
 	ddd pidgin
 
+DIST_ERR_MSG="Working directory is not git clean.\
+Run 'git status' to show what files are causing this.\
+Please note that 'make dist' packages the state in git, not the one on your disk."
+
+.PHONY: check-clean
+check-clean:
+	test "x" = x"`git status --porcelain`" || (echo ${DIST_ERR_MSG}; exit 1)
+
+.PHONY: dist
+dist: check-clean create_dirs
+# Abuse the "bin" dir for temporary files.
+	@rm -f bin/tgl_tl-parser.tar bin/tgl.tar bin/result.tar bin/result.tar.gz
+	( cd tgl/tl-parser && git archive --prefix=telegram-purple/tgl/tl-parser/ --output=../../bin/tgl_tl-parser.tar HEAD )
+	( cd tgl && git archive --prefix=telegram-purple/tgl/ --output=../bin/tgl.tar HEAD )
+	git archive --prefix=telegram-purple/ --output=bin/result.tar HEAD
+	tar --concatenate -f bin/result.tar bin/tgl.tar
+	tar --concatenate -f bin/result.tar bin/tgl_tl-parser.tar
+	gzip -n bin/result.tar
+# CAREFUL WHEN EDITING: Lots of black magic.
+# "mv -f" means "overwrite, if necessary"
+	@TARNAME="telegram-purple_`git describe --tags | sed s/^v// `.orig.tar.gz" ; \
+	echo mv -f bin/result.tar.gz $$TARNAME ; \
+	mv -f bin/result.tar.gz $$TARNAME
+
 
 ### == Cleaning in various flavors == ###
 
