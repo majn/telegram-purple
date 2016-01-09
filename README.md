@@ -40,6 +40,14 @@ The package is available in the Fedora 22 and 23 testing repositories:
 https://aur.archlinux.org/packages/telegram-purple/
 
 
+#### Debian
+
+At the time of writing, the package hasn't been accepted yet.
+Please first check if it's already available to you: `sudo apt-get install telegram-purple`
+
+If this doesn't work because the package doesn't exist (yet), please build it from source.
+
+
 Building From Source
 --------------------
 
@@ -63,19 +71,14 @@ This repository has submodules, so you need to clone recursively.
 
 ##### Debian / Ubuntu
 
-We are working on a Debian package! Please first check if it's already available to you: `sudo apt-get install telegram-purple`
-
-If the above works, then you should stop here: It is now installed.
-
-If the above fails: Don't worry, just continue building it by yourself. Next you need to install these dependencies:
-
         sudo apt-get install libgcrypt20-dev libpurple-dev libwebp-dev
+
 
 ##### OpenSUSE
 
         sudo zypper install gcc glib glib-devel libpurple libpurple-devel zlib-devel libwebp-devel
 
-And the development files for gcrypt, probably `gcrypt-devel` or something.
+And the development files for gcrypt, probably `gcrypt-devel` or something. (FIXME)
 
 
 #### 3. Compile and install
