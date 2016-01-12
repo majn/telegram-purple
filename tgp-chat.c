@@ -220,7 +220,7 @@ char *tgprpl_get_chat_name (GHashTable * data) {
 static void tgp_chat_roomlist_it (tgl_peer_t *P, void *extra) {
   connection_data *conn = extra;
   
-  if (tgl_get_peer_type (P->id) == TGL_PEER_CHAT && P->chat.users_num) {
+  if (tgl_get_peer_type (P->id) == TGL_PEER_CHAT && !(P->chat.flags & TGLCF_LEFT)) {
     char *id = g_strdup_printf ("%d", tgl_get_peer_id (P->id));
     
     PurpleRoomlistRoom *room = purple_roomlist_room_new (PURPLE_ROOMLIST_ROOMTYPE_ROOM, P->chat.print_title, NULL);

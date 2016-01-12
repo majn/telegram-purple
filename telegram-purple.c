@@ -435,7 +435,7 @@ static void leave_and_delete_chat_gw (PurpleBlistNode *node, gpointer data) {
 
 void leave_and_delete_chat (struct tgl_state *TLS, tgl_peer_t *P) {
   g_return_if_fail (P);
-  if (P && P->chat.users_num) {
+  if (P && !(P->user.flags & TGLCHF_LEFT)) {
     tgl_do_del_user_from_chat (TLS, P->id, TLS->our_id, tgp_notify_on_error_gw, NULL);
   }
   serv_got_chat_left (tls_get_conn (TLS), tgl_get_peer_id (P->id));
