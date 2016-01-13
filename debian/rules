@@ -1,15 +1,12 @@
 #!/usr/bin/make -f
 
-# output every command that modifies files on the build system.
-#export DH_VERBOSE = 1
-
 DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/default.mk
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
-	dh $@ --parallel
+	dh $@ --parallel --with autoreconf
 
 # dh_auto_clean tries to "make distclean", but we don't have that target.
 override_dh_auto_clean:

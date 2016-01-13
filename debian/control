@@ -7,6 +7,7 @@ Uploaders:
 Build-Depends:
  autotools-dev,
  debhelper (>= 9),
+ dh-autoreconf,
  libgcrypt20-dev,
  libglib2.0-dev,
  libpurple-dev,
