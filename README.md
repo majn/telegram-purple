@@ -273,7 +273,7 @@ FAQ
 
 Telegram group chat for telegram-purple or libtgl related discussions or questions:
 
-    - https://goo.gl/bhmM7N
+    - https://goo.gl/a8SigQ
 
 
 Submitting Bug Reports
