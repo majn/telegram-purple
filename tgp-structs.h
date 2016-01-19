@@ -72,6 +72,8 @@ struct tgp_msg_loading {
   int pending;
   struct tgl_message *msg;
   void *data;
+  int error;
+  char *error_msg;
 };
 
 struct tgp_msg_sending {
