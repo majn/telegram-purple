@@ -49,10 +49,9 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
   char *txt = NULL;
   
   tgl_peer_t *fromPeer = tgl_peer_get (TLS, M->from_id);
-  if (! fromPeer) {
-    return NULL;
-  }
-  char *txt_user = fromPeer->print_name;
+  g_return_val_if_fail(fromPeer != NULL, NULL);
+  
+  const char *txt_user = fromPeer->print_name;
 
   switch (M->action.type) {
     case tgl_message_action_chat_create:
@@ -157,6 +156,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
                              M->action.screenshot_cnt, txt_user);
       break;
     default:
+      g_warn_if_reached();
       break;
   }
   return txt;
@@ -416,7 +416,8 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     return;
   }
   
-  // Mark messages that contain a mention like if they contained our current nick name
+  // Mark messages that contain a mention as if they contained our current nick name
+  // FIXME: doesn't work in Adium
   if (M->flags & TGLMF_MENTION) {
     flags |= PURPLE_MESSAGE_NICK;
   }
