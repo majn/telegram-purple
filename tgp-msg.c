@@ -637,8 +637,8 @@ static void tgp_msg_on_loaded_chat_full (struct tgl_state *TLS, void *extra, int
   struct tgp_msg_loading *C = extra;
   
   if (! success) {
+    // foreign user's names won't be displayed in the user list
     g_warn_if_reached();
-    C->error = TRUE;
   }
   
   -- C->pending;
