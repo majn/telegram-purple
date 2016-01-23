@@ -1,6 +1,6 @@
 Name:		purple-telegram
-Version:	1.2.4
-Release:	2%{?dist}
+Version:	1.2.5
+Release:	1%{?dist}
 Summary:	Adds support for Libpurple based messengers
 Group:		Applications/Internet
 License:	GPLv2+
@@ -39,6 +39,9 @@ appstream-util validate-relax --nonet %{buildroot}/%{_datadir}/appdata/telegram-
 %{_datadir}/pixmaps/pidgin/protocols/48/telegram.png
 
 %changelog
+* Sat Jan 23 mjentsch 1.2.5-1
+- build for 1.2.5
+
 * Thu Dec 10 2015 tuxmaster 1.2.4-2
 - Fix build for appdata. 
 
