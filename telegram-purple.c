@@ -30,6 +30,7 @@ static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_messa
 static void update_on_logged_in (struct tgl_state *TLS);
 static void update_on_ready (struct tgl_state *TLS);
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status);
+static void update_secret_chat_typing (struct tgl_state *TLS, struct tgl_secret_chat *E);
 static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *U);
 static void update_user_handler (struct tgl_state *TLS, struct tgl_user *U, unsigned flags);
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *C, unsigned flags);
@@ -53,7 +54,9 @@ struct tgl_update_callback tgp_callback = {
   .logged_in = update_on_logged_in,
   .started = update_on_ready,
   .type_notification = update_user_typing,
-    // FIXME: what about type_in_secret_chat_notification, user_registred, user_activated, new_authorization, our_id ?
+  
+  // FIXME: what about user_registred, user_activated, new_authorization, our_id ?
+  .type_in_secret_chat_notification = update_secret_chat_typing,
   .chat_update = update_chat_handler,
   .channel_update = update_channel_handler,
   .user_update = update_user_handler,
@@ -245,6 +248,11 @@ static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *
 static void update_message_handler (struct tgl_state *TLS, struct tgl_message *M) {
   write_files_schedule (TLS);
   tgp_msg_recv (TLS, M);
+}
+
+static void update_secret_chat_typing (struct tgl_state *TLS, struct tgl_secret_chat *E) {
+  g_return_if_fail (tgp_blist_lookup_purple_name (TLS, E->id));
+  serv_got_typing (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, E->id), 2, PURPLE_TYPING);
 }
 
 static void update_user_typing (struct tgl_state *TLS, struct tgl_user *U, enum tgl_typing_status status) {
