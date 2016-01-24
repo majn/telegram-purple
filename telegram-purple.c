@@ -594,6 +594,7 @@ static void tgprpl_login (PurpleAccount * acct) {
   tgl_set_timer_methods (TLS, &tgp_timers);
   tgl_set_callback (TLS, &tgp_callback);
   tgl_register_app_id (TLS, TGP_APP_ID, TGP_APP_HASH);
+  tgl_set_app_version (TLS, PACKAGE_VERSION);
   tgl_init (TLS);
 
   if (! tgp_startswith (purple_account_get_username (acct), "+")) {
