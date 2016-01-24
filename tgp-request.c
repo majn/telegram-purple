@@ -310,3 +310,116 @@ void request_value (struct tgl_state *TLS, enum tgl_value_type type, const char 
       break;
   }
 }
+
+
+// delete contact
+
+static void request_delete_contact_ok (struct request_values_data *data, PurpleRequestFields* fields) {
+  tgl_peer_t *P = data->arg;
+  g_return_if_fail(P);
+  
+  switch (tgl_get_peer_type (P->id)) {
+    case TGL_PEER_CHAT:
+      g_warn_if_fail (P->chat.flags & TGLCF_LEFT);
+      leave_and_delete_chat (data->TLS, P);
+      break;
+      
+    case TGL_PEER_ENCR_CHAT:
+      tgl_do_discard_secret_chat (data->TLS, &P->encr_chat, NULL, NULL);
+      break;
+      
+    case TGL_PEER_USER:
+      g_warn_if_fail(P->user.flags & TGLUF_CONTACT);
+      tgl_do_del_contact (data->TLS, P->id, tgp_notify_on_error_gw, NULL);
+      break;
+
+    case TGL_PEER_CHANNEL:
+      g_warn_if_fail(P->channel.flags & TGLCHF_CREATOR);
+      if (! (P->channel.flags & TGLCHF_LEFT)) {
+        tgl_do_leave_channel (data->TLS, P->id, tgp_notify_on_error_gw, NULL);
+      }
+      break;
+      
+    default:
+      g_warn_if_reached();
+      break;
+  }
+  
+  free (data);
+}
+
+static void request_delete_contact_cancel (struct request_values_data *data, PurpleRequestFields* fields) {
+  free (data);
+}
+
+void tgprpl_request_delete_contact (PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group) {
+  const char *title1 = NULL,
+             *title2 = NULL,
+                *msg = NULL;
+
+  g_return_if_fail(buddy);
+
+  struct tgl_state *TLS = gc_get_tls (gc);
+
+  tgl_peer_t *P = tgp_blist_buddy_get_peer (buddy);
+  g_return_if_fail(P);
+
+  switch (tgl_get_peer_type (P->id)) {
+    case TGL_PEER_CHAT:
+      if (! (P->chat.flags & TGLCF_LEFT)) {
+        title1 = _("Leave Chat");
+        title2 = title1;
+        msg = _("Do you want to leave this chat permantently?");
+      }
+      break;
+
+    case TGL_PEER_ENCR_CHAT:
+      title1 = _("Abort Secret Chat");
+      title2 = title1;
+      msg = _("Do you want to terminate this secret chat permantently?");
+      break;
+
+    case TGL_PEER_USER:
+      if (P->user.flags & TGLUF_CONTACT) {
+        title1 = _("Delete Contact");
+        title2 = title1;
+        msg = _("Do you want to delete the contact from all your other devices?");
+      }
+      break;
+
+    case TGL_PEER_CHANNEL:
+      if (P->channel.flags & TGLCHF_CREATOR) {
+        /*
+         FIXME: Support destorying channels
+         
+         title1 = _("Destroy Channel");
+         title2 = title1;
+         msg = _("You are admin of this channel, do you want to delete it permanently?");
+        */
+      } else {
+        if (! (P->channel.flags & TGLCHF_LEFT)) {
+          title1 = _("Leave Channel");
+          title2 = title1;
+          msg = _("Do you want to leave this channel?");
+        }
+      }
+      break;
+
+    default:
+      g_warn_if_reached();
+      break;
+  }
+
+  if (msg) {
+    purple_request_ok_cancel(tls_get_conn (TLS), title1, title2, msg, 0, tls_get_pa (TLS),
+        tgp_blist_lookup_purple_name (TLS, P->id), NULL, (void *) request_values_data_init (TLS, 0, P, 0),
+        request_delete_contact_ok, request_delete_contact_cancel);
+  }
+}
+
+
+// add new contact
+
+void request_add_contact (struct tgl_state *TLS) {
+
+}

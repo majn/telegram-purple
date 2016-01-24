@@ -777,7 +777,7 @@ static PurplePluginProtocolInfo prpl_info = {
   NULL,                    // change_passwd
   tgprpl_add_buddy,
   NULL,                    // add_buddies
-  tgprpl_remove_buddy,
+  tgprpl_request_delete_contact,
   NULL,                    // remove_buddies
   NULL,                    // add_permit
   NULL,                    // add_deny

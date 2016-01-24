@@ -43,4 +43,6 @@ void request_value (struct tgl_state *TLS, enum tgl_value_type type, const char 
 void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *U);
 void request_create_chat (struct tgl_state *TLS, const char *subject);
 
+void tgprpl_request_delete_contact (PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group);
+
 #endif
