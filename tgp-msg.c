@@ -450,7 +450,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     if (! err) {
       err = _("failed loading message");
     }
-    tgp_msg_err_out (TLS, err, tgp_our_msg (TLS, M) ? M->from_id : M->to_id);
+    tgp_msg_special_out (TLS, err, tgp_our_msg (TLS, M) ? M->from_id : M->to_id, PURPLE_MESSAGE_ERROR);
     return;
   }
 
