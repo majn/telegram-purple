@@ -308,9 +308,15 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *extra, int suc
       if (purple_account_get_bool (tls_get_data (TLS)->pa, TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS)) {
         
         PurpleChat *PC = tgp_blist_chat_find (TLS, UC->id);
-        if (!PC) {
-          PC = p2tgl_chat_new (TLS, &UC->chat);
-          purple_blist_add_chat (PC, tgp_blist_group_init ("Telegram Chats"), NULL);
+        if (! (UC->chat.flags & TGLCF_LEFT)) {
+          if (!PC) {
+            PC = p2tgl_chat_new (TLS, &UC->chat);
+            purple_blist_add_chat (PC, tgp_blist_group_init ("Telegram Chats"), NULL);
+          }
+        } else {
+          if (PC) {
+            purple_blist_remove_chat (PC);
+          }
         }
       }
     } else if (tgl_get_peer_type (UC->id) == TGL_PEER_CHANNEL) {
