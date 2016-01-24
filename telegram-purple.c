@@ -71,9 +71,13 @@ static void _update_buddy (struct tgl_state *TLS, tgl_peer_t *user, unsigned fla
   PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, user->id);
   if (buddy) {
     if (flags & TGL_UPDATE_DELETED) {
+      debug ("update deleted");
       purple_blist_remove_buddy (buddy);
+      
     } else {
+      
       if (flags & TGL_UPDATE_CONTACT) {
+        debug ("update contact");
         purple_blist_alias_buddy (buddy, user->print_name);
       }
     
@@ -132,13 +136,16 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
           serv_got_alias (tls_get_conn (TLS), purple_buddy_get_name (buddy), user->print_name);
         }
       }
+
+      if (user->flags & TGLUF_CONTACT) {
+        if (! buddy) {
+          tgp_blist_contact_add (TLS, user);
+        }
+      }
       
       if (buddy) {
         p2tgl_prpl_got_user_status (TLS, user->id, &user->status);
-        
-        if (flags & TGL_UPDATE_PHOTO) {
-          tgp_info_update_photo (buddy, tgl_peer_get (TLS, user->id));
-        }
+        tgp_info_update_photo (buddy, tgl_peer_get (TLS, user->id));
       }
     }
   } else {
@@ -299,18 +306,7 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *extra, int suc
     }
     if (tgl_get_peer_type (UC->id) == TGL_PEER_USER) {
       if (! (UC->user.flags & TGLUF_DELETED)) {
-        PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, UC->id);
-        if (! buddy) {
-          info ("%s is in the dialogue list but not in the buddy list, add the user",
-              tgp_blist_lookup_purple_name (TLS, UC->id));
-          buddy = tgp_blist_buddy_new (TLS, UC);
-          purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init (_("Telegram")), NULL);
-          if (UC->user.photo_id) {
-            info ("%s has the photo %lld, fetch it.", buddy->name, UC->user.photo_id);
-            tgl_do_get_user_info (TLS, UC->id, 0, on_user_get_info, get_user_info_data_new (0, UC->id));
-          }
-        }
-        p2tgl_prpl_got_user_status (TLS, UC->id, &UC->user.status);
+        tgp_blist_contact_add (TLS, &UC->user);
       }
     } else if (tgl_get_peer_type (UC->id) == TGL_PEER_CHAT) {
       if (purple_account_get_bool (tls_get_data (TLS)->pa, TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS)) {
@@ -714,25 +710,9 @@ static void tgprpl_set_status (PurpleAccount *acct, PurpleStatus *status) {
 }
 
 static void tgprpl_add_buddy (PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group) {
-  tgl_peer_t *peer = tgl_peer_get_by_name (gc_get_tls (gc), buddy->name);
-  if (peer) {
-    _update_buddy (gc_get_tls (gc), peer, TGL_UPDATE_PHOTO);
-    tgp_blist_buddy_set_id (buddy, peer->id);
-    p2tgl_prpl_got_user_status (gc_get_tls (gc), peer->id, &peer->user.status);
-  }
-}
-
-static void tgprpl_remove_buddy (PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group) {
-  debug ("tgprpl_remove_buddy()");
-  if (! buddy) {
-    return;
-  }
-
-  tgl_peer_t *peer = tgp_blist_buddy_get_peer (buddy);
-  if (peer) {
-    if (tgl_get_peer_type (peer->id) == TGL_PEER_ENCR_CHAT) {
-      tgl_do_discard_secret_chat (gc_get_tls (gc), &peer->encr_chat, NULL, NULL);
-    }
+  tgl_peer_t *P = tgl_peer_get_by_name (gc_get_tls (gc), buddy->name);
+  if (P) {
+    tgp_blist_contact_add (gc_get_tls (gc), &P->user);
   }
 }
 

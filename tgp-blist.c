@@ -150,6 +150,24 @@ PurpleBuddy *tgp_blist_buddy_find (struct tgl_state *TLS, tgl_peer_id_t user) {
   return (PurpleBuddy *) tgp_blist_iterate (TLS, tgp_blist_buddy_find_cb, GINT_TO_POINTER(tgl_get_peer_id (user)));
 }
 
+// contacts
+
+void tgp_blist_contact_add (struct tgl_state *TLS, struct tgl_user *U) {
+  PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, U->id);
+  
+  if (! buddy) {
+    tgl_peer_t *P = tgl_peer_get (TLS, U->id);
+    
+    info ("Adding contact '%s' to buddy list", tgp_blist_lookup_purple_name (TLS, U->id));
+    buddy = tgp_blist_buddy_new (TLS, P);
+    purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init (_("Telegram")), NULL);
+    
+    tgp_info_update_photo (buddy, P);
+  }
+  
+  p2tgl_prpl_got_user_status (TLS, U->id, &U->status);
+}
+
 // chats
 
 static int tgp_blist_chat_find_cb (PurpleBlistNode *node, void *extra) {
