@@ -39,8 +39,17 @@ appstream-util validate-relax --nonet %{buildroot}/%{_datadir}/appdata/telegram-
 %{_datadir}/pixmaps/pidgin/protocols/48/telegram.png
 
 %changelog
-* Thu Dec 10 2015 tuxmaster 1.3.0
+* Thu Dec 10 2015 tuxmaster 1.3.0-1
 - Build for 1.3.0
+
+* Sat Jan 23 mjentsch 1.2.5-1
+- build for 1.2.5
+
+* Thu Dec 10 2015 tuxmaster 1.2.4-2
+- Fix build for appdata. 
+
+* Thu Dec 10 2015 mjentsch 1.2.4-1
+- build for 1.2.4
 
 * Thu Dec 10 2015 tuxmaster 1.2.4-2
 - Fix build for appdata.

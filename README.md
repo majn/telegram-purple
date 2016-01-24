@@ -4,7 +4,7 @@ Telegram-Purple Unofficial (Beta)
 Telegram-purple is a Libpurple protocol plugin that adds support for the Telegram messenger.
 
 I keep getting many questions about this plugin in my E-mail, so I've created a
-[telegram group chat](https://goo.gl/bhmM7N) for
+[telegram group chat](https://goo.gl/a8SigQ) for
 telegram-purple related discussions or questions.
 
 Installation
@@ -17,7 +17,7 @@ If your platform is not supported or you want to contribute by testing or develo
 
 #### OSX (Adium)
 
-1. Download and execute the [Telegram-Adium bundle] (https://github.com/majn/telegram-purple/releases/download/v1.2.4/telegram-adium-1.2.4.AdiumLibpurplePlugin.zip)
+1. Download and execute the [Telegram-Adium bundle] (https://github.com/majn/telegram-purple/releases/download/v1.2.5/telegram-adium-1.2.5.AdiumLibpurplePlugin.zip)
 2. Restart Adium
 
 #### Windows
@@ -217,32 +217,12 @@ and `.dsc` files, do this:
 
 Note that the parenthesis are important.
 
-1.2.4
+1.2.5
 -----
 
-- Fix crash on unknown media type
-- Fix crash on logout after cancelling a file transfer
-
-1.2.3
------
-
-- Build: Allow compilation on Windows #52 Thanks Eion!
-- Build: Drop dependency on LodePNG, Thanks Ben!
-- Build: Gettext is now optional
-
-- Fix issue that prevented to send messages to deleted users in certain cases (#174)
-- Fix own user being added to the buddy list in certain cases
-- Fix that read recipes of own messages are being displayed (#139)
-- Fix encoding inconsistencies with Unicode characters (#177)
-- Fix auto-joining for chats (#179)
-- Fix client not reconnecting anymore under certain circumstances (#173)
-- Fix crash on compat-verification (PullRequest #183)
-
-- Remove pointless "create chat" confirmation dialogue
-- Improve logging messages
-- Always send read recipes when the user is typing or sending a message
-- Improve translation and user messages (#139)
-- Use native password prompts (Adium)
+- Handle revoked sessions automatically
+- Include libtgl fix to prevent crashes on certain channel messages
+- Improve error handling
 
 
 Discussion / Help
@@ -273,7 +253,7 @@ FAQ
 
 Telegram group chat for telegram-purple or libtgl related discussions or questions:
 
-    - https://goo.gl/bhmM7N
+    - https://goo.gl/a8SigQ
 
 
 Submitting Bug Reports

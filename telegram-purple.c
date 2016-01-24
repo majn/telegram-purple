@@ -35,6 +35,7 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *U, unsi
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *C, unsigned flags);
 static void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *C, unsigned flags);
 static void update_channel_handler (struct tgl_state *TLS, struct tgl_channel *C, unsigned flags);
+static void update_on_failed_login (struct tgl_state *TLS);
 
 const char *config_dir = "telegram-purple";
 const char *user_pk_filename = "server.tglpub";
@@ -59,8 +60,8 @@ struct tgl_update_callback tgp_callback = {
   .secret_chat_update = update_secret_chat_handler,
   .msg_receive = update_message_handler,
   .user_status_update = update_user_status_handler,
-  .create_print_name = tgp_blist_create_print_name
-    // FIXME: on_failed_login ?
+  .create_print_name = tgp_blist_create_print_name,
+  .on_failed_login = update_on_failed_login
 };
 
 static void _update_buddy (struct tgl_state *TLS, tgl_peer_t *user, unsigned flags) {
@@ -528,6 +529,18 @@ static void update_on_ready (struct tgl_state *TLS) {
   tgl_do_update_contact_list (TLS, 0, 0);
 }
 
+static void update_on_failed_login (struct tgl_state *TLS) {
+  info ("update_on_failed_login(): Login to telegram failed.");
+  
+  // 401: SESSION_REVOKED is called when the session is cancelled during runtime
+  // 401: AUTH_KEY_UNREGISTERED is called when logging into a revoked session
+  if (strstr (TLS->error, "SESSION_REVOKED") ||
+      strstr (TLS->error, "AUTH_KEY_UNREGISTERED")) {
+    purple_account_set_bool (tls_get_pa (TLS), TGP_KEY_RESET_AUTH, TRUE);
+  }
+  purple_connection_error (tls_get_conn (TLS), TLS->error);
+}
+
 static void tgprpl_login (PurpleAccount * acct) {
   info ("tgprpl_login(): Purple is telling the prpl to connect the account");
   
@@ -587,6 +600,7 @@ static void tgprpl_login (PurpleAccount * acct) {
   tgl_set_timer_methods (TLS, &tgp_timers);
   tgl_set_callback (TLS, &tgp_callback);
   tgl_register_app_id (TLS, TGP_APP_ID, TGP_APP_HASH);
+  tgl_set_app_version (TLS, PACKAGE_VERSION);
   tgl_init (TLS);
 
   if (! tgp_startswith (purple_account_get_username (acct), "+")) {
@@ -604,6 +618,12 @@ static void tgprpl_login (PurpleAccount * acct) {
   read_auth_file (TLS);
   read_state_file (TLS);
 
+  if (purple_account_get_bool (acct, TGP_KEY_RESET_AUTH, FALSE)) {
+    info ("last login attempt failed, resetting authorization ...");
+    purple_account_set_bool (tls_get_pa (TLS), TGP_KEY_RESET_AUTH, FALSE);
+    bl_do_reset_authorization (TLS);
+  }
+  
   purple_connection_set_state (conn->gc, PURPLE_CONNECTING);
   tgl_login (TLS);
 }

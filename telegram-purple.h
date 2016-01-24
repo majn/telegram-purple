@@ -87,6 +87,8 @@
 #define TGP_DEFAULT_SEND_READ_NOTIFICATIONS TRUE
 #define TGP_KEY_SEND_READ_NOTIFICATIONS "send-read-notifications"
 
+#define TGP_KEY_RESET_AUTH "reset-authorization"
+
 extern const char *pk_path;
 extern const char *user_pk_filename;
 extern const char *config_dir;

@@ -43,15 +43,15 @@ g_utf8_substring (const gchar *str,
 #endif
 
 static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
-  assert (M && M->flags & TGLMF_SERVICE);
+  g_return_val_if_fail(M && M->flags & TGLMF_SERVICE, NULL);
+
   connection_data *conn = TLS->ev_base;
   char *txt = NULL;
   
   tgl_peer_t *fromPeer = tgl_peer_get (TLS, M->from_id);
-  if (! fromPeer) {
-    return NULL;
-  }
-  char *txt_user = fromPeer->print_name;
+  g_return_val_if_fail(fromPeer != NULL, NULL);
+  
+  const char *txt_user = fromPeer->print_name;
 
   switch (M->action.type) {
     case tgl_message_action_chat_create:
@@ -101,7 +101,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
       if (peer) {
 
         tgl_peer_t *chatPeer = tgl_peer_get (TLS, M->to_id);
-        assert (tgl_get_peer_type(chatPeer->id) == TGL_PEER_CHAT);
+        g_return_val_if_fail(tgl_get_peer_type (chatPeer->id) == TGL_PEER_CHAT, NULL);
         
         // make sure that the chat is showing before deleting the user, otherwise the chat will be
         // initialised after removing the chat and the chat will still contain the deleted user
@@ -171,6 +171,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
       break;
     }
     default:
+      g_warn_if_reached();
       break;
   }
   return txt;
@@ -437,9 +438,20 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     return;
   }
   
-  // Mark messages that contain a mention like if they contained our current nick name
+  // Mark messages that contain a mention as if they contained our current nick name
+  // FIXME: doesn't work in Adium
   if (M->flags & TGLMF_MENTION) {
     flags |= PURPLE_MESSAGE_NICK;
+  }
+  
+  // handle messages that failed to load
+  if (C->error) {
+    const char *err = C->error_msg;
+    if (! err) {
+      err = _("failed loading message");
+    }
+    tgp_msg_err_out (TLS, err, tgp_our_msg (TLS, M) ? M->from_id : M->to_id);
+    return;
   }
 
   // format the message text
@@ -452,7 +464,8 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   
       case tgl_message_media_photo: {
         if (M->media.photo) {
-          assert (C->data);
+          g_return_if_fail(C->data != NULL);
+          
           text = tgp_msg_photo_display (TLS, C->data, &flags);
           if (str_not_empty (text)) {
             if (str_not_empty (M->media.caption)) {
@@ -467,10 +480,10 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         
       case tgl_message_media_document:
         if (M->media.document->flags & TGLDF_STICKER) {
-          assert (C->data);
+          g_return_if_fail(C->data != NULL);
           text = tgp_msg_sticker_display (TLS, M->from_id, C->data, &flags);
         } else if (M->media.document->flags & TGLDF_IMAGE) {
-          assert (C->data);
+          g_return_if_fail(C->data != NULL);
           text = tgp_msg_photo_display (TLS, C->data, &flags);
         } else {
           if (! tgp_our_msg(TLS, M)) {
@@ -490,10 +503,10 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         
       case tgl_message_media_document_encr:
         if (M->media.encr_document->flags & TGLDF_STICKER) {
-          assert (C->data);
+          g_return_if_fail(C->data != NULL);
           text = tgp_msg_sticker_display (TLS, M->from_id, C->data, &flags);
         } if (M->media.encr_document->flags & TGLDF_IMAGE) {
-          assert (C->data);
+          g_return_if_fail(C->data != NULL);
           text = tgp_msg_photo_display (TLS, C->data, &flags);
         } else {
           if (! tgp_our_msg(TLS, M)) {
@@ -608,6 +621,8 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   switch (tgl_get_peer_type (M->to_id)) {
     case TGL_PEER_CHAT: {
       tgl_peer_t *P = tgl_peer_get (TLS, M->to_id);
+      g_return_if_fail(P != NULL);
+      
       if (tgp_chat_show (TLS, &P->chat)) {
         p2tgl_got_chat_in (TLS, M->to_id, M->from_id, text, flags, M->date);
       }
@@ -658,27 +673,43 @@ static void tgp_msg_process_in_ready (struct tgl_state *TLS) {
     if (C->data) {
       g_free (C->data);
     }
+    
+    if (C->error_msg) {
+      g_free (C->error_msg);
+    }
+    
     tgp_msg_loading_free (C);
   }
 }
 
 static void tgp_msg_on_loaded_document (struct tgl_state *TLS, void *extra, int success, const char *filename) {
   debug ("tgp_msg_on_loaded_document()");
-  assert (success);
-  
+ 
   struct tgp_msg_loading *C = extra;
-  C->data = (void *) g_strdup (filename);
+  
+  if (success) {
+    C->data = (void *) g_strdup (filename);
+  } else {
+    g_warn_if_reached();
+    C->error = TRUE;
+    C->error_msg = g_strdup (_("loading document or picture failed"));
+  }
+  
   -- C->pending;
   tgp_msg_process_in_ready (TLS);
 }
 
 static void tgp_msg_on_loaded_chat_full (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *chat) {
   debug ("tgp_msg_on_loaded_chat_full()");
-  assert (success);
   
   tgp_chat_on_loaded_chat_full (TLS, chat);
-  
   struct tgp_msg_loading *C = extra;
+  
+  if (! success) {
+    // foreign user's names won't be displayed in the user list
+    g_warn_if_reached();
+  }
+  
   -- C->pending;
   tgp_msg_process_in_ready (TLS);
 }
@@ -766,11 +797,10 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
   */
   
   if (tgl_get_peer_type (M->to_id) == TGL_PEER_CHAT) {
-      
-    tgl_peer_t *peer = tgl_peer_get (TLS, M->to_id);
-    assert (peer);
-      
-    if (! peer->chat.user_list_size) {
+    
+    tgl_peer_t *P = tgl_peer_get (TLS, M->to_id);
+    g_warn_if_fail(P);
+    if (P && ! P->chat.user_list_size) {
       // To display a chat the full name of every single user is needed, but the updates received from the server only
       // contain the names of users mentioned in the events. In order to display a messages we always need to fetch the
       // full chat info first. If the user list is empty, this means that we still haven't fetched the full chat information.

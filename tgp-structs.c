@@ -72,7 +72,7 @@ void tgp_msg_loading_free (gpointer data) {
 }
 
 struct tgp_msg_loading *tgp_msg_loading_init (struct tgl_message *M) {
-  struct tgp_msg_loading *C = malloc (sizeof (struct tgp_msg_loading));
+  struct tgp_msg_loading *C = talloc0 (sizeof (struct tgp_msg_loading));
   C->pending = 0;
   C->msg = M;
   C->data = NULL;
