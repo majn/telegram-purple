@@ -34,8 +34,7 @@
 static void tgl_chat_iterator_cb (tgl_peer_t *peer, void *extra) {
   NSMutableArray *A = (__bridge NSMutableArray *)(extra);
   
-  // chats with 0 participants were deleted or left by the user
-  if (tgl_get_peer_type (peer->id) == TGL_PEER_CHAT && peer->chat.users_num > 0) {
+  if (tgl_get_peer_type (peer->id) == TGL_PEER_CHAT && !(peer->chat.flags & TGLCF_LEFT)) {
     [A addObject: [NSString stringWithUTF8String: peer->print_name]];
   }
 }
