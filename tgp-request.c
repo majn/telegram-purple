@@ -383,7 +383,7 @@ void tgprpl_request_delete_contact (PurpleConnection *gc, PurpleBuddy *buddy, Pu
       if (P->user.flags & TGLUF_CONTACT) {
         title1 = _("Delete Contact");
         title2 = title1;
-        msg = _("Do you want to delete the contact from all your other devices?");
+        msg = _("Do you want to remove this user from your global contact list?");
       }
       break;
 
