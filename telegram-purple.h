@@ -87,6 +87,9 @@
 #define TGP_DEFAULT_SEND_READ_NOTIFICATIONS TRUE
 #define TGP_KEY_SEND_READ_NOTIFICATIONS "send-read-notifications"
 
+#define TGP_DEFAULT_CHANNEL_MEMBERS 500
+#define TGP_KEY_CHANNEL_MEMBERS "channel-member-count"
+
 #define TGP_KEY_RESET_AUTH "reset-authorization"
 
 extern const char *pk_path;

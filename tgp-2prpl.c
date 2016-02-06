@@ -63,10 +63,21 @@ int p2tgl_status_is_present (PurpleStatus *status) {
   return !(strcmp (name, "unavailable") == 0 || strcmp (name, "away") == 0);
 }
 
-void p2tgl_got_chat_in (struct tgl_state *TLS, tgl_peer_id_t chat, tgl_peer_id_t who, const char *message, int flags,
-    time_t when) {
-  serv_got_chat_in (tls_get_conn (TLS), tgl_get_peer_id (chat), tgp_blist_lookup_purple_name (TLS, who), flags,
-      message, when);
+void tgp_chat_got_in (struct tgl_state *TLS, tgl_peer_t *chat, tgl_peer_id_t from, const char *message,
+    int flags, time_t when) {
+  g_return_if_fail(chat);
+  if (tgp_chat_show (TLS, chat)) {
+    
+    // channel messages in non-megagroups are always sent by the channel itself
+    if (tgl_get_peer_type (chat->id) == TGL_PEER_CHANNEL && !(chat->channel.flags & TGLCHF_MEGAGROUP)) {
+      from = chat->id;
+    }
+    
+    serv_got_chat_in (tls_get_conn (TLS), tgl_get_peer_id (chat->id), tgp_blist_lookup_purple_name (TLS, from),
+        flags, message, when);
+  } else {
+    g_warn_if_reached();
+  }
 }
 
 void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, int flags, time_t when) {
@@ -102,11 +113,11 @@ void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *m
 
 PurpleConversation *p2tgl_find_conversation_with_account (struct tgl_state *TLS, tgl_peer_id_t peer) {
   int type = PURPLE_CONV_TYPE_IM;
-  if (tgl_get_peer_type (peer) == TGL_PEER_CHAT) {
+  if (tgl_get_peer_type (peer) == TGL_PEER_CHAT || tgl_get_peer_type (peer) == TGL_PEER_CHANNEL) {
     type = PURPLE_CONV_TYPE_CHAT;
   }
-  PurpleConversation *conv = purple_find_conversation_with_account (type, tgp_blist_lookup_purple_name (TLS, peer),
-      tls_get_pa (TLS));
+  PurpleConversation *conv = purple_find_conversation_with_account (type,
+      tgp_blist_lookup_purple_name (TLS, peer), tls_get_pa (TLS));
   return conv;
 }
 

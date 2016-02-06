@@ -105,7 +105,7 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
         
         // make sure that the chat is showing before deleting the user, otherwise the chat will be
         // initialised after removing the chat and the chat will still contain the deleted user
-        PurpleConversation *conv = tgp_chat_show (TLS, &chatPeer->chat);
+        PurpleConversation *conv = tgp_chat_show (TLS, chatPeer);
         if (conv) {
           char *alias = peer->print_name;
           const char *aliasLeft = tgp_blist_lookup_purple_name (TLS, TGL_MK_USER (M->action.user));
@@ -214,7 +214,8 @@ static gboolean tgp_msg_send_schedule_cb (gpointer data) {
     g_queue_pop_head (conn->out_messages);
 
     unsigned long long flags = 0;
-    if (tgl_get_peer_type (D->to) == TGL_PEER_CHANNEL) {
+    if (tgl_get_peer_type (D->to) == TGL_PEER_CHANNEL
+        && !(tgl_peer_get (conn->TLS, D->to)->channel.flags & TGLCHF_MEGAGROUP)) {
       flags |= TGLMF_POST_AS_CHANNEL;
     }
     // TODO: option for disable_msg_preview
@@ -248,17 +249,12 @@ static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_p
     start = end;
   }
 
-  // Prevent client from automatically printing the outgoing message. Channel messages are always printed by the
-  // channel user, not by ourselves to emulate behavior similar to the other Telegram clients.
-  if (tgl_get_peer_type (to) == TGL_PEER_CHANNEL) {
-    return 0;
-  }
   return 1;
 }
 
 void tgp_msg_special_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to_id, int flags) {
   if (tgl_get_peer_type (to_id) == TGL_PEER_CHAT) {
-    p2tgl_got_chat_in (TLS, to_id, to_id, msg, flags, time(0));
+    tgp_chat_got_in (TLS, tgl_peer_get (TLS, to_id), to_id, msg, flags, time(0));
   } else {
     // Regular IM conversations will not display specialized message flags like PURPLE_MESSAGE_ERROR or
     // PURPLE_MESSAGE_SYSTEM correctly when using serv_got_in, therefore it is necessary to use the underlying
@@ -419,19 +415,11 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   }
 
   // TODO: return 0 for all messages, so this isn't necessary and rely on this code to display all outgoing messages
-  if (tgp_outgoing_msg (TLS, M) && tgl_get_peer_type (M->to_id) != TGL_PEER_CHANNEL) {
+  if (tgp_outgoing_msg (TLS, M)
+      && tgl_get_peer_type (M->to_id) != TGL_PEER_CHANNEL
+      && tgl_get_peer_type (M->to_id) != TGL_PEER_CHAT) {
     return;
   }
-
-#ifdef __ADIUM_
-  /* Adium ignores when this plugin returns 0 in prpl_send_im, even though that flag indicates that an outgoing
-    message shouldn't be printed to the conversation. This will still look messy, cause some posts will show up
-    with the current user's name, while external post will show up with the actual channel name, but there is no
-    way to prevent outgoing messages in Adium. */
-  if (tgp_outgoing_msg (TLS, M)) {
-    return;
-  }
-#endif
 
   // filter empty or messages with invalid recipients
   if (! M->message || !tgl_get_peer_type (M->to_id)) {
@@ -562,17 +550,11 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     flags |= PURPLE_MESSAGE_RECV;
   }
   
-  if (tgl_get_peer_type (M->to_id) != TGL_PEER_ENCR_CHAT && ! (M->flags & TGLMF_UNREAD)) {
+  if (tgl_get_peer_type (M->to_id) != TGL_PEER_ENCR_CHAT
+      && tgl_get_peer_type (M->to_id) != TGL_PEER_CHANNEL
+      && ! (M->flags & TGLMF_UNREAD)) {
     flags |= PURPLE_MESSAGE_DELAYED;
   }
-
-#ifdef __ADIUM_
-  /* (oh boy, here we go again...) Adium will print DELAYED messages with a custom layout, which causes the
-     already fucked-up layout (see ifdef __ADIUM_ above) to be even more confusing. */
-  if (! (M->flags & TGLMF_UNREAD) && tgl_get_peer_type (M->to_id) == TGL_PEER_CHANNEL) {
-    flags ^= PURPLE_MESSAGE_DELAYED;
-  }
-#endif
   
   // some service messages (like removing/adding users from chats) might print the message 
   // text through other means and leave the text empty
@@ -619,13 +601,24 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
 
   // display the message to the user
   switch (tgl_get_peer_type (M->to_id)) {
-    case TGL_PEER_CHAT: {
+    case TGL_PEER_CHANNEL: {
       tgl_peer_t *P = tgl_peer_get (TLS, M->to_id);
       g_return_if_fail(P != NULL);
       
-      if (tgp_chat_show (TLS, &P->chat)) {
-        p2tgl_got_chat_in (TLS, M->to_id, M->from_id, text, flags, M->date);
+      if (P->channel.flags & TGLCHF_MEGAGROUP) {
+        // sender is the group
+        tgp_chat_got_in (TLS, P, M->from_id, text, flags, M->date);
+      } else {
+        
+        // sender is the channel itself
+        tgp_chat_got_in (TLS, P, P->id, text, flags, M->date);
       }
+      break;
+    }
+    case TGL_PEER_CHAT: {
+      tgl_peer_t *P = tgl_peer_get (TLS, M->to_id);
+      g_return_if_fail(P != NULL);
+      tgp_chat_got_in (TLS, P, M->from_id, text, flags, M->date);
       break;
     }
     case TGL_PEER_ENCR_CHAT: {
@@ -642,9 +635,6 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
       }
       break;
     }
-    case TGL_PEER_CHANNEL:
-      p2tgl_got_im_combo (TLS, M->to_id, text, flags, M->date);
-      break;
   }
   g_free (text);
 }
@@ -701,18 +691,32 @@ static void tgp_msg_on_loaded_document (struct tgl_state *TLS, void *extra, int 
 
 static void tgp_msg_on_loaded_chat_full (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *chat) {
   debug ("tgp_msg_on_loaded_chat_full()");
-  
-  tgp_chat_on_loaded_chat_full (TLS, chat);
-  struct tgp_msg_loading *C = extra;
-  
+
   if (! success) {
     // foreign user's names won't be displayed in the user list
     g_warn_if_reached();
   }
-  
+
+  struct tgp_msg_loading *C = extra;
   -- C->pending;
+  
   tgp_msg_process_in_ready (TLS);
 }
+
+static void tgp_msg_on_loaded_channel_members (struct tgl_state *TLS, int success, tgl_peer_t *P, void *extra) {
+  debug ("tgp_msg_on_loaded_channel_members()");
+  
+  if (! success) {
+    // user names won't be available in the channel
+    g_warn_if_reached();
+  }
+  
+  struct tgp_msg_loading *C = extra;
+  -- C->pending;
+  
+  tgp_msg_process_in_ready (TLS);
+}
+
 
 /*
 static void tgp_msg_on_loaded_user_full (struct tgl_state *TLS, void *extra, int success, struct tgl_user *U) {
@@ -796,23 +800,36 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
   }
   */
   
-  if (tgl_get_peer_type (M->to_id) == TGL_PEER_CHAT) {
-    
-    tgl_peer_t *P = tgl_peer_get (TLS, M->to_id);
-    g_warn_if_fail(P);
-    if (P && ! P->chat.user_list_size) {
-      // To display a chat the full name of every single user is needed, but the updates received from the server only
-      // contain the names of users mentioned in the events. In order to display a messages we always need to fetch the
-      // full chat info first. If the user list is empty, this means that we still haven't fetched the full chat information.
+  // To display a chat the full name of every single user is needed, but the updates received from the server only
+  // contain the names of users mentioned in the events. In order to display a messages we always need to fetch the
+  // full chat info first. If the user list is empty, this means that we still haven't fetched the full chat information.
+  // assure that there is only one chat info request for every
+  // chat to avoid causing FLOOD_WAIT_X errors that will lead to delays or dropped messages
+  gpointer to_ptr = GINT_TO_POINTER(tgl_get_peer_id (M->to_id));
+  
+  if (! g_hash_table_lookup (conn->pending_chat_info, to_ptr)) {
+
+    if (tgl_get_peer_type (M->to_id) == TGL_PEER_CHAT) {
+      tgl_peer_t *P = tgl_peer_get (TLS, M->to_id);
+      g_warn_if_fail(P);
       
-      // assure that there is only one chat info request for every
-      // chat to avoid causing FLOOD_WAIT_X errors that will lead to delays or dropped messages
-      gpointer to_ptr = GINT_TO_POINTER(tgl_get_peer_id (M->to_id));
-      
-      if (! g_hash_table_lookup (conn->pending_chat_info, to_ptr)) {
+      if (P && ! P->chat.user_list_size) {
         ++ C->pending;
         
         tgl_do_get_chat_info (TLS, M->to_id, FALSE, tgp_msg_on_loaded_chat_full, C);
+        g_hash_table_replace (conn->pending_chat_info, to_ptr, to_ptr);
+      }
+    }
+
+    if (tgl_get_peer_type (M->to_id) == TGL_PEER_CHANNEL) {
+      tgl_peer_t *P = tgl_peer_get (TLS, M->to_id);
+      g_warn_if_fail(P);
+      
+      // FIXME: check if the types are actually valid
+      if (P && ((P->channel.flags & (TGLCHF_ADMIN | TGLCHF_CREATOR)) || (P->channel.flags & TGLCHF_MEGAGROUP))) {
+        ++ C->pending;
+        
+        tgp_chat_load_channel_members (TLS, P, tgp_msg_on_loaded_channel_members, C);
         g_hash_table_replace (conn->pending_chat_info, to_ptr, to_ptr);
       }
     }

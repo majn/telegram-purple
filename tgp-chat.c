@@ -20,25 +20,21 @@
 
 #include "tgp-chat.h"
 
-GHashTable *tgp_chat_info_new (struct tgl_state *TLS, struct tgl_chat *chat) {
-  gchar *title = g_strdup (chat->print_title);
+GHashTable *tgp_chat_info_new (struct tgl_state *TLS, tgl_peer_t *P) {
   
   GHashTable *ht = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
-  g_hash_table_insert (ht, "subject", title);
-  g_hash_table_insert (ht, "id", g_strdup_printf ("%d", tgl_get_peer_id (chat->id)));
+  g_hash_table_insert (ht, "subject", g_strdup (P->print_name));
+  g_hash_table_insert (ht, "id", g_strdup_printf ("%d", tgl_get_peer_id (P->chat.id)));
+  
+  if (tgl_get_peer_type (P->id) == TGL_PEER_CHANNEL) {
+    g_hash_table_insert (ht, "last_server_id", g_strdup_printf ("%d", 0));
+  }
   
   return ht;
 }
 
-PurpleChat *p2tgl_chat_new (struct tgl_state *TLS, struct tgl_chat *chat) {
-  return purple_chat_new (tls_get_pa (TLS), chat->title, tgp_chat_info_new (TLS, chat));
-}
-
-void p2tgl_chat_update (struct tgl_state *TLS, PurpleChat *chat, tgl_peer_id_t id, int admin_id, const char *subject) {
-  GHashTable *ht = purple_chat_get_components (chat);
-  
-  g_hash_table_replace (ht, g_strdup ("id"), g_strdup_printf ("%d", tgl_get_peer_id (id)));
-  g_hash_table_replace (ht, g_strdup ("subject"), g_strdup (subject));
+PurpleChat *tgp_chat_new (struct tgl_state *TLS, tgl_peer_t *P) {
+  return purple_chat_new (tls_get_pa (TLS), P->chat.print_title, tgp_chat_info_new (TLS, P));
 }
 
 int tgp_chat_has_id (PurpleChat *C) {
@@ -52,15 +48,30 @@ tgl_peer_id_t tgp_chat_get_id (PurpleChat *C) {
   return TGL_MK_CHAT(atoi (id));
 }
 
-void tgp_chat_on_loaded_chat_full (struct tgl_state *TLS, struct tgl_chat *C) {
-  PurpleChat *PC = tgp_blist_chat_find (TLS, C->id);
-  if (!PC) {
-    PC = p2tgl_chat_new (TLS, C);
-    if (purple_account_get_bool (tls_get_pa (TLS), TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS)) {
-      purple_blist_add_chat (PC, tgp_blist_group_init (_("Telegram Chats")), NULL);
+static void tgp_chat_blist_store (struct tgl_state *TLS, tgl_peer_t *P, const char *group) {
+  g_return_if_fail(tgl_get_peer_type (P->id) == TGL_PEER_CHAT || tgl_get_peer_type (P->id) == TGL_PEER_CHANNEL);
+
+  PurpleChat *PC = tgp_blist_chat_find (TLS, P->id);
+  if (! (P->flags & TGLCF_LEFT)) {
+    if (! PC) {
+      PC = tgp_chat_new (TLS, tgl_peer_get (TLS, P->id));
+      if (purple_account_get_bool (tls_get_pa (TLS), TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS)) {
+        purple_blist_add_chat (PC, tgp_blist_group_init (group), NULL);
+        tgp_info_update_photo (&PC->node, tgl_peer_get (TLS, P->id));
+      }
+    }
+  } else {
+    if (PC) {
+      purple_blist_remove_chat (PC);
     }
   }
-  p2tgl_chat_update (TLS, PC, C->id, C->admin_id, C->print_title);
+
+  if (PC) {
+    g_hash_table_replace (purple_chat_get_components (PC), g_strdup ("id"),
+        g_strdup_printf ("%d", tgl_get_peer_id (P->id)));
+    g_hash_table_replace (purple_chat_get_components (PC), g_strdup ("subject"),
+        g_strdup (tgl_get_peer_type (P->id) == TGL_PEER_CHANNEL ? P->channel.title : P->chat.title));
+  }
 }
 
 static void tgp_chat_on_loaded_chat_full_joining (struct tgl_state *TLS, void *_, int success, struct tgl_chat *C) {
@@ -70,56 +81,115 @@ static void tgp_chat_on_loaded_chat_full_joining (struct tgl_state *TLS, void *_
     return;
   }
   
-  tgp_chat_on_loaded_chat_full (TLS, C);
-  tgp_chat_show (TLS, C);
-  
+  tgp_chat_blist_store (TLS, tgl_peer_get (TLS, C->id), _("Telegram Chats"));
+  tgp_chat_show (TLS, tgl_peer_get (TLS, C->id));
+
   // Check if the users attempts to join an empty chat
-  if (! C->user_list_size) {
-    p2tgl_got_chat_in (TLS, C->id, C->id, _("You have already left this chat."), PURPLE_MESSAGE_SYSTEM, time (NULL));
+  if (C->flags & TGLCF_LEFT) {
+    tgp_chat_got_in (TLS, tgl_peer_get (TLS, C->id), C->id, _("You have already left this chat."), PURPLE_MESSAGE_SYSTEM,
+        time (NULL));
   }
 }
 
-static void tgp_chat_add_all_users (struct tgl_state *TLS, PurpleConversation *conv, struct tgl_chat *C) {
+static void tgp_chat_on_loaded_channel_full_joining (struct tgl_state *TLS, int success, tgl_peer_t *P, void *extra) {
+  debug ("tgp_chat_on_loaded_channel_full_joining()");
+  if (! success) {
+    tgp_notify_on_error_gw (TLS, NULL, success);
+    return;
+  }
+  
+  tgp_chat_blist_store (TLS, P, _("Telegram Channels"));
+  tgp_chat_show (TLS, P);
+}
+
+static void tgp_chat_add_all_users (struct tgl_state *TLS, PurpleConversation *conv, tgl_peer_t *P) {
+  debug ("tgp_chat_add_all_users()");
+
   GList *users = NULL,
         *flags = NULL;
-  debug ("tgp_chat_add_all_users()");
-  
-  int i = 0;
-  for (; i < C->user_list_size; i++) {
-    struct tgl_chat_user *uid = (C->user_list + i);
-    const char *name = tgp_blist_lookup_purple_name (TLS, TGL_MK_USER(uid->user_id));
-    if (! name) {
-      g_warn_if_reached();
-      continue;
+
+  switch (tgl_get_peer_type (P->id)) {
+    case TGL_PEER_CHAT: {
+      struct tgl_chat *C = &P->chat;
+
+      int i;
+      for (i = 0; i < C->user_list_size; i ++) {
+        struct tgl_chat_user *uid = (C->user_list + i);
+        const char *name = tgp_blist_lookup_purple_name (TLS, TGL_MK_USER(uid->user_id));
+        if (name) {
+          users = g_list_append (users, g_strdup (name));
+          flags = g_list_append (flags, GINT_TO_POINTER(C->admin_id == uid->user_id ? PURPLE_CBFLAGS_FOUNDER : PURPLE_CBFLAGS_NONE));
+        }
+      }
+      break;
     }
-    users = g_list_append (users, g_strdup (name));
-    flags = g_list_append (flags, GINT_TO_POINTER(C->admin_id == uid->user_id ? PURPLE_CBFLAGS_FOUNDER : PURPLE_CBFLAGS_NONE));
+
+    case TGL_PEER_CHANNEL: {
+      // fetch users
+      GList *MS = g_hash_table_lookup (tls_get_data (TLS)->channel_members, GINT_TO_POINTER(tgl_get_peer_id (P->id)));
+      
+      while (MS) {
+        struct tgp_channel_member *M = MS->data;
+        const char *name = tgp_blist_lookup_purple_name (TLS, M->id);
+        if (name) {
+          users = g_list_append (users, g_strdup (name));
+          flags = g_list_append (flags, GINT_TO_POINTER(M->flags));
+        }
+        MS = g_list_next (MS);
+      };
+      break;
+    }
+
+    default:
+      g_return_if_reached();
+      break;
   }
+
   purple_conv_chat_add_users (PURPLE_CONV_CHAT(conv), users, NULL, flags, FALSE);
   g_list_free_full (users, g_free);
   g_list_free (flags);
 }
 
-PurpleConversation *tgp_chat_show (struct tgl_state *TLS, struct tgl_chat *C) {
+PurpleConversation *tgp_chat_show (struct tgl_state *TLS, tgl_peer_t *P) {
   PurpleConvChat *chat = NULL;
   
   // check if chat is already shown
-  PurpleConversation *conv = purple_find_chat (tls_get_conn (TLS), tgl_get_peer_id (C->id));
+  PurpleConversation *conv = purple_find_chat (tls_get_conn (TLS), tgl_get_peer_id (P->id));
   if (conv) {
     chat = purple_conversation_get_chat_data (conv);
     if (chat && ! purple_conv_chat_has_left (chat)) {
       return conv;
     }
   }
-  
+
   // join the chat now
-  conv = serv_got_joined_chat (tls_get_conn (TLS), tgl_get_peer_id (C->id), C->print_title);
+  const char *name = NULL;
+  if (tgl_get_peer_type (P->id) == TGL_PEER_CHAT) {
+    name = P->chat.print_title;
+  } else if (tgl_get_peer_type (P->id) == TGL_PEER_CHANNEL) {
+    name = P->channel.print_title;
+  }
+  g_return_val_if_fail(name, NULL);
+  
+  conv = serv_got_joined_chat (tls_get_conn (TLS), tgl_get_peer_id (P->id), name);
   g_return_val_if_fail(conv, NULL);
-  
+
   purple_conv_chat_clear_users (purple_conversation_get_chat_data (conv));
-  tgp_chat_add_all_users (TLS, conv, C);
-  
+  tgp_chat_add_all_users (TLS, conv, P);
+
   return conv;
+}
+
+int tgprpl_send_chat (PurpleConnection *gc, int id, const char *message, PurpleMessageFlags flags) {
+  debug ("tgprpl_send_chat()");
+  
+  tgl_peer_t *P = tgl_peer_get (gc_get_tls (gc), TGL_MK_CHAT(id));
+  if (! P) {
+    P = tgl_peer_get (gc_get_tls (gc), TGL_MK_CHANNEL(id));
+  }
+  g_return_val_if_fail(P != NULL, -1);
+  
+  return tgp_msg_send (gc_get_tls (gc), message, P->id);
 }
 
 GList *tgprpl_chat_join_info (PurpleConnection *gc) {
@@ -149,8 +219,7 @@ GHashTable *tgprpl_chat_info_defaults (PurpleConnection *gc, const char *chat_na
   if (chat_name) {
     tgl_peer_t *P = tgl_peer_get_by_name (gc_get_tls (gc), chat_name);
     if (P) {
-      debug ("found chat...");
-      return tgp_chat_info_new (gc_get_tls (gc), &P->chat);
+      return tgp_chat_info_new (gc_get_tls (gc), P);
     }
     warning ("Chat not found, returning empty defaults...");
   }
@@ -176,13 +245,24 @@ void tgprpl_chat_join (PurpleConnection *gc, GHashTable *data) {
   // join existing chat by id when the user clicks on a chat in the buddy list
   void *value = g_hash_table_lookup (data, "id");
   if (value && atoi (value)) {
-    tgl_peer_id_t cid = TGL_MK_CHAT(atoi (value));
-    tgl_peer_t *P = tgl_peer_get (gc_get_tls (gc), cid);
+    tgl_peer_t *P = tgl_peer_get (gc_get_tls (gc), TGL_MK_CHAT(atoi (value)));
+    
+    if (! P) {
+      P = tgl_peer_get (gc_get_tls (gc), TGL_MK_CHANNEL(atoi (value)));
+    }
+    
     if (P) {
-      debug ("joining chat by id %d ...", tgl_get_peer_id (cid));
-      tgl_do_get_chat_info (gc_get_tls (gc), cid, FALSE, tgp_chat_on_loaded_chat_full_joining, NULL);
+      debug ("type=%d", tgl_get_peer_type (P->id));
+      if (tgl_get_peer_type (P->id) == TGL_PEER_CHAT) {
+        debug ("joining chat by id %d ...", tgl_get_peer_id (P->id));
+        tgl_do_get_chat_info (gc_get_tls (gc), P->id, FALSE, tgp_chat_on_loaded_chat_full_joining, NULL);
+      } else {
+        g_return_if_fail(tgl_get_peer_type (P->id) == TGL_PEER_CHANNEL);
+        debug ("joining channel by id %d ...", tgl_get_peer_id (P->id));
+        tgp_chat_load_channel_members (gc_get_tls (gc), P, tgp_chat_on_loaded_channel_full_joining, NULL);
+      }
     } else {
-      warning ("Cannot join chat %d, peer not found...", tgl_get_peer_id (cid));
+      warning ("Cannot join chat %d, peer not found...", tgl_get_peer_id (P->id));
       purple_serv_got_join_chat_failed (gc, data);
     }
     return;
@@ -199,17 +279,25 @@ void tgprpl_chat_join (PurpleConnection *gc, GHashTable *data) {
   const char *subject = g_hash_table_lookup (data, "subject");
   if (str_not_empty (subject)) {
     tgl_peer_t *P = tgl_peer_get_by_name (gc_get_tls (gc), subject);
-    
-    // handle joining chats by print_names as used by the Adium plugin
-    if (P && tgl_get_peer_type (P->id) == TGL_PEER_CHAT) {
-      debug ("joining chat by subject %s ...", subject);
-      
-      tgl_do_get_chat_info (gc_get_tls (gc), P->id, FALSE, tgp_chat_on_loaded_chat_full_joining, NULL);
+    if (! P) {
+      // user creates a new chat by providing its subject the chat join window
+      request_create_chat (gc_get_tls (gc), subject);
       return;
     }
     
-    // user creates a new chat by providing its subject the chat join window
-    request_create_chat (gc_get_tls (gc), subject);
+    // handle joining chats by print_names as used by the Adium plugin
+    if (tgl_get_peer_type (P->id) == TGL_PEER_CHAT) {
+      debug ("joining chat by subject %s ...", subject);
+      tgl_do_get_chat_info (gc_get_tls (gc), P->id, FALSE, tgp_chat_on_loaded_chat_full_joining, NULL);
+      return;
+    } else if (tgl_get_peer_type (P->id) == TGL_PEER_CHANNEL) {
+      debug ("joining channel by subject %s ...", subject);
+      tgp_chat_load_channel_members (gc_get_tls (gc), P, tgp_chat_on_loaded_channel_full_joining, NULL);
+      return;
+    } else {
+      warning ("Cannot join chat %s, wrong peer type", subject);
+      purple_serv_got_join_chat_failed (gc, data);
+    }
   }
 }
 
@@ -283,3 +371,109 @@ void tgp_chat_join_all_pending (struct tgl_state *TLS) {
     tls_get_data (TLS)->pending_joins = NULL;
   }
 }
+
+static void tgp_channel_load_admins_done (struct tgl_state *TLS, void *extra, int success, int users_num,
+      struct tgl_user **users) {
+  debug ("tgp_channel_load_admins_done()");
+  
+  struct tgp_channel_members_loading *D = extra;
+  
+  if (success) {
+    GHashTable *HT = g_hash_table_new (g_direct_hash, g_direct_equal);
+    
+    int i;
+    for (i = 0; i < users_num; i ++) {
+      g_hash_table_insert (HT, GINT_TO_POINTER(tgl_get_peer_id (users[i]->id)), GINT_TO_POINTER(1));
+    }
+    
+    GList *MS = D->members;
+    do {
+      struct tgp_channel_member *M = MS->data;
+      if (g_hash_table_lookup (HT, GINT_TO_POINTER(tgl_get_peer_id (M->id)))) {
+        M->flags |= PURPLE_CBFLAGS_OP;
+      }
+    } while ((MS = g_list_next (MS)));
+    g_hash_table_insert (tls_get_data (TLS)->channel_members, GINT_TO_POINTER(tgl_get_peer_id (D->P->id)), MS);
+    
+    g_hash_table_destroy (HT);
+  }
+  
+  D->callback (TLS, success, D->P, D->extra);
+  free (D);
+}
+
+static void tgp_channel_load_members_done (struct tgl_state *TLS, void *extra, int success, int users_num,
+      struct tgl_user **users) {
+  debug ("tgp_channel_load_members_done()");
+  
+  struct tgp_channel_members_loading *D = extra;
+  
+  if (! success) {
+    D->callback (TLS, FALSE, D->P, NULL);
+    free (D);
+    return;
+  }
+  
+  int i;
+  for (i = 0; i < users_num; i ++) {
+    struct tgp_channel_member *M = talloc0 (sizeof(struct tgp_channel_member));
+    M->id = users[i]->id;
+    D->members = g_list_append (D->members, M);
+  }
+  
+  if (D->P->flags & TGLCHF_ADMIN) {
+    tgl_do_channel_get_members (TLS, D->P->id,
+        purple_account_get_int (tls_get_pa (TLS), TGP_KEY_CHANNEL_MEMBERS, TGP_DEFAULT_CHANNEL_MEMBERS),
+        0, 1, tgp_channel_load_admins_done, D);
+  } else {
+    g_hash_table_insert (tls_get_data (TLS)->channel_members, GINT_TO_POINTER(tgl_get_peer_id (D->P->id)),
+        D->members);
+    D->callback (TLS, success, D->P, D->extra);
+    free (D);
+  }
+}
+
+void tgp_chat_load_channel_members (struct tgl_state *TLS, tgl_peer_t *P,
+       void (*callback) (struct tgl_state *TLS, int success, tgl_peer_t *P, void *extra), void *extra) {
+  
+  struct tgp_channel_members_loading *D = talloc0 (sizeof(struct tgp_channel_members_loading));
+  D->P = P;
+  D->callback = callback;
+  D->remaining = 2;
+  D->extra = extra;
+  
+  tgl_do_channel_get_members (TLS, P->id,
+      purple_account_get_int (tls_get_pa (TLS), TGP_KEY_CHANNEL_MEMBERS, TGP_DEFAULT_CHANNEL_MEMBERS),
+      0, 0, tgp_channel_load_members_done, D);
+}
+
+static void update_chat (struct tgl_state *TLS, tgl_peer_t *C, unsigned flags, const char *group) {
+  if (flags & TGL_UPDATE_CREATED) {
+    tgp_blist_lookup_add (TLS, C->id, C->print_name);
+    tgp_chat_blist_store (TLS, tgl_peer_get (TLS, C->id), group);
+    
+  } else {
+    PurpleChat *PC = tgp_blist_chat_find (TLS, C->id);
+    if (PC) {
+      if (flags & TGL_UPDATE_TITLE) {
+        purple_blist_alias_chat (PC, C->print_name);
+      }
+      if (flags & TGL_UPDATE_DELETED) { // TODO: test if this is actually executed on deletion
+        purple_blist_remove_chat (PC);
+      }
+    }
+  }
+}
+
+void update_channel_handler (struct tgl_state *TLS, struct tgl_channel *C, unsigned flags) {
+  debug ("update_channel_handler() (%s)", print_flags_update (flags));
+  
+  update_chat (TLS, tgl_peer_get (TLS, C->id), flags, _("Telegram Channels"));
+}
+
+void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *C, unsigned flags) {
+  debug ("update_chat_handler() (%s)", print_flags_update (flags));
+  
+  update_chat (TLS, tgl_peer_get (TLS, C->id), flags, _("Telegram Chats"));
+}
+

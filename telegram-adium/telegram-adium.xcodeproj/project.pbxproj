@@ -112,7 +112,6 @@
 		C4B57BE51B109E6D006997F4 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		C4B57BE81B10D814006997F4 /* configure.ac */ = {isa = PBXFileReference; lastKnownFileType = text; name = configure.ac; path = ../configure.ac; sourceTree = "<group>"; };
 		C4B57BE91B10D822006997F4 /* Makefile.in */ = {isa = PBXFileReference; lastKnownFileType = text; name = Makefile.in; path = ../Makefile.in; sourceTree = "<group>"; };
-		C4B57BEC1B13B2C4006997F4 /* auto-types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "auto-types.h"; path = "../auto/auto-types.h"; sourceTree = "<group>"; };
 		C4B57BED1B1598BE006997F4 /* telegram-purple */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "telegram-purple"; path = ..; sourceTree = "<group>"; };
 		C4B57BEF1B1598D4006997F4 /* libtgl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libtgl.a; path = ../libs/libtgl.a; sourceTree = "<group>"; };
 		C4D12DEE1BC534CF00C0F6E1 /* tgp-blist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "tgp-blist.h"; path = "../tgp-blist.h"; sourceTree = "<group>"; };
@@ -268,7 +267,6 @@
 				C431EB7B1A76C737006521CB /* tgp-chat.c */,
 				C431EB7C1A76C737006521CB /* tgp-chat.h */,
 				C4E5280F1A8A907200C4B915 /* tgp-ft.c */,
-				C4B57BEC1B13B2C4006997F4 /* auto-types.h */,
 				C4E528101A8A907200C4B915 /* tgp-ft.h */,
 				C479A8001BB69C2100C153DF /* tgp-request.c */,
 				C479A8011BB69C2100C153DF /* tgp-request.h */,
