@@ -229,11 +229,10 @@ GHashTable *tgprpl_chat_info_defaults (PurpleConnection *gc, const char *chat_na
 void tgprpl_chat_join (PurpleConnection *gc, GHashTable *data) {
   debug ("tgprpl_chat_join()");
   g_return_if_fail(data);
-  
+
   // auto joins will cause chat joins at a time when the dialogue list is not ready, remember
   // those chats and join them once the dialogue list is fetched
   if (! gc_get_data (gc)->dialogues_ready) {
-    g_return_if_fail (data);
     const char *id = g_hash_table_lookup (data, "id");
     if (id) {
       debug ("attempting to join chat %s while not ready, queue up for later", id);
@@ -308,12 +307,19 @@ char *tgprpl_get_chat_name (GHashTable * data) {
 static void tgp_chat_roomlist_it (tgl_peer_t *P, void *extra) {
   connection_data *conn = extra;
   
-  if (tgl_get_peer_type (P->id) == TGL_PEER_CHAT && !(P->chat.flags & TGLCF_LEFT)) {
+  if ((tgl_get_peer_type (P->id) == TGL_PEER_CHAT || tgl_get_peer_type (P->id) == TGL_PEER_CHANNEL)
+      && !(P->flags & TGLPF_LEFT)) {
     char *id = g_strdup_printf ("%d", tgl_get_peer_id (P->id));
     
     PurpleRoomlistRoom *room = purple_roomlist_room_new (PURPLE_ROOMLIST_ROOMTYPE_ROOM, P->chat.print_title, NULL);
     purple_roomlist_room_add_field (conn->roomlist, room, id);
-    purple_roomlist_room_add_field (conn->roomlist, room, GINT_TO_POINTER(P->chat.users_num));
+    if (tgl_get_peer_type (P->id) == TGL_PEER_CHANNEL) {
+      purple_roomlist_room_add_field (conn->roomlist, room, GINT_TO_POINTER(0));
+      purple_roomlist_room_add_field (conn->roomlist, room, (P->channel.flags & TGLCHF_MEGAGROUP) ? _("Supergroup") : _("Channel"));
+    } else {
+      purple_roomlist_room_add_field (conn->roomlist, room, GINT_TO_POINTER(P->chat.users_num));
+      purple_roomlist_room_add_field (conn->roomlist, room, _("Group"));
+    }
     purple_roomlist_room_add (conn->roomlist, room);
     
     g_free (id);
@@ -322,38 +328,36 @@ static void tgp_chat_roomlist_it (tgl_peer_t *P, void *extra) {
 
 PurpleRoomlist *tgprpl_roomlist_get_list (PurpleConnection *gc) {
   debug ("tgprpl_roomlist_get_list()");
-  connection_data *conn = purple_connection_get_protocol_data (gc);
-  GList *fields = NULL;
-  
+  connection_data *conn = gc_get_data (gc);
+
   if (conn->roomlist) {
     purple_roomlist_unref (conn->roomlist);
   }
   
   conn->roomlist = purple_roomlist_new (purple_connection_get_account (gc));
   
+  GList *fields = NULL;
   PurpleRoomlistField *f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_STRING, "", "id", TRUE);
   fields = g_list_append (fields, f);
-  
+
   f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_INT, _("Users in chat"), "users", FALSE);
   fields = g_list_append (fields, f);
-  
+
+  f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_STRING, _("Type"), "type", FALSE);
+  fields = g_list_append (fields, f);
+
   purple_roomlist_set_fields (conn->roomlist, fields);
-  
   tgl_peer_iterator_ex (conn->TLS, tgp_chat_roomlist_it, conn);
   
   return conn->roomlist;
 }
 
 void tgprpl_roomlist_cancel (PurpleRoomlist *list) {
-  PurpleConnection *gc = purple_account_get_connection (list->account);
-  if (! gc) {
-    return;
-  }
-  
-  connection_data *conn = purple_connection_get_protocol_data (gc);
+  g_return_if_fail(list->account);
+
   purple_roomlist_set_in_progress (list, FALSE);
-  if (conn->roomlist == list) {
-    conn->roomlist = NULL;
+  if (pa_get_data (list->account)->roomlist == list) {
+    pa_get_data (list->account)->roomlist = NULL;
     purple_roomlist_unref (list);
   }
 }

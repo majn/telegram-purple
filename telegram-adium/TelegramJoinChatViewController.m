@@ -39,6 +39,14 @@ static void tgl_chat_iterator_cb (tgl_peer_t *peer, void *extra) {
   }
 }
 
+static void tgl_channel_iterator_cb (tgl_peer_t *peer, void *extra) {
+  NSMutableArray *A = (__bridge NSMutableArray *)(extra);
+  
+  if (tgl_get_peer_type (peer->id) == TGL_PEER_CHANNEL && !(peer->channel.flags & TGLCHF_LEFT)) {
+    [A addObject: [NSString stringWithUTF8String: peer->print_name]];
+  }
+}
+
 - (void)configureForAccount:(AIAccount *)inAccount
 {
   [super configureForAccount:inAccount];
@@ -51,7 +59,10 @@ static void tgl_chat_iterator_cb (tgl_peer_t *peer, void *extra) {
     // fetch all active chats and put them into the select box
     [popupButton_existingChat removeAllItems];
     NSMutableArray *chats = [NSMutableArray new];
+    
     tgl_peer_iterator_ex (conn->TLS, tgl_chat_iterator_cb, (__bridge void *)(chats));
+    tgl_peer_iterator_ex (conn->TLS, tgl_channel_iterator_cb, (__bridge void *)(chats));
+    
     [popupButton_existingChat
         addItemsWithTitles: [chats sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)]];
     
