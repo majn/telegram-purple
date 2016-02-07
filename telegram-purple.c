@@ -71,14 +71,11 @@ static void _update_buddy (struct tgl_state *TLS, tgl_peer_t *user, unsigned fla
     if (flags & TGL_UPDATE_DELETED) {
       debug ("update deleted");
       purple_blist_remove_buddy (buddy);
-      
     } else {
-      
       if (flags & TGL_UPDATE_CONTACT) {
         debug ("update contact");
         purple_blist_alias_buddy (buddy, user->print_name);
       }
-    
       if (flags & TGL_UPDATE_PHOTO) {
         debug ("update photo");
         tgp_info_update_photo (buddy, user);

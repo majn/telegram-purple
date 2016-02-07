@@ -90,6 +90,8 @@ static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, in
 
   debug ("moving transferred file from tgl directory %s to selected target %s", selected, filename);
   g_unlink (selected);
+  
+  //FIXME: try to copy when this fails
   g_rename (filename, selected);
   g_free (selected);
 }

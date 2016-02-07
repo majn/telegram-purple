@@ -239,6 +239,7 @@ static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_p
   if (size > TGP_MAX_MSG_SIZE * TGP_DEFAULT_MAX_MSG_SPLIT_COUNT) {
     return -E2BIG;
   }
+  
   while (size > start) {
     int end = start + (int)TGP_MAX_MSG_SIZE;
     if (end > size) {

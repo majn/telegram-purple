@@ -245,11 +245,9 @@ void tgprpl_chat_join (PurpleConnection *gc, GHashTable *data) {
   void *value = g_hash_table_lookup (data, "id");
   if (value && atoi (value)) {
     tgl_peer_t *P = tgl_peer_get (gc_get_tls (gc), TGL_MK_CHAT(atoi (value)));
-    
     if (! P) {
       P = tgl_peer_get (gc_get_tls (gc), TGL_MK_CHANNEL(atoi (value)));
     }
-    
     if (P) {
       debug ("type=%d", tgl_get_peer_type (P->id));
       if (tgl_get_peer_type (P->id) == TGL_PEER_CHAT) {

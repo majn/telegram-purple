@@ -53,6 +53,8 @@
   [super didConnect];
   [self purpleAccount];
   
+  // FIXME: Crashed after going online
+  
   // Storing chats in the blist breaks Adium bookmarks. Adium doesn't
   // show those chats anyway, so we can just safely delete those.
   PurpleBlistNode *node = purple_blist_get_root();
