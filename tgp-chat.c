@@ -48,7 +48,7 @@ tgl_peer_id_t tgp_chat_get_id (PurpleChat *C) {
   return TGL_MK_CHAT(atoi (id));
 }
 
-static void tgp_chat_blist_store (struct tgl_state *TLS, tgl_peer_t *P, const char *group) {
+void tgp_chat_blist_store (struct tgl_state *TLS, tgl_peer_t *P, const char *group) {
   g_return_if_fail(tgl_get_peer_type (P->id) == TGL_PEER_CHAT || tgl_get_peer_type (P->id) == TGL_PEER_CHANNEL);
 
   PurpleChat *PC = tgp_blist_chat_find (TLS, P->id);
@@ -57,15 +57,15 @@ static void tgp_chat_blist_store (struct tgl_state *TLS, tgl_peer_t *P, const ch
       PC = tgp_chat_new (TLS, tgl_peer_get (TLS, P->id));
       if (purple_account_get_bool (tls_get_pa (TLS), TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS)) {
         purple_blist_add_chat (PC, tgp_blist_group_init (group), NULL);
-        tgp_info_update_photo (&PC->node, tgl_peer_get (TLS, P->id));
       }
     }
+    tgp_info_update_photo (&PC->node, tgl_peer_get (TLS, P->id));
   } else {
     if (PC) {
       purple_blist_remove_chat (PC);
     }
   }
-
+  
   if (PC) {
     g_hash_table_replace (purple_chat_get_components (PC), g_strdup ("id"),
         g_strdup_printf ("%d", tgl_get_peer_id (P->id)));
@@ -462,6 +462,9 @@ static void update_chat (struct tgl_state *TLS, tgl_peer_t *C, unsigned flags, c
       }
       if (flags & TGL_UPDATE_DELETED) { // TODO: test if this is actually executed on deletion
         purple_blist_remove_chat (PC);
+      }
+      if (flags & TGL_UPDATE_PHOTO) {
+        tgp_info_update_photo (&PC->node, tgl_peer_get (TLS, C->id));
       }
     }
   }

@@ -162,9 +162,8 @@ void tgp_blist_contact_add (struct tgl_state *TLS, struct tgl_user *U) {
     buddy = tgp_blist_buddy_new (TLS, P);
     purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init (_("Telegram")), NULL);
     
-    tgp_info_update_photo (buddy, P);
+    tgp_info_update_photo (&buddy->node, P);
   }
-  
   p2tgl_prpl_got_user_status (TLS, U->id, &U->status);
 }
 

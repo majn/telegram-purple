@@ -22,16 +22,7 @@
 
 #include "telegram-purple.h"
 
-#define TGP_INFO_PHOTO_ID "tgp-photo-id"
-
-struct tgp_info_load_photo_data {
-  struct tgl_state *TLS;
-  void (* callback) (struct tgl_state *TLS, void *extra, gchar *img, size_t len, int success);
-  void *extra;
-};
-
-void tgp_info_load_photo_peer (struct tgl_state *TLS, tgl_peer_t *P, void *extra,
-        void (*callback) (struct tgl_state *TLS, void *extra, gchar *img, size_t len, int success));
-void tgp_info_update_photo (PurpleBuddy *buddy, tgl_peer_t *P);
+#define TGP_INFO_PHOTO_ID "tgp_photo_id"
+void tgp_info_update_photo (PurpleBlistNode *node, tgl_peer_t *P);
 void tgprpl_info_show (PurpleConnection *gc, const char *who);
 #endif

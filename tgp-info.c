@@ -19,139 +19,70 @@
 
 #include "tgp-info.h"
 
-
 // load photo
 
-static void tgp_info_load_photo_done (struct tgl_state *TLS, void *extra, int success,
-    const char *filename) {
-  struct tgp_info_load_photo_data *data = extra;
+static void tgp_info_update_photo_id (PurpleBlistNode *node, long long photo) {
+  char *llid = g_strdup_printf ("%lld", photo);
+  debug ("tgp_info_update_photo_id %s", llid);
+  purple_blist_node_set_string (node, TGP_INFO_PHOTO_ID, llid);
+  g_free (llid);
+}
 
-  if (! success) {
-    data->callback (TLS, data->extra, NULL, 0, 0);
+static void tgp_info_load_photo_done (struct tgl_state *TLS, void *extra, int success, const char *filename) {
+  tgl_peer_t *P = extra;
+  
+  g_return_if_fail(success);
+  
+  gchar *img = NULL;
+  size_t len;
+  GError *err = NULL;
+  g_file_get_contents (filename, &img, &len, &err);
+  if (err) {
+    failure ("getting file contents for %s failed: %s", filename, err->message);
+    return;
+  }
+  
+  if (tgl_get_peer_type (P->id) == TGL_PEER_USER || tgl_get_peer_type (P->id) == TGL_PEER_ENCR_CHAT) {
+    PurpleBuddy *B = tgp_blist_buddy_find (TLS, P->id);
+    g_return_if_fail(B);
+    
+    purple_buddy_icons_set_for_user (tls_get_pa (TLS), purple_buddy_get_name (B),
+       (guchar*) img, len, NULL);
+    tgp_info_update_photo_id (&B->node, P->user.photo_big.local_id);
   } else {
-    gchar *img = NULL;
-    size_t len;
-    GError *err = NULL;
-    g_file_get_contents (filename, &img, &len, &err);
-
-    if (err) {
-      failure ("getting file contents for %s failed: %s", filename, err->message);
-      data->callback (TLS, data->extra, NULL, 0, FALSE);
-      return;
-    }
-    data->callback (TLS, data->extra, img, len, success);
-  }
-  free (data);
-}
-
-static void tgp_info_update_photo_chat_done (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *C) {
-  g_return_if_fail(success);
-  g_return_if_fail(C->photo);
-  tgl_do_load_photo (TLS, C->photo, tgp_info_load_photo_done, extra);
-}
-
-static void tgp_info_update_photo_user_done (struct tgl_state *TLS, void *extra, int success, struct tgl_user *U) {
-  g_return_if_fail(success);
-  g_return_if_fail(U->photo);
-  tgl_do_load_photo (TLS, U->photo, tgp_info_load_photo_done, extra);
-}
-
-static void tgp_info_update_photo_channel_done (struct tgl_state *TLS, void *extra, int success, struct tgl_channel *CH) {
-  g_return_if_fail(success);
-  g_return_if_fail(CH->photo);
-  tgl_do_load_photo (TLS, CH->photo, tgp_info_load_photo_done, extra);
-}
-
-void tgp_info_load_photo_peer (struct tgl_state *TLS, tgl_peer_t *P, void *extra,
-       void (*callback) (struct tgl_state *TLS, void *extra, gchar *img, size_t len, int success)) {
-  assert(callback);
-
-  struct tgp_info_load_photo_data *D = talloc0 (sizeof(struct tgp_info_load_photo_data));
-  D->callback = callback;
-  D->extra = extra;
-  D->TLS = TLS;
-
-  switch (tgl_get_peer_type (P->id)) {
-    case TGL_PEER_CHANNEL:
-      tgl_do_get_channel_info (TLS, P->id, FALSE, tgp_info_update_photo_channel_done, D);
-      break;
-
-    case TGL_PEER_USER:
-      tgl_do_get_user_info (TLS, P->id, FALSE, tgp_info_update_photo_user_done, D);
-      break;
-
-    case TGL_PEER_CHAT:
-      tgl_do_get_chat_info (TLS, P->id, FALSE, tgp_info_update_photo_chat_done, D);
-      break;
-
-    case TGL_PEER_ENCR_CHAT: {
-      tgl_peer_t *parent = tgp_encr_chat_get_partner (TLS, &P->encr_chat);
-      g_return_if_fail(parent);
-      tgl_do_get_user_info (TLS, parent->id, FALSE, tgp_info_update_photo_user_done, D);
-      break;
-    }
-
-    default:
-      g_warn_if_reached();
-      break;
+    PurpleChat *C = tgp_blist_chat_find (TLS, P->id);
+    g_return_if_fail(C);
+    
+    purple_buddy_icons_node_set_custom_icon (&C->node, (guchar*) img, len);
+    tgp_info_update_photo_id (&C->node, P->user.photo_big.local_id);
   }
 }
-
 
 // update photo
 
-static void tgp_info_update_photo_done (struct tgl_state *TLS, void *extra, gchar *img, size_t len, int success) {
-  PurpleBuddy *node = extra;
-  g_return_if_fail(success);
-  purple_buddy_icons_set_for_user (tls_get_pa (TLS), purple_buddy_get_name (node), img, len, NULL);
-}
-
-void tgp_info_update_photo (PurpleBuddy *buddy, tgl_peer_t *P) {
-  PurpleBlistNode *node = &buddy->node;
+void tgp_info_update_photo (PurpleBlistNode *node, tgl_peer_t *P) {
   tgl_peer_t *parent = NULL;
 
-  long long photo = 0;
-  switch (tgl_get_peer_type (P->id)) {
-    case TGL_PEER_USER:
-      photo = P->user.photo_id;
-      break;
-
-    case TGL_PEER_CHANNEL:
-      photo = P->channel.photo_id;
-      break;
-
-    case TGL_PEER_ENCR_CHAT: {
-      parent = tgp_encr_chat_get_partner (pbn_get_data (node)->TLS, &P->encr_chat);
-      photo = parent->photo_id;
-      break;
-    }
-
-    default:
-      return;
-  }
+  // FIXME: test if this works for encrypted chats
+  long long photo = P->user.photo_big.local_id;
 
   const char *old = purple_blist_node_get_string (node, TGP_INFO_PHOTO_ID);
   if (old) {
     long long id = 0;
     id = atoll (old);
     if (id == photo) {
-      debug ("photo id for %s hasn't changed %lld", buddy->name, id);
+      debug ("photo id for %s hasn't changed %lld", parent ? parent->print_name : P->print_name, id);
       return;
     }
   }
 
   if (photo != 0) {
-    tgp_info_load_photo_peer (pbn_get_data (node)->TLS, parent ? parent : P, node, tgp_info_update_photo_done);
+    tgl_do_load_file_location (pbn_get_data (node)->TLS, &P->user.photo_big, tgp_info_load_photo_done, P);
   } else {
-    purple_buddy_icons_set_for_user (purple_buddy_get_account (buddy), purple_buddy_get_name (buddy), NULL,
-        0, NULL);
+    // set empty photo
+    purple_buddy_icons_node_set_custom_icon_from_file (node, NULL);
+    tgp_info_update_photo_id (node, photo);
   }
-
-  // FIXME: call this in tgp_info_update_photo_done, right now just hope for the best
-  char *llid = g_strdup_printf ("%lld", photo);
-  debug ("tgl_info_update_photo %s", llid);
-  purple_blist_node_set_string (node, TGP_INFO_PHOTO_ID, llid);
-  g_free (llid);
 }
 
 

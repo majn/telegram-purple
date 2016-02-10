@@ -78,7 +78,7 @@ static void _update_buddy (struct tgl_state *TLS, tgl_peer_t *user, unsigned fla
       }
       if (flags & TGL_UPDATE_PHOTO) {
         debug ("update photo");
-        tgp_info_update_photo (buddy, user);
+        tgp_info_update_photo (&buddy->node, user);
       }
     }
   }
@@ -140,7 +140,7 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *user, u
       
       if (buddy) {
         p2tgl_prpl_got_user_status (TLS, user->id, &user->status);
-        tgp_info_update_photo (buddy, tgl_peer_get (TLS, user->id));
+        tgp_info_update_photo (&buddy->node, tgl_peer_get (TLS, user->id));
       }
     }
   } else {
