@@ -661,6 +661,13 @@ static gboolean tgprpl_can_receive_file (PurpleConnection *gc, const char *who) 
   return TRUE;
 }
 
+static GHashTable *tgprpl_get_account_text_table (PurpleAccount *pa) {
+  GHashTable *HT;
+  HT = g_hash_table_new (g_str_hash, g_str_equal);
+  g_hash_table_insert(HT, "login_label", (gpointer) _("phone no. (+ country prefix)"));
+  return HT;
+}
+
 PurplePlugin *_telegram_protocol = NULL;
 
 static PurplePluginProtocolInfo prpl_info = {
@@ -738,7 +745,7 @@ static PurplePluginProtocolInfo prpl_info = {
   NULL,                    // send_attention
   NULL,                    // get_attention_types
   sizeof(PurplePluginProtocolInfo),
-  NULL,           		     // get_account_text_table
+  tgprpl_get_account_text_table, // get_account_text_table
   NULL,                    // initiate_media
   NULL,                    // get_media_caps
   NULL,                    // get_moods
