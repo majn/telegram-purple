@@ -131,7 +131,7 @@
   
   [menu addItemWithTitle:@"Delete and exit..."
                   target:self
-                  action:@selector(deleteAndExitChat)
+                  action:@selector(deleteAndExit)
            keyEquivalent:@""
                      tag:0];
   
@@ -143,20 +143,16 @@
   connection_data *conn = purple_connection_get_protocol_data (purple_account_get_connection(account));
   AIChat *chat = adium.interfaceController.activeChat;
   if (chat) {
-    export_chat_link_checked (conn->TLS, [chat.name UTF8String]);
+    export_chat_link_by_name (conn->TLS, [chat.name UTF8String]);
   }
 }
 
-- (void)deleteAndExitChat
+- (void)deleteAndExit
 {
   connection_data *conn = purple_connection_get_protocol_data (purple_account_get_connection(account));
   AIChat *chat = adium.interfaceController.activeChat;
   if (chat) {
-    const char *name = [chat.name UTF8String];
-    tgl_peer_t *P = tgp_blist_lookup_peer_get (conn->TLS, name);
-    if (P) {
-      leave_and_delete_chat (conn->TLS, P);
-    }
+    leave_and_delete_chat_by_name (conn->TLS, [chat.name UTF8String]);
   }
 }
 

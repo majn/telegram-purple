@@ -161,13 +161,8 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
     case tgl_message_action_channel_create: {
       txt = g_strdup_printf (_("Channel %1$s created"), M->action.title);
       
-      // Add the new channel to the buddy list
-      PurpleBuddy *buddy = tgp_blist_buddy_new (TLS, fromPeer);
-      purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init (_("Telegram Channels")), NULL);
-      // tgp_info_update_photo (buddy, fromPeer);
-      
-      purple_prpl_got_user_status (tls_get_pa (TLS), tgp_blist_lookup_purple_name (TLS, fromPeer->id),
-          "available", NULL);
+      // FIXME: check if this makes sense
+      tgp_chat_blist_store (TLS, fromPeer, _("Telegram Channels"));
       break;
     }
     default:

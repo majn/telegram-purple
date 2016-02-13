@@ -96,9 +96,10 @@ extern const char *pk_path;
 extern const char *user_pk_filename;
 extern const char *config_dir;
 extern PurplePlugin *_telegram_protocol;
-void export_chat_link_checked (struct tgl_state *TLS, const char *name);
-void import_chat_link_checked (struct tgl_state *TLS, const char *link);
+void import_chat_link (struct tgl_state *TLS, const char *link);
+void export_chat_link_by_name (struct tgl_state *TLS, const char *name);
 void leave_and_delete_chat (struct tgl_state *TLS, tgl_peer_t *P);
+void leave_and_delete_chat_by_name (struct tgl_state *TLS, const char *name);
 void channel_load_photo (struct tgl_state *TLS, void *extra, int success, struct tgl_channel *C);
 
 #endif

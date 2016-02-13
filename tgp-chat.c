@@ -15,21 +15,19 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  
- Copyright Matthias Jentsch, Ben Wiederhake 2014-2015
+ Copyright Matthias Jentsch, Ben Wiederhake 2014-2016
  */
 
 #include "tgp-chat.h"
 
 GHashTable *tgp_chat_info_new (struct tgl_state *TLS, tgl_peer_t *P) {
-  
   GHashTable *ht = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
   g_hash_table_insert (ht, "subject", g_strdup (P->print_name));
-  g_hash_table_insert (ht, "id", g_strdup_printf ("%d", tgl_get_peer_id (P->chat.id)));
-  
+  g_hash_table_insert (ht, "id", g_strdup_printf ("%d", tgl_get_peer_id (P->id)));
+  g_hash_table_insert (ht, "type", g_strdup_printf ("%d", tgl_get_peer_type (P->id)));
   if (tgl_get_peer_type (P->id) == TGL_PEER_CHANNEL) {
     g_hash_table_insert (ht, "last_server_id", g_strdup_printf ("%d", 0));
   }
-  
   return ht;
 }
 
@@ -43,9 +41,13 @@ int tgp_chat_has_id (PurpleChat *C) {
 }
 
 tgl_peer_id_t tgp_chat_get_id (PurpleChat *C) {
-  const char *id = g_hash_table_lookup (purple_chat_get_components (C), "id");
-  assert (id && *id);
-  return TGL_MK_CHAT(atoi (id));
+  const char *I = g_hash_table_lookup (purple_chat_get_components (C), "id");
+  const char *T = g_hash_table_lookup (purple_chat_get_components (C), "type");
+  int type = TGL_PEER_CHAT;
+  if (T && *T) {
+    type = atoi (T);
+  }
+  return tgl_set_peer_id (type, (I && *I) ? atoi (I) : 0);
 }
 
 void tgp_chat_blist_store (struct tgl_state *TLS, tgl_peer_t *P, const char *group) {
@@ -69,6 +71,8 @@ void tgp_chat_blist_store (struct tgl_state *TLS, tgl_peer_t *P, const char *gro
   if (PC) {
     g_hash_table_replace (purple_chat_get_components (PC), g_strdup ("id"),
         g_strdup_printf ("%d", tgl_get_peer_id (P->id)));
+    g_hash_table_replace (purple_chat_get_components (PC), g_strdup ("type"),
+        g_strdup_printf ("%d", tgl_get_peer_type (P->id)));
     g_hash_table_replace (purple_chat_get_components (PC), g_strdup ("subject"),
         g_strdup (tgl_get_peer_type (P->id) == TGL_PEER_CHANNEL ? P->channel.title : P->chat.title));
   }

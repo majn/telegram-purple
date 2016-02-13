@@ -84,7 +84,7 @@ static void tgl_channel_iterator_cb (tgl_peer_t *peer, void *extra) {
     // Join by link
     NSString *link = [textField_joinByLink stringValue];
     if ([link length]) {
-      import_chat_link_checked (conn->TLS, [link UTF8String]);
+      import_chat_link (conn->TLS, [link UTF8String]);
       return;
     }
     

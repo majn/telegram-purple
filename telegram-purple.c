@@ -247,12 +247,10 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *extra, int suc
       g_warn_if_reached ();
       continue;
     }
-    
     // our own contact shouldn't show up in our buddy list
     if (tgl_get_peer_id (UC->id) == tgl_get_peer_id (TLS->our_id)) {
       continue;
     }
-    
     if (tgl_get_peer_type (UC->id) == TGL_PEER_USER) {
       if (! (UC->user.flags & TGLUF_DELETED)) {
         tgp_blist_contact_add (TLS, &UC->user);
@@ -327,16 +325,8 @@ static void start_secret_chat (PurpleBlistNode *node, gpointer data) {
 
 static void create_chat_link_done (struct tgl_state *TLS, void *extra, int success, const char *url) {
   tgl_peer_t *P = extra;
-  
   if (success) {
-    assert (tgl_get_peer_type (P->id) == TGL_PEER_CHAT);
-    /*
-    tgp_chat_show (TLS, P);
-    serv_got_chat_in (tls_get_conn (TLS), tgl_get_peer_id (P->id), "WebPage", PURPLE_MESSAGE_SYSTEM, msg, time(NULL));
-    */
-    
     char *msg = g_strdup_printf (_("Invite link: %s"), url);
-    
     tgp_chat_got_in (TLS, P, P->id, msg, PURPLE_MESSAGE_SYSTEM, time(NULL));
     g_free (msg);
   } else {
@@ -344,23 +334,33 @@ static void create_chat_link_done (struct tgl_state *TLS, void *extra, int succe
   }
 }
 
-static void export_chat_link_checked_gw (PurpleBlistNode *node, gpointer data) {
-  PurpleChat *chat = (PurpleChat*)node;
-  export_chat_link_checked (pbn_get_data (node)->TLS, purple_chat_get_name (chat));
-}
-
-void export_chat_link_checked (struct tgl_state *TLS, const char *name) {
-  tgl_peer_t *C = tgp_blist_lookup_peer_get (TLS, name);
-  if (! C) {
-    failure ("Chat \"%s\" not found, not exporting link.", name);
-    return;
-  }
-  if (C->chat.admin_id != tgl_get_peer_id (TLS->our_id)) {
+void export_chat_link (struct tgl_state *TLS, tgl_peer_t *P) {
+  if (! (P->flags & (TGLPF_ADMIN | TGLPF_CREATOR))) {
+    // FIXME: Can TGLCHF_MODERATOR export links?
     purple_notify_error (_telegram_protocol, _("Creating chat link failed"), _("Creating chat link failed"),
         _("You need to be admin of the group  to do that."));
     return;
   }
-  tgl_do_export_chat_link (TLS, C->id, create_chat_link_done, C);
+  
+  if (tgl_get_peer_type(P->id) == TGL_PEER_CHAT) {
+    tgl_do_export_chat_link (TLS, P->id, create_chat_link_done, P);
+  } else if (tgl_get_peer_type(P->id) == TGL_PEER_CHANNEL) {
+    tgl_do_export_channel_link (TLS, P->id, create_chat_link_done, P);
+  } else {
+    g_warn_if_reached();
+  }
+}
+
+static void export_chat_link_checked_gw (PurpleBlistNode *node, gpointer data) {
+  PurpleChat *chat = (PurpleChat*)node;
+  export_chat_link_by_name (pbn_get_data (node)->TLS, purple_chat_get_name (chat));
+}
+
+void export_chat_link_by_name (struct tgl_state *TLS, const char *name) {
+  g_return_if_fail(name);
+  tgl_peer_t *C = tgp_blist_lookup_peer_get (TLS, name);
+  g_warn_if_fail(C != NULL);
+  export_chat_link (TLS, C);
 }
 
 static void leave_and_delete_chat_gw (PurpleBlistNode *node, gpointer data) {
@@ -372,14 +372,30 @@ static void leave_and_delete_chat_gw (PurpleBlistNode *node, gpointer data) {
 
 void leave_and_delete_chat (struct tgl_state *TLS, tgl_peer_t *P) {
   g_return_if_fail (P);
-  if (P && !(P->user.flags & TGLCHF_LEFT)) {
-    tgl_do_del_user_from_chat (TLS, P->id, TLS->our_id, tgp_notify_on_error_gw, NULL);
+
+  if (tgl_get_peer_type(P->id) == TGL_PEER_CHAT) {
+    if (!(P->chat.flags & TGLCHF_LEFT)) {
+      tgl_do_del_user_from_chat (TLS, P->id, TLS->our_id, tgp_notify_on_error_gw, NULL);
+    }
+  } else if (tgl_get_peer_type(P->id) == TGL_PEER_CHANNEL) {
+    tgl_do_leave_channel (TLS, P->id, tgp_notify_on_error_gw, NULL);
+  } else {
+    g_return_if_reached();
   }
+
   serv_got_chat_left (tls_get_conn (TLS), tgl_get_peer_id (P->id));
+
   PurpleChat *PC = tgp_blist_chat_find (TLS, P->id);
   if (PC) {
     purple_blist_remove_chat (PC);
   }
+}
+
+void leave_and_delete_chat_by_name (struct tgl_state *TLS, const char *name) {
+  g_return_if_fail(name);
+  tgl_peer_t *P = tgp_blist_lookup_peer_get (TLS, name);
+  g_return_if_fail(P);
+  leave_and_delete_chat (TLS, P);
 }
 
 static void import_chat_link_done (struct tgl_state *TLS, void *extra, int success) {
@@ -391,7 +407,7 @@ static void import_chat_link_done (struct tgl_state *TLS, void *extra, int succe
       _("Chat added to list of chat rooms."));
 }
 
-void import_chat_link_checked (struct tgl_state *TLS, const char *link) {
+void import_chat_link (struct tgl_state *TLS, const char *link) {
   tgl_do_import_chat_link (TLS, link, (int) strlen(link), import_chat_link_done, NULL);
 }
 

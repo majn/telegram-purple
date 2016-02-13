@@ -41,6 +41,8 @@ PurpleChat *tgp_chat_new (struct tgl_state *TLS, tgl_peer_t *P);
 tgl_peer_id_t tgp_chat_get_id (PurpleChat *C);
 int tgp_chat_has_id (PurpleChat *C);
 
+void tgp_chat_blist_store (struct tgl_state *TLS, tgl_peer_t *P, const char *group);
+
 PurpleConversation *tgp_chat_show (struct tgl_state *TLS, tgl_peer_t *P);
 int tgprpl_send_chat (PurpleConnection *gc, int id, const char *message, PurpleMessageFlags flags);
 char *tgprpl_get_chat_name (GHashTable *data);
