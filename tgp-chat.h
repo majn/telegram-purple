@@ -36,8 +36,6 @@ struct tgp_channel_members_loading {
   int remaining;
 };
 
-PurpleChat *tgp_chat_new (struct tgl_state *TLS, tgl_peer_t *P);
-
 tgl_peer_id_t tgp_chat_get_id (PurpleChat *C);
 int tgp_chat_has_id (PurpleChat *C);
 

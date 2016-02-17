@@ -31,10 +31,6 @@ GHashTable *tgp_chat_info_new (struct tgl_state *TLS, tgl_peer_t *P) {
   return ht;
 }
 
-PurpleChat *tgp_chat_new (struct tgl_state *TLS, tgl_peer_t *P) {
-  return purple_chat_new (tls_get_pa (TLS), P->chat.print_title, tgp_chat_info_new (TLS, P));
-}
-
 int tgp_chat_has_id (PurpleChat *C) {
   const char *id = g_hash_table_lookup (purple_chat_get_components (C), "id");
   return id && *id;
@@ -105,7 +101,6 @@ static void tgp_chat_on_loaded_channel_full_joining (struct tgl_state *TLS, int 
     tgp_notify_on_error_gw (TLS, NULL, success);
     return;
   }
-  
   tgp_chat_blist_store (TLS, P, _("Telegram Channels"));
   tgp_chat_show (TLS, P);
 }
