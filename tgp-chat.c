@@ -56,10 +56,14 @@ void tgp_chat_blist_store (struct tgl_state *TLS, tgl_peer_t *P, const char *gro
   PurpleChat *PC = tgp_blist_chat_find (TLS, P->id);
   if (! (P->flags & TGLCF_LEFT)) {
     if (! PC) {
-      PC = tgp_chat_new (TLS, tgl_peer_get (TLS, P->id));
+      PC = purple_chat_new (tls_get_pa (TLS), P->chat.print_title, tgp_chat_info_new (TLS, P));
+      // adding chats to the blist in Adium would cause the bookmarks and auto-joins to fail,
+      // as Adium assumes that a chat existing in blist means the user already joined
+#ifndef __ADIUM_
       if (purple_account_get_bool (tls_get_pa (TLS), TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS)) {
         purple_blist_add_chat (PC, tgp_blist_group_init (group), NULL);
       }
+#endif
     }
     tgp_info_update_photo (&PC->node, tgl_peer_get (TLS, P->id));
   } else {
