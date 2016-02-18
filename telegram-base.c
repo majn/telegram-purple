@@ -493,7 +493,7 @@ void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *titl
       debug ("User %s not found in peer list", users[j]);
     }
   }
-  if (i > 0) {
+  if (j > 1) {
     tgl_do_create_group_chat (TLS, j, ids, title, (int) strlen(title),
                               tgp_notify_on_error_gw, g_strdup (title));
   } else {
