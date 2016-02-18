@@ -566,7 +566,18 @@ static void tgprpl_login (PurpleAccount * acct) {
   tgl_set_callback (TLS, &tgp_callback);
   tgl_register_app_id (TLS, TGP_APP_ID, TGP_APP_HASH);
   tgl_set_app_version (TLS, PACKAGE_VERSION);
-  tgl_init (TLS);
+
+  if (tgl_init (TLS) != 0) {
+    debug ("Call to tgl_init failed.\n");
+    char *cause = g_strdup_printf (_("Unable to sign on as %s: problem in the underlying library"
+                                     " 'tgl'. Please submit a bug report with the debug log."),
+                    purple_account_get_username (acct));
+    purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_INVALID_SETTINGS, cause);
+    purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, _("Problem in tgl"),
+        cause, NULL, NULL, NULL);
+    g_free (cause);
+    return;
+  }
 
   if (! tgp_startswith (purple_account_get_username (acct), "+")) {
     // TRANSLATORS: Please fill in your own prefix!
