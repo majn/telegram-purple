@@ -11,3 +11,13 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 # dh_auto_clean tries to "make distclean", but we don't have that target.
 override_dh_auto_clean:
 	test ! -e Makefile || $(MAKE) clean
+
+## http://wiki.debian.org/onlyjob/get-orig-source
+PKD := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+PKG := $(shell dpkg-parsechangelog -l$(PKD)/changelog --show-field=Source)
+VER ?= $(shell dpkg-parsechangelog -l$(PKD)/changelog --show-field=Version | cut -d- -f1)
+.PHONY: get-orig-source
+get-orig-source:  $(info I: $(PKG)_$(VER))
+	@echo "# Downloading for ${PKD}"
+	uscan --noconf --verbose --rename --destdir=$(CURDIR) \
+	      --check-dirname-level=0 --force-download --download-version "$(VER)" $(PKD)
