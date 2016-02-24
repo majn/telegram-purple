@@ -4414,7 +4414,7 @@ if test "${enable_icons+set}" = set; then :
   enableval=$enable_icons;
 fi
 
-  if test "x$enable_icons" == "xno"; then :
+  if test "x$enable_icons" = "xno"; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Icons are deactivated. Pidgin needs icons. Finch and telepathy-haze don't." >&5
 $as_echo "$as_me: WARNING: Icons are deactivated. Pidgin needs icons. Finch and telepathy-haze don't." >&2;}

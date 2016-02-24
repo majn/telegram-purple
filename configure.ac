@@ -65,7 +65,7 @@ AS_IF([test "x$enable_libwebp" != "xno"], [
 AC_SUBST([COPY_ICONS], [yes])
 AC_ARG_ENABLE([icons],
   AS_HELP_STRING([--disable-icons], [Don't copy the protocol icons for Pidgin. Only useful if you're using Finch of telepathy-haze. (Adium users shouldn't be using this build system at all.)]))
-  AS_IF([test "x$enable_icons" == "xno"], [
+  AS_IF([test "x$enable_icons" = "xno"], [
     AC_WARN([Icons are deactivated. Pidgin needs icons. Finch and telepathy-haze don't.])
     AC_SUBST([COPY_ICONS], [no])
   ])
