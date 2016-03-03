@@ -89,12 +89,8 @@ commit:
 # The *commands* for commit.h shall always be executed, but the
 # *file* commit.h should only be considered to have changed in rare cases.
 GIT_COMMIT=$(shell git rev-parse HEAD | cut -c1-10)
-commit.h: commit .git
-	@grep -scq ${GIT_COMMIT} commit.h || ( \
-	echo "Refresh commit.h" && \
-	echo '#ifndef GIT_COMMIT' > commit.h && \
-	echo '#  define GIT_COMMIT "${GIT_COMMIT}"' >> commit.h && \
-	echo '#endif' >> commit.h )
+commit.h: commit
+	@./commit.h.gen
 
 # Ugly, but necessary, because otherwise commit.h would not get generated:
 test/loadtest.c: commit.h
