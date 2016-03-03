@@ -215,7 +215,7 @@ check-clean: .git
 
 # Feel free to remove the "check-clean" dependency if you know what you're doing.
 .PHONY: dist
-dist: check-clean .git create_dirs
+dist: check-clean commit.h .git create_dirs
 	./gen-origtar
 
 
