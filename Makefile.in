@@ -216,19 +216,7 @@ check-clean: .git
 # Feel free to remove the "check-clean" dependency if you know what you're doing.
 .PHONY: dist
 dist: check-clean .git create_dirs
-# Abuse the "bin" dir for temporary files.
-	@rm -f bin/tgl_tl-parser.tar bin/tgl.tar bin/result.tar bin/result.tar.gz
-	( cd tgl/tl-parser && git archive --prefix=telegram-purple/tgl/tl-parser/ --output=../../bin/tgl_tl-parser.tar HEAD )
-	( cd tgl && git archive --prefix=telegram-purple/tgl/ --output=../bin/tgl.tar HEAD )
-	git archive --prefix=telegram-purple/ --output=bin/result.tar HEAD
-	tar --concatenate -f bin/result.tar bin/tgl.tar
-	tar --concatenate -f bin/result.tar bin/tgl_tl-parser.tar
-	gzip -n bin/result.tar
-# CAREFUL WHEN EDITING: Lots of black magic.
-# "mv -f" means "overwrite, if necessary"
-	@TARNAME="telegram-purple_`git describe --tags | sed s/^v// `.orig.tar.gz" ; \
-	echo mv -f bin/result.tar.gz $$TARNAME ; \
-	mv -f bin/result.tar.gz $$TARNAME
+	./gen-origtar
 
 
 ### == Cleaning in various flavors == ###

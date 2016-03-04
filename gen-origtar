@@ -1,0 +1,44 @@
+#!/bin/sh
+
+# This file is part of telegram-purple
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
+#
+# Copyright Matthias Jentsch, Ben Wiederhake 2016
+
+set -e
+
+# -- Cleanup possibly left-over artifacts
+rm -f bin/tgl_tl-parser.tar bin/tgl.tar bin/result.tar bin/result.tar.gz
+
+# -- Create parts
+# Abuse the "bin" dir for temporary files.
+( cd tgl/tl-parser && git archive --prefix=telegram-purple/tgl/tl-parser/ --output=../../bin/tgl_tl-parser.tar HEAD )
+( cd tgl && git archive --prefix=telegram-purple/tgl/ --output=../bin/tgl.tar HEAD )
+git archive --prefix=telegram-purple/ --output=bin/result.tar HEAD
+
+# -- Concatenate it all
+tar --concatenate -f bin/result.tar bin/tgl.tar
+tar --concatenate -f bin/result.tar bin/tgl_tl-parser.tar
+gzip -n bin/result.tar
+
+# -- Determine name and move
+TARNAME="telegram-purple_`git describe --tags | sed s/^v// `.orig.tar.gz"
+# "mv -f" means "overwrite, if necessary"
+echo mv -f bin/result.tar.gz $TARNAME
+mv -f bin/result.tar.gz $TARNAME
+
+# -- Cleanup (never fail)
+rm -f bin/tgl_tl-parser.tar bin/tgl.tar bin/result.tar bin/result.tar.gz || true
