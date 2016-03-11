@@ -1,5 +1,5 @@
 Name:		purple-telegram
-Version:	1.2.5
+Version:	1.2.6
 Release:	1%{?dist}
 Summary:	Adds support for Libpurple based messengers
 Group:		Applications/Internet
@@ -39,6 +39,9 @@ appstream-util validate-relax --nonet %{buildroot}/%{_datadir}/appdata/telegram-
 %{_datadir}/pixmaps/pidgin/protocols/48/telegram.png
 
 %changelog
+* Fri Mar 11 mjentsch 1.2.6-1
+- build for 1.2.6
+
 * Sat Jan 23 mjentsch 1.2.5-1
 - build for 1.2.5
 
