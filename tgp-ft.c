@@ -62,7 +62,12 @@ static char *tgp_strdup_determine_filename (const char *mime, const char *captio
 static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, int success, const char *filename) {
   debug ("tgprpl_xfer_recv_on_finished()");
   struct tgp_xfer_send_data *data = _data;
+
   char *selected = g_strdup (purple_xfer_get_local_filename (data->xfer));
+  debug ("moving transferred file from tgl directory %s to selected target %s", filename, selected);
+  g_unlink (selected);
+  g_rename (filename, selected);
+  g_free (selected);
 
   if (success) {
     debug ("purple_xfer_set_completed");
@@ -87,11 +92,6 @@ static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, in
   data->xfer->data = NULL;
   purple_xfer_unref (data->xfer);
   tgprpl_xfer_free_data (data);
-
-  debug ("moving transferred file from tgl directory %s to selected target %s", selected, filename);
-  g_unlink (selected);
-  g_rename (filename, selected);
-  g_free (selected);
 }
 
 static void tgprpl_xfer_send_on_finished (struct tgl_state *TLS, void *_data, int success, struct tgl_message *M) {
