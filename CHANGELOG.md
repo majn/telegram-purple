@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+##### 1.2.6
+
+- Include libtgl bugfix "use-after-not-created for photos"
+- Fix Adium bundle version incompatibillity for newest version
+
 ##### 1.2.5
 
 - Include libtgl fix to prevent crashes on certain channel messages

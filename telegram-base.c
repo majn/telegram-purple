@@ -493,9 +493,9 @@ void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *titl
       debug ("User %s not found in peer list", users[j]);
     }
   }
-  if (i > 0) {
-    tgl_do_create_group_chat (TLS, j, ids, title, (int) strlen (title), tgp_notify_on_error_gw,
-        g_strdup (title));
+  if (j > 1) {
+    tgl_do_create_group_chat (TLS, j, ids, title, (int) strlen(title),
+        tgp_notify_on_error_gw, g_strdup (title));
   } else {
     purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_INFO, _("Couldn't create group"),
         _("Please select at least one other user."), NULL, NULL, NULL);

@@ -4,7 +4,7 @@ Telegram-Purple Unofficial (Beta)
 Telegram-purple is a Libpurple protocol plugin that adds support for the Telegram messenger.
 
 I keep getting many questions about this plugin in my E-mail, so I've created a
-[telegram group chat](https://goo.gl/a8SigQ) for
+[telegram group chat](https://goo.gl/QHttTR) for
 telegram-purple related discussions or questions.
 
 Installation
@@ -17,7 +17,7 @@ If your platform is not supported or you want to contribute by testing or develo
 
 #### OSX (Adium)
 
-1. Download and execute the [Telegram-Adium bundle] (https://github.com/majn/telegram-purple/releases/download/v1.2.5/telegram-adium-1.2.5.AdiumLibpurplePlugin.zip)
+1. Download and execute the [Telegram-Adium bundle] (https://github.com/majn/telegram-purple/releases/download/v1.2.6/telegram-adium-1.2.6.AdiumLibpurplePlugin.zip)
 2. Restart Adium
 
 #### Windows
@@ -239,13 +239,11 @@ and `.dsc` files, do this:
 
 Note that the parenthesis are important.
 
-1.2.5
+1.2.6
 -----
 
-- Handle revoked sessions automatically
-- Include libtgl fix to prevent crashes on certain channel messages
-- Improve error handling
-
+- Include libtgl bugfix "use-after-not-created for photos"
+- Fix Adium bundle version incompatibillity for newest version
 
 Discussion / Help
 -----------------
@@ -275,7 +273,7 @@ FAQ
 
 Telegram group chat for telegram-purple or libtgl related discussions or questions:
 
-    - https://goo.gl/a8SigQ
+    - https://goo.gl/QHttTR
 
 
 Submitting Bug Reports

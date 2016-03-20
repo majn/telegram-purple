@@ -289,6 +289,7 @@
 				C410948219BB2D7D0083BF3F /* Sources */,
 				C410948319BB2D7D0083BF3F /* Frameworks */,
 				C410948419BB2D7D0083BF3F /* Resources */,
+				C4C325A11C91BD230020D32E /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -345,6 +346,22 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		C4C325A11C91BD230020D32E /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "install_name_tool -change \"@executable_path/../Frameworks/libglib.framework/Versions/2.38.1/libglib\" \"@executable_path/../Frameworks/libglib.framework/libglib\" \"$TARGET_BUILD_DIR/$PRODUCT_NAME.$WRAPPER_EXTENSION/Contents/MacOS/$PRODUCT_NAME\"\ninstall_name_tool -change \"@executable_path/../Frameworks/libpurple.framework/Versions/2.10.7rd8d96a636413/libpurple\" \"@executable_path/../Frameworks/libpurple.framework/libpurple\" \"$TARGET_BUILD_DIR/$PRODUCT_NAME.$WRAPPER_EXTENSION/Contents/MacOS/$PRODUCT_NAME\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		C410948219BB2D7D0083BF3F /* Sources */ = {
