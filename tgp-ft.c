@@ -66,7 +66,7 @@ static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, in
   char *selected = g_strdup (purple_xfer_get_local_filename (data->xfer));
   debug ("moving transferred file from tgl directory %s to selected target %s", filename, selected);
   g_unlink (selected);
-  g_rename (filename, selected);
+  tgp_utils_file_copy (filename, selected);
   g_free (selected);
 
   if (success) {
