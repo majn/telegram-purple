@@ -188,6 +188,13 @@ static void tgprpl_xfer_recv_init (PurpleXfer *X) {
   P = tgp_blist_lookup_peer_get (TLS, who);
   g_return_if_fail(P);
 
+  // Prevent the xfer data from getting freed after cancelling to allow the file transfer to complete
+  // without crashing. This is necessary cause loading the file in libtgl cannot be aborted once started.
+  purple_xfer_ref (X);
+
+  data->timer = purple_timeout_add (100, tgprpl_xfer_upload_progress, X);
+  data->loading = TRUE;
+
   switch (M->media.type) {
     case tgl_message_media_document:
       tgl_do_load_document (TLS, D, tgprpl_xfer_recv_on_finished, data);
@@ -209,13 +216,6 @@ static void tgprpl_xfer_recv_init (PurpleXfer *X) {
       failure ("Unknown message media type: %d, XFER not possible.", M->media.type);
       return;
   }
-
-  // Prevent the xfer data from getting freed after cancelling to allow the file transfer to complete
-  // without crashing. This is necessary cause loading the file in libtgl cannot be aborted once started.
-  purple_xfer_ref (X);
-
-  data->timer = purple_timeout_add (100, tgprpl_xfer_upload_progress, X);
-  data->loading = TRUE;
 }
 
 static void tgprpl_xfer_send_init (PurpleXfer *X) {
