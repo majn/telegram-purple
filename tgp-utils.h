@@ -26,6 +26,7 @@
 #include <time.h>
 #include <tgl.h>
 #include <glib.h>
+#include <glib/gstdio.h>
 
 tgl_peer_t *tgp_encr_chat_get_partner (struct tgl_state *TLS, struct tgl_secret_chat *chat);
 
@@ -49,5 +50,6 @@ void tgp_g_list_free_full (GList *list, GDestroyNotify free_func);
 const char *tgp_mime_to_filetype (const char *mime);
 int tgp_startswith (const char *str, const char *with);
 void tgp_replace (char *string, char what, char with);
+gboolean tgp_utils_file_copy (const gchar *source, const gchar *destination);
 
 #endif

@@ -132,3 +132,25 @@ void tgp_replace (char *string, char what, char with) {
     }
   }
 }
+
+gboolean tgp_utils_file_copy (const gchar *source, const gchar *destination) {
+  /* copy-paste from pidgin/gtkprefs.c */
+  FILE *src;
+  if(!(src = g_fopen(source, "rb")))
+    return FALSE;
+
+  FILE *dest;
+  if(!(dest = g_fopen(destination, "wb"))) {
+    fclose(src);
+    return FALSE;
+  }
+ 
+  gint chr = EOF;
+  while((chr = fgetc(src)) != EOF) {
+    putc(chr, dest);
+  }
+  
+  fclose(dest);
+  fclose(src);
+  return TRUE;
+}
