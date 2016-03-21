@@ -208,7 +208,7 @@ static gboolean tgp_msg_send_schedule_cb (gpointer data) {
   while ((D = g_queue_peek_head (conn->out_messages))) {
     g_queue_pop_head (conn->out_messages);
 
-    unsigned long long flags = 0;
+    unsigned long long flags = TGLMF_HTML;
     if (tgl_get_peer_type (D->to) == TGL_PEER_CHANNEL
         && !(tgl_peer_get (conn->TLS, D->to)->channel.flags & TGLCHF_MEGAGROUP)) {
       flags |= TGLMF_POST_AS_CHANNEL;
