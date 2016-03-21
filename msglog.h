@@ -24,4 +24,7 @@ void info(const char* format, ...);
 void warning(const char* format, ...);
 void failure(const char* format, ...);
 void fatal(const char* format, ...);
-
+const char *print_flags_update (unsigned update);
+const char *print_flags_channel (unsigned flags);
+const char *print_flags_peer (unsigned flags);
+const char *print_flags_user (unsigned flags);

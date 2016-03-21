@@ -19,11 +19,6 @@
 #import "TelegramAccountViewController.h"
 #import "TelegramAccount.h"
 
-#import <Adium/AIService.h>
-#import <AIUtilities/AIStringFormatter.h>
-#import <AIUtilities/AIAttributedStringAdditions.h>
-#import <AIUtilities/AIPopUpButtonAdditions.h>
-
 #include "telegram-purple.h"
 
 @implementation TelegramAccountViewController
@@ -51,9 +46,6 @@
   NSString *passwordTwoFactor = [account preferenceForKey:@"Telegram:"TGP_KEY_PASSWORD_TWO_FACTOR
                                  group:GROUP_ACCOUNT_STATUS] ?: @"";
   [textField_password setStringValue:passwordTwoFactor];
-  
-  id s = [account preferenceForKey:@"Telegram:"TGP_KEY_HISTORY_SYNC_ALL group:GROUP_ACCOUNT_STATUS];
-  [checkbox_historySyncAll setState:[s boolValue]];
   
   id read = [account preferenceForKey:@"Telegram:"TGP_KEY_DISPLAY_READ_NOTIFICATIONS group:GROUP_ACCOUNT_STATUS];
   [checkbox_displayReadNotifications setState:[read boolValue]];
@@ -86,10 +78,6 @@
                   forKey:@"Telegram:"TGP_KEY_ACCEPT_SECRET_CHATS
                    group:GROUP_ACCOUNT_STATUS];
 
-  [account setPreference:[NSNumber numberWithBool:[checkbox_historySyncAll state]]
-                  forKey:@"Telegram:"TGP_KEY_HISTORY_SYNC_ALL
-                   group:GROUP_ACCOUNT_STATUS];
-  
   [account setPreference:[NSNumber numberWithBool:[checkbox_displayReadNotifications state]]
                   forKey:@"Telegram:"TGP_KEY_DISPLAY_READ_NOTIFICATIONS
                    group:GROUP_ACCOUNT_STATUS];

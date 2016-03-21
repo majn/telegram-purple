@@ -20,10 +20,11 @@
 #  include "config.h"
 #endif
 
+#include "commit.h"
+
 #import "TelegramPlugin.h"
 #import "TelegramService.h"
 #import "telegram-purple.h"
-#import <tgl.h>
 
 extern void purple_init_telegram_plugin();
 
@@ -50,22 +51,22 @@ extern void purple_init_telegram_plugin();
 
 - (NSString *)pluginAuthor
 {
-    return @TG_AUTHOR;
+    return @PLUGIN_AUTHOR;
 }
 
 -(NSString *)pluginVersion
 {
-    return @PACKAGE_VERSION;
+    return @PACKAGE_VERSION "\n\t\t\tcommit: " GIT_COMMIT "\n\t\t\tlibtgl: " TGL_VERSION;
 }
 
 -(NSString *)pluginDescription
 {
-    return @TG_DESCRIPTION;
+    return @"Telegram Protocol Plugin";
 }
 
 -(char*)getPkName
 {
-    const char* utf8String = (char *)[[[NSBundle bundleForClass: [self class]] pathForResource: @"tg-server" ofType: @"pub"] UTF8String];
+    const char* utf8String = (char *)[[[NSBundle bundleForClass: [self class]] pathForResource: @"tg-server" ofType: @"tglpub"] UTF8String];
     size_t len = strlen(utf8String) + 1;
     char *buf = malloc(len);
     memcpy(buf, utf8String, len);

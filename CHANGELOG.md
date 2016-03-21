@@ -1,7 +1,67 @@
 Changelog
 ---------
 
-#### Version 1.2.0 (Beta 3)
+##### 1.2.5
+
+- Include libtgl fix to prevent crashes on certain channel messages
+- Improve error handling to be more graceful
+
+##### 1.2.4
+
+- Fix crash on unknown media type
+- Fix crash on logout after cancelling a file transfer
+
+##### 1.2.3
+
+- Build: Allow compilation on Windows #52 Thanks Eion!
+- Build: Drop dependency on LodePNG, Thanks Ben!
+- Build: Gettext is now optional
+
+- Fix issue that prevented to send messages to deleted users in certain cases (#174)
+- Fix own user being added to the buddy list in certain cases
+- Fix that read recipes of own messages are being displayed (#139)
+- Fix encoding inconsistencies with Unicode characters (#177)
+- Fix auto-joining for chats (#179)
+- Fix client not reconnecting anymore under certain circumstances (#173)
+- Fix crash on compat-verification (PullRequest #183)
+
+- Remove pointless "create chat" confirmation dialogue
+- Improve logging messages
+- Always send read recipes when the user is typing or sending a message
+- Improve translation and user messages (#139)
+- Use native password prompts (Adium)
+
+
+##### 1.2.2
+
+    - fix some licensing issues by not depending on OpenSSL any longer (thanks Ben!)
+    - add tons of translations (thanks to anyone helping!)
+    - fix issue that caused empty files
+    - fix pidgin not reconnecting after hibernation
+    - fix adium not reconnecting after hibernation
+    - fix secret chat fingerprint not being displayed after restart
+    - fix secret chat name not being displayed after restart
+
+##### 1.2.1
+
+##### Bugfixes
+
+    - Fix buggy group chat handling
+      * Assure that foreign users are always listed by their full name instead of the user ID
+      * Don't automatically add group chats to buddy list to prevent incompatibillities with some libpurple clients
+      * Fix issue that caused the buddy list to not be correctly updated on joining / leaving participants
+      * Fix an issue that caused the user list to be printed on every group chat message in Finch
+
+    - Fetch chat information lazily to reduce traffic and prevent flood errors
+    - Improve input validation for phone numbers
+
+###### Features
+
+    - Support leaving chats
+    - Implement the roomlist-API to allow listing of all active chats
+
+
+##### Version 1.2.0 (Beta 3)
 
 ##### Bugfixes
 

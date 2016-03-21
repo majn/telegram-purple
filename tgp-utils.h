@@ -27,9 +27,7 @@
 #include <tgl.h>
 #include <glib.h>
 
-connection_data *get_conn_from_buddy (PurpleBuddy *buddy);
 tgl_peer_t *tgp_encr_chat_get_partner (struct tgl_state *TLS, struct tgl_secret_chat *chat);
-tgl_peer_t *find_peer_by_name (struct tgl_state *TLS, const char *who);
 
 /**
  * Return whether this message was created by our client in this session
@@ -46,10 +44,10 @@ char *tgp_format_img (int imgstore);
 char *tgp_format_user_status (struct tgl_user_status *status);
 int str_not_empty (const char *string);
 long tgp_time_n_days_ago (int days);
-char *tgp_g_format_size (gint64 size);
 void tgp_g_queue_free_full (GQueue *queue, GDestroyNotify free_func);
 void tgp_g_list_free_full (GList *list, GDestroyNotify free_func);
 const char *tgp_mime_to_filetype (const char *mime);
 int tgp_startswith (const char *str, const char *with);
+void tgp_replace (char *string, char what, char with);
 
 #endif

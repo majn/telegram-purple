@@ -1,0 +1,11 @@
+# List of source files containing translatable strings.
+
+telegram-base.c
+telegram-purple.c
+tgp-2prpl.c
+tgp-msg.c
+tgp-net.c
+tgp-request.c
+tgp-utils.c
+tgp-chat.c
+

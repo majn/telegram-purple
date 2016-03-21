@@ -38,4 +38,9 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M);
  */
 int tgp_msg_send (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to);
 
+/**
+ * Print a special message in the conversation with a peer assuring that special flags are displayed
+ */
+void tgp_msg_special_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to_id, int flags);
+
 #endif

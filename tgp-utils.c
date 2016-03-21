@@ -18,25 +18,13 @@
  Copyright Matthias Jentsch 2014-2015
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include "tgp-utils.h"
-#include "msglog.h"
-#include "lodepng/lodepng.h"
-
-#include <purple.h>
-
-connection_data *get_conn_from_buddy (PurpleBuddy *buddy) {
-  connection_data *c = purple_connection_get_protocol_data (
-                            purple_account_get_connection (purple_buddy_get_account (buddy)));
-  return c;
-}
+#include "telegram-purple.h"
 
 const char *format_time (time_t date) {
+  // TODO: Inline this function for better readability?
   struct tm *datetime = localtime(&date);
-  return purple_utf8_strftime ("%d.%m.%Y %H:%M", datetime);
+  // This should be the language's timestamp format. This is preceded by a colon.
+  return purple_utf8_strftime (_("%d.%m.%Y %H:%M"), datetime);
 }
 
 char *tgp_format_img (int imgstore) {
@@ -53,19 +41,23 @@ char *tgp_format_user_status (struct tgl_user_status *status) {
   char *when;
   switch (status->online) {
     case -1:
-      when = g_strdup_printf("%s", format_time (status->when));
+      when = g_strdup_printf ("%s", format_time (status->when));
       break;
     case -2:
-      when = g_strdup_printf("recently");
+      // This is preceded by a colon.
+      when = g_strdup (_("recently"));
       break;
     case -3:
-      when = g_strdup_printf("last week");
+      // This is preceded by a colon.
+      when = g_strdup (_("last week"));
       break;
     case -4:
-      when = g_strdup_printf("last month");
+      // This is preceded by a colon.
+      when = g_strdup (_("last month"));
       break;
     default:
-      when = g_strdup ("unknown");
+      // This is preceded by a colon. It refers to a point on time.
+      when = g_strdup (_("unknown"));
       break;
   }
   return when;
@@ -80,43 +72,16 @@ int tgp_outgoing_msg (struct tgl_state *TLS, struct tgl_message *M) {
 }
 
 int tgp_our_msg (struct tgl_state *TLS, struct tgl_message *M) {
-  return TLS->our_id == tgl_get_peer_id(M->from_id);
-}
-
-tgl_peer_t *find_peer_by_name (struct tgl_state *TLS, const char *who) {
-  tgl_peer_t *peer = tgl_peer_get (TLS, TGL_MK_USER(atoi (who)));
-  if (peer) { return peer; }
-  peer = tgl_peer_get (TLS, TGL_MK_CHAT(atoi(who)));
-  if (peer) { return peer; }
-  peer = tgl_peer_get (TLS, TGL_MK_ENCR_CHAT(atoi(who)));
-  if (peer) { return peer; }
-  return NULL;
+  return tgl_get_peer_id (TLS->our_id) == tgl_get_peer_id (M->from_id);
 }
 
 tgl_peer_t *tgp_encr_chat_get_partner (struct tgl_state *TLS, struct tgl_secret_chat *chat) {
-  return tgl_peer_get (TLS, TGL_MK_USER(chat->admin_id == TLS->our_id ? chat->user_id : chat->admin_id));
+  return tgl_peer_get (TLS, TGL_MK_USER(chat->admin_id == tgl_get_peer_id (TLS->our_id) ? chat->user_id : chat->admin_id));
 }
 
 long tgp_time_n_days_ago (int days) {
   return time(NULL) - 24 * 3600 * days;
 };
-
-char *tgp_g_format_size (gint64 size) {
-  char *sizes[] = {
-    "B",
-    "KB",
-    "MB",
-    "GB",
-    "PB"
-  };
-  int base = 0;
-  double s = (double) size;
-  while (s > 1024 && base < 4) {
-    s /= 1024;
-    ++ base;
-  }
-  return g_strdup_printf ("%.1f %s, ", s, sizes[base]);
-}
 
 void tgp_g_queue_free_full (GQueue *queue, GDestroyNotify free_func) {
   void *entry;
@@ -128,8 +93,10 @@ void tgp_g_queue_free_full (GQueue *queue, GDestroyNotify free_func) {
 }
 
 void tgp_g_list_free_full (GList *list, GDestroyNotify free_func) {
-  g_list_foreach (list, (GFunc)free_func, NULL);
-  g_list_free (list);
+  if (list) {
+    g_list_foreach (list, (GFunc)free_func, NULL);
+    g_list_free (list);
+  }
 }
 
 const char *tgp_mime_to_filetype (const char *mime) {
@@ -157,3 +124,11 @@ int tgp_startswith (const char *str, const char *with) {
   return TRUE;
 }
 
+void tgp_replace (char *string, char what, char with) {
+  char *p = string;
+  while (*(p ++)) {
+    if (*p == what) {
+      *p = with;
+    }
+  }
+}

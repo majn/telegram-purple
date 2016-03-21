@@ -15,18 +15,20 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
 
-    Copyright Matthias Jentsch, Vitaly Valtman, Christopher Althaus, Markus Endres 2014-2015
+    Copyright Matthias Jentsch, Vitaly Valtman, Christopher Althaus, Ben Wiederhake 2014-2015
 */
 #ifndef __TELEGRAM_BASE_H__
 #define __TELEGRAM_BASE_H__
 
 #include "telegram-purple.h"
 
-struct request_password_data {
-  struct tgl_state *TLS;
-  void (*callback)(struct tgl_state *TLS, const char *string[], void *arg);
-  void *arg;
+struct rsa_pubkey {
+  unsigned int e;
+  unsigned int n_len;
+  unsigned char *n_raw;
 };
+
+gboolean read_pubkey_file (const char *name, struct rsa_pubkey *dst);
 
 void read_state_file (struct tgl_state *TLS);
 void read_auth_file (struct tgl_state *TLS);
@@ -37,21 +39,14 @@ void read_secret_chat_file (struct tgl_state *TLS);
 void write_secret_chat_file (struct tgl_state *TLS);
 void write_secret_chat_gw (struct tgl_state *TLS, void *extra, int success, struct tgl_secret_chat *E);
 
-void telegram_login (struct tgl_state *TLS);
-void request_code_entered (gpointer data, const gchar *code);
-void request_password (struct tgl_state *TLS, void (*callback)(struct tgl_state *TLS, const char *string[], void *arg),
-                       void *arg);
-void request_accept_secret_chat (struct tgl_state *TLS, struct tgl_secret_chat *U);
-
-void request_create_chat (struct tgl_state *TLS, const char *subject);
-
-gchar *get_config_dir (struct tgl_state *TLS, char const *username);
+gchar *get_config_dir (char const *username);
+gchar *get_user_pk_path ();
 gchar *get_download_dir (struct tgl_state *TLS);
-void assert_file_exists (PurpleConnection *gc, const char *filepath, const char *format);
 
-int tgp_visualize_key(struct tgl_state *TLS, unsigned char* sha1_key);
+int tgp_visualize_key (struct tgl_state *TLS, unsigned char* sha1_key);
 void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *title,
                                          const char *users[], int num_users, int print_names);
 
 void tgp_notify_on_error_gw (struct tgl_state *TLS, void *extra, int success);
+int tgp_error_if_false (struct tgl_state *TLS, int val, const char *cause, const char *msg);
 #endif

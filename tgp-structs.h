@@ -34,39 +34,37 @@ typedef struct {
   int updated;
   GQueue *new_messages;
   GQueue *out_messages;
-  GQueue *pending_reads;
+  GHashTable *pending_reads;
   GList *used_images;
   guint write_timer;
   guint login_timer;
   guint out_timer;
-  int in_fallback_chat;
+  struct request_values_data *request_code_data;
   int password_retries;
+  int login_retries;
   PurpleRoomlist *roomlist;
   GHashTable *pending_chat_info;
+  GHashTable *id_to_purple_name;
+  GHashTable *purple_name_to_id;
+  GHashTable *channel_members;
+  GList *pending_joins;
+  int dialogues_ready;
 } connection_data;
-
-typedef struct { 
-  int show_info; 
-  tgl_peer_id_t peer;
-} get_user_info_data;
 
 struct tgp_xfer_send_data {
   int timer;
-  int done;
+  int loading;
   PurpleXfer *xfer;
   connection_data *conn;
   struct tgl_message *msg;
-};
-
-struct download_desc {
-  get_user_info_data *get_user_info_data;
-  void *data;
 };
 
 struct tgp_msg_loading {
   int pending;
   struct tgl_message *msg;
   void *data;
+  int error;
+  char *error_msg;
 };
 
 struct tgp_msg_sending {
@@ -75,26 +73,16 @@ struct tgp_msg_sending {
   gchar *msg;
 };
 
-struct accept_secret_chat_data {
-  struct tgl_state *TLS;
-  struct tgl_secret_chat *U;
-};
+void pending_reads_send_all (struct tgl_state *TLS);
+void pending_reads_add (struct tgl_state *TLS, struct tgl_message *M);
+void pending_reads_send_user (struct tgl_state *TLS, tgl_peer_id_t id);
 
-struct accept_create_chat_data {
-  struct tgl_state *TLS;
-  char *title;
-};
-
-void pending_reads_send_all (GQueue *queue, struct tgl_state *TLS);
-void pending_reads_add (GQueue *queue, tgl_peer_id_t id);
-struct message_text *message_text_init (struct tgl_message *M, gchar *text);
-void message_text_free (gpointer data);
 void used_images_add (connection_data *data, gint imgid);
 void *connection_data_free (connection_data *conn);
 connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *gc, PurpleAccount *pa);
-get_user_info_data* get_user_info_data_new (int show_info, tgl_peer_id_t peer);
 struct tgp_msg_loading *tgp_msg_loading_init (struct tgl_message *M);
 struct tgp_msg_sending *tgp_msg_sending_init (struct tgl_state *TLS, char *M, tgl_peer_id_t to);
 void tgp_msg_loading_free (gpointer data);
 void tgp_msg_sending_free (gpointer data);
 #endif
+

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "0510"
+   LastUpgradeVersion = "0630"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -14,42 +14,40 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "C410948519BB2D7D0083BF3F"
-               BuildableName = "telegram-adium.AdiumLibpurplePlugin"
-               BlueprintName = "telegram-adium"
+               BlueprintIdentifier = "C4B57BF11B160950006997F4"
+               BuildableName = "telegram-purple"
+               BlueprintName = "telegram-purple"
                ReferencedContainer = "container:telegram-adium.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
+      buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES"
-      buildConfiguration = "Debug">
+      shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
       </Testables>
+      <AdditionalOptions>
+      </AdditionalOptions>
    </TestAction>
    <LaunchAction
+      buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
-      buildConfiguration = "Debug"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
+      debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
-      <PathRunnable
-         runnableDebuggingMode = "0"
-         BundleIdentifier = "com.adiumX.adiumX"
-         FilePath = "/Applications/Adium.app">
-      </PathRunnable>
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C410948519BB2D7D0083BF3F"
-            BuildableName = "telegram-adium.AdiumLibpurplePlugin"
-            BlueprintName = "telegram-adium"
+            BlueprintIdentifier = "C4B57BF11B160950006997F4"
+            BuildableName = "telegram-purple"
+            BlueprintName = "telegram-purple"
             ReferencedContainer = "container:telegram-adium.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -57,11 +55,20 @@
       </AdditionalOptions>
    </LaunchAction>
    <ProfileAction
+      buildConfiguration = "Release"
       shouldUseLaunchSchemeArgsEnv = "YES"
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
-      buildConfiguration = "Release"
       debugDocumentVersioning = "YES">
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "C4B57BF11B160950006997F4"
+            BuildableName = "telegram-purple"
+            BlueprintName = "telegram-purple"
+            ReferencedContainer = "container:telegram-adium.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">
