@@ -499,6 +499,8 @@ static void tgprpl_login (PurpleAccount * acct) {
   
   PurpleConnection *gc = purple_account_get_connection (acct);
   
+  gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_NO_BGCOLOR;
+  
   struct tgl_state *TLS = tgl_state_alloc ();
   connection_data *conn = connection_data_init (TLS, gc, acct);
   purple_connection_set_protocol_data (gc, conn);
