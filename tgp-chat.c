@@ -79,6 +79,7 @@ PurpleChat *tgp_chat_blist_store (struct tgl_state *TLS, tgl_peer_t *P, const ch
   } else {
     if (PC) {
       purple_blist_remove_chat (PC);
+      PC = NULL;
     }
   }
   
@@ -90,6 +91,8 @@ PurpleChat *tgp_chat_blist_store (struct tgl_state *TLS, tgl_peer_t *P, const ch
     g_hash_table_replace (purple_chat_get_components (PC), g_strdup ("subject"),
         g_strdup (tgl_get_peer_type (P->id) == TGL_PEER_CHANNEL ? P->channel.title : P->chat.title));
   }
+
+  return PC;
 }
 
 static void tgp_chat_on_loaded_chat_full_joining (struct tgl_state *TLS, void *_, int success, struct tgl_chat *C) {
