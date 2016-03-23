@@ -654,8 +654,7 @@ static void tgp_msg_process_in_ready (struct tgl_state *TLS) {
     
     tgp_msg_display (TLS, C);
     pending_reads_add (TLS, C->msg);
-    pending_reads_send_all (TLS);
-    
+
     if (C->data) {
       g_free (C->data);
     }
@@ -666,6 +665,9 @@ static void tgp_msg_process_in_ready (struct tgl_state *TLS) {
     
     tgp_msg_loading_free (C);
   }
+  pending_reads_send_all (TLS);
+
+  debug ("tgp_msg_process_in_ready, queue size=%d", g_queue_get_length (conn->new_messages));
 }
 
 static void tgp_msg_on_loaded_document (struct tgl_state *TLS, void *extra, int success, const char *filename) {
