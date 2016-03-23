@@ -57,7 +57,9 @@ DATA_ROOT_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=datarootdir purple)
 CRYPTO_FLAG=@CRYPTO_FLAG@
 
 
-### == Building and 'magic' targets == ###
+### == 'Magic' targets and infrastructure. == ###
+# Here be dragons! See https://github.com/majn/telegram-purple/issues/242
+# For the full list of requirements, goals, and rationale.
 
 .PHONY: create_dirs
 create_dirs: ${DIR_LIST}
@@ -69,40 +71,49 @@ DEPENDENCE=$(subst ${OBJ}/,${DEP}/,$(patsubst %.o,%.d,${ALL_OBJS}))
 DEPENDENCE_LIST=${DEPENDENCE}
 -include ${DEPENDENCE_LIST}
 
-
-# The dependency on tgl/libs/libtgl.a ensures that "make -C tgl" was called,
-# and most importantly: It ensures that all automatic headers exist.
-# The dependency on commit.h ensures that the header is always created when the commit changes or doesn't exist
-${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c tgl/libs/libtgl.a | create_dirs commit
-	echo $@ && ${CC} ${CFLAGS} ${CPPFLAGS} -I ${srcdir}/tgl -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
-
 tgl/Makefile.in:
 	@echo "tgl/Makefile.in not found. Maybe you need to 'git submodule update --init --recursive' ?" && exit 1
 
-tgl/Makefile: tgl/Makefile.in
+tgl/Makefile: tgl/Makefile.in Makefile
 	cd tgl && ./configure -q ${CRYPTO_FLAG} --disable-extf CFLAGS="@CFLAGS@" LDFLAGS="@LDFLAGS@"
 
-# Always invoke make on tgl
-.PHONY: tgl/libs/libtgl.a
-tgl/libs/libtgl.a: tgl/Makefile
+.PHONY: submade
+submade: tgl/Makefile
 	+make -C tgl
+
+tgl/libs/libtgl.a: submade
+
+.PHONY: commit
+commit:
+
+# The *commands* for commit.h shall always be executed, but the
+# *file* commit.h should only be considered to have changed in rare cases.
+GIT_COMMIT=$(shell git rev-parse HEAD | cut -c1-10)
+commit.h: commit .git
+	@grep -scq ${GIT_COMMIT} commit.h || ( \
+	echo "Refresh commit.h" && \
+	echo '#ifndef GIT_COMMIT' > commit.h && \
+	echo '#  define GIT_COMMIT "${GIT_COMMIT}"' >> commit.h && \
+	echo '#endif' >> commit.h )
+
+# Ugly, but necessary, because otherwise commit.h would not get generated:
+test/loadtest.c: commit.h
+
+# Ugly, but necessary, because otherwise commit.h would not get generated:
+telegram-purple.c: commit.h
+
+
+### == 'Normal' build. == ###
+
+# Note: 'submade' should be called long before this.
+${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c tgl/libs/libtgl.a | create_dirs
+	echo $@ && ${CC} ${CFLAGS} ${CPPFLAGS} -I ${srcdir}/tgl -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
 
 po/%.mo: po/%.po
 	${MSGFMT_PATH} -cf -o $@ $<
 
-${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} tgl/libs/libtgl.a | create_dirs
+${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} tgl/libs/libtgl.a | create_dirs submade
 	${CC} -shared -o $@ $^ ${LDFLAGS}
-
-GIT_COMMIT=$(shell git rev-parse HEAD | cut -c1-10)
-GIT_COMMIT_H=commit.h
-.PHONY: commit
-commit:
-# avoid needles changes to commit.h, otherwise autodepent will *always* recompile files that include it
-	@(test -r commit.h && cat commit.h | grep -qc ${GIT_COMMIT} ) || \
-	( echo "Refresh commit.h"; \
-	echo '#ifndef GIT_COMMIT' > ${GIT_COMMIT_H}; \
-	echo '#  define GIT_COMMIT "${GIT_COMMIT}"' >> commit.h; \
-	echo '#endif' >> ${GIT_COMMIT_H} )
 
 
 ### == noicon_{,un}install targets. Use only if you know that you don't need icons. Note that pidgin uses those files. == ###
