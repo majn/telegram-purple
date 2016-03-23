@@ -15,7 +15,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  
- Copyright Matthias Jentsch 2014-2015
+ Copyright Matthias Jentsch 2014-2016
  */
 
 #include "telegram-purple.h"
@@ -699,20 +699,13 @@ static void tgp_msg_on_loaded_chat_full (struct tgl_state *TLS, void *extra, int
   tgp_msg_process_in_ready (TLS);
 }
 
-static void tgp_msg_on_loaded_channel_members (struct tgl_state *TLS, int success, tgl_peer_t *P, void *extra) {
-  debug ("tgp_msg_on_loaded_channel_members()");
-  
-  if (! success) {
-    // user names won't be available in the channel
-    g_warn_if_reached();
-  }
-  
+static void tgp_msg_on_loaded_channel_history (struct tgl_state *TLS, void *extra, int success, tgl_peer_t *P) {
+
   struct tgp_msg_loading *C = extra;
   -- C->pending;
-  
+
   tgp_msg_process_in_ready (TLS);
 }
-
 
 /*
 static void tgp_msg_on_loaded_user_full (struct tgl_state *TLS, void *extra, int success, struct tgl_user *U) {
@@ -724,20 +717,60 @@ static void tgp_msg_on_loaded_user_full (struct tgl_state *TLS, void *extra, int
 }
 */
 
-void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
-  connection_data *conn = TLS->ev_base;
+/*
+ Libpurple message history is immutable and cannot be changed after printing a message.
+ TGP currently keeps the first-in first-out queue *new_messages* to ensure that
+ the messages are being printed in the correct order. When its necessary to fetch
+ additional info (like attached pictures) before this can be done, the queue will hold
+ all newer messages until the old message was completely loaded.
+*/
+void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) {
+  debug ("tgp_msg_recv before=%p server_id=%lld", before, M->server_id);
+  
   if (M->flags & (TGLMF_EMPTY | TGLMF_DELETED)) {
     return;
   }
+
   if (!(M->flags & TGLMF_CREATED)) {
     return;
   }
+
   if (!(M->flags | TGLMF_UNREAD) && M->date != 0 && M->date < tgp_msg_oldest_relevant_ts (TLS)) {
     debug ("Message from %d on %d too old, ignored.", tgl_get_peer_id (M->from_id), M->date);
     return;
   }
   
   struct tgp_msg_loading *C = tgp_msg_loading_init (M);
+  
+  /*
+   For non-channels telegram ensures that tgp receives the messages in the correct order, but in channels
+   there may be holes that need to be filled before the message log can be printed. This means that the
+   queue may not be processed till all historic messages have been fetched and the messages have been
+   inserted into the correct position of the queue
+   */
+  if (tgl_get_peer_type (C->msg->from_id) == TGL_PEER_CHANNEL
+      || tgl_get_peer_type (C->msg->to_id) == TGL_PEER_CHANNEL) {
+    
+    tgl_peer_id_t id = tgl_get_peer_type (C->msg->from_id) == TGL_PEER_CHANNEL ?
+    C->msg->from_id : C->msg->to_id;
+    
+    if (! tgp_channel_loaded (TLS, id)) {
+      ++ C->pending;
+      
+      tgp_channel_load (TLS, tgl_peer_get (TLS, id), tgp_msg_on_loaded_channel_history, C);
+    }
+    
+    PurpleChat *CH = tgp_blist_chat_find (TLS, id);
+    if (CH) {
+      if (tgp_chat_get_last_server_id (CH) >= C->msg->server_id) {
+        info ("dropping duplicate channel messages server_id=%lld", C->msg->server_id);
+        return;
+      }
+      if (tgp_chat_get_last_server_id (CH) == C->msg->server_id - 1) {
+        tgp_chat_set_last_server_id (CH, C->msg->server_id);
+      }
+    }
+  }
   
   if (! (M->flags & TGLMF_SERVICE)) {
     
@@ -746,8 +779,8 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
       switch (M->media.type) {
         case tgl_message_media_photo: {
           
-          // include the "bad photo" check from telegram-cli interface.c:3287 to avoid crashes when fetching history
-          // TODO: find out the reason for this behavior
+          // include the "bad photo" check from telegram-cli interface.c:3287 to avoid crashes
+          // when fetching history. TODO: find out the reason for this behavior
           if (M->media.photo) {
             ++ C->pending;
             tgl_do_load_photo (TLS, M->media.photo, tgp_msg_on_loaded_document, C);
@@ -783,27 +816,15 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
   }
 
   /*
-  // for forwarded messages assure that the forwarded user is always loaded
-  if (tgl_get_peer_id (M->fwd_from_id) != TGL_PEER_UNKNOWN) {
-    tgl_peer_t *FP = tgl_peer_get (TLS , M->fwd_from_id);
-    if (! FP) {
-      ++ C->pending;
-      debug ("type=%d, id=%d, hash=%lld", M->fwd_from_id.peer_type, M->fwd_from_id.peer_id, M->fwd_from_id.access_hash);
-      
-      // FIXME: fwd_from_id.access_hash is always 0, submit fix to libtgl
-      tgl_do_get_user_info (TLS, M->fwd_from_id, FALSE, tgp_msg_on_loaded_user_full, C);
-    }
-  }
+   To display a chat, the full name of every single user is needed, but the updates received from the server only
+   contain the names of users mentioned in the events. In order to display a messages we always need to fetch the
+   full chat info first. If the user list is empty, this means that we still haven't fetched the full chat
+   information. Assure that there is only one chat info request for every chat to avoid causing FLOOD_WAIT_X
+   errors that will lead to delays or dropped messages
   */
-  
-  // To display a chat the full name of every single user is needed, but the updates received from the server only
-  // contain the names of users mentioned in the events. In order to display a messages we always need to fetch the
-  // full chat info first. If the user list is empty, this means that we still haven't fetched the full chat information.
-  // assure that there is only one chat info request for every
-  // chat to avoid causing FLOOD_WAIT_X errors that will lead to delays or dropped messages
   gpointer to_ptr = GINT_TO_POINTER(tgl_get_peer_id (M->to_id));
   
-  if (! g_hash_table_lookup (conn->pending_chat_info, to_ptr)) {
+  if (! g_hash_table_lookup (tls_get_data (TLS)->pending_chat_info, to_ptr)) {
 
     if (tgl_get_peer_type (M->to_id) == TGL_PEER_CHAT) {
       tgl_peer_t *P = tgl_peer_get (TLS, M->to_id);
@@ -813,25 +834,19 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
         ++ C->pending;
         
         tgl_do_get_chat_info (TLS, M->to_id, FALSE, tgp_msg_on_loaded_chat_full, C);
-        g_hash_table_replace (conn->pending_chat_info, to_ptr, to_ptr);
-      }
-    }
-
-    if (tgl_get_peer_type (M->to_id) == TGL_PEER_CHANNEL) {
-      tgl_peer_t *P = tgl_peer_get (TLS, M->to_id);
-      g_warn_if_fail(P);
-      
-      // FIXME: check if the types are actually valid
-      if (P && ((P->channel.flags & (TGLCHF_ADMIN | TGLCHF_CREATOR)) || (P->channel.flags & TGLCHF_MEGAGROUP))) {
-        ++ C->pending;
-        
-        tgp_chat_load_channel_members (TLS, P, tgp_msg_on_loaded_channel_members, C);
-        g_hash_table_replace (conn->pending_chat_info, to_ptr, to_ptr);
+        g_hash_table_replace (tls_get_data (TLS)->pending_chat_info, to_ptr, to_ptr);
       }
     }
   }
-  
-  g_queue_push_tail (conn->new_messages, C);
+
+  GList *b = g_queue_find (tls_get_data (TLS)->new_messages, before);
+  if (b) {
+    struct tgp_msg_loading *M = before->data;
+    debug ("inserting before server_id=%lld", M->msg->server_id);
+    g_queue_insert_before (tls_get_data (TLS)->new_messages, b, C);
+  } else {
+    g_queue_push_tail (tls_get_data (TLS)->new_messages, C);
+  }
   tgp_msg_process_in_ready (TLS);
 }
 

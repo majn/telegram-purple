@@ -44,6 +44,7 @@ typedef struct {
   int login_retries;
   PurpleRoomlist *roomlist;
   GHashTable *pending_chat_info;
+  GHashTable *pending_channels;
   GHashTable *id_to_purple_name;
   GHashTable *purple_name_to_id;
   GHashTable *channel_members;

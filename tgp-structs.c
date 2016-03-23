@@ -102,6 +102,7 @@ connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *
   conn->out_messages = g_queue_new ();
   conn->pending_reads = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
   conn->pending_chat_info = g_hash_table_new (g_direct_hash, g_direct_equal);
+  conn->pending_channels = g_hash_table_new (g_direct_hash, g_direct_equal);
   conn->id_to_purple_name = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
   conn->purple_name_to_id = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
   conn->channel_members = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, (void (*) (gpointer)) g_list_free);
@@ -120,6 +121,7 @@ void *connection_data_free (connection_data *conn) {
   tgp_g_list_free_full (conn->pending_joins, g_free);
   g_hash_table_destroy (conn->pending_reads);
   g_hash_table_destroy (conn->pending_chat_info);
+  g_hash_table_destroy (conn->pending_channels);
   g_hash_table_destroy (conn->id_to_purple_name);
   g_hash_table_destroy (conn->purple_name_to_id);
   g_hash_table_destroy (conn->channel_members);

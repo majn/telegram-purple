@@ -92,6 +92,8 @@
 
 #define TGP_KEY_RESET_AUTH "reset-authorization"
 
+#define TGP_CHANNEL_HISTORY_LIMIT 500
+
 extern const char *pk_path;
 extern const char *user_pk_filename;
 extern const char *config_dir;

@@ -201,7 +201,7 @@ static void update_user_status_handler (struct tgl_state *TLS, struct tgl_user *
 
 static void update_message_handler (struct tgl_state *TLS, struct tgl_message *M) {
   write_files_schedule (TLS);
-  tgp_msg_recv (TLS, M);
+  tgp_msg_recv (TLS, M, NULL);
 }
 
 static void update_secret_chat_typing (struct tgl_state *TLS, struct tgl_secret_chat *E) {

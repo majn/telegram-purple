@@ -27,7 +27,7 @@
  * Loads embedded ressources like pictures or document thumbnails and ensures that 
  * that all messages are still displayed in the original incoming order.
  */
-void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M);
+void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before);
 
 /**
  * Process a message and send it the peer
