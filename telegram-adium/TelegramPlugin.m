@@ -20,7 +20,7 @@
 #  include "config.h"
 #endif
 
-#include "commit.h"
+#include "../commit.h"
 
 #import "TelegramPlugin.h"
 #import "TelegramService.h"
