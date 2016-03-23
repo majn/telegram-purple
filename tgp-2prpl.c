@@ -50,10 +50,10 @@ connection_data *pa_get_data (PurpleAccount *pa) {
 
 connection_data *pbn_get_data (PurpleBlistNode *node) {
   if (PURPLE_BLIST_NODE_IS_CHAT (node)) {
-    return pa_get_data (purple_chat_get_account((PurpleChat *) node));
+    return pa_get_data (purple_chat_get_account ((PurpleChat *) node));
   }
   if (PURPLE_BLIST_NODE_IS_BUDDY (node)) {
-    return pa_get_data (purple_buddy_get_account((PurpleBuddy *) node));
+    return pa_get_data (purple_buddy_get_account ((PurpleBuddy *) node));
   }
   return NULL;
 }
@@ -89,13 +89,13 @@ void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *m
   }
   
   /*
-     Outgoing messages are not well supported in different libpurple clients, 
-     purple_conv_im_write should have the best among different versions. Unfortunately
-     this causes buggy formatting in Adium, so we don't use this workaround in that case.
+    Outgoing messages are not well supported in different libpurple clients,
+    purple_conv_im_write should have the best among different versions. Unfortunately
+    this causes buggy formatting in Adium, so we don't use this workaround in that case.
    
-     NOTE: Outgoing messages will not work in Adium <= 1.6.0, there is no way to print outgoing
-     messages in those versions at all.
-   */
+    NOTE: Outgoing messages will not work in Adium <= 1.6.0, there is no way to print outgoing
+    messages in those versions at all.
+  */
 #ifndef __ADIUM_
   if (flags & PURPLE_MESSAGE_SEND) {
     PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, who);
