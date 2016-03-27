@@ -79,7 +79,7 @@ struct tgp_msg_loading *tgp_msg_loading_init (struct tgl_message *M) {
   return C;
 }
 
-struct tgp_msg_sending *tgp_msg_sending_init (struct tgl_state *TLS, gchar *M, tgl_peer_id_t to) {
+struct tgp_msg_sending *tgp_msg_sending_init (struct tgl_state *TLS, char *M, tgl_peer_id_t to) {
   struct tgp_msg_sending *C = malloc (sizeof (struct tgp_msg_sending));
   C->TLS = TLS;
   C->msg = M;
@@ -89,7 +89,9 @@ struct tgp_msg_sending *tgp_msg_sending_init (struct tgl_state *TLS, gchar *M, t
 
 void tgp_msg_sending_free (gpointer data) {
   struct tgp_msg_sending *C = data;
-  g_free (C->msg);
+  if (C->msg) {
+    g_free (C->msg);
+  }
   free (C);
 }
 

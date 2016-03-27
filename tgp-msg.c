@@ -220,32 +220,12 @@ static gboolean tgp_msg_send_schedule_cb (gpointer data) {
   return FALSE;
 }
 
-static void tgp_msg_send_schedule (struct tgl_state *TLS, gchar *chunk, tgl_peer_id_t to) {
-  g_queue_push_tail (tls_get_data (TLS)->out_messages, tgp_msg_sending_init (TLS, chunk, to));
+static void tgp_msg_send_schedule (struct tgl_state *TLS, const char *chunk, tgl_peer_id_t to) {
+  g_queue_push_tail (tls_get_data (TLS)->out_messages, tgp_msg_sending_init (TLS, g_strdup (chunk), to));
   if (tls_get_data (TLS)->out_timer) {
     purple_timeout_remove (tls_get_data (TLS)->out_timer);
   }
   tls_get_data (TLS)->out_timer = purple_timeout_add (0, tgp_msg_send_schedule_cb, tls_get_data (TLS));
-}
-
-static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
-  int size = (int)g_utf8_strlen (message, -1), start = 0;
-
-  if (size > TGP_MAX_MSG_SIZE * TGP_DEFAULT_MAX_MSG_SPLIT_COUNT) {
-    return -E2BIG;
-  }
-  
-  while (size > start) {
-    int end = start + (int)TGP_MAX_MSG_SIZE;
-    if (end > size) {
-      end = size;
-    }
-    gchar *chunk = g_utf8_substring (message, start, end);
-    tgp_msg_send_schedule (TLS, chunk, to);
-    start = end;
-  }
-
-  return 1;
 }
 
 void tgp_msg_special_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to_id, int flags) {
@@ -271,90 +251,132 @@ void send_inline_picture_done (struct tgl_state *TLS, void *extra, int success, 
     char *errormsg = g_strdup_printf ("%d: %s", TLS->error_code, TLS->error);
     failure (errormsg);
     purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, _("Sending image failed."),
-                           errormsg, NULL, NULL, NULL);
+        errormsg, NULL, NULL, NULL);
     g_free (errormsg);
     return;
   }
 }
 
-int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
+static GList *tgp_msg_imgs_parse (const char *msg) {
+  GList *imgs = NULL;
 
-#ifndef __ADIUM_
-  // search for outgoing embedded image tags and send them
-  gchar *img = NULL;
-  gchar *stripped = NULL;
-  debug ("tgp_msg_send='%s'", message);
-  
-  if ((img = g_strrstr (message, "<IMG")) || (img = g_strrstr (message, "<img"))) {
-    if (tgl_get_peer_type(to) == TGL_PEER_ENCR_CHAT) {
-      tgp_msg_special_out (TLS, _("Sorry, sending documents to encrypted chats not yet supported."), to,
-          PURPLE_MESSAGE_ERROR | PURPLE_MESSAGE_SYSTEM);
-      return 0;
-    }
-    debug ("img found: %s", img);
-    gchar *id;
-    if ((id = g_strrstr (img, "ID=\"")) || (id = g_strrstr (img, "id=\""))) {
-      id += 4;
-      int imgid = atoi (id);
-      if (imgid > 0) {
-        PurpleStoredImage *psi = purple_imgstore_find_by_id (imgid);
-        if (! psi) {
-          failure ("Img %d not found in imgstore", imgid);
-          return -1;
-        }
-        gchar *tmp = g_build_filename (g_get_tmp_dir(), purple_imgstore_get_filename (psi), NULL) ;
-        GError *err = NULL;
-        gconstpointer data = purple_imgstore_get_data (psi);
-        g_file_set_contents (tmp, data, purple_imgstore_get_size (psi), &err);
-        if (! err) {
+  int i;
+  int len = (int) strlen (msg);
+  for (i = 0; i < len; i ++) {
+    if (len - i >= 4 && (! memcmp (msg + i, "<IMG", 4) || ! memcmp (msg + i, "<img", 4))) {
+      i += 4;
 
-          unsigned long long int flags = TGL_SEND_MSG_FLAG_DOCUMENT_AUTO;
-          if (tgl_get_peer_id (to) == TGL_PEER_CHANNEL) {
-            flags |= TGLMF_POST_AS_CHANNEL;
+      int e = i;
+      while (msg[++ e] != '>' && e < len) {}
+      
+      gchar *id = NULL;
+      if ((id = g_strstr_len (msg + i, e - i, "ID=\"")) || (id = g_strstr_len (msg + i, e - i, "id=\""))) {
+        int img = atoi (id + 4);
+        debug ("parsed img id %d", img);
+        if (img > 0) {
+          PurpleStoredImage *psi = purple_imgstore_find_by_id (img);
+          if (psi) {
+            imgs = g_list_append (imgs, psi);
+          } else {
+            g_warn_if_reached();
           }
-
-          stripped = g_strstrip(purple_markup_strip_html (message));
-          tgl_do_send_document (TLS, to, tmp, stripped, (int)strlen (stripped), flags, send_inline_picture_done, NULL);
-          g_free (stripped);
-          
-          // return 0 to assure that the picture is not echoed, since
-          // it will already be echoed with the outgoing message
-          return 0;
-        } else {
-          failure ("Storing %s in imagestore failed: %s\n", tmp, err->message);
-          g_error_free (err);
-          return -1;
         }
+      } else {
+        g_warn_if_reached();
       }
+
+      i = e;
     }
-    // no image id found in image
-    return -1;
+  }
+  return imgs;
+}
+
+static char *tgp_msg_markdown_convert (const char *msg) {
+  int len = (int) strlen (msg);
+  char *html = g_new0(gchar, 3 * len);
+
+  int open = FALSE;
+  int i, j;
+  for (i = 0, j = 0; i < len; i ++) {
+    
+    // markdown for bold and italic doesn't seem to work with non-bots,
+    // therefore only parse code-tags
+    if (len - i < 3 || (memcmp (msg + i, "```", 3))) {
+      html[j ++] = msg[i];
+    } else {
+      i += 2;
+      if (! open) {
+        assert(j + 6 < 3 * len);
+        memcpy(html + j, "<code>", 6);
+        j += 6;
+      } else {
+        assert(j + 7 < 3 * len);
+        memcpy(html + j, "</code>", 7);
+        j += 7;
+      }
+      open = ! open;
+    }
   }
   
-  /*
-    Adium won't escape any HTML markup and just pass any user-input through,
-    while Pidgin will replace special chars with the escape chars and also add 
-    additional markup for RTL languages and such.
+  html[j] = 0;
+  return html;
+}
 
-    First, we remove any HTML markup added by Pidgin, since Telegram won't handle it properly.
-    User-entered HTML is still escaped and therefore won't be harmed.
-   */
-  stripped = purple_markup_strip_html (message);
+int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
+
+  // send all inline images
+  GList *imgs = tgp_msg_imgs_parse (message);
+  debug ("parsed %d images in messages", g_list_length (imgs));
+  while (imgs) {
+    PurpleStoredImage *psi = imgs->data;
+    gchar *tmp = g_build_filename (g_get_tmp_dir(), purple_imgstore_get_filename (psi), NULL) ;
+    GError *err = NULL;
+    gconstpointer data = purple_imgstore_get_data (psi);
+    g_file_set_contents (tmp, data, purple_imgstore_get_size (psi), &err);
+    if (! err) {
+      debug ("sending img='%s'", tmp);
+      tgl_do_send_document (TLS, to, tmp, NULL, 0,
+          TGL_SEND_MSG_FLAG_DOCUMENT_AUTO | (tgl_get_peer_type (to) == TGL_PEER_CHANNEL) ? TGLMF_POST_AS_CHANNEL : 0,
+          send_inline_picture_done, NULL);
+    } else {
+      failure ("error=%s", err->message);
+      g_warn_if_reached();
+    }
+    imgs = g_list_next(imgs);
+  }
   
-   // now unescape the markup, so that html special chars will still show
-   // up properly in Telegram
-  gchar *unescaped = purple_unescape_text (stripped);
-  int ret = tgp_msg_send_split (TLS, stripped, to);
+  // replace markdown with html
+  char *html = g_strstrip(tgp_msg_markdown_convert (message));
   
-  g_free (unescaped);
-  g_free (stripped);
-  return ret;
-#endif
+  // check message length
+  int size = (int) g_utf8_strlen (html, -1);
+  if (size == 0) {
+    g_free (html);
+    return 0; // fail quietly on empty messages
+  }
+  if (size > TGP_MAX_MSG_SIZE * TGP_DEFAULT_MAX_MSG_SPLIT_COUNT) {
+    g_free (html);
+    return -E2BIG;
+  }
+
+  // send big message as multiple chunks
+  int start = 0;
+  while (size > start) {
+    int end = start + (int)TGP_MAX_MSG_SIZE;
+    if (end > size) {
+      end = size;
+    }
+    char *chunk = g_utf8_substring (html, start, end);
+    tgp_msg_send_schedule (TLS, chunk, to);
+    start = end;
+  }
   
-  // when the other peer receives a message it is obvious that the previous messages were read
-  pending_reads_send_user (TLS, to);
+  g_free (html);
   
-  return tgp_msg_send_split (TLS, message, to);
+  // return 0 to assure that the picture is not echoed, since
+  // it will already be echoed with the outgoing message
+  // FIXME: Eventually never display outgoing messages? What about Adium???
+  return 1;
 }
 
 static char *tgp_msg_photo_display (struct tgl_state *TLS, const char *filename, int *flags) {

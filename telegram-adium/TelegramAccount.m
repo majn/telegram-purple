@@ -22,6 +22,7 @@
 #import <Adium/ESFileTransfer.h>
 #import <Adium/AIListContact.h>
 #import <Adium/AIMenuControllerProtocol.h>
+#import <Adium/AIHTMLDecoder.h>
 #import <AIUtilities/AIMenuAdditions.h>
 
 #include "telegram-purple.h"
@@ -180,6 +181,24 @@
 - (void)cancelFileTransfer:(ESFileTransfer *)fileTransfer
 {
   [super cancelFileTransfer:fileTransfer];
+}
+
+- (NSString *)encodedAttributedString:(NSAttributedString *)inAttributedString forListObject:(AIListObject *)inListObject
+{
+  static AIHTMLDecoder *htmlEncoder = nil;
+  if (!htmlEncoder) {
+    htmlEncoder = [[AIHTMLDecoder alloc] init];
+    [htmlEncoder setIncludesHeaders:NO];
+    [htmlEncoder setIncludesFontTags:NO];
+    [htmlEncoder setClosesFontTags:NO];
+    [htmlEncoder setIncludesStyleTags:YES];
+    [htmlEncoder setIncludesColorTags:NO];
+    [htmlEncoder setEncodesNonASCII:NO];
+    [htmlEncoder setPreservesAllSpaces:NO];
+    [htmlEncoder setUsesAttachmentTextEquivalents:YES];
+  }
+  
+  return [htmlEncoder encodeHTML:inAttributedString imagesPath:nil];
 }
 
 #pragma mark Group Chats

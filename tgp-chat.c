@@ -209,6 +209,9 @@ int tgprpl_send_chat (PurpleConnection *gc, int id, const char *message, PurpleM
   }
   g_return_val_if_fail(P != NULL, -1);
   
+  // when the group receives a message it is obvious that the previous messages were read
+  pending_reads_send_user (gc_get_tls (gc), P->id);
+  
   return tgp_msg_send (gc_get_tls (gc), message, P->id);
 }
 

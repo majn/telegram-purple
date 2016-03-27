@@ -607,34 +607,36 @@ static int tgprpl_send_im (PurpleConnection *gc, const char *who, const char *me
     return 1;
   }
 
-  // Make sure that to only send messages to an existing peer by searching it in the peer tree, to give immediate
-  // feedback by returning an error-code in case the peer doesn't exist.
+  // check receiver to give immediate feedback in case sending a message is not possible
   tgl_peer_t *peer = tgp_blist_lookup_peer_get (gc_get_tls (gc), who);
-  if (peer) {
-    // give a proper error message when attempting to send to a secret chat that is not usable
-    if (tgl_get_peer_type (peer->id) == TGL_PEER_ENCR_CHAT && peer->encr_chat.state != sc_ok) {
-      const char *msg;
-      if (peer->encr_chat.state == sc_deleted) {
-        msg = _("Secret chat was already deleted");
-      } else {
-        msg = _("Secret chat is not ready");
-      }
-      tgp_msg_special_out (gc_get_tls (gc), msg, peer->id, PURPLE_MESSAGE_NO_LOG | PURPLE_MESSAGE_ERROR);
-      return -1;
-    }
+  if (! peer) {
+    warning ("peer not found");
+    return -1;
+  }
 
-    // give a proper error message when attempting to send to a secret chat you don't own
-    if (tgl_get_peer_type (peer->id) == TGL_PEER_CHANNEL && ! (peer->flags & TGLCHF_CREATOR)) {
-      tgp_msg_special_out (gc_get_tls (gc), _("Only the creator of a channel can post messages."), peer->id,
-          PURPLE_MESSAGE_NO_LOG | PURPLE_MESSAGE_ERROR);
-      return -1;
+  // secret chat not yet usable
+  if (tgl_get_peer_type (peer->id) == TGL_PEER_ENCR_CHAT && peer->encr_chat.state != sc_ok) {
+    const char *msg;
+    if (peer->encr_chat.state == sc_deleted) {
+      msg = _("Secret chat was already deleted");
+    } else {
+      msg = _("Secret chat is not ready");
     }
+    tgp_msg_special_out (gc_get_tls (gc), msg, peer->id, PURPLE_MESSAGE_NO_LOG | PURPLE_MESSAGE_ERROR);
+    return -1;
+  }
 
-    return tgp_msg_send (gc_get_tls (gc), message, peer->id);
+  // channel owned by someone else (TEST: why does it work with supergroups?)
+  if (tgl_get_peer_type (peer->id) == TGL_PEER_CHANNEL && ! (peer->flags & TGLCHF_CREATOR)) {
+    tgp_msg_special_out (gc_get_tls (gc), _("Only the creator of a channel can post messages."), peer->id,
+        PURPLE_MESSAGE_NO_LOG | PURPLE_MESSAGE_ERROR);
+    return -1;
   }
   
-  warning ("peer not found");
-  return -1;
+  // when the other peer receives a message it is obvious that the previous messages were read
+  pending_reads_send_user (gc_get_tls (gc), peer->id);
+  
+  return tgp_msg_send (gc_get_tls (gc), message, peer->id);
 }
 
 static unsigned int tgprpl_send_typing (PurpleConnection *gc, const char *who, PurpleTypingState typing) {
