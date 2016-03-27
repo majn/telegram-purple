@@ -376,7 +376,7 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
   // return 0 to assure that the picture is not echoed, since
   // it will already be echoed with the outgoing message
   // FIXME: Eventually never display outgoing messages? What about Adium???
-  return 1;
+  return 0;
 }
 
 static char *tgp_msg_photo_display (struct tgl_state *TLS, const char *filename, int *flags) {
@@ -432,14 +432,16 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     return;
   }
 
-  // TODO: return 0 for all messages, so this isn't necessary and rely on this code to display all outgoing messages
+#ifdef __ADIUM_
+  // prevent double messages in Adium >= v1.6
   if (tgp_outgoing_msg (TLS, M)
       && tgl_get_peer_type (M->to_id) != TGL_PEER_CHANNEL
       && tgl_get_peer_type (M->to_id) != TGL_PEER_CHAT) {
     return;
   }
+#endif
 
-  // filter empty or messages with invalid recipients
+  // filter empty messages or messages with invalid recipients
   if (! M->message || !tgl_get_peer_type (M->to_id)) {
     return;
   }
