@@ -601,14 +601,16 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   if (tgl_get_peer_id (M->fwd_from_id) != TGL_PEER_UNKNOWN) {
     const char *name;
     tgl_peer_t *FP = tgl_peer_get (TLS, M->fwd_from_id);
+    
+    char *tmp = text;
     if (FP) {
       name = FP->print_name;
+      text = g_strdup_printf (_("<b>Forwarded message from: %s</b><br>%s"), name, text);
     } else {
       // FIXME: sometimes users aren't part of the response when receiving a forwarded message
-      name = "Unknown User";
+      text = g_strdup_printf (_("<b>Forwarded message:</b><br>%s"), text);
     }
-    g_free (text);
-    text = g_strdup_printf (_("<b>Forwarded from %s</b>: %s"), name, text);
+    g_free (tmp);
   }
 
   /*
