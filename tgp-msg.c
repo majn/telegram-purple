@@ -213,7 +213,7 @@ static gboolean tgp_msg_send_schedule_cb (gpointer data) {
         && !(tgl_peer_get (conn->TLS, D->to)->channel.flags & TGLCHF_MEGAGROUP)) {
       flags |= TGLMF_POST_AS_CHANNEL;
     }
-    // TODO: option for disable_msg_preview
+
     tgl_do_send_message (D->TLS, D->to, D->msg, (int)strlen (D->msg), flags, NULL, tgp_msg_send_done, NULL);
     tgp_msg_sending_free (D);
   }
@@ -298,9 +298,7 @@ static char *tgp_msg_markdown_convert (const char *msg) {
   int open = FALSE;
   int i, j;
   for (i = 0, j = 0; i < len; i ++) {
-    
-    // markdown for bold and italic doesn't seem to work with non-bots,
-    // therefore only parse code-tags
+    // markdown for bold and italic doesn't seem to work with non-bots, therefore only parse code-tags
     if (len - i < 3 || (memcmp (msg + i, "```", 3))) {
       html[j ++] = msg[i];
     } else {
@@ -317,7 +315,6 @@ static char *tgp_msg_markdown_convert (const char *msg) {
       open = ! open;
     }
   }
-  
   html[j] = 0;
   return html;
 }
@@ -375,7 +372,6 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
   
   // return 0 to assure that the picture is not echoed, since
   // it will already be echoed with the outgoing message
-  // FIXME: Eventually never display outgoing messages? What about Adium???
   return 0;
 }
 
@@ -532,7 +528,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
           g_return_if_fail(C->data != NULL);
           text = tgp_msg_photo_display (TLS, C->data, &flags);
         } else {
-          if (! tgp_our_msg(TLS, M)) {
+          if (! tgp_our_msg (TLS, M)) {
             tgprpl_recv_file (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, M->to_id), M);
           }
           return;
