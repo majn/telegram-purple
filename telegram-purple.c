@@ -820,6 +820,11 @@ static void tgprpl_init (PurplePlugin *plugin) {
       TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD, TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
+  // Media
+  opt = purple_account_option_int_new (_("Autoload media size (kb)"), TGP_KEY_MEDIA_SIZE,
+            TGP_DEFAULT_MEDIA_SIZE);
+  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
+  
   // Chats
   opt = purple_account_option_bool_new (_("Add all group chats to buddy list"),
       TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS);

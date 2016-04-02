@@ -36,6 +36,11 @@ connection_data *tls_get_data (struct tgl_state *TLS) {
   return TLS->ev_base;
 }
 
+int tls_get_media_threshold (struct tgl_state *TLS) {
+  return purple_account_get_int (tls_get_pa (TLS),
+             TGP_KEY_MEDIA_SIZE, TGP_DEFAULT_MEDIA_SIZE) << 10;
+}
+
 connection_data *gc_get_data (PurpleConnection *gc) {
   return purple_connection_get_protocol_data (gc);
 }

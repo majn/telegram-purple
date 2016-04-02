@@ -379,6 +379,15 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
   return 0;
 }
 
+static char *tgp_msg_file_display (const char *filename, const char *caption) {
+#ifndef __ADIUM_
+  return g_strdup_printf ("<a href=\"file:///%s\">%s</a>", g_markup_escape_text (filename, -1),
+              g_markup_escape_text (caption, -1));
+#else
+  return g_strdup_printf ("file:///%s", g_uri_escape_string (filename, NULL, TRUE));
+#endif
+}
+
 static char *tgp_msg_photo_display (struct tgl_state *TLS, const char *filename, int *flags) {
   connection_data *conn = TLS->ev_base;
   int img = p2tgl_imgstore_add_with_id (filename);
@@ -416,7 +425,6 @@ static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from,
 }
 
 static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
-  connection_data *conn = TLS->ev_base;
   struct tgl_message *M = C->msg;
   char *text = NULL;
   int flags = 0;
@@ -490,21 +498,28 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         if (M->media.document->flags & TGLDF_STICKER) {
           g_return_if_fail(C->data != NULL);
           text = tgp_msg_sticker_display (TLS, M->from_id, C->data, &flags);
+        } else if (M->media.document->flags & TGLDF_ANIMATED && C->data) {
+          text = tgp_msg_file_display (C->data, _("[animation]"));
         } else if (M->media.document->flags & TGLDF_IMAGE) {
           g_return_if_fail(C->data != NULL);
           text = tgp_msg_photo_display (TLS, C->data, &flags);
         } else {
-          if (! tgp_our_msg(TLS, M)) {
-            tgprpl_recv_file (conn->gc, tgp_blist_lookup_purple_name (TLS, M->from_id), M);
+          if (! tgp_our_msg (TLS, M)) {
+            tgprpl_recv_file (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, M->from_id), M);
           }
           return;
         }
         break;
-        
+
       case tgl_message_media_video:
       case tgl_message_media_audio: {
-        if (! tgp_our_msg(TLS, M)) {
-          tgprpl_recv_file (conn->gc, tgp_blist_lookup_purple_name (TLS, M->from_id), M);
+        if (! tgp_our_msg (TLS, M)) {
+          if (C->data) {
+            text = tgp_msg_file_display (C->data,
+                       M->media.type == tgl_message_media_audio ? _("[audio]") : _("[video]"));
+          } else {
+            tgprpl_recv_file (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, M->from_id), M);
+          }
         }
       }
       break;
@@ -518,7 +533,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
           text = tgp_msg_photo_display (TLS, C->data, &flags);
         } else {
           if (! tgp_our_msg(TLS, M)) {
-            tgprpl_recv_file (conn->gc, tgp_blist_lookup_purple_name (TLS, M->to_id), M);
+            tgprpl_recv_file (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, M->to_id), M);
           }
           return;
         }
@@ -815,15 +830,43 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
         }
           
         // documents that are stickers or images will be displayed just like regular photo messages
-        // and need to be lodaed beforehand
+        // and need to be loaded beforehand
         case tgl_message_media_document:
-        case tgl_message_media_video:
-        case tgl_message_media_audio:
-          if (M->media.document->flags & TGLDF_STICKER || M->media.document->flags & TGLDF_IMAGE) {
+          if (M->media.document->flags & (TGLDF_STICKER | TGLDF_IMAGE)) {
             ++ C->pending;
             tgl_do_load_document (TLS, M->media.document, tgp_msg_on_loaded_document, C);
+          } else if (M->media.document->flags & (TGLDF_ANIMATED | TGLDF_VIDEO | TGLDF_AUDIO)) {
+
+            // adium doesn't support file links, autoloading media would mean that it
+            // wouldn't be possible to show a usable link to the user
+#ifndef __ADIUM_
+            if (M->media.document->size <= tls_get_media_threshold (TLS)) { // 8mb auto loading threshold
+              ++ C->pending;
+              if (M->media.document->flags & TGLDF_AUDIO) {
+                tgl_do_load_audio (TLS, M->media.document, tgp_msg_on_loaded_document, C);
+              } else if (M->media.document->flags & TGLDF_VIDEO) {
+                tgl_do_load_video (TLS, M->media.document, tgp_msg_on_loaded_document, C);
+              } else {
+                tgl_do_load_document (TLS, M->media.document, tgp_msg_on_loaded_document, C);
+              }
+            }
+#endif
           }
           break;
+#ifndef __ADIUM_
+        case tgl_message_media_video:
+          if (M->media.document->size <= tls_get_media_threshold (TLS)) {
+            ++ C->pending;
+            tgl_do_load_video (TLS, M->media.document, tgp_msg_on_loaded_document, C);
+          }
+          break;
+        case tgl_message_media_audio:
+          if (M->media.document->size <= tls_get_media_threshold (TLS)) {
+            ++ C->pending;
+            tgl_do_load_audio (TLS, M->media.document, tgp_msg_on_loaded_document, C);
+          }
+          break;
+#endif
         case tgl_message_media_document_encr:
           if (M->media.encr_document->flags & TGLDF_STICKER || M->media.encr_document->flags & TGLDF_IMAGE) {
             ++ C->pending;
