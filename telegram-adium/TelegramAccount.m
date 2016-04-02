@@ -190,8 +190,8 @@
     htmlEncoder = [[AIHTMLDecoder alloc] init];
     [htmlEncoder setIncludesHeaders:NO];
     [htmlEncoder setIncludesFontTags:NO];
-    [htmlEncoder setClosesFontTags:NO];
-    [htmlEncoder setIncludesStyleTags:YES];
+    [htmlEncoder setClosesFontTags:YES];
+    [htmlEncoder setIncludesStyleTags:NO];
     [htmlEncoder setIncludesColorTags:NO];
     [htmlEncoder setEncodesNonASCII:NO];
     [htmlEncoder setPreservesAllSpaces:NO];
