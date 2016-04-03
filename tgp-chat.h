@@ -34,14 +34,13 @@ struct tgp_channel_loading {
   GList *callbacks;
   GList *extras;
   int remaining;
-  PurpleChat *CH;
 };
 
 tgl_peer_id_t tgp_chat_get_id (PurpleChat *C);
 int tgp_chat_has_id (PurpleChat *C);
 
-void tgp_chat_set_last_server_id (PurpleChat *C, long long id);
-long long tgp_chat_get_last_server_id (PurpleChat *C);
+void tgp_chat_set_last_server_id (struct tgl_state *TLS, tgl_peer_id_t chat, int id);
+int tgp_chat_get_last_server_id (struct tgl_state *TLS, tgl_peer_id_t chat);
 
 PurpleChat *tgp_chat_blist_store (struct tgl_state *TLS, tgl_peer_t *P, const char *group);
 

@@ -799,15 +799,12 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
       tgp_channel_load (TLS, tgl_peer_get (TLS, id), tgp_msg_on_loaded_channel_history, C);
     }
     
-    PurpleChat *CH = tgp_blist_chat_find (TLS, id);
-    if (CH) {
-      if (tgp_chat_get_last_server_id (CH) >= C->msg->server_id) {
-        info ("dropping duplicate channel messages server_id=%lld", C->msg->server_id);
-        return;
-      }
-      if (tgp_chat_get_last_server_id (CH) == C->msg->server_id - 1) {
-        tgp_chat_set_last_server_id (CH, C->msg->server_id);
-      }
+    if (tgp_chat_get_last_server_id (TLS, id) >= C->msg->server_id) {
+      info ("dropping duplicate channel messages server_id=%lld", C->msg->server_id);
+      return;
+    }
+    if (tgp_chat_get_last_server_id (TLS, id) == (int) C->msg->server_id - 1) {
+      tgp_chat_set_last_server_id (TLS, id, (int) C->msg->server_id);
     }
   }
   
