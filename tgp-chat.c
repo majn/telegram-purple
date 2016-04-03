@@ -574,10 +574,6 @@ void update_channel_handler (struct tgl_state *TLS, struct tgl_channel *C, unsig
   debug ("update_channel_handler() (%s)", print_flags_update (flags));
   
   update_chat (TLS, tgl_peer_get (TLS, C->id), flags, _("Telegram Channels"));
-
-  if (flags & TGL_UPDATE_CREATED && ! tgp_channel_loaded (TLS, C->id)) {
-    tgp_channel_load (TLS, tgl_peer_get (TLS, C->id), NULL, NULL);
-  }
 }
 
 void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *C, unsigned flags) {

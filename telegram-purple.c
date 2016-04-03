@@ -263,6 +263,16 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *extra, int suc
   tgp_chat_join_all_pending (TLS);
 }
 
+static void on_get_channel_list_done (struct tgl_state *TLS, void *callback_extra, int success, int size,
+                tgl_peer_id_t peers[], tgl_message_id_t *last_msg_id[], int unread_count[]) {
+  int i;
+  for (i = 0; i < size; i ++) {
+    if (! tgp_channel_loaded (TLS, peers[i])) {
+      tgp_channel_load (TLS, tgl_peer_get (TLS, peers[i]), NULL, NULL);
+    }
+  }
+}
+
 static const char *tgprpl_list_icon (PurpleAccount *acct, PurpleBuddy *buddy) {
   return "telegram";
 }
@@ -342,7 +352,7 @@ void export_chat_link (struct tgl_state *TLS, tgl_peer_t *P) {
     return;
   }
   
-  if (tgl_get_peer_type(P->id) == TGL_PEER_CHAT) {
+  if (tgl_get_peer_type (P->id) == TGL_PEER_CHAT) {
     tgl_do_export_chat_link (TLS, P->id, create_chat_link_done, P);
   } else if (tgl_get_peer_type(P->id) == TGL_PEER_CHANNEL) {
     tgl_do_export_channel_link (TLS, P->id, create_chat_link_done, P);
@@ -478,7 +488,7 @@ static void update_on_ready (struct tgl_state *TLS) {
   }
   
   tgl_do_get_dialog_list (TLS, 200, 0, on_get_dialog_list_done, NULL);
-  tgl_do_get_channels_dialog_list (TLS, 50, 0, NULL, NULL);
+  tgl_do_get_channels_dialog_list (TLS, 50, 0, on_get_channel_list_done, NULL);
   tgl_do_update_contact_list (TLS, 0, 0);
 }
 
