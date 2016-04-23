@@ -4,13 +4,14 @@
 # 
 # Translators:
 # Hugues Morisset <hugues.m@hotmail.fr>, 2015-2016
+# Javier Sixto, 2016
 msgid ""
 msgstr ""
 "Project-Id-Version: telegram-purple\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-02-18 18:51+0100\n"
-"PO-Revision-Date: 2016-02-18 18:22+0000\n"
-"Last-Translator: Ben Wiederhake <BenWiederhake.GitHub@gmx.de>\n"
+"PO-Revision-Date: 2016-04-14 19:48+0000\n"
+"Last-Translator: Javier Sixto\n"
 "Language-Team: French (http://www.transifex.com/telegram-purple-developers/telegram-purple/language/fr/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -40,7 +41,7 @@ msgstr "Conversation secrète terminé."
 
 #: ../telegram-purple.c:182
 msgid "Telegram"
-msgstr ""
+msgstr "Telegram"
 
 #: ../telegram-purple.c:229
 msgid "Message marked as read."
@@ -64,7 +65,7 @@ msgstr "Vous devez être administrateur du groupe pour faire cela."
 
 #: ../telegram-purple.c:390
 msgid "Chat joined"
-msgstr "Conversation jointe."
+msgstr "Conversation atteinte."
 
 #: ../telegram-purple.c:391
 msgid "Chat added to list of chat rooms."
@@ -87,7 +88,7 @@ msgstr "Supprimer et quitter ..."
 #: ../telegram-purple.c:518
 #, c-format
 msgid "Unable to sign on as %s: file (public key) not found."
-msgstr ""
+msgstr "Impossible de se connecté comme %s: fichier (clé publique) manquante."
 
 #: ../telegram-purple.c:522
 #, c-format
@@ -105,7 +106,7 @@ msgstr "Soyez sur que telegram-purple est installé proprement,\nparticulièreme
 msgid ""
 "Unable to sign on as %s: phone number lacks country prefix. Numbers must "
 "start with the full international prefix code, e.g. +1 for USA."
-msgstr ""
+msgstr "Impossible de se connecter avec %s: le préfixe de pays est manquant. Le numéro de téléphone doit commencer avec le numéro de préfixe international, ex: +33 pour la France."
 
 #: ../telegram-purple.c:550
 msgid "Incomplete phone number"
@@ -113,15 +114,15 @@ msgstr "Numéro de téléphone incomplet"
 
 #: ../telegram-purple.c:600
 msgid "Secret chat was already deleted"
-msgstr ""
+msgstr "Conversation secrète déjà supprimée."
 
 #: ../telegram-purple.c:602
 msgid "Secret chat is not ready"
-msgstr ""
+msgstr "Conversation secrète non prête"
 
 #: ../telegram-purple.c:610
 msgid "Only the creator of a channel can post messages."
-msgstr ""
+msgstr "Seul le créateur du canal peut publier des messages"
 
 #: ../telegram-purple.c:654
 msgid "Cannot invite buddy to chat"
@@ -133,7 +134,7 @@ msgstr "L'utilisateur spécifier n'existe pas."
 
 #: ../telegram-purple.c:668
 msgid "phone no. (+ country prefix)"
-msgstr ""
+msgstr "n° téléphone (+ préfixe pays)"
 
 #. Login
 #: ../telegram-purple.c:776
@@ -188,7 +189,7 @@ msgstr "Envoyé des notification de réception quand vous êtes présent."
 
 #: ../telegram-purple.c:838
 msgid "Telegram Protocol Plugin."
-msgstr ""
+msgstr "Extension Protocole Telegram"
 
 #: ../tgp-msg.c:58
 #, c-format
@@ -256,11 +257,11 @@ msgstr[1] "%2$s a pris un copie d'écran des messages de %1$d."
 #: ../tgp-msg.c:162
 #, c-format
 msgid "Channel %1$s created"
-msgstr ""
+msgstr "Canal %1$s crée"
 
 #: ../tgp-msg.c:166 ../tgp-chat.c:101 ../tgp-chat.c:476
 msgid "Telegram Channels"
-msgstr ""
+msgstr "Canaux Telegram"
 
 #: ../tgp-msg.c:196
 msgid "Sending message failed."
@@ -281,16 +282,16 @@ msgstr "%s a envoyé un sticker."
 
 #: ../tgp-msg.c:440
 msgid "failed loading message"
-msgstr ""
+msgstr "échec au chargement du message"
 
 #: ../tgp-msg.c:577
 #, c-format
 msgid "<b>Forwarded from %s</b>: %s"
-msgstr ""
+msgstr "<b>Transféré depuis %s</b>: %s"
 
 #: ../tgp-msg.c:686
 msgid "loading document or picture failed"
-msgstr ""
+msgstr "échec au chargement du document ou d'image"
 
 #: ../tgp-net.c:281
 msgid "Cannot connect to main server"
@@ -457,35 +458,35 @@ msgstr "Entré seulement des numéro dans le champs pour le numéro internationa
 
 #: ../tgp-request.c:370
 msgid "Leave Chat"
-msgstr ""
+msgstr "Quitter la conversation"
 
 #: ../tgp-request.c:372
 msgid "Do you want to leave this chat permantently?"
-msgstr ""
+msgstr "Voulez-vous quitter cette discussion définitivement ?"
 
 #: ../tgp-request.c:377
 msgid "Abort Secret Chat"
-msgstr ""
+msgstr "Abandonner la conversation secrète"
 
 #: ../tgp-request.c:379
 msgid "Do you want to terminate this secret chat permantently?"
-msgstr ""
+msgstr "Voulez-vous quitter cette conversation définitivement ?"
 
 #: ../tgp-request.c:384
 msgid "Delete Contact"
-msgstr ""
+msgstr "Supprimer ce contacte"
 
 #: ../tgp-request.c:386
 msgid "Do you want to remove this user from your global contact list?"
-msgstr ""
+msgstr "Voulez-vous supprimer cet utilisateur de votre liste de contacte globale ?"
 
 #: ../tgp-request.c:401
 msgid "Leave Channel"
-msgstr ""
+msgstr "Quitter le canal"
 
 #: ../tgp-request.c:403
 msgid "Do you want to leave this channel?"
-msgstr ""
+msgstr "Voulez-vous quitter ce canal ?"
 
 #. This should be the language's timestamp format. This is preceded by a
 #. colon.
@@ -515,7 +516,7 @@ msgstr "inconnue"
 
 #: ../tgp-chat.c:84 ../tgp-chat.c:482
 msgid "Telegram Chats"
-msgstr ""
+msgstr "Conversations de Telegram"
 
 #: ../tgp-chat.c:89
 msgid "You have already left this chat."
@@ -535,15 +536,15 @@ msgstr "Chat ID:"
 
 #: ../tgp-chat.c:316
 msgid "Supergroup"
-msgstr ""
+msgstr "Supergroup"
 
 #: ../tgp-chat.c:316
 msgid "Channel"
-msgstr ""
+msgstr "Canal"
 
 #: ../tgp-chat.c:319
 msgid "Group"
-msgstr ""
+msgstr "Groupe"
 
 #: ../tgp-chat.c:341
 msgid "Users in chat"
@@ -551,4 +552,4 @@ msgstr "Utilisateurs dans la conversation"
 
 #: ../tgp-chat.c:344
 msgid "Type"
-msgstr ""
+msgstr "Type"
