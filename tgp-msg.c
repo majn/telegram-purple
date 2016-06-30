@@ -784,14 +784,14 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
   /*
    For non-channels telegram ensures that tgp receives the messages in the correct order, but in channels
    there may be holes that need to be filled before the message log can be printed. This means that the
-   queue may not be processed till all historic messages have been fetched and the messages have been
+   queue may not be processed until all historic messages have been fetched and the messages have been
    inserted into the correct position of the queue
    */
   if (tgl_get_peer_type (C->msg->from_id) == TGL_PEER_CHANNEL
       || tgl_get_peer_type (C->msg->to_id) == TGL_PEER_CHANNEL) {
     
     tgl_peer_id_t id = tgl_get_peer_type (C->msg->from_id) == TGL_PEER_CHANNEL ?
-    C->msg->from_id : C->msg->to_id;
+      C->msg->from_id : C->msg->to_id;
     
     if (! tgp_channel_loaded (TLS, id)) {
       ++ C->pending;
@@ -848,6 +848,7 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
 #endif
           }
           break;
+
 #ifndef __ADIUM_
         case tgl_message_media_video:
           if (M->media.document->size <= tls_get_media_threshold (TLS)) {
@@ -862,18 +863,20 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
           }
           break;
 #endif
+
         case tgl_message_media_document_encr:
           if (M->media.encr_document->flags & TGLDF_STICKER || M->media.encr_document->flags & TGLDF_IMAGE) {
             ++ C->pending;
             tgl_do_load_encr_document (TLS, M->media.encr_document, tgp_msg_on_loaded_document, C);
           }
           break;
-          
+
         case tgl_message_media_geo:
           // TODO: load geo thumbnail
           break;
-          
-        default: // prevent Clang warnings ...
+
+        default:
+          // prevent Clang warnings ...
           break;
       }
     }
@@ -887,16 +890,16 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
    errors that will lead to delays or dropped messages
   */
   gpointer to_ptr = GINT_TO_POINTER(tgl_get_peer_id (M->to_id));
-  
+
   if (! g_hash_table_lookup (tls_get_data (TLS)->pending_chat_info, to_ptr)) {
 
     if (tgl_get_peer_type (M->to_id) == TGL_PEER_CHAT) {
       tgl_peer_t *P = tgl_peer_get (TLS, M->to_id);
       g_warn_if_fail(P);
-      
+
       if (P && ! P->chat.user_list_size) {
         ++ C->pending;
-        
+
         tgl_do_get_chat_info (TLS, M->to_id, FALSE, tgp_msg_on_loaded_chat_full, C);
         g_hash_table_replace (tls_get_data (TLS)->pending_chat_info, to_ptr, to_ptr);
       }

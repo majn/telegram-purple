@@ -30,7 +30,7 @@
 void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before);
 
 /**
- * Process a message and send it the peer
+ * Process a message and send it to the peer
  *
  * Removes all HTML escape chars and HTML markup, finds  embedded images and sends 
  * them as pictures and splits up messages that are too big for single Telegram
