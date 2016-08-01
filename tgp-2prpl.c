@@ -200,7 +200,7 @@ int p2tgl_imgstore_add_with_id_webp (const char *filename) {
   // downscale oversized sticker images displayed in chat, otherwise it would harm readabillity
   WebPDecoderConfig config;
   WebPInitDecoderConfig (&config);
-  if (! WebPGetFeatures(data, len, &config.input) == VP8_STATUS_OK) {
+  if (WebPGetFeatures(data, len, &config.input) != VP8_STATUS_OK) {
     warning ("error reading webp bitstream: %s", filename);
     g_free ((gchar *)data);
     return 0;
@@ -228,7 +228,7 @@ int p2tgl_imgstore_add_with_id_webp (const char *filename) {
     config.options.use_scaling = 1;
   }
   config.output.colorspace = MODE_BGRA;
-  if (! WebPDecode(data, len, &config) == VP8_STATUS_OK) {
+  if (WebPDecode(data, len, &config) != VP8_STATUS_OK) {
     warning ("error decoding webp: %s", filename);
     g_free ((gchar *)data);
     return 0;
