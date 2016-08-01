@@ -15,7 +15,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
 
-    Copyright Matthias Jentsch, Vitaly Valtman, Christopher Althaus, Markus Endres 2014-2015
+    Copyright Matthias Jentsch, Vitaly Valtman, Christopher Althaus, Ben Wiederhake 2014-2015
 */
 #ifndef __TG_PURPLE_H__
 #define __TG_PURPLE_H__
@@ -32,6 +32,8 @@
 #else
 #  define _(String) String
 #  define P_(Singular,Plural,N) Plural
+#  define N_(String) String
+#  define gettext(String) String
 #endif
 
 #include <tgl.h>
@@ -53,19 +55,20 @@
 #include "tgp-ft.h"
 #include "tgp-msg.h"
 #include "tgp-request.h"
+#include "tgp-info.h"
 #include "msglog.h"
 
 #define PLUGIN_ID "prpl-telegram"
-// FIXME: Name must be translated (for languages without latin script, it would look like gibberish. Just like Japanese script looks to me.)
-#define TG_AUTHOR "Matthias Jentsch <mtthsjntsch@gmail.com>, Vitaly Valtman, Ben Wiederhake <BenWiederhake.GitHub@gmx.de>, Christopher Althaus <althaus.christopher@gmail.com>, based on libtgl by Vitaly Valtman."
-#define TG_DESCRIPTION "Telegram protocol."
-#define TG_BUILD "13"
-  
+#define PLUGIN_AUTHOR "Matthias Jentsch <mtthsjntsch@gmail.com>\n\t\t\tVitaly Valtman\n\t\t\tBen Wiederhake\n\t\t\tChristopher Althaus <althaus.christopher@gmail.com>"
+
 #define TGP_APP_HASH "99428c722d0ed59b9cd844e4577cb4bb"
 #define TGP_APP_ID 16154
 
 #define TGP_MAX_MSG_SIZE 4096
 #define TGP_DEFAULT_MAX_MSG_SPLIT_COUNT 4
+
+#define TGP_DEFAULT_MEDIA_SIZE 8192
+#define TGP_KEY_MEDIA_SIZE "media-size-threshold"
 
 #define TGP_KEY_PASSWORD_TWO_FACTOR "password-two-factor"
 
@@ -78,7 +81,7 @@
 #define TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD 14
 #define TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD  "history-retrieve-days"
 
-#define TGP_DEFAULT_JOIN_GROUP_CHATS FALSE
+#define TGP_DEFAULT_JOIN_GROUP_CHATS TRUE
 #define TGP_KEY_JOIN_GROUP_CHATS "auto-join-group-chats"
 
 #define TGP_DEFAULT_DISPLAY_READ_NOTIFICATIONS FALSE
@@ -87,12 +90,21 @@
 #define TGP_DEFAULT_SEND_READ_NOTIFICATIONS TRUE
 #define TGP_KEY_SEND_READ_NOTIFICATIONS "send-read-notifications"
 
+#define TGP_DEFAULT_CHANNEL_MEMBERS 500
+#define TGP_KEY_CHANNEL_MEMBERS "channel-member-count"
+
+#define TGP_KEY_RESET_AUTH "reset-authorization"
+
+#define TGP_CHANNEL_HISTORY_LIMIT 500
+
 extern const char *pk_path;
 extern const char *user_pk_filename;
 extern const char *config_dir;
 extern PurplePlugin *_telegram_protocol;
-void export_chat_link_checked (struct tgl_state *TLS, const char *name);
-void import_chat_link_checked (struct tgl_state *TLS, const char *link);
+void import_chat_link (struct tgl_state *TLS, const char *link);
+void export_chat_link_by_name (struct tgl_state *TLS, const char *name);
 void leave_and_delete_chat (struct tgl_state *TLS, tgl_peer_t *P);
+void leave_and_delete_chat_by_name (struct tgl_state *TLS, const char *name);
+void channel_load_photo (struct tgl_state *TLS, void *extra, int success, struct tgl_channel *C);
 
 #endif

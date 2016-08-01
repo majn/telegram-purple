@@ -15,7 +15,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  
- Copyright Matthias Jentsch 2014-2015
+ Copyright Matthias Jentsch 2014-2016
  */
 
 #include "telegram-purple.h"
@@ -43,15 +43,15 @@ g_utf8_substring (const gchar *str,
 #endif
 
 static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
-  assert (M && M->flags & TGLMF_SERVICE);
+  g_return_val_if_fail(M && M->flags & TGLMF_SERVICE, NULL);
+
   connection_data *conn = TLS->ev_base;
   char *txt = NULL;
   
   tgl_peer_t *fromPeer = tgl_peer_get (TLS, M->from_id);
-  if (! fromPeer) {
-    return NULL;
-  }
-  char *txt_user = fromPeer->print_name;
+  g_return_val_if_fail(fromPeer != NULL, NULL);
+  
+  const char *txt_user = fromPeer->print_name;
 
   switch (M->action.type) {
     case tgl_message_action_chat_create:
@@ -81,14 +81,17 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
       }
       break;
     }
-    case tgl_message_action_chat_add_user: {
-      tgl_peer_t *peer = tgl_peer_get (TLS, TGL_MK_USER (M->action.user));
-      if (peer) {
-        char *alias = peer->print_name;
-        txt = g_strdup_printf (_("%2$s added user %1$s."), alias, txt_user);
-        PurpleConversation *conv = purple_find_chat (conn->gc, tgl_get_peer_id (M->to_id));
-        if (conv) {
-          p2tgl_conv_add_user (TLS, conv, M->action.user, NULL, 0, FALSE);
+    case tgl_message_action_chat_add_users: {
+      int i;
+      for (i = 0; i < M->action.user_num; ++i) {
+        tgl_peer_t *peer = tgl_peer_get (TLS, TGL_MK_USER (M->action.users[i]));
+        if (peer) {
+          char *alias = peer->print_name;
+          txt = g_strdup_printf (_("%2$s added user %1$s."), alias, txt_user);
+          PurpleConversation *conv = purple_find_chat (conn->gc, tgl_get_peer_id (M->to_id));
+          if (conv) {
+            p2tgl_conv_add_user (TLS, conv, M->action.users[i], NULL, 0, FALSE);
+          }
         }
       }
       break;
@@ -98,11 +101,11 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
       if (peer) {
 
         tgl_peer_t *chatPeer = tgl_peer_get (TLS, M->to_id);
-        assert (tgl_get_peer_type(chatPeer->id) == TGL_PEER_CHAT);
+        g_return_val_if_fail(tgl_get_peer_type (chatPeer->id) == TGL_PEER_CHAT, NULL);
         
         // make sure that the chat is showing before deleting the user, otherwise the chat will be
         // initialised after removing the chat and the chat will still contain the deleted user
-        PurpleConversation *conv = tgp_chat_show (TLS, &chatPeer->chat);
+        PurpleConversation *conv = tgp_chat_show (TLS, chatPeer);
         if (conv) {
           char *alias = peer->print_name;
           const char *aliasLeft = tgp_blist_lookup_purple_name (TLS, TGL_MK_USER (M->action.user));
@@ -155,7 +158,15 @@ static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
                                 M->action.screenshot_cnt),
                              M->action.screenshot_cnt, txt_user);
       break;
+    case tgl_message_action_channel_create: {
+      txt = g_strdup_printf (_("Channel %1$s created"), M->action.title);
+      
+      // FIXME: check if this makes sense
+      tgp_chat_blist_store (TLS, fromPeer, _("Telegram Channels"));
+      break;
+    }
     default:
+      g_warn_if_reached();
       break;
   }
   return txt;
@@ -180,7 +191,7 @@ static void tgp_msg_send_done (struct tgl_state *TLS, void *callback_extra, int 
     char *err = _("Sending message failed.");
     warning (err);
     if (M) {
-      tgp_msg_err_out (TLS, err, M->to_id);
+      tgp_msg_special_out (TLS, err, M->to_id, PURPLE_MESSAGE_ERROR | PURPLE_MESSAGE_NO_LOG);
     } else {
       fatal (err);
     }
@@ -197,79 +208,41 @@ static gboolean tgp_msg_send_schedule_cb (gpointer data) {
   while ((D = g_queue_peek_head (conn->out_messages))) {
     g_queue_pop_head (conn->out_messages);
 
-    // TODO: option for disable_msg_preview
-    tgl_do_send_message (D->TLS, D->to, D->msg, (int)strlen (D->msg), 0, NULL, tgp_msg_send_done, NULL);
+    unsigned long long flags = TGLMF_HTML;
+    if (tgl_get_peer_type (D->to) == TGL_PEER_CHANNEL
+        && !(tgl_peer_get (conn->TLS, D->to)->channel.flags & TGLCHF_MEGAGROUP)) {
+      flags |= TGLMF_POST_AS_CHANNEL;
+    }
+
+    tgl_do_send_message (D->TLS, D->to, D->msg, (int)strlen (D->msg), flags, NULL, tgp_msg_send_done, NULL);
     tgp_msg_sending_free (D);
   }
   return FALSE;
 }
 
-static void tgp_msg_send_schedule (struct tgl_state *TLS, gchar *chunk, tgl_peer_id_t to) {
-  g_queue_push_tail (tls_get_data (TLS)->out_messages, tgp_msg_sending_init (TLS, chunk, to));
+static void tgp_msg_send_schedule (struct tgl_state *TLS, const char *chunk, tgl_peer_id_t to) {
+  g_queue_push_tail (tls_get_data (TLS)->out_messages, tgp_msg_sending_init (TLS, g_strdup (chunk), to));
   if (tls_get_data (TLS)->out_timer) {
     purple_timeout_remove (tls_get_data (TLS)->out_timer);
   }
   tls_get_data (TLS)->out_timer = purple_timeout_add (0, tgp_msg_send_schedule_cb, tls_get_data (TLS));
 }
 
-static int tgp_msg_send_split (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
-  int size = (int)g_utf8_strlen (message, -1), start = 0;
-
-  if (size > TGP_MAX_MSG_SIZE * TGP_DEFAULT_MAX_MSG_SPLIT_COUNT) {
-    return -E2BIG;
-  }
-  while (size > start) {
-    int end = start + (int)TGP_MAX_MSG_SIZE;
-    if (end > size) {
-      end = size;
+void tgp_msg_special_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to_id, int flags) {
+  if (tgl_get_peer_type (to_id) == TGL_PEER_CHAT) {
+    tgp_chat_got_in (TLS, tgl_peer_get (TLS, to_id), to_id, msg, flags, time(0));
+  } else {
+    // Regular IM conversations will not display specialized message flags like PURPLE_MESSAGE_ERROR or
+    // PURPLE_MESSAGE_SYSTEM correctly when using serv_got_in, therefore it is necessary to use the underlying
+    // conversation directly.
+    const char *name = tgp_blist_lookup_purple_name (TLS, to_id);
+    PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, to_id);
+    g_return_if_fail (name);
+    if (! conv) {
+      // if the conversation isn't open yet, create one with that name
+      conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tls_get_pa (TLS), name);
     }
-    gchar *chunk = g_utf8_substring (message, start, end);
-    tgp_msg_send_schedule (TLS, chunk, to);
-    start = end;
-  }
-  return 1;
-}
-
-void tgp_msg_err_out (struct tgl_state *TLS, const char *error, tgl_peer_id_t to) {
-  int flags = PURPLE_MESSAGE_ERROR | PURPLE_MESSAGE_SYSTEM;
-  time_t now;
-  time (&now);
-  switch (tgl_get_peer_type (to)) {
-      case TGL_PEER_CHAT:
-        p2tgl_got_chat_in (TLS, to, to, error, flags, now);
-        break;
-      case TGL_PEER_USER:
-      case TGL_PEER_ENCR_CHAT:
-        serv_got_im (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, to), error, flags, now);
-        break;
-  }
-}
-
-void tgp_msg_sys_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to_id, int no_log) {
-  int flags = PURPLE_MESSAGE_SYSTEM;
-  if (no_log) {
-    flags |= PURPLE_MESSAGE_NO_LOG;
-  }
-  time_t now;
-  time (&now);
-  
-  switch (tgl_get_peer_type (to_id)) {
-    case TGL_PEER_CHAT:
-      p2tgl_got_chat_in (TLS, to_id, to_id, msg, flags, now);
-      break;
-    case TGL_PEER_USER:
-    case TGL_PEER_ENCR_CHAT: {
-      const char *name = tgp_blist_lookup_purple_name (TLS, to_id);
-      PurpleConversation *conv = p2tgl_find_conversation_with_account (TLS, to_id);
-      
-      g_return_if_fail (name);
-
-      if (! conv) {
-        conv = purple_conversation_new (PURPLE_CONV_TYPE_IM, tls_get_pa (TLS), name);
-      }
-      purple_conversation_write (conv, name, msg, flags, now);
-      break;
-    }
+    purple_conversation_write (conv, name, msg, flags, time(0));
   }
 }
 
@@ -278,83 +251,137 @@ void send_inline_picture_done (struct tgl_state *TLS, void *extra, int success, 
     char *errormsg = g_strdup_printf ("%d: %s", TLS->error_code, TLS->error);
     failure (errormsg);
     purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, _("Sending image failed."),
-                           errormsg, NULL, NULL, NULL);
+        errormsg, NULL, NULL, NULL);
     g_free (errormsg);
     return;
   }
 }
 
+static GList *tgp_msg_imgs_parse (const char *msg) {
+  GList *imgs = NULL;
+
+  int i;
+  int len = (int) strlen (msg);
+  for (i = 0; i < len; i ++) {
+    if (len - i >= 4 && (! memcmp (msg + i, "<IMG", 4) || ! memcmp (msg + i, "<img", 4))) {
+      i += 4;
+
+      int e = i;
+      while (msg[++ e] != '>' && e < len) {}
+      
+      gchar *id = NULL;
+      if ((id = g_strstr_len (msg + i, e - i, "ID=\"")) || (id = g_strstr_len (msg + i, e - i, "id=\""))) {
+        int img = atoi (id + 4);
+        debug ("parsed img id %d", img);
+        if (img > 0) {
+          PurpleStoredImage *psi = purple_imgstore_find_by_id (img);
+          if (psi) {
+            imgs = g_list_append (imgs, psi);
+          } else {
+            g_warn_if_reached();
+          }
+        }
+      } else {
+        g_warn_if_reached();
+      }
+
+      i = e;
+    }
+  }
+  return imgs;
+}
+
+static char *tgp_msg_markdown_convert (const char *msg) {
+  int len = (int) strlen (msg);
+  char *html = g_new0(gchar, 3 * len);
+
+  int open = FALSE;
+  int i, j;
+  for (i = 0, j = 0; i < len; i ++) {
+    // markdown for bold and italic doesn't seem to work with non-bots, therefore only parse code-tags
+    if (len - i < 3 || (memcmp (msg + i, "```", 3))) {
+      html[j ++] = msg[i];
+    } else {
+      i += 2;
+      if (! open) {
+        assert(j + 6 < 3 * len);
+        memcpy(html + j, "<code>", 6);
+        j += 6;
+      } else {
+        assert(j + 7 < 3 * len);
+        memcpy(html + j, "</code>", 7);
+        j += 7;
+      }
+      open = ! open;
+    }
+  }
+  html[j] = 0;
+  return html;
+}
+
 int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
 
-#ifndef __ADIUM_
-  // search for outgoing embedded image tags and send them
-  gchar *img = NULL;
-  gchar *stripped = NULL;
-  
-  if ((img = g_strrstr (message, "<IMG")) || (img = g_strrstr (message, "<img"))) {
-    if (tgl_get_peer_type(to) == TGL_PEER_ENCR_CHAT) {
-      tgp_msg_err_out (TLS, _("Sorry, sending documents to encrypted chats not yet supported."), to);
-      return 0;
+  // send all inline images
+  GList *imgs = tgp_msg_imgs_parse (message);
+  debug ("parsed %d images in messages", g_list_length (imgs));
+  while (imgs) {
+    PurpleStoredImage *psi = imgs->data;
+    gchar *tmp = g_build_filename (g_get_tmp_dir(), purple_imgstore_get_filename (psi), NULL) ;
+    GError *err = NULL;
+    gconstpointer data = purple_imgstore_get_data (psi);
+    g_file_set_contents (tmp, data, purple_imgstore_get_size (psi), &err);
+    if (! err) {
+      debug ("sending img='%s'", tmp);
+      tgl_do_send_document (TLS, to, tmp, NULL, 0,
+          TGL_SEND_MSG_FLAG_DOCUMENT_AUTO | (tgl_get_peer_type (to) == TGL_PEER_CHANNEL) ? TGLMF_POST_AS_CHANNEL : 0,
+          send_inline_picture_done, NULL);
+    } else {
+      failure ("error=%s", err->message);
+      g_warn_if_reached();
     }
-    debug ("img found: %s", img);
-    gchar *id;
-    if ((id = g_strrstr (img, "ID=\"")) || (id = g_strrstr (img, "id=\""))) {
-      id += 4;
-      int imgid = atoi (id);
-      if (imgid > 0) {
-        PurpleStoredImage *psi = purple_imgstore_find_by_id (imgid);
-        if (! psi) {
-          failure ("Img %d not found in imgstore", imgid);
-          return -1;
-        }
-        gchar *tmp = g_build_filename (g_get_tmp_dir(), purple_imgstore_get_filename (psi), NULL) ;
-        GError *err = NULL;
-        gconstpointer data = purple_imgstore_get_data (psi);
-        g_file_set_contents (tmp, data, purple_imgstore_get_size (psi), &err);
-        if (! err) {
-          stripped = g_strstrip(purple_markup_strip_html (message));
-          tgl_do_send_document (TLS, to, tmp, stripped, (int)strlen (stripped),
-                                TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, send_inline_picture_done, NULL);
-          g_free (stripped);
-          
-          // return 0 to assure that the picture is not echoed, since
-          // it will already be echoed with the outgoing message
-          return 0;
-        } else {
-          failure ("Storing %s in imagestore failed: %s\n", tmp, err->message);
-          g_error_free (err);
-          return -1;
-        }
-      }
-    }
-    // no image id found in image
-    return -1;
+    imgs = g_list_next(imgs);
   }
   
-  /*
-    Adium won't escape any HTML markup and just pass any user-input through,
-    while Pidgin will replace special chars with the escape chars and also add 
-    additional markup for RTL languages and such.
+  // replace markdown with html
+  char *html = g_strstrip(tgp_msg_markdown_convert (message));
+  
+  // check message length
+  int size = (int) g_utf8_strlen (html, -1);
+  if (size == 0) {
+    g_free (html);
+    return 0; // fail quietly on empty messages
+  }
+  if (size > TGP_MAX_MSG_SIZE * TGP_DEFAULT_MAX_MSG_SPLIT_COUNT) {
+    g_free (html);
+    return -E2BIG;
+  }
 
-    First, we remove any HTML markup added by Pidgin, since Telegram won't handle it properly.
-    User-entered HTML is still escaped and therefore won't be harmed.
-   */
-  stripped = purple_markup_strip_html (message);
+  // send big message as multiple chunks
+  int start = 0;
+  while (size > start) {
+    int end = start + (int)TGP_MAX_MSG_SIZE;
+    if (end > size) {
+      end = size;
+    }
+    char *chunk = g_utf8_substring (html, start, end);
+    tgp_msg_send_schedule (TLS, chunk, to);
+    start = end;
+  }
   
-   // now unescape the markup, so that html special chars will still show
-   // up properly in Telegram
-  gchar *unescaped = purple_unescape_text (stripped);
-  int ret = tgp_msg_send_split (TLS, stripped, to);
+  g_free (html);
   
-  g_free (unescaped);
-  g_free (stripped);
-  return ret;
+  // return 0 to assure that the picture is not echoed, since
+  // it will already be echoed with the outgoing message
+  return 0;
+}
+
+static char *tgp_msg_file_display (const char *filename, const char *caption) {
+#ifndef __ADIUM_
+  return g_strdup_printf ("<a href=\"file:///%s\">%s</a>", g_markup_escape_text (filename, -1),
+              g_markup_escape_text (caption, -1));
+#else
+  return g_strdup_printf ("file:///%s", g_uri_escape_string (filename, NULL, TRUE));
 #endif
-  
-  // when the other peer receives a message it is obvious that the previous messages were read
-  pending_reads_send_user (TLS, to);
-  
-  return tgp_msg_send_split (TLS, message, to);
 }
 
 static char *tgp_msg_photo_display (struct tgl_state *TLS, const char *filename, int *flags) {
@@ -394,7 +421,6 @@ static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from,
 }
 
 static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
-  connection_data *conn = TLS->ev_base;
   struct tgl_message *M = C->msg;
   char *text = NULL;
   int flags = 0;
@@ -410,14 +436,34 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     return;
   }
 
-  // only display new messages, ignore updates or deletions
-  if (!M->message || tgp_outgoing_msg (TLS, M) || !tgl_get_peer_type (M->to_id)) {
+#ifdef __ADIUM_
+  // prevent double messages in Adium >= v1.6
+  if (tgp_outgoing_msg (TLS, M)
+      && tgl_get_peer_type (M->to_id) != TGL_PEER_CHANNEL
+      && tgl_get_peer_type (M->to_id) != TGL_PEER_CHAT) {
+    return;
+  }
+#endif
+
+  // filter empty messages or messages with invalid recipients
+  if (! M->message || !tgl_get_peer_type (M->to_id)) {
     return;
   }
   
-  // Mark messages that contain a mention like if they contained our current nick name
+  // Mark messages that contain a mention as if they contained our current nick name
+  // FIXME: doesn't work in Adium
   if (M->flags & TGLMF_MENTION) {
     flags |= PURPLE_MESSAGE_NICK;
+  }
+  
+  // handle messages that failed to load
+  if (C->error) {
+    const char *err = C->error_msg;
+    if (! err) {
+      err = _("failed loading message");
+    }
+    tgp_msg_special_out (TLS, err, tgp_our_msg (TLS, M) ? M->from_id : M->to_id, PURPLE_MESSAGE_ERROR);
+    return;
   }
 
   // format the message text
@@ -430,7 +476,8 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   
       case tgl_message_media_photo: {
         if (M->media.photo) {
-          assert (C->data);
+          g_return_if_fail(C->data != NULL);
+          
           text = tgp_msg_photo_display (TLS, C->data, &flags);
           if (str_not_empty (text)) {
             if (str_not_empty (M->media.caption)) {
@@ -445,37 +492,44 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         
       case tgl_message_media_document:
         if (M->media.document->flags & TGLDF_STICKER) {
-          assert (C->data);
+          g_return_if_fail(C->data != NULL);
           text = tgp_msg_sticker_display (TLS, M->from_id, C->data, &flags);
+        } else if (M->media.document->flags & TGLDF_ANIMATED && C->data) {
+          text = tgp_msg_file_display (C->data, _("[animation]"));
         } else if (M->media.document->flags & TGLDF_IMAGE) {
-          assert (C->data);
+          g_return_if_fail(C->data != NULL);
           text = tgp_msg_photo_display (TLS, C->data, &flags);
         } else {
-          if (! tgp_our_msg(TLS, M)) {
-            tgprpl_recv_file (conn->gc, tgp_blist_lookup_purple_name (TLS, M->from_id), M);
+          if (! tgp_our_msg (TLS, M)) {
+            tgprpl_recv_file (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, M->from_id), M);
           }
           return;
         }
         break;
-        
+
       case tgl_message_media_video:
       case tgl_message_media_audio: {
-        if (! tgp_our_msg(TLS, M)) {
-          tgprpl_recv_file (conn->gc, tgp_blist_lookup_purple_name (TLS, M->from_id), M);
+        if (! tgp_our_msg (TLS, M)) {
+          if (C->data) {
+            text = tgp_msg_file_display (C->data,
+                       M->media.type == tgl_message_media_audio ? _("[audio]") : _("[video]"));
+          } else {
+            tgprpl_recv_file (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, M->from_id), M);
+          }
         }
       }
       break;
         
       case tgl_message_media_document_encr:
         if (M->media.encr_document->flags & TGLDF_STICKER) {
-          assert (C->data);
+          g_return_if_fail(C->data != NULL);
           text = tgp_msg_sticker_display (TLS, M->from_id, C->data, &flags);
         } if (M->media.encr_document->flags & TGLDF_IMAGE) {
-          assert (C->data);
+          g_return_if_fail(C->data != NULL);
           text = tgp_msg_photo_display (TLS, C->data, &flags);
         } else {
-          if (! tgp_our_msg(TLS, M)) {
-            tgprpl_recv_file (conn->gc, tgp_blist_lookup_purple_name (TLS, M->to_id), M);
+          if (! tgp_our_msg (TLS, M)) {
+            tgprpl_recv_file (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, M->to_id), M);
           }
           return;
         }
@@ -527,7 +581,9 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     flags |= PURPLE_MESSAGE_RECV;
   }
   
-  if (tgl_get_peer_type (M->to_id) != TGL_PEER_ENCR_CHAT && ! (M->flags & TGLMF_UNREAD)) {
+  if (tgl_get_peer_type (M->to_id) != TGL_PEER_ENCR_CHAT
+      && tgl_get_peer_type (M->to_id) != TGL_PEER_CHANNEL
+      && ! (M->flags & TGLMF_UNREAD)) {
     flags |= PURPLE_MESSAGE_DELAYED;
   }
   
@@ -536,14 +592,66 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   if (! str_not_empty (text)) {
     return;
   }
-  
+
+  // Handle forwarded messages
+  if (tgl_get_peer_id (M->fwd_from_id) != TGL_PEER_UNKNOWN) {
+    const char *name;
+    tgl_peer_t *FP = tgl_peer_get (TLS, M->fwd_from_id);
+    
+    char *tmp = text;
+    if (FP) {
+      name = FP->print_name;
+      text = g_strdup_printf (_("<b>Forwarded message from: %s</b><br>%s"), name, text);
+    } else {
+      // FIXME: sometimes users aren't part of the response when receiving a forwarded message
+      text = g_strdup_printf (_("<b>Forwarded message:</b><br>%s"), text);
+    }
+    g_free (tmp);
+  }
+
+  /*
+  FIXME: message lookup doesn't work
+  // Handle replies
+  if (M->reply_id > 0) {
+    tgl_message_id_t id;
+    id.peer_type = TGL_PEER_USER;
+    id.id = M->reply_id;
+
+    const char *msg = "Unkown Message";
+    struct tgl_message *MM = tgl_message_get (TLS, &id);
+    if (MM) {
+      msg = MM->message;
+    }
+    const char *usr = "Unknown User";
+    if (MM) {
+      tgl_peer_t *P = tgl_peer_get (TLS, MM->from_id);
+      usr = P->print_name;
+    }
+    g_free (text);
+    text = g_strdup_printf (_("<b>%s: %s</b><br>%s"), msg, usr, M->message);
+  }
+  */
+
   // display the message to the user
   switch (tgl_get_peer_type (M->to_id)) {
+    case TGL_PEER_CHANNEL: {
+      tgl_peer_t *P = tgl_peer_get (TLS, M->to_id);
+      g_return_if_fail(P != NULL);
+      
+      if (P->channel.flags & TGLCHF_MEGAGROUP) {
+        // sender is the group
+        tgp_chat_got_in (TLS, P, M->from_id, text, flags, M->date);
+      } else {
+        
+        // sender is the channel itself
+        tgp_chat_got_in (TLS, P, P->id, text, flags, M->date);
+      }
+      break;
+    }
     case TGL_PEER_CHAT: {
       tgl_peer_t *P = tgl_peer_get (TLS, M->to_id);
-      if (tgp_chat_show (TLS, &P->chat)) {
-        p2tgl_got_chat_in (TLS, M->to_id, M->from_id, text, flags, M->date);
-      }
+      g_return_if_fail(P != NULL);
+      tgp_chat_got_in (TLS, P, M->from_id, text, flags, M->date);
       break;
     }
     case TGL_PEER_ENCR_CHAT: {
@@ -561,7 +669,6 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
       break;
     }
   }
-  
   g_free (text);
 }
 
@@ -584,50 +691,122 @@ static void tgp_msg_process_in_ready (struct tgl_state *TLS) {
     
     tgp_msg_display (TLS, C);
     pending_reads_add (TLS, C->msg);
-    pending_reads_send_all (TLS);
-    
+
     if (C->data) {
       g_free (C->data);
     }
+    
+    if (C->error_msg) {
+      g_free (C->error_msg);
+    }
+    
     tgp_msg_loading_free (C);
   }
+  pending_reads_send_all (TLS);
+
+  debug ("tgp_msg_process_in_ready, queue size=%d", g_queue_get_length (conn->new_messages));
 }
 
 static void tgp_msg_on_loaded_document (struct tgl_state *TLS, void *extra, int success, const char *filename) {
   debug ("tgp_msg_on_loaded_document()");
-  assert (success);
-  
+ 
   struct tgp_msg_loading *C = extra;
-  C->data = (void *) g_strdup (filename);
+  
+  if (success) {
+    C->data = (void *) g_strdup (filename);
+  } else {
+    g_warn_if_reached();
+    C->error = TRUE;
+    C->error_msg = g_strdup (_("loading document or picture failed"));
+  }
+  
   -- C->pending;
   tgp_msg_process_in_ready (TLS);
 }
 
 static void tgp_msg_on_loaded_chat_full (struct tgl_state *TLS, void *extra, int success, struct tgl_chat *chat) {
   debug ("tgp_msg_on_loaded_chat_full()");
-  assert (success);
+
+  if (! success) {
+    // foreign user's names won't be displayed in the user list
+    g_warn_if_reached();
+  }
+
+  struct tgp_msg_loading *C = extra;
+  -- C->pending;
   
-  tgp_chat_on_loaded_chat_full (TLS, chat);
-  
+  tgp_msg_process_in_ready (TLS);
+}
+
+static void tgp_msg_on_loaded_channel_history (struct tgl_state *TLS, void *extra, int success, tgl_peer_t *P) {
+
+  struct tgp_msg_loading *C = extra;
+  -- C->pending;
+
+  tgp_msg_process_in_ready (TLS);
+}
+
+/*
+static void tgp_msg_on_loaded_user_full (struct tgl_state *TLS, void *extra, int success, struct tgl_user *U) {
+  debug ("tgp_msg_on_loaded_user_full()");
+
   struct tgp_msg_loading *C = extra;
   -- C->pending;
   tgp_msg_process_in_ready (TLS);
 }
+*/
 
-void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
-  connection_data *conn = TLS->ev_base;
+/*
+ Libpurple message history is immutable and cannot be changed after printing a message.
+ TGP currently keeps the first-in first-out queue *new_messages* to ensure that
+ the messages are being printed in the correct order. When its necessary to fetch
+ additional info (like attached pictures) before this can be done, the queue will hold
+ all newer messages until the old message was completely loaded.
+*/
+void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) {
+  debug ("tgp_msg_recv before=%p server_id=%lld", before, M->server_id);
+  
   if (M->flags & (TGLMF_EMPTY | TGLMF_DELETED)) {
     return;
   }
+
   if (!(M->flags & TGLMF_CREATED)) {
     return;
   }
+
   if (!(M->flags | TGLMF_UNREAD) && M->date != 0 && M->date < tgp_msg_oldest_relevant_ts (TLS)) {
     debug ("Message from %d on %d too old, ignored.", tgl_get_peer_id (M->from_id), M->date);
     return;
   }
   
   struct tgp_msg_loading *C = tgp_msg_loading_init (M);
+  
+  /*
+   For non-channels telegram ensures that tgp receives the messages in the correct order, but in channels
+   there may be holes that need to be filled before the message log can be printed. This means that the
+   queue may not be processed until all historic messages have been fetched and the messages have been
+   inserted into the correct position of the queue
+   */
+  if (tgl_get_peer_type (C->msg->from_id) == TGL_PEER_CHANNEL
+      || tgl_get_peer_type (C->msg->to_id) == TGL_PEER_CHANNEL) {
+    
+    tgl_peer_id_t id = tgl_get_peer_type (C->msg->from_id) == TGL_PEER_CHANNEL ?
+      C->msg->from_id : C->msg->to_id;
+    
+    if (! tgp_channel_loaded (TLS, id)) {
+      ++ C->pending;
+      
+      tgp_channel_load (TLS, tgl_peer_get (TLS, id), tgp_msg_on_loaded_channel_history, C);
+    }
+    
+    if (tgp_chat_get_last_server_id (TLS, id) >= C->msg->server_id) {
+      info ("dropping duplicate channel messages server_id=%lld", C->msg->server_id);
+      return;
+    }
+    if (tgp_chat_get_last_server_id (TLS, id) == (int) C->msg->server_id - 1) {
+      tgp_chat_set_last_server_id (TLS, id, (int) C->msg->server_id);
+    }
+  }
   
   if (! (M->flags & TGLMF_SERVICE)) {
     
@@ -636,8 +815,8 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
       switch (M->media.type) {
         case tgl_message_media_photo: {
           
-          // include the "bad photo" check from telegram-cli interface.c:3287 to avoid crashes when fetching history
-          // TODO: find out the reason for this behavior
+          // include the "bad photo" check from telegram-cli interface.c:3287 to avoid crashes
+          // when fetching history. TODO: find out the reason for this behavior
           if (M->media.photo) {
             ++ C->pending;
             tgl_do_load_photo (TLS, M->media.photo, tgp_msg_on_loaded_document, C);
@@ -646,56 +825,95 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M) {
         }
           
         // documents that are stickers or images will be displayed just like regular photo messages
-        // and need to be lodaed beforehand
+        // and need to be loaded beforehand
         case tgl_message_media_document:
-        case tgl_message_media_video:
-        case tgl_message_media_audio:
-          if (M->media.document->flags & TGLDF_STICKER || M->media.document->flags & TGLDF_IMAGE) {
+          if (M->media.document->flags & (TGLDF_STICKER | TGLDF_IMAGE)) {
             ++ C->pending;
             tgl_do_load_document (TLS, M->media.document, tgp_msg_on_loaded_document, C);
+          } else if (M->media.document->flags & (TGLDF_ANIMATED | TGLDF_VIDEO | TGLDF_AUDIO)) {
+
+            // adium doesn't support file links, autoloading media would mean that it
+            // wouldn't be possible to show a usable link to the user
+#ifndef __ADIUM_
+            if (M->media.document->size <= tls_get_media_threshold (TLS)) { // 8mb auto loading threshold
+              ++ C->pending;
+              if (M->media.document->flags & TGLDF_AUDIO) {
+                tgl_do_load_audio (TLS, M->media.document, tgp_msg_on_loaded_document, C);
+              } else if (M->media.document->flags & TGLDF_VIDEO) {
+                tgl_do_load_video (TLS, M->media.document, tgp_msg_on_loaded_document, C);
+              } else {
+                tgl_do_load_document (TLS, M->media.document, tgp_msg_on_loaded_document, C);
+              }
+            }
+#endif
           }
           break;
+
+#ifndef __ADIUM_
+        case tgl_message_media_video:
+          if (M->media.document->size <= tls_get_media_threshold (TLS)) {
+            ++ C->pending;
+            tgl_do_load_video (TLS, M->media.document, tgp_msg_on_loaded_document, C);
+          }
+          break;
+        case tgl_message_media_audio:
+          if (M->media.document->size <= tls_get_media_threshold (TLS)) {
+            ++ C->pending;
+            tgl_do_load_audio (TLS, M->media.document, tgp_msg_on_loaded_document, C);
+          }
+          break;
+#endif
+
         case tgl_message_media_document_encr:
           if (M->media.encr_document->flags & TGLDF_STICKER || M->media.encr_document->flags & TGLDF_IMAGE) {
             ++ C->pending;
             tgl_do_load_encr_document (TLS, M->media.encr_document, tgp_msg_on_loaded_document, C);
           }
           break;
-          
+
         case tgl_message_media_geo:
           // TODO: load geo thumbnail
           break;
-          
-        default: // prevent Clang warnings ...
+
+        default:
+          // prevent Clang warnings ...
           break;
       }
     }
   }
-  
-  if (tgl_get_peer_type (M->to_id) == TGL_PEER_CHAT) {
-      
-    tgl_peer_t *peer = tgl_peer_get (TLS, M->to_id);
-    assert (peer);
-      
-    if (! peer->chat.user_list_size) {
-      // To display a chat the full name of every single user is needed, but the updates received from the server only
-      // contain the names of users mentioned in the events. In order to display a messages we always need to fetch the
-      // full chat info first. If the user list is empty, this means that we still haven't fetched the full chat information.
-      
-      // assure that there is only one chat info request for every
-      // chat to avoid causing FLOOD_WAIT_X errors that will lead to delays or dropped messages
-      gpointer to_ptr = GINT_TO_POINTER(tgl_get_peer_id (M->to_id));
-      
-      if (! g_hash_table_lookup (conn->pending_chat_info, to_ptr)) {
+
+  /*
+   To display a chat, the full name of every single user is needed, but the updates received from the server only
+   contain the names of users mentioned in the events. In order to display a messages we always need to fetch the
+   full chat info first. If the user list is empty, this means that we still haven't fetched the full chat
+   information. Assure that there is only one chat info request for every chat to avoid causing FLOOD_WAIT_X
+   errors that will lead to delays or dropped messages
+  */
+  gpointer to_ptr = GINT_TO_POINTER(tgl_get_peer_id (M->to_id));
+
+  if (! g_hash_table_lookup (tls_get_data (TLS)->pending_chat_info, to_ptr)) {
+
+    if (tgl_get_peer_type (M->to_id) == TGL_PEER_CHAT) {
+      tgl_peer_t *P = tgl_peer_get (TLS, M->to_id);
+      g_warn_if_fail(P);
+
+      if (P && ! P->chat.user_list_size) {
         ++ C->pending;
-        
+
         tgl_do_get_chat_info (TLS, M->to_id, FALSE, tgp_msg_on_loaded_chat_full, C);
-        g_hash_table_replace (conn->pending_chat_info, to_ptr, to_ptr);
+        g_hash_table_replace (tls_get_data (TLS)->pending_chat_info, to_ptr, to_ptr);
       }
     }
   }
-  
-  g_queue_push_tail (conn->new_messages, C);
+
+  GList *b = g_queue_find (tls_get_data (TLS)->new_messages, before);
+  if (b) {
+    struct tgp_msg_loading *M = before->data;
+    debug ("inserting before server_id=%lld", M->msg->server_id);
+    g_queue_insert_before (tls_get_data (TLS)->new_messages, b, C);
+  } else {
+    g_queue_push_tail (tls_get_data (TLS)->new_messages, C);
+  }
   tgp_msg_process_in_ready (TLS);
 }
 

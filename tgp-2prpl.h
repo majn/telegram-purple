@@ -27,6 +27,7 @@
 PurpleAccount *tls_get_pa (struct tgl_state *TLS);
 PurpleConnection *tls_get_conn (struct tgl_state *TLS);
 connection_data *tls_get_data (struct tgl_state *TLS);
+int tls_get_media_threshold (struct tgl_state *TLS);
 connection_data *gc_get_data (PurpleConnection *gc);
 connection_data *pa_get_data (PurpleAccount *pa);
 connection_data *pbn_get_data (PurpleBlistNode *node);
@@ -34,17 +35,13 @@ struct tgl_state *gc_get_tls (PurpleConnection *gc);
 
 int p2tgl_status_is_present (PurpleStatus *status);
 
-void p2tgl_got_chat_in (struct tgl_state *TLS, tgl_peer_id_t chat, tgl_peer_id_t who, const char *message, int flags, time_t when);
+void tgp_chat_got_in (struct tgl_state *TLS, tgl_peer_t *chat, tgl_peer_id_t who, const char *message, int flags, time_t when);
 void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *msg, int flags, time_t when);
 void p2tgl_prpl_got_user_status (struct tgl_state *TLS, tgl_peer_id_t user, struct tgl_user_status *status);
 void p2tgl_conv_add_user (struct tgl_state *TLS, PurpleConversation *conv, int user, char *message, int flags, int new_arrival);
 PurpleConversation *p2tgl_find_conversation_with_account (struct tgl_state *TLS, tgl_peer_id_t peer);
-PurpleNotifyUserInfo *p2tgl_notify_peer_info_new (struct tgl_state *TLS, tgl_peer_t *P);
-PurpleNotifyUserInfo *p2tgl_notify_user_info_new (struct tgl_user *U);
-PurpleNotifyUserInfo *p2tgl_notify_encrypted_chat_info_new (struct tgl_state *TLS, struct tgl_secret_chat *secret, struct tgl_user *U);
-int p2tgl_imgstore_add_with_id (const char* filename);
-void p2tgl_buddy_icons_set_for_user (PurpleAccount *pa, tgl_peer_id_t id, const char* filename);
 
+int p2tgl_imgstore_add_with_id (const char* filename);
 int p2tgl_imgstore_add_with_id_raw (const unsigned char *raw_rgba, unsigned width, unsigned height);
 #ifdef HAVE_LIBWEBP
 int p2tgl_imgstore_add_with_id_webp (const char *filename);

@@ -1,20 +1,20 @@
 /*
  This file is part of telegram-purple
- 
+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
- 
+
  Copyright Matthias Jentsch 2014-2015
  */
 
@@ -90,6 +90,8 @@ static void tgprpl_xfer_recv_on_finished (struct tgl_state *TLS, void *_data, in
 
   debug ("moving transferred file from tgl directory %s to selected target %s", selected, filename);
   g_unlink (selected);
+  
+  //FIXME: try to copy when this fails
   g_rename (filename, selected);
   g_free (selected);
 }
@@ -138,33 +140,33 @@ static gboolean tgprpl_xfer_upload_progress (gpointer _data) {
   PurpleXfer *X = _data;
   struct tgp_xfer_send_data *data = X->data;
   connection_data *conn = data->conn;
-  
+
   PurpleXferType type = purple_xfer_get_type (X);
   switch (type) {
     case PURPLE_XFER_SEND:
       purple_xfer_set_size (X, conn->TLS->cur_uploading_bytes);
       purple_xfer_set_bytes_sent (X, conn->TLS->cur_uploaded_bytes);
       purple_xfer_update_progress (X);
-      
+
       debug ("PURPLE_XFER_SEND progress %d / %d", conn->TLS->cur_uploaded_bytes, conn->TLS->cur_uploading_bytes);
       if (conn->TLS->cur_uploaded_bytes == conn->TLS->cur_uploading_bytes) {
         data->timer = 0;
         return FALSE;
       }
       break;
-      
+
     case PURPLE_XFER_RECEIVE:
       purple_xfer_set_size (X, conn->TLS->cur_downloading_bytes);
       purple_xfer_set_bytes_sent (X, conn->TLS->cur_downloaded_bytes);
       purple_xfer_update_progress (X);
-      
+
       debug ("PURPLE_XFER_RECEIVE progress %d / %d", conn->TLS->cur_downloaded_bytes, conn->TLS->cur_downloading_bytes);
       if (conn->TLS->cur_downloading_bytes == conn->TLS->cur_downloaded_bytes) {
         data->timer = 0;
         return FALSE;
       }
       break;
-      
+
     default:
     case PURPLE_XFER_UNKNOWN:
       failure ("ERROR: tgprpl_xfer_upload_progress xfer type PURPLE_XFER_UNKNOWN.");
@@ -243,8 +245,13 @@ static void tgprpl_xfer_send_init (PurpleXfer *X) {
     return;
   }
 
+  unsigned long long int flags = TGL_SEND_MSG_FLAG_DOCUMENT_AUTO;
+  if (tgl_get_peer_type (P->id) == TGL_PEER_CHANNEL) {
+    flags |= TGLMF_POST_AS_CHANNEL;
+  }
+
   tgl_do_send_document (data->conn->TLS, P->id, (char*) localfile, NULL, 0,
-      TGL_SEND_MSG_FLAG_DOCUMENT_AUTO, tgprpl_xfer_send_on_finished, data);
+      flags, tgprpl_xfer_send_on_finished, data);
 
   // see comment in tgprpl_xfer_recv_init()
   purple_xfer_ref (X);
@@ -328,12 +335,12 @@ static PurpleXfer *tgprpl_new_xfer_recv (PurpleConnection *gc, const char *who) 
 void tgprpl_recv_file (PurpleConnection *gc, const char *who, struct tgl_message *M) {
   debug ("tgprpl_recv_file()");
   g_return_if_fail (who);
-  
+
   PurpleXfer *X = tgprpl_new_xfer_recv (gc, who);
   const char *mime_type, *caption;
   long long access_hash;
   int flags, size;
-  
+
   if (M->media.type == tgl_message_media_document_encr) {
     mime_type = M->media.encr_document->mime_type;
     caption = M->media.encr_document->caption;
@@ -351,7 +358,7 @@ void tgprpl_recv_file (PurpleConnection *gc, const char *who, struct tgl_message
   char *filename = tgp_strdup_determine_filename (mime_type, caption, flags, access_hash);
   purple_xfer_set_filename (X, filename);
   g_free (filename);
-  
+
   purple_xfer_set_size (X, size);
   tgprpl_xfer_init_data (X, purple_connection_get_protocol_data (gc), M);
   purple_xfer_request (X);

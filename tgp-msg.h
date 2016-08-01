@@ -27,10 +27,10 @@
  * Loads embedded ressources like pictures or document thumbnails and ensures that 
  * that all messages are still displayed in the original incoming order.
  */
-void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M);
+void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before);
 
 /**
- * Process a message and send it the peer
+ * Process a message and send it to the peer
  *
  * Removes all HTML escape chars and HTML markup, finds  embedded images and sends 
  * them as pictures and splits up messages that are too big for single Telegram
@@ -38,7 +38,9 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M);
  */
 int tgp_msg_send (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to);
 
-void tgp_msg_err_out (struct tgl_state *TLS, const char *error, tgl_peer_id_t to);
-void tgp_msg_sys_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to_id, int no_log);
+/**
+ * Print a special message in the conversation with a peer assuring that special flags are displayed
+ */
+void tgp_msg_special_out (struct tgl_state *TLS, const char *msg, tgl_peer_id_t to_id, int flags);
 
 #endif

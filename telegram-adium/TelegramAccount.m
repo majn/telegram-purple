@@ -22,6 +22,7 @@
 #import <Adium/ESFileTransfer.h>
 #import <Adium/AIListContact.h>
 #import <Adium/AIMenuControllerProtocol.h>
+#import <Adium/AIHTMLDecoder.h>
 #import <AIUtilities/AIMenuAdditions.h>
 
 #include "telegram-purple.h"
@@ -52,6 +53,8 @@
 {
   [super didConnect];
   [self purpleAccount];
+  
+  // FIXME: Crashed after going online
   
   // Storing chats in the blist breaks Adium bookmarks. Adium doesn't
   // show those chats anyway, so we can just safely delete those.
@@ -129,7 +132,7 @@
   
   [menu addItemWithTitle:@"Delete and exit..."
                   target:self
-                  action:@selector(deleteAndExitChat)
+                  action:@selector(deleteAndExit)
            keyEquivalent:@""
                      tag:0];
   
@@ -141,20 +144,16 @@
   connection_data *conn = purple_connection_get_protocol_data (purple_account_get_connection(account));
   AIChat *chat = adium.interfaceController.activeChat;
   if (chat) {
-    export_chat_link_checked (conn->TLS, [chat.name UTF8String]);
+    export_chat_link_by_name (conn->TLS, [chat.name UTF8String]);
   }
 }
 
-- (void)deleteAndExitChat
+- (void)deleteAndExit
 {
   connection_data *conn = purple_connection_get_protocol_data (purple_account_get_connection(account));
   AIChat *chat = adium.interfaceController.activeChat;
   if (chat) {
-    const char *name = [chat.name UTF8String];
-    tgl_peer_t *P = tgp_blist_lookup_peer_get (conn->TLS, name);
-    if (P) {
-      leave_and_delete_chat (conn->TLS, P);
-    }
+    leave_and_delete_chat_by_name (conn->TLS, [chat.name UTF8String]);
   }
 }
 
@@ -182,6 +181,24 @@
 - (void)cancelFileTransfer:(ESFileTransfer *)fileTransfer
 {
   [super cancelFileTransfer:fileTransfer];
+}
+
+- (NSString *)encodedAttributedString:(NSAttributedString *)inAttributedString forListObject:(AIListObject *)inListObject
+{
+  static AIHTMLDecoder *htmlEncoder = nil;
+  if (!htmlEncoder) {
+    htmlEncoder = [[AIHTMLDecoder alloc] init];
+    [htmlEncoder setIncludesHeaders:NO];
+    [htmlEncoder setIncludesFontTags:NO];
+    [htmlEncoder setClosesFontTags:YES];
+    [htmlEncoder setIncludesStyleTags:NO];
+    [htmlEncoder setIncludesColorTags:NO];
+    [htmlEncoder setEncodesNonASCII:NO];
+    [htmlEncoder setPreservesAllSpaces:NO];
+    [htmlEncoder setUsesAttachmentTextEquivalents:YES];
+  }
+  
+  return [htmlEncoder encodeHTML:inAttributedString imagesPath:nil];
 }
 
 #pragma mark Group Chats

@@ -1,0 +1,23 @@
+<!-- Copyright © 2012-2015 Matthias Klumpp.
+  This material may only be distributed subject to the terms and
+  conditions set forth in the GNU Free Documentation License (GFDL),
+  V1.2 with no invariant sections or later (the latest version is
+  presently available at http://www.gnu.org/licenses/fdl.txt).
+
+  This file bases on the "Quickstart Translation using itstool":
+  http://www.freedesktop.org/software/appstream/docs/sect-Quickstart-Translation.html
+
+  The copyright for the base transformer was found at:
+  http://www.freedesktop.org/software/appstream/docs/index.html
+-->
+<its:rules
+  xmlns:its="http://www.w3.org/2005/11/its"
+  version="1.0">
+  <its:translateRule translate="no" selector="/component"/>
+  <its:translateRule translate="yes"
+    selector="/component/name |
+              /component/summary |
+              /component/description |
+              /component/screenshots/screenshot/caption |
+              /component/developer_name"/>
+</its:rules>

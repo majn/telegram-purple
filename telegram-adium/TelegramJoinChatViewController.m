@@ -34,8 +34,15 @@
 static void tgl_chat_iterator_cb (tgl_peer_t *peer, void *extra) {
   NSMutableArray *A = (__bridge NSMutableArray *)(extra);
   
-  // chats with 0 participants were deleted or left by the user
-  if (tgl_get_peer_type (peer->id) == TGL_PEER_CHAT && peer->chat.users_num > 0) {
+  if (tgl_get_peer_type (peer->id) == TGL_PEER_CHAT && !(peer->chat.flags & TGLCF_LEFT)) {
+    [A addObject: [NSString stringWithUTF8String: peer->print_name]];
+  }
+}
+
+static void tgl_channel_iterator_cb (tgl_peer_t *peer, void *extra) {
+  NSMutableArray *A = (__bridge NSMutableArray *)(extra);
+  
+  if (tgl_get_peer_type (peer->id) == TGL_PEER_CHANNEL && !(peer->channel.flags & TGLCHF_LEFT)) {
     [A addObject: [NSString stringWithUTF8String: peer->print_name]];
   }
 }
@@ -52,7 +59,10 @@ static void tgl_chat_iterator_cb (tgl_peer_t *peer, void *extra) {
     // fetch all active chats and put them into the select box
     [popupButton_existingChat removeAllItems];
     NSMutableArray *chats = [NSMutableArray new];
+    
     tgl_peer_iterator_ex (conn->TLS, tgl_chat_iterator_cb, (__bridge void *)(chats));
+    tgl_peer_iterator_ex (conn->TLS, tgl_channel_iterator_cb, (__bridge void *)(chats));
+    
     [popupButton_existingChat
         addItemsWithTitles: [chats sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)]];
     
@@ -74,7 +84,7 @@ static void tgl_chat_iterator_cb (tgl_peer_t *peer, void *extra) {
     // Join by link
     NSString *link = [textField_joinByLink stringValue];
     if ([link length]) {
-      import_chat_link_checked (conn->TLS, [link UTF8String]);
+      import_chat_link (conn->TLS, [link UTF8String]);
       return;
     }
     

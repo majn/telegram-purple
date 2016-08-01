@@ -42,6 +42,7 @@
 		C4B4BE391AB613950064AC17 /* TelegramJoinChatView.xib in Resources */ = {isa = PBXBuildFile; fileRef = C4B4BE381AB613950064AC17 /* TelegramJoinChatView.xib */; };
 		C4B57BF01B1598D4006997F4 /* libtgl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C4B57BEF1B1598D4006997F4 /* libtgl.a */; };
 		C4D12DF01BC534CF00C0F6E1 /* tgp-blist.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D12DEF1BC534CF00C0F6E1 /* tgp-blist.c */; };
+		C4D3EB5A1C3824C5003C895B /* tgp-info.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D3EB581C3824C5003C895B /* tgp-info.c */; };
 		C4D432D81BC2783C00561667 /* tg-server.tglpub in Resources */ = {isa = PBXBuildFile; fileRef = C4D432D71BC2783C00561667 /* tg-server.tglpub */; };
 		C4D819061A5C862E0044CBA9 /* tgp-structs.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D819041A5C862E0044CBA9 /* tgp-structs.c */; };
 		C4D9185B1C1C6B3900AECCA2 /* libgpg-error.0.dylib in Resources */ = {isa = PBXBuildFile; fileRef = C4D9185A1C1C6B3900AECCA2 /* libgpg-error.0.dylib */; };
@@ -111,11 +112,12 @@
 		C4B57BE51B109E6D006997F4 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		C4B57BE81B10D814006997F4 /* configure.ac */ = {isa = PBXFileReference; lastKnownFileType = text; name = configure.ac; path = ../configure.ac; sourceTree = "<group>"; };
 		C4B57BE91B10D822006997F4 /* Makefile.in */ = {isa = PBXFileReference; lastKnownFileType = text; name = Makefile.in; path = ../Makefile.in; sourceTree = "<group>"; };
-		C4B57BEC1B13B2C4006997F4 /* auto-types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "auto-types.h"; path = "../auto/auto-types.h"; sourceTree = "<group>"; };
 		C4B57BED1B1598BE006997F4 /* telegram-purple */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "telegram-purple"; path = ..; sourceTree = "<group>"; };
 		C4B57BEF1B1598D4006997F4 /* libtgl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libtgl.a; path = ../libs/libtgl.a; sourceTree = "<group>"; };
 		C4D12DEE1BC534CF00C0F6E1 /* tgp-blist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "tgp-blist.h"; path = "../tgp-blist.h"; sourceTree = "<group>"; };
 		C4D12DEF1BC534CF00C0F6E1 /* tgp-blist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "tgp-blist.c"; path = "../tgp-blist.c"; sourceTree = "<group>"; };
+		C4D3EB581C3824C5003C895B /* tgp-info.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "tgp-info.c"; path = "../tgp-info.c"; sourceTree = "<group>"; };
+		C4D3EB591C3824C5003C895B /* tgp-info.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "tgp-info.h"; path = "../tgp-info.h"; sourceTree = "<group>"; };
 		C4D432D71BC2783C00561667 /* tg-server.tglpub */ = {isa = PBXFileReference; lastKnownFileType = file; name = "tg-server.tglpub"; path = "../tg-server.tglpub"; sourceTree = "<group>"; };
 		C4D819041A5C862E0044CBA9 /* tgp-structs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "tgp-structs.c"; path = "../tgp-structs.c"; sourceTree = "<group>"; };
 		C4D819051A5C862E0044CBA9 /* tgp-structs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "tgp-structs.h"; path = "../tgp-structs.h"; sourceTree = "<group>"; };
@@ -265,12 +267,13 @@
 				C431EB7B1A76C737006521CB /* tgp-chat.c */,
 				C431EB7C1A76C737006521CB /* tgp-chat.h */,
 				C4E5280F1A8A907200C4B915 /* tgp-ft.c */,
-				C4B57BEC1B13B2C4006997F4 /* auto-types.h */,
 				C4E528101A8A907200C4B915 /* tgp-ft.h */,
 				C479A8001BB69C2100C153DF /* tgp-request.c */,
 				C479A8011BB69C2100C153DF /* tgp-request.h */,
 				C4D12DEE1BC534CF00C0F6E1 /* tgp-blist.h */,
 				C4D12DEF1BC534CF00C0F6E1 /* tgp-blist.c */,
+				C4D3EB591C3824C5003C895B /* tgp-info.h */,
+				C4D3EB581C3824C5003C895B /* tgp-info.c */,
 				330704C72BA03B848124B6F7 /* telegram-adium */,
 			);
 			name = "telegram-purple";
@@ -286,6 +289,7 @@
 				C410948219BB2D7D0083BF3F /* Sources */,
 				C410948319BB2D7D0083BF3F /* Frameworks */,
 				C410948419BB2D7D0083BF3F /* Resources */,
+				C4C325A11C91BD230020D32E /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -343,6 +347,22 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		C4C325A11C91BD230020D32E /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "install_name_tool -change \"@executable_path/../Frameworks/libglib.framework/Versions/2.38.1/libglib\" \"@executable_path/../Frameworks/libglib.framework/libglib\" \"$TARGET_BUILD_DIR/$PRODUCT_NAME.$WRAPPER_EXTENSION/Contents/MacOS/$PRODUCT_NAME\"\ninstall_name_tool -change \"@executable_path/../Frameworks/libpurple.framework/Versions/2.10.7rd8d96a636413/libpurple\" \"@executable_path/../Frameworks/libpurple.framework/libpurple\" \"$TARGET_BUILD_DIR/$PRODUCT_NAME.$WRAPPER_EXTENSION/Contents/MacOS/$PRODUCT_NAME\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		C410948219BB2D7D0083BF3F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -368,6 +388,7 @@
 				C425F9181A7069C300361AFC /* tgp-utils.c in Sources */,
 				C4D819061A5C862E0044CBA9 /* tgp-structs.c in Sources */,
 				C431EB7D1A76C737006521CB /* tgp-chat.c in Sources */,
+				C4D3EB5A1C3824C5003C895B /* tgp-info.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -492,7 +513,7 @@
 				INSTALL_PATH = "$(HOME)/Library/Application Support/Adium 2.0/PlugIns/";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/../libs",
+					"$(PROJECT_DIR)/../tgl/libs",
 					"$(PROJECT_DIR)",
 					"$(PROJECT_DIR)/Frameworks",
 					"$(PROJECT_DIR)/Frameworks/Adium",
@@ -532,7 +553,7 @@
 				INSTALL_PATH = "$(HOME)/Library/Application Support/Adium 2.0/PlugIns/";
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/../libs",
+					"$(PROJECT_DIR)/../tgl/libs",
 					"$(PROJECT_DIR)/Frameworks",
 					"$(PROJECT_DIR)/Frameworks/Adium",
 				);

@@ -1,4 +1,5 @@
-/* This file is part of telegram-purple 
+/* 
+ This file is part of telegram-purple
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
@@ -102,15 +103,14 @@ PurpleBuddy *tgp_blist_buddy_migrate (struct tgl_state *TLS, PurpleBuddy *buddy,
   purple_blist_remove_buddy (buddy);
   buddy = purple_buddy_new (tls_get_pa (TLS), user->print_name, NULL);
   tgp_blist_buddy_set_id (buddy, user->id);
-  purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init ("Telegram"), NULL);
+  purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init (_("Telegram")), NULL);
   return buddy;
 }
 
 void tgp_blist_buddy_set_id (PurpleBuddy *buddy, tgl_peer_id_t id) {
   int uid = tgl_get_peer_id (id),
      type = tgl_get_peer_type (id);
-  assert (type == TGL_PEER_ENCR_CHAT || type == TGL_PEER_USER);
-  
+  assert (type == TGL_PEER_ENCR_CHAT || type == TGL_PEER_USER || type == TGL_PEER_CHANNEL);
   purple_blist_node_set_int (&buddy->node, TGP_BUDDY_KEY_PEER_ID, uid);
   purple_blist_node_set_int (&buddy->node, TGP_BUDDY_KEY_PEER_TYPE, type);
 }
@@ -122,11 +122,12 @@ int tgp_blist_buddy_has_id (PurpleBuddy *buddy) {
 tgl_peer_id_t tgp_blist_buddy_get_id (PurpleBuddy *buddy) {
   int id = purple_blist_node_get_int (&buddy->node, TGP_BUDDY_KEY_PEER_ID),
     type = purple_blist_node_get_int (&buddy->node, TGP_BUDDY_KEY_PEER_TYPE);
-
   if (type == TGL_PEER_USER) {
     return TGL_MK_USER (id);
   } else if (type == TGL_PEER_ENCR_CHAT) {
     return TGL_MK_ENCR_CHAT (id);
+  } else if (type == TGL_PEER_CHANNEL) {
+    return TGL_MK_CHANNEL (id);
   } else {
     return tgl_set_peer_id (TGL_PEER_UNKNOWN, 0);
   }
@@ -147,6 +148,23 @@ static int tgp_blist_buddy_find_cb (PurpleBlistNode *node, void *extra) {
 
 PurpleBuddy *tgp_blist_buddy_find (struct tgl_state *TLS, tgl_peer_id_t user) {
   return (PurpleBuddy *) tgp_blist_iterate (TLS, tgp_blist_buddy_find_cb, GINT_TO_POINTER(tgl_get_peer_id (user)));
+}
+
+// contacts
+
+void tgp_blist_contact_add (struct tgl_state *TLS, struct tgl_user *U) {
+  PurpleBuddy *buddy = tgp_blist_buddy_find (TLS, U->id);
+  
+  if (! buddy) {
+    tgl_peer_t *P = tgl_peer_get (TLS, U->id);
+    
+    info ("Adding contact '%s' to buddy list", tgp_blist_lookup_purple_name (TLS, U->id));
+    buddy = tgp_blist_buddy_new (TLS, P);
+    purple_blist_add_buddy (buddy, NULL, tgp_blist_group_init (_("Telegram")), NULL);
+    
+    tgp_info_update_photo (&buddy->node, P);
+  }
+  p2tgl_prpl_got_user_status (TLS, U->id, &U->status);
 }
 
 // chats
@@ -170,12 +188,13 @@ PurpleChat *tgp_blist_chat_find (struct tgl_state *TLS, tgl_peer_id_t user) {
 
 PurpleGroup *tgp_blist_group_init (const char *name) {
   PurpleGroup *grp = purple_find_group (name);
-  if (grp == NULL) {
+  if (! grp) {
     grp = purple_group_new (name);
     purple_blist_add_group (grp, NULL);
   }
   return grp;
 }
+
 
 // names
 
@@ -218,4 +237,3 @@ char *tgp_blist_create_print_name (struct tgl_state *TLS, tgl_peer_id_t id, cons
   g_free (name);
   return S;
 }
-

@@ -72,14 +72,14 @@ void tgp_msg_loading_free (gpointer data) {
 }
 
 struct tgp_msg_loading *tgp_msg_loading_init (struct tgl_message *M) {
-  struct tgp_msg_loading *C = malloc (sizeof (struct tgp_msg_loading));
+  struct tgp_msg_loading *C = talloc0 (sizeof (struct tgp_msg_loading));
   C->pending = 0;
   C->msg = M;
   C->data = NULL;
   return C;
 }
 
-struct tgp_msg_sending *tgp_msg_sending_init (struct tgl_state *TLS, gchar *M, tgl_peer_id_t to) {
+struct tgp_msg_sending *tgp_msg_sending_init (struct tgl_state *TLS, char *M, tgl_peer_id_t to) {
   struct tgp_msg_sending *C = malloc (sizeof (struct tgp_msg_sending));
   C->TLS = TLS;
   C->msg = M;
@@ -89,7 +89,9 @@ struct tgp_msg_sending *tgp_msg_sending_init (struct tgl_state *TLS, gchar *M, t
 
 void tgp_msg_sending_free (gpointer data) {
   struct tgp_msg_sending *C = data;
-  g_free (C->msg);
+  if (C->msg) {
+    g_free (C->msg);
+  }
   free (C);
 }
 
@@ -102,8 +104,11 @@ connection_data *connection_data_init (struct tgl_state *TLS, PurpleConnection *
   conn->out_messages = g_queue_new ();
   conn->pending_reads = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
   conn->pending_chat_info = g_hash_table_new (g_direct_hash, g_direct_equal);
+  conn->pending_channels = g_hash_table_new (g_direct_hash, g_direct_equal);
   conn->id_to_purple_name = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
   conn->purple_name_to_id = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+  conn->channel_members = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, (void (*) (gpointer)) g_list_free);
+  
   return conn;
 }
 
@@ -118,8 +123,11 @@ void *connection_data_free (connection_data *conn) {
   tgp_g_list_free_full (conn->pending_joins, g_free);
   g_hash_table_destroy (conn->pending_reads);
   g_hash_table_destroy (conn->pending_chat_info);
+  g_hash_table_destroy (conn->pending_channels);
   g_hash_table_destroy (conn->id_to_purple_name);
   g_hash_table_destroy (conn->purple_name_to_id);
+  g_hash_table_destroy (conn->channel_members);
+  
   tgprpl_xfer_free_all (conn);
   g_free (conn->TLS->base_path);
   tgl_free_all (conn->TLS);
@@ -127,11 +135,3 @@ void *connection_data_free (connection_data *conn) {
   free (conn);
   return NULL;
 }
-
-get_user_info_data* get_user_info_data_new (int show_info, tgl_peer_id_t peer) {
-  get_user_info_data *info_data = malloc (sizeof(get_user_info_data));
-  info_data->show_info = show_info;
-  info_data->peer = peer;
-  return info_data;
-}
-

@@ -1,6 +1,42 @@
 Changelog
 ---------
 
+##### 1.2.6
+
+- Include libtgl bugfix "use-after-not-created for photos"
+- Fix Adium bundle version incompatibillity for newest version
+
+##### 1.2.5
+
+- Include libtgl fix to prevent crashes on certain channel messages
+- Improve error handling to be more graceful
+
+##### 1.2.4
+
+- Fix crash on unknown media type
+- Fix crash on logout after cancelling a file transfer
+
+##### 1.2.3
+
+- Build: Allow compilation on Windows #52 Thanks Eion!
+- Build: Drop dependency on LodePNG, Thanks Ben!
+- Build: Gettext is now optional
+
+- Fix issue that prevented to send messages to deleted users in certain cases (#174)
+- Fix own user being added to the buddy list in certain cases
+- Fix that read recipes of own messages are being displayed (#139)
+- Fix encoding inconsistencies with Unicode characters (#177)
+- Fix auto-joining for chats (#179)
+- Fix client not reconnecting anymore under certain circumstances (#173)
+- Fix crash on compat-verification (PullRequest #183)
+
+- Remove pointless "create chat" confirmation dialogue
+- Improve logging messages
+- Always send read recipes when the user is typing or sending a message
+- Improve translation and user messages (#139)
+- Use native password prompts (Adium)
+
+
 ##### 1.2.2
 
     - fix some licensing issues by not depending on OpenSSL any longer (thanks Ben!)

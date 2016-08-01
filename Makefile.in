@@ -34,10 +34,9 @@ MSGFMT_PATH=@MSGFMT_PATH@
 DEP=dep
 EXE=bin
 OBJ=objs
-LIB=libs
-DIR_LIST=${DEP} ${EXE} ${OBJ} ${LIB}
+DIR_LIST=${DEP} ${EXE} ${OBJ}
 
-PLUGIN_OBJECTS=${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/telegram-base.o ${OBJ}/telegram-purple.o ${OBJ}/tgp-2prpl.o ${OBJ}/tgp-structs.o ${OBJ}/tgp-utils.o ${OBJ}/tgp-chat.o ${OBJ}/tgp-ft.o ${OBJ}/tgp-msg.o ${OBJ}/tgp-request.o ${OBJ}/tgp-blist.o
+PLUGIN_OBJECTS=${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/telegram-base.o ${OBJ}/telegram-purple.o ${OBJ}/tgp-2prpl.o ${OBJ}/tgp-structs.o ${OBJ}/tgp-utils.o ${OBJ}/tgp-chat.o ${OBJ}/tgp-ft.o ${OBJ}/tgp-msg.o ${OBJ}/tgp-request.o ${OBJ}/tgp-blist.o ${OBJ}/tgp-info.o
 ALL_OBJS=${PLUGIN_OBJECTS}
 
 ifdef MSGFMT_PATH
@@ -55,9 +54,14 @@ all: ${PRPL_LIBNAME} $(LOCALE_MOS)
 
 PLUGIN_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=plugindir purple)
 DATA_ROOT_DIR_PURPLE=$(shell ${PKG_CONFIG} --variable=datarootdir purple)
-COPY_ICONS=@COPY_ICONS@
 CRYPTO_FLAG=@CRYPTO_FLAG@
 
+
+### == 'Magic' targets and infrastructure. == ###
+# Here be dragons! See https://github.com/majn/telegram-purple/issues/242
+# For the full list of requirements, goals, and rationale.
+
+.PHONY: create_dirs
 create_dirs: ${DIR_LIST}
 
 ${DIR_LIST}:
@@ -67,79 +71,96 @@ DEPENDENCE=$(subst ${OBJ}/,${DEP}/,$(patsubst %.o,%.d,${ALL_OBJS}))
 DEPENDENCE_LIST=${DEPENDENCE}
 -include ${DEPENDENCE_LIST}
 
-
-# The dependency on tgl/libs/libtgl.a ensures that "make -C tgl" was called,
-# and most importantly: It ensures that all automatic headers exist.
-${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c ${LIB}/libtgl.a | create_dirs
-	echo $@ && ${CC} ${CFLAGS} ${CPPFLAGS} -I ${srcdir}/tgl -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
-
 tgl/Makefile.in:
 	@echo "tgl/Makefile.in not found. Maybe you need to 'git submodule update --init --recursive' ?" && exit 1
 
-tgl/Makefile: tgl/Makefile.in
+tgl/Makefile: tgl/Makefile.in Makefile
 	cd tgl && ./configure -q ${CRYPTO_FLAG} --disable-extf CFLAGS="@CFLAGS@" LDFLAGS="@LDFLAGS@"
 
-tgl/libs/libtgl.a: tgl/Makefile
+.PHONY: submade
+submade: tgl/Makefile
 	+make -C tgl
+
+tgl/libs/libtgl.a: submade
+
+.PHONY: commit
+commit:
+
+# The *commands* for commit.h shall always be executed, but the
+# *file* commit.h should only be considered to have changed in rare cases.
+GIT_COMMIT=$(shell git rev-parse HEAD | cut -c1-10)
+commit.h: commit
+	@./commit.h.gen
+
+# Ugly, but necessary, because otherwise commit.h would not get generated:
+test/loadtest.c: commit.h
+
+# Ugly, but necessary, because otherwise commit.h would not get generated:
+telegram-purple.c: commit.h
+
+
+### == 'Normal' build. == ###
+
+# Note: 'submade' should be called long before this.
+${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c tgl/libs/libtgl.a | create_dirs
+	echo $@ && ${CC} ${CFLAGS} ${CPPFLAGS} -I ${srcdir}/tgl -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
 
 po/%.mo: po/%.po
 	${MSGFMT_PATH} -cf -o $@ $<
 
-${LIB}/libtgl.a: tgl/libs/libtgl.a | create_dirs
-	cp $< $@
-
-${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} ${LIB}/libtgl.a | create_dirs
+${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} tgl/libs/libtgl.a | create_dirs submade
 	${CC} -shared -o $@ $^ ${LDFLAGS}
 
-.PHONY: plugin
-plugin: $(PRPL_LIBNAME)
 
+### == noicon_{,un}install targets. Use only if you know that you don't need icons. Note that pidgin uses those files. == ###
 
-.PHONY: strip
-strip: $(PRPL_LIBNAME)
-	$(STRIP) --strip-unneeded $(PRPL_LIBNAME)
-
-.PHONY: install
-install: $(PRPL_LIBNAME) $(LOCALE_MOS)
+.PHONY: noicon_install
+noicon_install: $(PRPL_LIBNAME) $(LOCALE_MOS)
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(PLUGIN_DIR_PURPLE)
 	install -m $(FILE_PERM) $(PRPL_LIBNAME) $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)/etc/telegram-purple
 	install -m $(FILE_PERM) tg-server.tglpub $(DESTDIR)/etc/telegram-purple/server.tglpub
-	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(datarootdir)/appdata
-	install -m $(FILE_PERM) telegram-purple.metainfo.xml $(DESTDIR)$(datarootdir)/appdata/telegram-purple.metainfo.xml
-ifeq ($(COPY_ICONS),no)
-	@echo "Not copying icons due to configure-option --disable-icons."
-	@echo " If you're using Finch, Empathy, or Telepathy, then this is a good idea."
-	@echo " If you're using Pidgin, then this is a bad idea."
-	@echo " If you're using Adium, read the README.md: You're using the wrong build system!"
-else
-	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16
-	install -m $(FILE_PERM) imgs/telegram16.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
-	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22
-	install -m $(FILE_PERM) imgs/telegram22.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
-	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48
-	install -m $(FILE_PERM) imgs/telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
-endif
+# Assume that the user does not use AppStream if she doesn't want icons
 	@for lang in $(LOCALES); do \
 		mkdir -p $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES; \
 		echo "installing po/$$lang.mo to $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
 		install -m $(FILE_PERM) po/$$lang.mo $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
 	done
 
-.PHONY: uninstall
-uninstall:
+.PHONY: noicon_uninstall
+noicon_uninstall:
 	rm -f $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
 	rm -f $(DESTDIR)/etc/telegram-purple/server.pub # TODO: Remove this in later versions
 	rm -f $(DESTDIR)/etc/telegram-purple/server.tglpub
-	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
-	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
-	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
-	rm -f $(DESTDIR)$(datarootdir)/appdata/telegram-purple.metainfo.xml
 # TODO: Delete all installed .mo's, no matter what LINGUAS says.
 	@for lang in $(LOCALES); do \
 		echo "removing $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
 		rm -f $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo; \
 	done
+
+
+### == Main {,un}install targets. This should satisfy most needs. == ###
+
+.PHONY: install
+install: noicon_install
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16
+	install -m $(FILE_PERM) imgs/telegram16.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22
+	install -m $(FILE_PERM) imgs/telegram22.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48
+	install -m $(FILE_PERM) imgs/telegram48.png $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
+	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(datarootdir)/appdata
+	install -m $(FILE_PERM) AppStream/telegram-purple.metainfo.xml $(DESTDIR)$(datarootdir)/appdata/telegram-purple.metainfo.xml
+
+.PHONY: uninstall
+uninstall: noicon_uninstall
+	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/16/telegram.png
+	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/22/telegram.png
+	rm -f $(DESTDIR)$(DATA_ROOT_DIR_PURPLE)/pixmaps/pidgin/protocols/48/telegram.png
+	rm -f $(DESTDIR)$(datarootdir)/appdata/telegram-purple.metainfo.xml
+
+
+### == The local_{,un}install targets, in case you're not root. == ###
 
 .PHONY: local_install
 local_install:
@@ -154,6 +175,20 @@ local_uninstall:
 	rm -f $(DESTDIR)$(HOME)/.purple/plugins/$(PRPL_NAME)
 	rm -f $(DESTDIR)$(HOME)/.purple/telegram-purple/server.tglpub
 
+
+### == Handling and maintenance. Subject to rapid change, shouldn't be used in scripts. == ###
+
+.PHONY: plugin
+plugin: $(PRPL_LIBNAME)
+
+.PHONY: strip
+strip: $(PRPL_LIBNAME)
+	$(STRIP) --strip-unneeded $(PRPL_LIBNAME)
+
+.PHONY: build-nsi
+build-nsi: telegram-purple.nsi.awk telegram-purple.nsi.awk-in
+	awk -f telegram-purple.nsi.awk telegram-purple.nsi.awk-in > telegram-purple.nsi
+
 .PHONY: run
 run:
 	pidgin -d | grep 'telegram\|plugin\|proxy'
@@ -162,10 +197,36 @@ run:
 debug: install
 	ddd pidgin
 
+DIST_ERR_MSG="Working directory is not git clean.\
+Run 'git status' to show what files are causing this.\
+Please note that 'make dist' packages the state in git, not the one on your disk."
+
+SUBMOD_ERR_MSG="Couldn't find tgl/tl-parser/tl-parser.c\
+Are all submodules properly initialized and updated?"
+
+# Not PHONY
+.git:
+	@echo "Not in a git folder. Features that require git are disabled."; exit 1
+
+.PHONY: check-clean
+check-clean: .git
+	@test "x" = x"`git status --porcelain`" || (echo ${DIST_ERR_MSG}; exit 1)
+	@test -r tgl/tl-parser/.git || (echo ${SUBMOD_ERR_MSG}; exit 1)
+
+# Feel free to remove the "check-clean" dependency if you know what you're doing.
+.PHONY: dist
+dist: check-clean commit.h .git create_dirs
+	./gen-origtar
+
+
+### == Cleaning in various flavors == ###
+
 .PHONY: clean-here
 clean-here:
-	rm -rf ${DIR_LIST} config.log config.status $(PRPL_C_OBJS) $(PRPL_LIBNAME) po/*.mo
+	rm -rf ${DIR_LIST} $(PRPL_LIBNAME) po/*.mo commit.h autom4te.cache
 
-.PHONY: clean
+-include test/Makefile
+
+.PHONY: clean clean-test
 clean: clean-here tgl/Makefile
 	+make -C tgl clean

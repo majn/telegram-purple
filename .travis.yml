@@ -1,0 +1,48 @@
+language: c
+# Select Trusty Tahr.
+sudo: required
+dist: trusty
+# Travis' git submodule support is ... broken? half-broken? Maybe intentional?
+git:
+  submodules: false
+  depth: 3
+before_install:
+  - git submodule update --init --recursive
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq libssl-dev libgcrypt20-dev libpurple-dev libwebp-dev
+script:
+  - ./configure $CONFIGURE_FLAGS
+  - make -j2
+  - make check
+compiler:
+  - clang
+  - gcc
+env:
+# Try to be nice to the builder
+  - CONFIGURE_FLAGS=""
+  - CONFIGURE_FLAGS="--disable-gcrypt"
+  - CONFIGURE_FLAGS="                 --disable-libwebp"
+#  - CONFIGURE_FLAGS="--disable-gcrypt --disable-libwebp"
+  - CONFIGURE_FLAGS="                                   --disable-translation"
+#  - CONFIGURE_FLAGS="--disable-gcrypt                   --disable-translation"
+#  - CONFIGURE_FLAGS="                 --disable-libwebp --disable-translation"
+  - CONFIGURE_FLAGS="--disable-gcrypt --disable-libwebp --disable-translation"
+matrix:
+# Be even nicer by excluding half of the combinations
+  exclude:
+    - compiler: clang
+      env: CONFIGURE_FLAGS=""
+    - compiler: gcc
+      env: CONFIGURE_FLAGS="--disable-gcrypt"
+    - compiler: clang
+      env: CONFIGURE_FLAGS="                 --disable-libwebp"
+#    - compiler: XXX
+#      env: CONFIGURE_FLAGS="--disable-gcrypt --disable-libwebp"
+    - compiler: gcc
+      env: CONFIGURE_FLAGS="                                   --disable-translation"
+#    - compiler: clang
+#      env: CONFIGURE_FLAGS="--disable-gcrypt                   --disable-translation"
+#    - compiler: gcc
+#      env: CONFIGURE_FLAGS="                 --disable-libwebp --disable-translation"
+    - compiler: clang
+      env: CONFIGURE_FLAGS="--disable-gcrypt --disable-libwebp --disable-translation"
