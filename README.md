@@ -86,7 +86,13 @@ this indicates that this version is in fact much further than just
 
 ##### Debian / Ubuntu
 
-        sudo apt-get install libgcrypt20-dev libpurple-dev libwebp-dev
+We are working on a Debian package! Please first check if it's already available to you: `sudo apt-get install telegram-purple`
+
+If the above works, then you should stop here: It is now installed.
+
+If the above fails: Don't worry, just continue building it by yourself. Next you need to install these dependencies:
+
+        sudo apt-get install libgcrypt20-dev libpurple-dev libwebp-dev gettext
 
 
 ##### OpenSUSE
@@ -199,6 +205,7 @@ Building the Debian Package
 
 If you just need a `.deb`, simply do:
 
+    sudo apt-get install debhelper
     git checkout debian-master
     fakeroot ./debian/rules binary
 
