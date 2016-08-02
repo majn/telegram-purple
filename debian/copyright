@@ -9,7 +9,7 @@ Copyright: 2014-2015 Matthias Jentsch <mtthsjntsch@gmail.com>
            2014 Markus Endres <endresma45241@th-nuernberg.de>
 License: GPL-2+
 
-Files: telegram-purple.metainfo.xml
+Files: AppStream/telegram-purple.metainfo.untranslated.xml
 Copyright: 2015 Jiri Eischmann <eischmann@redhat.com>
 License: GFDL-NIV
 License-Grant:
@@ -19,12 +19,6 @@ Files: debian/*
 Copyright: 2015 Hugues Morisset <morisset.hugues@gmail.com>
            2015 Ben Wiederhake <BenWiederhake.GitHub@gmail.com>
 License: GPL-2+
-
-Files: debian/rawtar
-Copyright: 2008, 2009, 2013, 2014 Meitar Moscovitz <meitarm+github@gmail.com>
-           2011, 2013 Marius Ghita <mhitza@gmail.com>
-           2012 C.D. Clark III <https://github.com/meitar/git-archive-all.sh.git>
-License: GPL-3+
 
 Files: tgl/*
 Copyright: 2013-2015 Vitaly Valtman <mail@vysheng.ru>
@@ -74,10 +68,6 @@ License: LGPL-2.1+
 License: GPL-2+
  On Debian systems, the complete text of the GNU General Public License
  version 2 can be found in "/usr/share/common-licenses/GPL-2".
-
-License: GPL-3+
- On Debian systems, the complete text of the GNU General
- Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
 
 License: BSD-3-clause
  On Debian systems, the complete text of the Revised BSD License

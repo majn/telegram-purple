@@ -14,7 +14,7 @@ Build-Depends:
  libwebp-dev,
  pkg-config,
  zlib1g-dev
-Standards-Version: 3.9.6
+Standards-Version: 3.9.8
 Homepage: https://github.com/majn/telegram-purple
 Vcs-Git: https://github.com/BenWiederhake/telegram-purple
 Vcs-Browser: https://github.com/BenWiederhake/telegram-purple/tree/debian-develop
