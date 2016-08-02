@@ -429,7 +429,7 @@ static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
     return NULL;
   }
   
-  // chats that dont have a proper ID arent usable
+  // chats that don't have a proper ID aren't usable
   if (PURPLE_BLIST_NODE_IS_CHAT(node) && ! tgp_chat_has_id ((PurpleChat *)node)) {
     return NULL;
   }
