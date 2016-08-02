@@ -24,26 +24,19 @@ enough to avoid scenarios that usually need the d/patches/ directory.
 4. Generate a *.orig.tar.gz from the git repository, e.g., upgrade the 
    Debian source package to a new upstream version.
 
-    ~$ git clone --recursive --branch debian-master \
+Easy way:
+    use the provided orig-tars, e.g., 'telegram-purple_1.2.6.orig.tar.gz'
+
+Hard way (the procedure used to create these files):
+    $ git clone --recursive --branch debian-master \
            https://github.com/majn/telegram-purple.git
-    ~& cd telegram-purple
-    ~/telegram-purple$ debian/genorigtar.sh
+    $ cd telegram-purple
+    ...$ make dist
 
 The output should look like this:
-
-    Debian version seems to be 1.2.3. Expecting a tag v1.2.3
-    Resolved to ffca726ca1cd22f87a48ca3fe042802302e82837
-
-Note that the script builds on the following assumptions that are *not* 
-verified:
-- d/changelog is in a current state
-- d/changelog refers to an existing version tag known by the local git 
-  repository
-- there have been no modifications in the tgl/ folder, and most 
-  importantly: the debian-* branch didn't change the submodule commit
-
-The last item can be considered a bug, which is why I don't recommend 
-anyone to use out genorigtar.sh script for other projects.
+    Refresh commit.h
+    ./gen-origtar
+    mv -f bin/result.tar.gz telegram-purple_deb-v1.2.4-2-161-gb5272d4.orig.tar.gz
 
 The following approaches do NOT work:
 - Github's "download source tar", as this leaves out submodules.
@@ -76,7 +69,7 @@ So following that tradition, this package would be called "pidgin-telegram".
 
 However, this would have a lot of disadvantages:
 - This is a frontend-agnostic backend that works with Adium, pidgin, 
-  and Finch. We hope that it works nicely with all other frontends. 
+  and Finch. We hope that it works nicely with all other frontends, too. 
   Calling it "pidgin-something" would be highly misleading.
 - All error messages and their translations would need to be adapted
 - paths would need to change that aren't configurable
@@ -96,9 +89,9 @@ No.
 So far, ABI-compatibility was broken between virtually every other 
 commit to libtgl, and the library is still under development. The 
 latest "stable" release is heavily outdated and can no longer be used 
-productively (missing features, known bugs, etc.), so if we were to 
+productively (missing features, known breaking bugs, etc.), so if we were to 
 package tgl we would need to repackage it constantly, with no defined 
-concept version, soname, or anything reliable. No other program 
+concept of version, soname, or anything reliable. No other program 
 (*including* tg-cli) can be expected to use the same version of libtgl 
 as telegram-purple does. (This might happen every now and then, but 
 that would be random chance. Finally, it's highly unlikely that someone 
@@ -124,5 +117,5 @@ clever way.
 About this document
 ===================
 
-This not written in Markdown. All formatting is in the hope of making 
-it easy to read.
+This is not written in Markdown. All formatting is in the hope of
+making it easy to read.
