@@ -1,6 +1,7 @@
 version=4
 opts="\
   downloadurlmangle=s/tag\/v(.*)$/download\/v$1\/telegram-purple_$1.orig.tar.gz/,\
+  filenamemangle=s/.*tag\/v(.*)$/telegram-purple_$1.orig.tar.gz/,\
   uversionmangle=s/-(beta\d*)$/~$1/,\
   " \
   https://github.com/majn/telegram-purple/releases \
