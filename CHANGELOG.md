@@ -1,6 +1,14 @@
 Changelog
 ---------
 
+##### 1.3.0
+
+- channel/supergroup support
+- support sending code tags in markdown "backtick" format (see README for example)
+- reduce amount of file-transfer popups in Pidgin, auto-load media in the background
+- fix stability issues for the win32 build
+- fix multiple crashes in libtgl
+
 ##### 1.2.6
 
 - Include libtgl bugfix "use-after-not-created for photos"

@@ -429,7 +429,7 @@ static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
     return NULL;
   }
   
-  // chats that dont have a proper ID arent usable
+  // chats that don't have a proper ID aren't usable
   if (PURPLE_BLIST_NODE_IS_CHAT(node) && ! tgp_chat_has_id ((PurpleChat *)node)) {
     return NULL;
   }
@@ -509,7 +509,7 @@ static void tgprpl_login (PurpleAccount * acct) {
   
   PurpleConnection *gc = purple_account_get_connection (acct);
   
-  gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_NO_BGCOLOR;
+  gc->flags |= PURPLE_CONNECTION_NO_BGCOLOR;
   
   struct tgl_state *TLS = tgl_state_alloc ();
   connection_data *conn = connection_data_init (TLS, gc, acct);
