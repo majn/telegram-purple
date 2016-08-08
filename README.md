@@ -250,19 +250,20 @@ from "back then", see the documentation there.
 
 This command requires the original tar to exist (and will fail otherwise,
 although the error message will be misleading) will build all further files,
-specifically `.debian.tar.xz`,`.dsc`, `.deb`, and `.changes`:
+specifically `.debian.tar.xz`, `.dsc`, `.deb`, and `.changes`:
 
     dpkg-buildpackage
 
-And that already covers the official part of the work-flow. Of course,
-you can call small parts of the build process directly, in order to avoid
+For the upload, you should use `pbuilder` and similar to build the package
+in a more minimalistic environment. That covers the official part of the work-flow.
+
+Of course, you can call small parts of the build process directly, in order to avoid
 overhead like rebuilding. For example, if you only need the `.debian.tar.xz`
 and `.dsc` files, do this:
 
     make dist
-    ( cd .. && dpkg-source -b telegram-purple )
-
-Note that the parenthesis are important.
+    false # Move tar to parent directory, by hand
+    dpkg-source -b .
 
 1.3.0
 -----
