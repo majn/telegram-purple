@@ -79,7 +79,7 @@ tgl/Makefile: tgl/Makefile.in Makefile
 
 .PHONY: submade
 submade: tgl/Makefile
-	+make -C tgl
+	+${MAKE} -C tgl
 
 tgl/libs/libtgl.a: submade
 
@@ -229,4 +229,4 @@ clean-here:
 
 .PHONY: clean clean-test
 clean: clean-here tgl/Makefile
-	+make -C tgl clean
+	+${MAKE} -C tgl clean
