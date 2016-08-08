@@ -22,4 +22,4 @@ recheck: clean-test check
 
 .PHONY: clean-test
 clean-test:
-	rm -f bin tmp
+	rm -rf test/bin test/tmp

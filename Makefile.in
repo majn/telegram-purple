@@ -223,10 +223,10 @@ dist: check-clean commit.h .git create_dirs
 
 .PHONY: clean-here
 clean-here:
-	rm -rf ${DIR_LIST} $(PRPL_LIBNAME) po/*.mo commit.h autom4te.cache
+	rm -rf ${DIR_LIST} $(PRPL_LIBNAME) po/*.mo autom4te.cache AppStream/po/*.mo
 
 -include test/Makefile
 
-.PHONY: clean clean-test
-clean: clean-here tgl/Makefile
+.PHONY: clean
+clean: clean-here clean-test tgl/Makefile
 	+${MAKE} -C tgl clean
