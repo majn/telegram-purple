@@ -225,6 +225,7 @@ If you just need a `.deb`, simply do:
 
     sudo apt-get install debhelper
     git checkout debian-master
+    git submodule update --recursive
     fakeroot ./debian/rules binary
 
 And you're done! The `.deb` is in the directory at which you started.
