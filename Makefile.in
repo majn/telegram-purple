@@ -79,7 +79,7 @@ tgl/Makefile: tgl/Makefile.in Makefile
 
 .PHONY: submade
 submade: tgl/Makefile
-	+${MAKE} -C tgl
+	+${MAKE} -C tgl libs/libtgl.a
 
 tgl/libs/libtgl.a: submade
 
