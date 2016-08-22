@@ -3,7 +3,6 @@
 DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/default.mk
 
-export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
 	dh $@ --parallel --with autoreconf
