@@ -77,11 +77,8 @@ tgl/Makefile.in:
 tgl/Makefile: tgl/Makefile.in Makefile
 	cd tgl && ./configure -q ${CRYPTO_FLAG} --disable-extf CFLAGS="@CFLAGS@" LDFLAGS="@LDFLAGS@"
 
-.PHONY: submade
-submade: tgl/Makefile
+tgl/libs/libtgl.a: tgl/Makefile
 	+${MAKE} -C tgl libs/libtgl.a
-
-tgl/libs/libtgl.a: submade
 
 .PHONY: commit
 commit:
@@ -101,14 +98,13 @@ telegram-purple.c: commit.h
 
 ### == 'Normal' build. == ###
 
-# Note: 'submade' should be called long before this.
 ${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c tgl/libs/libtgl.a | create_dirs
 	echo $@ && ${CC} ${CFLAGS} ${CPPFLAGS} -I ${srcdir}/tgl -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
 
 po/%.mo: po/%.po
 	${MSGFMT_PATH} -cf -o $@ $<
 
-${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} tgl/libs/libtgl.a | create_dirs submade
+${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} tgl/libs/libtgl.a | create_dirs
 	${CC} -shared -o $@ $^ ${LDFLAGS}
 
 
