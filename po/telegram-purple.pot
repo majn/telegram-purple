@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-02-18 18:51+0100\n"
+"POT-Creation-Date: 2016-08-31 22:53+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -46,51 +46,48 @@ msgstr ""
 msgid "Message marked as read."
 msgstr ""
 
-#.
-#. tgp_chat_show (TLS, P);
-#. serv_got_chat_in (tls_get_conn (TLS), tgl_get_peer_id (P->id), "WebPage", PURPLE_MESSAGE_SYSTEM, msg, time(NULL));
-#.
-#: ../telegram-purple.c:338
+#: ../telegram-purple.c:339
 #, c-format
 msgid "Invite link: %s"
 msgstr ""
 
-#: ../telegram-purple.c:359
+#. FIXME: Can TGLCHF_MODERATOR export links?
+#: ../telegram-purple.c:350
 msgid "Creating chat link failed"
 msgstr ""
 
-#: ../telegram-purple.c:360
+#: ../telegram-purple.c:351
 msgid "You need to be admin of the group  to do that."
 msgstr ""
 
-#: ../telegram-purple.c:390
+#: ../telegram-purple.c:416
 msgid "Chat joined"
 msgstr ""
 
-#: ../telegram-purple.c:391
+#: ../telegram-purple.c:417
 msgid "Chat added to list of chat rooms."
 msgstr ""
 
-#: ../telegram-purple.c:417
+#: ../telegram-purple.c:443
 msgid "Start secret chat..."
 msgstr ""
 
 #. Generate Public Link
-#: ../telegram-purple.c:424
+#: ../telegram-purple.c:450
 msgid "Invite users by link..."
 msgstr ""
 
 #. Delete self from chat
-#: ../telegram-purple.c:432
+#: ../telegram-purple.c:458
 msgid "Delete and exit..."
 msgstr ""
 
-#: ../telegram-purple.c:518
+#: ../telegram-purple.c:546
 #, c-format
 msgid "Unable to sign on as %s: file (public key) not found."
 msgstr ""
 
-#: ../telegram-purple.c:522
+#: ../telegram-purple.c:550
 #, c-format
 msgid ""
 "Make sure telegram-purple is installed properly,\n"
@@ -100,94 +97,110 @@ msgid ""
 "%1$s to %2$s."
 msgstr ""
 
+#: ../telegram-purple.c:572
+#, c-format
+msgid ""
+"Unable to sign on as %s: problem in the underlying library 'tgl'. Please "
+"submit a bug report with the debug log."
+msgstr ""
+
+#: ../telegram-purple.c:576
+msgid "Problem in tgl"
+msgstr ""
+
 #. TRANSLATORS: Please fill in your own prefix!
-#: ../telegram-purple.c:545
+#: ../telegram-purple.c:584
 #, c-format
 msgid ""
 "Unable to sign on as %s: phone number lacks country prefix. Numbers must "
 "start with the full international prefix code, e.g. +1 for USA."
 msgstr ""
 
-#: ../telegram-purple.c:550
+#: ../telegram-purple.c:589
 msgid "Incomplete phone number"
 msgstr ""
 
-#: ../telegram-purple.c:600
+#: ../telegram-purple.c:642
 msgid "Secret chat was already deleted"
 msgstr ""
 
-#: ../telegram-purple.c:602
+#: ../telegram-purple.c:644
 msgid "Secret chat is not ready"
 msgstr ""
 
-#: ../telegram-purple.c:610
+#: ../telegram-purple.c:652
 msgid "Only the creator of a channel can post messages."
 msgstr ""
 
-#: ../telegram-purple.c:654
+#: ../telegram-purple.c:695
 msgid "Cannot invite buddy to chat"
 msgstr ""
 
-#: ../telegram-purple.c:655
+#: ../telegram-purple.c:696
 msgid "Specified user does not exist."
 msgstr ""
 
-#: ../telegram-purple.c:668
+#: ../telegram-purple.c:709
 msgid "phone no. (+ country prefix)"
 msgstr ""
 
 #. Login
-#: ../telegram-purple.c:776
+#: ../telegram-purple.c:817
 msgid "Password (two factor authentication)"
 msgstr ""
 
-#: ../telegram-purple.c:781
+#: ../telegram-purple.c:822
 msgid ""
 "Fallback SMS verification\n"
 "(Helps when not using Pidgin and you aren't being prompted for the code)"
 msgstr ""
 
-#: ../telegram-purple.c:787
+#: ../telegram-purple.c:828
 msgid "always"
 msgstr ""
 
-#: ../telegram-purple.c:788
+#: ../telegram-purple.c:829
 msgid "never"
 msgstr ""
 
-#: ../telegram-purple.c:789
+#: ../telegram-purple.c:830
 msgid "ask"
 msgstr ""
 
-#: ../telegram-purple.c:791
+#: ../telegram-purple.c:832
 msgid "Accept secret chats"
 msgstr ""
 
-#: ../telegram-purple.c:795
+#: ../telegram-purple.c:836
 msgid "Display buddies offline after (days)"
 msgstr ""
 
-#: ../telegram-purple.c:799
+#: ../telegram-purple.c:840
 msgid ""
 "Don't fetch history older than (days)\n"
 "(0 for unlimited)"
 msgstr ""
 
+#. Media
+#: ../telegram-purple.c:845
+msgid "Autoload media size (kb)"
+msgstr ""
+
 #. Chats
-#: ../telegram-purple.c:804
+#: ../telegram-purple.c:850
 msgid "Add all group chats to buddy list"
 msgstr ""
 
 #. Read notifications
-#: ../telegram-purple.c:809
+#: ../telegram-purple.c:855
 msgid "Display notices of receipt"
 msgstr ""
 
-#: ../telegram-purple.c:813
+#: ../telegram-purple.c:859
 msgid "Send notices of receipt when present"
 msgstr ""
 
-#: ../telegram-purple.c:838
+#: ../telegram-purple.c:884
 msgid "Telegram Protocol Plugin."
 msgstr ""
 
@@ -259,37 +272,52 @@ msgstr[1] ""
 msgid "Channel %1$s created"
 msgstr ""
 
-#: ../tgp-msg.c:166 ../tgp-chat.c:101 ../tgp-chat.c:476
+#. FIXME: check if this makes sense
+#: ../tgp-msg.c:165 ../tgp-chat.c:124 ../tgp-chat.c:576
 msgid "Telegram Channels"
 msgstr ""
 
-#: ../tgp-msg.c:196
+#: ../tgp-msg.c:191
 msgid "Sending message failed."
 msgstr ""
 
-#: ../tgp-msg.c:278
+#: ../tgp-msg.c:253
 msgid "Sending image failed."
 msgstr ""
 
-#: ../tgp-msg.c:295
-msgid "Sorry, sending documents to encrypted chats not yet supported."
-msgstr ""
-
-#: ../tgp-msg.c:395
+#: ../tgp-msg.c:417
 #, c-format
 msgid "%s sent a sticker."
 msgstr ""
 
-#: ../tgp-msg.c:440
+#: ../tgp-msg.c:463
 msgid "failed loading message"
 msgstr ""
 
-#: ../tgp-msg.c:577
-#, c-format
-msgid "<b>Forwarded from %s</b>: %s"
+#: ../tgp-msg.c:498
+msgid "[animation]"
 msgstr ""
 
-#: ../tgp-msg.c:686
+#: ../tgp-msg.c:515
+msgid "[audio]"
+msgstr ""
+
+#: ../tgp-msg.c:515
+msgid "[video]"
+msgstr ""
+
+#: ../tgp-msg.c:604
+#, c-format
+msgid "<b>Forwarded message from: %s</b><br>%s"
+msgstr ""
+
+#. FIXME: sometimes users aren't part of the response when receiving a forwarded message
+#: ../tgp-msg.c:607
+#, c-format
+msgid "<b>Forwarded message:</b><br>%s"
+msgstr ""
+
+#: ../tgp-msg.c:720
 msgid "loading document or picture failed"
 msgstr ""
 
@@ -512,42 +540,42 @@ msgstr ""
 msgid "unknown"
 msgstr ""
 
-#: ../tgp-chat.c:84 ../tgp-chat.c:482
+#: ../tgp-chat.c:108 ../tgp-chat.c:582
 msgid "Telegram Chats"
 msgstr ""
 
-#: ../tgp-chat.c:89
+#: ../tgp-chat.c:113
 msgid "You have already left this chat."
 msgstr ""
 
-#: ../tgp-chat.c:198
+#: ../tgp-chat.c:224
 msgid "Subject:"
 msgstr ""
 
-#: ../tgp-chat.c:204
+#: ../tgp-chat.c:230
 msgid "Invite link:"
 msgstr ""
 
-#: ../tgp-chat.c:210
+#: ../tgp-chat.c:236
 msgid "Chat ID:"
 msgstr ""
 
-#: ../tgp-chat.c:316
+#: ../tgp-chat.c:342
 msgid "Supergroup"
 msgstr ""
 
-#: ../tgp-chat.c:316
+#: ../tgp-chat.c:342
 msgid "Channel"
 msgstr ""
 
-#: ../tgp-chat.c:319
+#: ../tgp-chat.c:345
 msgid "Group"
 msgstr ""
 
-#: ../tgp-chat.c:341
+#: ../tgp-chat.c:367
 msgid "Users in chat"
 msgstr ""
 
-#: ../tgp-chat.c:344
+#: ../tgp-chat.c:370
 msgid "Type"
 msgstr ""
