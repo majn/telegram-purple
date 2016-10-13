@@ -22,7 +22,7 @@ datarootdir=@datarootdir@
 localedir=@localedir@
 gettext_package=@GETTEXT_PACKAGE@
 
-CFLAGS=@CFLAGS@ @PURPLE_CFLAGS@ @DEFS@ -DENABLE_NLS -DLOCALEDIR='"$(localedir)"' -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing -fPIC -fstack-protector-strong -D_FORTIFY_SOURCE=2
+CFLAGS=@CFLAGS@ @PURPLE_CFLAGS@ @DEFS@ -DENABLE_NLS -DLOCALEDIR='"$(localedir)"' -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing -fPIC -D_FORTIFY_SOURCE=2
 LDFLAGS=@LDFLAGS@ @OPENSSL_LIBS@ @PURPLE_LIBS@ @LIBS@ -rdynamic -ggdb
 DIR_PERM=0755
 FILE_PERM=0644
@@ -30,6 +30,14 @@ FILE_PERM=0644
 CC=@CC@
 PKG_CONFIG=@PKG_CONFIG@
 MSGFMT_PATH=@MSGFMT_PATH@
+
+# Check if GCC >= 5.0 before enabling stack smashing protection
+ifeq "$(CC)" "gcc"
+GCCVERGEQ5 := $(shell expr `$(CC) -dumpversion | cut -f1 -d.` \>= 5)
+ifeq "$(GCCVERGEQ5)" "1"
+	CFLAGS += -fstack-protector-strong
+endif
+endif
 
 DEP=dep
 EXE=bin
