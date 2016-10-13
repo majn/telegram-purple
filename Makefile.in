@@ -31,12 +31,10 @@ CC=@CC@
 PKG_CONFIG=@PKG_CONFIG@
 MSGFMT_PATH=@MSGFMT_PATH@
 
-# Check if GCC >= 5.0 before enabling stack smashing protection
-ifeq "$(CC)" "gcc"
-GCCVERGEQ5 := $(shell expr `$(CC) -dumpversion | cut -f1 -d.` \>= 5)
-ifeq "$(GCCVERGEQ5)" "1"
+# Check if -fstack-protector-strong is supported before enabling it
+SPUNSUPPORTED = $(shell $(CC) -fstack-protector-strong 2>&1 | grep -c 'stack-protector-strong')
+ifeq "$(SPUNSUPPORTED)" "0"
 	CFLAGS += -fstack-protector-strong
-endif
 endif
 
 DEP=dep
