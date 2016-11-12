@@ -408,6 +408,26 @@ void leave_and_delete_chat_by_name (struct tgl_state *TLS, const char *name) {
   leave_and_delete_chat (TLS, P);
 }
 
+static PurpleCmdRet
+tgprpl_cmd_kick(PurpleConversation *conv, const gchar *cmd, gchar **args, gchar **error, void *data)
+{
+  PurpleConnection *pc = NULL;
+  int id = -1;
+  gchar *who;
+  
+  pc = conv->account->gc;
+  id = purple_conv_chat_get_id(PURPLE_CONV_CHAT(conv));
+  
+  if (pc == NULL || id == -1)
+    return PURPLE_CMD_RET_FAILED;
+  
+  who = g_strjoinv(" ", args);
+  tgprpl_kick_from_chat(pc, id, who);
+  g_free(who);
+  
+  return PURPLE_CMD_RET_OK;
+}
+
 static void import_chat_link_done (struct tgl_state *TLS, void *extra, int success) {
   if (! success) {
     tgp_notify_on_error_gw (TLS, NULL, success);
@@ -797,6 +817,15 @@ static PurplePluginProtocolInfo prpl_info = {
   NULL                     // add_buddies_with_invite
 };
 
+static gboolean tgprpl_load (PurplePlugin *plugin) {				
+  purple_cmd_register("kick", "s", PURPLE_CMD_P_PLUGIN, PURPLE_CMD_FLAG_CHAT |
+                      PURPLE_CMD_FLAG_PRPL_ONLY | PURPLE_CMD_FLAG_ALLOW_WRONG_ARGS,
+                      PLUGIN_ID, tgprpl_cmd_kick,
+                      _("kick <user>:  Kick a user from the room."), NULL);
+  
+  return TRUE;
+}
+
 static void tgprpl_init (PurplePlugin *plugin) {
   PurpleAccountOption *opt;
   
@@ -884,7 +913,7 @@ static PurplePluginInfo plugin_info = {
   N_("Telegram Protocol Plugin."),
   PLUGIN_AUTHOR,
   "https://github.com/majn/telegram-purple",
-  NULL,           // on load
+  tgprpl_load,    // on load
   NULL,           // on unload
   NULL,           // on destroy
   NULL,           // ui specific struct

@@ -53,6 +53,7 @@ PurpleRoomlist *tgprpl_roomlist_get_list (PurpleConnection *gc);
 void tgprpl_roomlist_cancel (PurpleRoomlist *list);
 GHashTable *tgprpl_chat_info_defaults (PurpleConnection *gc, const char *chat_name);
 void tgp_chat_join_all_pending (struct tgl_state *TLS);
+void tgprpl_kick_from_chat (PurpleConnection *gc, int id, const char *who);
 
 void tgp_channel_load (struct tgl_state *TLS, tgl_peer_t *P,
          void (*callback) (struct tgl_state *, void *, int, tgl_peer_t *),
