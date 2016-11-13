@@ -218,6 +218,21 @@ int tgprpl_send_chat (PurpleConnection *gc, int id, const char *message, PurpleM
   return tgp_msg_send (gc_get_tls (gc), message, P->id);
 }
 
+void tgprpl_kick_from_chat (PurpleConnection *gc, int id, const char *who) {
+  debug ("tgprpl_kick_from_chat()");
+  
+  tgl_peer_t *P = tgl_peer_get (gc_get_tls (gc), TGL_MK_CHAT(id));
+  if (! P) {
+    P = tgl_peer_get (gc_get_tls (gc), TGL_MK_CHANNEL(id));
+  }
+  g_return_if_fail(P != NULL);
+  
+  tgl_peer_t *other_id = tgp_blist_lookup_peer_get (gc_get_tls (gc), who);
+  g_return_if_fail(P != NULL);
+  
+  tgl_do_del_user_from_chat (gc_get_tls (gc), P->id, other_id->id, tgp_notify_on_error_gw, NULL);
+}
+
 GList *tgprpl_chat_join_info (PurpleConnection *gc) {
   struct proto_chat_entry *pce;
   pce = g_new0 (struct proto_chat_entry, 1);
