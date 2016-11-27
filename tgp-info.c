@@ -76,7 +76,7 @@ void tgp_info_update_photo (PurpleBlistNode *node, tgl_peer_t *P) {
     }
   }
 
-  if (photo != 0) {
+  if (photo != 0 && pbn_get_data (node) != NULL) {  // FIXME: Monkey-patched condition, I have no idea why this is NULL sometimes.
     tgl_do_load_file_location (pbn_get_data (node)->TLS, &P->user.photo_big, tgp_info_load_photo_done, P);
   } else {
     // set empty photo

@@ -22,7 +22,7 @@ datarootdir=@datarootdir@
 localedir=@localedir@
 gettext_package=@GETTEXT_PACKAGE@
 
-CFLAGS=@CFLAGS@ @PURPLE_CFLAGS@ @DEFS@ -DENABLE_NLS -DLOCALEDIR='"$(localedir)"' -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing -fPIC
+CFLAGS=@CFLAGS@ @PURPLE_CFLAGS@ @DEFS@ -DENABLE_NLS -DLOCALEDIR='"$(localedir)"' -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing -fPIC -D_FORTIFY_SOURCE=2
 LDFLAGS=@LDFLAGS@ @OPENSSL_LIBS@ @PURPLE_LIBS@ @LIBS@ -rdynamic -ggdb
 DIR_PERM=0755
 FILE_PERM=0644
@@ -30,6 +30,12 @@ FILE_PERM=0644
 CC=@CC@
 PKG_CONFIG=@PKG_CONFIG@
 MSGFMT_PATH=@MSGFMT_PATH@
+
+# Check if -fstack-protector-strong is supported before enabling it
+SPUNSUPPORTED = $(shell $(CC) -fstack-protector-strong 2>&1 | grep -c 'stack-protector-strong')
+ifeq "$(SPUNSUPPORTED)" "0"
+	CFLAGS += -fstack-protector-strong
+endif
 
 DEP=dep
 EXE=bin
@@ -77,11 +83,8 @@ tgl/Makefile.in:
 tgl/Makefile: tgl/Makefile.in Makefile
 	cd tgl && ./configure -q ${CRYPTO_FLAG} --disable-extf CFLAGS="@CFLAGS@" LDFLAGS="@LDFLAGS@"
 
-.PHONY: submade
-submade: tgl/Makefile
+tgl/libs/libtgl.a: tgl/Makefile
 	+${MAKE} -C tgl libs/libtgl.a
-
-tgl/libs/libtgl.a: submade
 
 .PHONY: commit
 commit:
@@ -101,14 +104,13 @@ telegram-purple.c: commit.h
 
 ### == 'Normal' build. == ###
 
-# Note: 'submade' should be called long before this.
 ${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c tgl/libs/libtgl.a | create_dirs
 	echo $@ && ${CC} ${CFLAGS} ${CPPFLAGS} -I ${srcdir}/tgl -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
 
 po/%.mo: po/%.po
 	${MSGFMT_PATH} -cf -o $@ $<
 
-${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} tgl/libs/libtgl.a | create_dirs submade
+${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} tgl/libs/libtgl.a | create_dirs
 	${CC} -shared -o $@ $^ ${LDFLAGS}
 
 
