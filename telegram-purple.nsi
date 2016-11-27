@@ -91,10 +91,12 @@ Section "MainSection" SEC01
 	after_copy:
 	
 	SetOutPath "$PidginDir\locale"
+	File /nonfatal "/oname=bg\LC_MESSAGES\telegram-purple.mo" "po\bg.mo"
 	File /nonfatal "/oname=de_DE\LC_MESSAGES\telegram-purple.mo" "po\de_DE.mo"
 	File /nonfatal "/oname=es_AR\LC_MESSAGES\telegram-purple.mo" "po\es_AR.mo"
 	File /nonfatal "/oname=fr\LC_MESSAGES\telegram-purple.mo" "po\fr.mo"
 	File /nonfatal "/oname=it_IT\LC_MESSAGES\telegram-purple.mo" "po\it_IT.mo"
+	File /nonfatal "/oname=nl\LC_MESSAGES\telegram-purple.mo" "po\nl.mo"
 	File /nonfatal "/oname=pl_PL\LC_MESSAGES\telegram-purple.mo" "po\pl_PL.mo"
 	File /nonfatal "/oname=pt_BR\LC_MESSAGES\telegram-purple.mo" "po\pt_BR.mo"
 	File /nonfatal "/oname=ru_RU\LC_MESSAGES\telegram-purple.mo" "po\ru_RU.mo"
