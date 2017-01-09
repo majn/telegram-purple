@@ -192,9 +192,10 @@ static void tgp_msg_send_done (struct tgl_state *TLS, void *callback_extra, int 
     warning (err);
     if (M) {
       tgp_msg_special_out (TLS, err, M->to_id, PURPLE_MESSAGE_ERROR | PURPLE_MESSAGE_NO_LOG);
-    } else {
-      fatal (err);
     }
+    assert (callback_extra != NULL);
+    warning ("Code %d: %s\n", TLS->error_code, TLS->error);
+    warning ("Message was: %s\n", (char *) callback_extra);
     return;
   }
   
@@ -214,7 +215,7 @@ static gboolean tgp_msg_send_schedule_cb (gpointer data) {
       flags |= TGLMF_POST_AS_CHANNEL;
     }
 
-    tgl_do_send_message (D->TLS, D->to, D->msg, (int)strlen (D->msg), flags, NULL, tgp_msg_send_done, NULL);
+    tgl_do_send_message (D->TLS, D->to, D->msg, (int)strlen (D->msg), flags, NULL, tgp_msg_send_done, D->msg);
     tgp_msg_sending_free (D);
   }
   return FALSE;
