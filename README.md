@@ -302,7 +302,7 @@ FAQ
 
 Telegram group chat for telegram-purple or libtgl related discussions or questions:
 
-    - https://goo.gl/QHttTR
+    - https://goo.gl/VudXys
 
 
 Submitting Bug Reports
