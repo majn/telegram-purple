@@ -18,9 +18,6 @@
 
 srcdir=.
 
-SCHEME_VERSION = 38
-ENCRYPTED_SCHEME_VERSION = 23
-
 
 WIN32_DEV_TOP ?= ../../win32-dev
 
@@ -92,7 +89,7 @@ ${EXE}/generate: ${GENERATE_OBJECTS} ${COMMON_OBJECTS}
 ${AUTO}/scheme.tlo: ${AUTO}/scheme.tl ${EXE}/tl-parser
 	${EXE}/tl-parser -e $@ ${AUTO}/scheme.tl
 
-${AUTO}/scheme.tl: ${srcdir}/scheme$(SCHEME_VERSION).tl ${srcdir}/encrypted_scheme$(ENCRYPTED_SCHEME_VERSION).tl ${srcdir}/binlog.tl ${srcdir}/mtproto.tl ${srcdir}/append.tl | ${AUTO}
+${AUTO}/scheme.tl: ${srcdir}/scheme.tl ${srcdir}/encrypted_scheme.tl ${srcdir}/binlog.tl ${srcdir}/mtproto.tl ${srcdir}/append.tl | ${AUTO}
 	cat $^ > $@
 
 ${AUTO}/scheme2.tl: ${AUTO}/scheme.tl ${EXE}/tl-parser
