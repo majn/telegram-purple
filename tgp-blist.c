@@ -200,13 +200,13 @@ PurpleGroup *tgp_blist_group_init (const char *name) {
 
 char *tgp_blist_create_print_name (struct tgl_state *TLS, tgl_peer_id_t id, const char *a1, const char *a2,
     const char *a3, const char *a4) {
-  
+
   // libtgl passes 0 for all unused strings, therefore the last passed string will always be followed
   // by a NULL-termination as expected
   gchar *name = g_strjoin (" ", a1, a2, a3, a4, NULL);
-  
+
   // When the user doesn't provide some input (like last name) ugly trailing or leading
-  // whitespaces may occur due to empty strings in the join operator
+  // whitespaces may occur due to empty strings in the g_strjoin arguments
   name = g_strstrip(name);
 
   /* Assure that all print_names are unique by checking the following conditions:
@@ -215,17 +215,34 @@ char *tgp_blist_create_print_name (struct tgl_state *TLS, tgl_peer_id_t id, cons
      2. No BlistNode with that name should exists unless it is already corresponding to this peer ID. The rationale is
         that this prpl uses the first print_name as permanent name for each user. Therefore it must be assured that no
         foreign user will ever take this exact name again, otherwise the current users actions might be associated
-        with the old BlistNode. */
+        with the old BlistNode.
+     3. Assure that the print name isn't already stored in the peer_by_name_tree.
+   */
   int i = 0;
   gchar *n = NULL;
+
   tgl_peer_id_t *id2 = tgp_blist_lookup_get_id (TLS, name);
+  if ( !id2) {
+    tgl_peer_t *tmpP = tgl_peer_get_by_name (TLS, name);
+    if (tmpP) {
+      id2 = &tmpP->id;
+    }
+  }
+
   while (id2 && tgl_get_peer_id (*id2) != tgl_get_peer_id (id)) {
     if (n) {
       g_free (n);
     }
     n = g_strdup_printf ("%s #%d", name, ++ i);
     debug ("resolving duplicate for %s, assigning: %s", name, n);
+    
     id2 = tgp_blist_lookup_get_id (TLS, n);
+    if ( !id2) {
+      tgl_peer_t *tmpP = tgl_peer_get_by_name(TLS, n);
+      if (tmpP) {
+        id2 = &tmpP->id;
+      }
+    }
   }
   if (n) {
     g_free (name);
