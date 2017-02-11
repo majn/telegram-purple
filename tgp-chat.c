@@ -300,7 +300,7 @@ void tgprpl_chat_join (PurpleConnection *gc, GHashTable *data) {
         tgp_channel_load (gc_get_tls (gc), P, tgp_chat_on_loaded_channel_full_joining, NULL);
       }
     } else {
-      warning ("Cannot join chat %d, peer not found...", tgl_get_peer_id (P->id));
+      warning ("Cannot join chat %d, peer not found...", atoi (value));
       purple_serv_got_join_chat_failed (gc, data);
     }
     return;
