@@ -11,10 +11,10 @@
   },
   "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "1C5A3335-4726-410A-8E70-801C8879E269",
   "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
-    "32693D74F7AAA18802B0105461C73E1FD01CF3A3" : "telegram-purple\/tgl",
-    "2BAF9F6AF710B4D765F611851696219A50533669" : "tg",
-    "41D8FEA2FB3AAB94D0D4027A64957635038B427E" : "telegram-purple",
-    "78234520DB6A5DE1B463A6198C9122A9D1A44221" : "telegram-purple\/tgl\/tl-parser"
+    "32693D74F7AAA18802B0105461C73E1FD01CF3A3" : "telegram-purple\/tgl\/",
+    "2BAF9F6AF710B4D765F611851696219A50533669" : "tg\/",
+    "41D8FEA2FB3AAB94D0D4027A64957635038B427E" : "telegram-purple\/",
+    "78234520DB6A5DE1B463A6198C9122A9D1A44221" : "telegram-purple\/tgl\/tl-parser\/"
   },
   "DVTSourceControlWorkspaceBlueprintNameKey" : "telegram-adium",
   "DVTSourceControlWorkspaceBlueprintVersion" : 204,
