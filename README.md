@@ -91,7 +91,7 @@ If the above works, then you should stop here: It is now installed.
 
 If the above fails: Don't worry, just continue building it by yourself. Next you need to install these dependencies:
 
-        sudo apt-get install libgcrypt20-dev libpurple-dev libwebp-dev gettext gcc make
+        sudo apt-get install libgcrypt20-dev libpurple-dev libwebp-dev gettext build-essential
 
 
 ##### OpenSUSE
