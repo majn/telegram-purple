@@ -32,6 +32,7 @@ chmod 755 %{buildroot}/%{_libdir}/purple-2/telegram-purple.so
 %{_datadir}/pixmaps/pidgin/protocols/16/telegram.png
 %{_datadir}/pixmaps/pidgin/protocols/22/telegram.png
 %{_datadir}/pixmaps/pidgin/protocols/48/telegram.png
+%{_datadir}/appdata/telegram-purple.metainfo.xml
 
 %changelog
 * Thu Dec 10 2015 mjentsch 1.2.4-1
