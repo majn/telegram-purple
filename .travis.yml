@@ -1,0 +1,39 @@
+sudo: required
+language: C
+
+services:
+  - docker
+
+cache:
+    directories:
+      - $HOME/.cache
+
+env:
+    matrix:
+      - OS=fedora DIST=24
+      - OS=fedora DIST=25
+      - OS=ubuntu DIST=trusty
+      - OS=ubuntu DIST=xenial
+      - OS=ubuntu DIST=yakkety
+      - OS=debian DIST=jessie
+      - OS=debian DIST=stretch
+      - OS=debian DIST=sid
+
+matrix:
+    allow_failures:
+#      - env: OS=fedora DIST=24
+#      - env: OS=fedora DIST=25
+#      - env: OS=ubuntu DIST=trusty
+#      - env: OS=ubuntu DIST=xenial
+#      - env: OS=ubuntu DIST=yakkety
+#      - env: OS=debian DIST=jessie
+#      - env: OS=debian DIST=stretch
+      - env: OS=debian DIST=sid
+
+
+script:
+  - git clone https://github.com/packpack/packpack.git packpack
+  # Split v1.2.4-30-g924e59b into VERSION=1.2.4 RELEASE=30
+  - export VERSION=$(git describe --long --always --tags | sed -n 's/^v\([0-9\.]*\)-\([0-9]*\)-\([a-z0-9]*\)/\1/p')
+  - export RELEASE=$(git describe --long --always --tags | sed -n 's/^v\([0-9\.]*\)-\([0-9]*\)-\([a-z0-9]*\)/\2/p')
+  - packpack/packpack
