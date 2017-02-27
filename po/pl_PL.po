@@ -16,7 +16,7 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: pl_PL\n"
-"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>=14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
 
 #: ../telegram-base.c:500
 msgid "Couldn't create group"
@@ -261,6 +261,7 @@ msgid_plural "%2$s set self destruction timer to %1$d seconds."
 msgstr[0] "Użytkownik %2$s ustawił czas samozniszczenia na %1$d sekundę."
 msgstr[1] "Użytkownik %2$s ustawił czas samozniszczenia na %1$d sekundy."
 msgstr[2] "Użytkownik %2$s ustawił czas samozniszczenia na %1$d sekund."
+msgstr[3] "Użytkownik %2$s ustawił czas samozniszczenia na %1$d sekund."
 
 #: ../tgp-msg.c:144
 #, c-format
@@ -269,6 +270,7 @@ msgid_plural "%2$s marked %1$d messages read."
 msgstr[0] "Użytkownik %2$s oznaczył %1$d wiadomość jako przeczytaną."
 msgstr[1] "Użytkownik %2$s oznaczył %1$d wiadomości jako przeczytane."
 msgstr[2] "Użytkownik %2$s oznaczył %1$d wiadomości jako przeczytane."
+msgstr[3] "Użytkownik %2$s oznaczył %1$d wiadomości jako przeczytane."
 
 #: ../tgp-msg.c:150
 #, c-format
@@ -277,6 +279,7 @@ msgid_plural "%2$s deleted %1$d messages."
 msgstr[0] "Użytkownik %2$s usunął %1$d wiadomość."
 msgstr[1] "Użytkownik %2$s usunął %1$d wiadomości."
 msgstr[2] "Użytkownik %2$s usunął %1$d wiadomości."
+msgstr[3] "Użytkownik %2$s usunął %1$d wiadomości."
 
 #: ../tgp-msg.c:156
 #, c-format
@@ -285,6 +288,7 @@ msgid_plural "%2$s made a screenshot of %1$d messages."
 msgstr[0] "Użytkownik %2$s utworzył zrzut ekranu %1$d wiadomości."
 msgstr[1] "Użytkownik %2$s utworzył zrzut ekranu %1$d wiadomości."
 msgstr[2] "Użytkownik %2$s utworzył zrzut ekranu %1$d wiadomości."
+msgstr[3] "Użytkownik %2$s utworzył zrzut ekranu %1$d wiadomości."
 
 #: ../tgp-msg.c:162
 #, c-format

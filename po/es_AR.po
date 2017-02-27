@@ -180,7 +180,7 @@ msgstr "nunca"
 
 #: ../telegram-purple.c:830
 msgid "ask"
-msgstr "pedir"
+msgstr "preguntar"
 
 #: ../telegram-purple.c:832
 msgid "Accept secret chats"
