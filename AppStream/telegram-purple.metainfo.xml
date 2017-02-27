@@ -10,6 +10,7 @@
     <name xml:lang="bg">Telegram</name>
     <name xml:lang="cs-CZ">Telegram</name>
     <name xml:lang="de-DE">Telegram</name>
+    <name xml:lang="es">Telegram</name>
     <name xml:lang="es-AR">Telegram</name>
     <name xml:lang="fr">Telegram</name>
     <name xml:lang="it-IT">Telegram</name>
@@ -21,6 +22,7 @@
     <summary xml:lang="bg">Добавка, която добавя поддръжка на Telegram</summary>
     <summary xml:lang="cs-CZ">Zásuvný modul, který přidá podporu pro Telegram</summary>
     <summary xml:lang="de-DE">Plugin zur Unterstützung von Telegram</summary>
+    <summary xml:lang="es">Un plugin que añade soporte para Telegram</summary>
     <summary xml:lang="es-AR">Un plugin que agrega soporte para Telegram</summary>
     <summary xml:lang="fr">Une extension qui ajoute le support pour Telegram</summary>
     <summary xml:lang="it-IT">Un plugin che aggiunge il supporto per Telegram</summary>
