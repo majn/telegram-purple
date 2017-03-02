@@ -22,7 +22,7 @@
 // load photo
 
 static void tgp_info_update_photo_id (PurpleBlistNode *node, long long photo) {
-  char *llid = g_strdup_printf ("%lld", photo);
+  char *llid = g_strdup_printf ("%" G_GINT64_FORMAT, photo);
   debug ("tgp_info_update_photo_id %s", llid);
   purple_blist_node_set_string (node, TGP_INFO_PHOTO_ID, llid);
   g_free (llid);
