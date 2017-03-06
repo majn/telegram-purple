@@ -408,8 +408,7 @@ void leave_and_delete_chat_by_name (struct tgl_state *TLS, const char *name) {
   leave_and_delete_chat (TLS, P);
 }
 
-static PurpleCmdRet
-tgprpl_cmd_kick(PurpleConversation *conv, const gchar *cmd, gchar **args, gchar **error, void *data)
+static PurpleCmdRet tgprpl_cmd_kick(PurpleConversation *conv, const gchar *cmd, gchar **args, gchar **error, void *data)
 {
   PurpleConnection *pc = NULL;
   int id = -1;
