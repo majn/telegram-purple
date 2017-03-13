@@ -24,6 +24,8 @@ LOCALE_MOS=$(addprefix po/,$(addsuffix .mo,$(LOCALES)))
 # which are expected to have msgfmt on their $PATH
 MSGFMT_PATH=msgfmt
 
+all: translate
+
 po/%.mo: po/%.po
 	${MSGFMT_PATH} -cf -o $@ $<
 
@@ -41,5 +43,3 @@ potfile: po/telegram-purple.metainfo.xml.pot
 
 .PHONY: translate
 translate: telegram-purple.metainfo.xml
-
-all: translate
