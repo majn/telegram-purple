@@ -376,13 +376,13 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
   return 0;
 }
 
-static char *tgp_msg_file_display (const char *filename, const char *caption) {
-#ifndef __ADIUM_
-  return g_strdup_printf ("<a href=\"file:///%s\">%s</a>", g_markup_escape_text (filename, -1),
-              g_markup_escape_text (caption, -1));
-#else
-  return g_strdup_printf ("file:///%s", g_uri_escape_string (filename, NULL, TRUE));
-#endif
+static char *tgp_msg_file_display (const char *path, const char *filename, const char* caption, const char *mime, long long size) {
+  gchar *fsize = g_format_size(size);
+  gchar *format;
+  format = g_strdup_printf ("[%s <a href=\"file:///%s\">%s</a> %s %s]", g_markup_escape_text (caption, -1), g_markup_escape_text (path, -1),
+                          g_markup_escape_text (filename, -1), g_markup_escape_text (mime, -1), fsize);
+  g_free (fsize);
+  return format;
 }
 
 static char *tgp_msg_photo_display (struct tgl_state *TLS, const char *filename, int *flags) {
@@ -492,19 +492,30 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
       }
         
       case tgl_message_media_document:
+        
         if (M->media.document->flags & TGLDF_STICKER) {
           g_return_if_fail(C->data != NULL);
           text = tgp_msg_sticker_display (TLS, M->from_id, C->data, &flags);
-        } else if (M->media.document->flags & TGLDF_ANIMATED && C->data) {
-          text = tgp_msg_file_display (C->data, _("[animation]"));
+
+        } else if (M->media.document->flags & TGLDF_ANIMATED) {
+          g_return_if_fail(C->data != NULL);
+          text = tgp_msg_file_display (C->data, M->media.document->caption, _("animation"),
+                                       M->media.document->mime_type, M->media.document->size);
+
         } else if (M->media.document->flags & TGLDF_IMAGE) {
           g_return_if_fail(C->data != NULL);
           text = tgp_msg_photo_display (TLS, C->data, &flags);
+
         } else {
           if (! tgp_our_msg (TLS, M)) {
-            tgprpl_recv_file (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, M->from_id), M);
+            if (C->data) {
+              text = tgp_msg_file_display (C->data, M->media.document->caption, _("document"),
+                                           M->media.document->mime_type, M->media.document->size);
+            } else {
+              tgprpl_recv_file (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, M->from_id), M);
+              return;
+            }
           }
-          return;
         }
         break;
 
@@ -512,10 +523,17 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
       case tgl_message_media_audio: {
         if (! tgp_our_msg (TLS, M)) {
           if (C->data) {
-            text = tgp_msg_file_display (C->data,
-                       M->media.type == tgl_message_media_audio ? _("[audio]") : _("[video]"));
+            const char *filename = C->data + strlen(C->data) - 1;
+            while (filename > (char *)C->data && *filename != G_DIR_SEPARATOR) {
+              filename --;
+            }
+            filename ++;
+            text = tgp_msg_file_display (C->data, filename,
+                       M->media.type == tgl_message_media_audio ? _("audio") : _("video"),
+                                         M->media.document->mime_type, M->media.document->size);
           } else {
             tgprpl_recv_file (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, M->from_id), M);
+            return;
           }
         }
       }
@@ -525,14 +543,22 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         if (M->media.encr_document->flags & TGLDF_STICKER) {
           g_return_if_fail(C->data != NULL);
           text = tgp_msg_sticker_display (TLS, M->from_id, C->data, &flags);
+
         } if (M->media.encr_document->flags & TGLDF_IMAGE) {
           g_return_if_fail(C->data != NULL);
           text = tgp_msg_photo_display (TLS, C->data, &flags);
+
         } else {
           if (! tgp_our_msg (TLS, M)) {
-            tgprpl_recv_file (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, M->to_id), M);
+            if (C->data) {
+              text = tgp_msg_file_display (C->data, M->media.encr_document->caption, _("document"),
+                                           M->media.encr_document->mime_type, M->media.encr_document->size);
+              
+            } else {
+              tgprpl_recv_file (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, M->to_id), M);
+              return;
+            }
           }
-          return;
         }
         break;
       
@@ -831,12 +857,12 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
           if (M->media.document->flags & (TGLDF_STICKER | TGLDF_IMAGE)) {
             ++ C->pending;
             tgl_do_load_document (TLS, M->media.document, tgp_msg_on_loaded_document, C);
-          } else if (M->media.document->flags & (TGLDF_ANIMATED | TGLDF_VIDEO | TGLDF_AUDIO)) {
-
+            
+          } else {
             // adium doesn't support file links, autoloading media would mean that it
             // wouldn't be possible to show a usable link to the user
 #ifndef __ADIUM_
-            if (M->media.document->size <= tls_get_media_threshold (TLS)) { // 8mb auto loading threshold
+            if (M->media.document->size <= tls_get_media_threshold (TLS)) {
               ++ C->pending;
               if (M->media.document->flags & TGLDF_AUDIO) {
                 tgl_do_load_audio (TLS, M->media.document, tgp_msg_on_loaded_document, C);
