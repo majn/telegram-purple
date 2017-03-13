@@ -182,7 +182,7 @@ msgstr "pytanie"
 
 #: ../telegram-purple.c:832
 msgid "Accept secret chats"
-msgstr "Akceptowanie tajnych rozmów"
+msgstr "Odbieranie tajnych rozmów"
 
 #: ../telegram-purple.c:836
 msgid "Display buddies offline after (days)"
@@ -448,7 +448,7 @@ msgstr "Nieprawidłowe hasło"
 #: ../tgp-request.c:150
 #, c-format
 msgid "Accept secret chat '%s' on this device?"
-msgstr "Zaakceptować tajną rozmowę „%s” na tym urządzeniu?"
+msgstr "Odebrać tajną rozmowę „%s” na tym urządzeniu?"
 
 #: ../tgp-request.c:151
 msgid "Secret chat"
@@ -461,9 +461,9 @@ msgid ""
 "decline, you can still accept the chat on other devices."
 msgstr ""
 "Tajne rozmowy mogą mieć tylko jeden punkt wyjściowy. Jeśli tajna rozmowa "
-"zostanie zaakceptowana na tym urządzeniu, to jej wiadomości nie będą "
-"dostępne nigdzie indziej. Jeśli zostanie odrzucona, to nadal można ją "
-"zaakceptować na innych urządzeniach."
+"zostanie odebrana na tym urządzeniu, to jej wiadomości nie będą dostępne "
+"nigdzie indziej. Jeśli zostanie odrzucona, to nadal można ją odebrać na "
+"innych urządzeniach."
 
 #: ../tgp-request.c:182
 msgid ""

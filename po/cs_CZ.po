@@ -10,7 +10,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-08-31 22:53+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Ben Wiederhake <BenWiederhake.GitHub@gmx.de>, 2016\n"
+"Last-Translator: Jiri Eischmann <jiri@eischmann.cz>, 2017\n"
 "Language-Team: Czech (Czech Republic) (https://www.transifex.com/telegram-purple-developers/teams/53149/cs_CZ/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=CHARSET\n"
@@ -85,7 +85,7 @@ msgstr "Smazat a ukončit..."
 #: ../telegram-purple.c:546
 #, c-format
 msgid "Unable to sign on as %s: file (public key) not found."
-msgstr ""
+msgstr "Nelze se přihlásit jako %s: soubor (veřejný klíč) nenalezen."
 
 #: ../telegram-purple.c:550
 #, c-format
@@ -108,10 +108,12 @@ msgid ""
 "Unable to sign on as %s: problem in the underlying library 'tgl'. Please "
 "submit a bug report with the debug log."
 msgstr ""
+"Nelze se přihlásit jako %s: problém v použité knihovně \"tgl\". Prosím "
+"nahlaste chybu včetně chybového protokolu."
 
 #: ../telegram-purple.c:576
 msgid "Problem in tgl"
-msgstr ""
+msgstr "Problém v tgl"
 
 #. TRANSLATORS: Please fill in your own prefix!
 #: ../telegram-purple.c:584
@@ -120,6 +122,9 @@ msgid ""
 "Unable to sign on as %s: phone number lacks country prefix. Numbers must "
 "start with the full international prefix code, e.g. +1 for USA."
 msgstr ""
+"Nelze se přihlásit jako %s: telefonnímu číslu chybí předčíslí země. Čísla "
+"musí začínat s plným mezinárodním předčíslím, např. +420 pro Českou "
+"republiku."
 
 #: ../telegram-purple.c:589
 msgid "Incomplete phone number"
@@ -127,15 +132,15 @@ msgstr "Nekompletní telefonní číslo"
 
 #: ../telegram-purple.c:642
 msgid "Secret chat was already deleted"
-msgstr ""
+msgstr "Tajný chat byl již smazán"
 
 #: ../telegram-purple.c:644
 msgid "Secret chat is not ready"
-msgstr ""
+msgstr "Tajný chat není připraven"
 
 #: ../telegram-purple.c:652
 msgid "Only the creator of a channel can post messages."
-msgstr ""
+msgstr "Pouze tvůrce kanálu může zasílat zprávy."
 
 #: ../telegram-purple.c:695
 msgid "Cannot invite buddy to chat"
@@ -147,7 +152,7 @@ msgstr "Zadaný uživatel neexistuje."
 
 #: ../telegram-purple.c:709
 msgid "phone no. (+ country prefix)"
-msgstr ""
+msgstr "telefonní číslo (+ předčíslí země)"
 
 #. Login
 #: ../telegram-purple.c:817
@@ -193,7 +198,7 @@ msgstr ""
 #. Media
 #: ../telegram-purple.c:845
 msgid "Autoload media size (kb)"
-msgstr ""
+msgstr "Velikost automaticky nahraných médií (kb)"
 
 #. Chats
 #: ../telegram-purple.c:850
@@ -211,7 +216,7 @@ msgstr "V přítomnosti zasílat oznámení o doručení"
 
 #: ../telegram-purple.c:884
 msgid "Telegram Protocol Plugin."
-msgstr ""
+msgstr "Zásuvný modul protokolu Telegram."
 
 #: ../tgp-msg.c:58
 #, c-format
@@ -252,43 +257,43 @@ msgstr "%2$s smazal(a) uživatele %1$s."
 #, c-format
 msgid "%2$s set self destruction timer to %1$d second."
 msgid_plural "%2$s set self destruction timer to %1$d seconds."
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "%2$s nastavil(a) sebedestrukční časovač na %1$d sekundu."
+msgstr[1] "%2$s nastavil(a) sebedestrukční časovač na %1$d sekundy."
+msgstr[2] "%2$s nastavil(a) sebedestrukční časovač na %1$d sekund."
 
 #: ../tgp-msg.c:144
 #, c-format
 msgid "%2$s marked %1$d message read."
 msgid_plural "%2$s marked %1$d messages read."
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "%2$s označil(a) %1$d zprávu jako přečtenou."
+msgstr[1] "%2$s označil(a) %1$d zprávy jako přečtené."
+msgstr[2] "%2$s označil(a) %1$d zpráv jako přečtené."
 
 #: ../tgp-msg.c:150
 #, c-format
 msgid "%2$s deleted %1$d message."
 msgid_plural "%2$s deleted %1$d messages."
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "%2$s smazal(a) %1$d zprávu."
+msgstr[1] "%2$s smazal(a) %1$d zprávy."
+msgstr[2] "%2$s smazal(a) %1$d zpráv."
 
 #: ../tgp-msg.c:156
 #, c-format
 msgid "%2$s made a screenshot of %1$d message."
 msgid_plural "%2$s made a screenshot of %1$d messages."
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "%2$s vytvořil(a) screenshot %1$d zprávy."
+msgstr[1] "%2$s vytvořil(a) screenshot %1$d zpráv."
+msgstr[2] "%2$s vytvořil(a) screenshot %1$d zpráv."
 
 #: ../tgp-msg.c:162
 #, c-format
 msgid "Channel %1$s created"
-msgstr ""
+msgstr "Kanál %1$s vytvořen"
 
 #. FIXME: check if this makes sense
 #: ../tgp-msg.c:165 ../tgp-chat.c:124 ../tgp-chat.c:576
 msgid "Telegram Channels"
-msgstr ""
+msgstr "Kanály Telegramu"
 
 #: ../tgp-msg.c:191
 msgid "Sending message failed."
@@ -305,35 +310,35 @@ msgstr "%s odeslal nálepku."
 
 #: ../tgp-msg.c:463
 msgid "failed loading message"
-msgstr ""
+msgstr "selhalo načítání zprávy"
 
 #: ../tgp-msg.c:498
 msgid "[animation]"
-msgstr ""
+msgstr "[animace]"
 
 #: ../tgp-msg.c:515
 msgid "[audio]"
-msgstr ""
+msgstr "[audio]"
 
 #: ../tgp-msg.c:515
 msgid "[video]"
-msgstr ""
+msgstr "[video]"
 
 #: ../tgp-msg.c:604
 #, c-format
 msgid "<b>Forwarded message from: %s</b><br>%s"
-msgstr ""
+msgstr "<b>Zpráva přeposlaná od:%s</b><br>%s"
 
 #. FIXME: sometimes users aren't part of the response when receiving a
 #. forwarded message
 #: ../tgp-msg.c:607
 #, c-format
 msgid "<b>Forwarded message:</b><br>%s"
-msgstr ""
+msgstr "<b>Přeposlaná zpráva:</b><br>%s"
 
 #: ../tgp-msg.c:720
 msgid "loading document or picture failed"
-msgstr ""
+msgstr "nahrávání dokumentu nebo obrázku sehlalo"
 
 #: ../tgp-net.c:281
 msgid "Cannot connect to main server"
@@ -514,35 +519,35 @@ msgstr ""
 
 #: ../tgp-request.c:370
 msgid "Leave Chat"
-msgstr ""
+msgstr "Opustit chat"
 
 #: ../tgp-request.c:372
 msgid "Do you want to leave this chat permantently?"
-msgstr ""
+msgstr "Chcete tento chat opustit trvale?"
 
 #: ../tgp-request.c:377
 msgid "Abort Secret Chat"
-msgstr ""
+msgstr "Ukončit tajný chat"
 
 #: ../tgp-request.c:379
 msgid "Do you want to terminate this secret chat permantently?"
-msgstr ""
+msgstr "Chcete ukončit tento tajný chat trvale?"
 
 #: ../tgp-request.c:384
 msgid "Delete Contact"
-msgstr ""
+msgstr "Smazat kontant"
 
 #: ../tgp-request.c:386
 msgid "Do you want to remove this user from your global contact list?"
-msgstr ""
+msgstr "Chcete tohoto uživatele odstranit ze seznamu kontaktů?"
 
 #: ../tgp-request.c:401
 msgid "Leave Channel"
-msgstr ""
+msgstr "Opustit kanál"
 
 #: ../tgp-request.c:403
 msgid "Do you want to leave this channel?"
-msgstr ""
+msgstr "Chcete opustit tento kanál?"
 
 #. This should be the language's timestamp format. This is preceded by a
 #. colon.
@@ -572,7 +577,7 @@ msgstr "neznámé"
 
 #: ../tgp-chat.c:108 ../tgp-chat.c:582
 msgid "Telegram Chats"
-msgstr ""
+msgstr "Chaty Telegramu"
 
 #: ../tgp-chat.c:113
 msgid "You have already left this chat."
@@ -592,15 +597,15 @@ msgstr "ID Chatu:"
 
 #: ../tgp-chat.c:342
 msgid "Supergroup"
-msgstr ""
+msgstr "Superskupina"
 
 #: ../tgp-chat.c:342
 msgid "Channel"
-msgstr ""
+msgstr "Kanál"
 
 #: ../tgp-chat.c:345
 msgid "Group"
-msgstr ""
+msgstr "Skupina"
 
 #: ../tgp-chat.c:367
 msgid "Users in chat"
@@ -608,4 +613,4 @@ msgstr "Uživatelé v chatu"
 
 #: ../tgp-chat.c:370
 msgid "Type"
-msgstr ""
+msgstr "Typ"
