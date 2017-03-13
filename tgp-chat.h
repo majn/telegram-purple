@@ -46,6 +46,7 @@ PurpleChat *tgp_chat_blist_store (struct tgl_state *TLS, tgl_peer_t *P, const ch
 
 PurpleConversation *tgp_chat_show (struct tgl_state *TLS, tgl_peer_t *P);
 int tgprpl_send_chat (PurpleConnection *gc, int id, const char *message, PurpleMessageFlags flags);
+unsigned int tgprpl_send_chat_typing (PurpleConversation *conv, PurpleTypingState typing, gpointer ignored);
 char *tgprpl_get_chat_name (GHashTable *data);
 void tgprpl_chat_join (PurpleConnection *gc, GHashTable *data);
 GList *tgprpl_chat_join_info (PurpleConnection *gc);
@@ -62,5 +63,6 @@ int tgp_channel_loaded (struct tgl_state *TLS, tgl_peer_id_t id);
 
 void update_channel_handler (struct tgl_state *TLS, struct tgl_channel *C, unsigned flags);
 void update_chat_handler (struct tgl_state *TLS, struct tgl_chat *C, unsigned flags);
+void update_chat_typing (struct tgl_state *TLS, struct tgl_user *U, struct tgl_chat *C, enum tgl_typing_status status);
 
 #endif

@@ -55,6 +55,7 @@ struct tgl_update_callback tgp_callback = {
   
   // FIXME: what about user_registred, user_activated, new_authorization, our_id ?
   .type_in_secret_chat_notification = update_secret_chat_typing,
+  .type_in_chat_notification = update_chat_typing,
   .chat_update = update_chat_handler,
   .channel_update = update_channel_handler,
   .user_update = update_user_handler,
@@ -523,6 +524,8 @@ static void update_on_failed_login (struct tgl_state *TLS) {
   purple_connection_error (tls_get_conn (TLS), TLS->error);
 }
 
+static gulong chat_conversation_typing_signal = 0;
+
 static void tgprpl_login (PurpleAccount * acct) {
   info ("tgprpl_login(): Purple is telling the prpl to connect the account");
   
@@ -622,6 +625,11 @@ static void tgprpl_login (PurpleAccount * acct) {
   
   purple_connection_set_state (conn->gc, PURPLE_CONNECTING);
   tgl_login (TLS);
+    
+  if (!chat_conversation_typing_signal) {
+    chat_conversation_typing_signal = purple_signal_connect(purple_conversations_get_handle(), "chat-conversation-typing", 
+      purple_connection_get_prpl (gc), PURPLE_CALLBACK(tgprpl_send_chat_typing), NULL);
+  }
 }
 
 static void tgprpl_close (PurpleConnection *gc) {
