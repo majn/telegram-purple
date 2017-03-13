@@ -218,6 +218,78 @@ int tgprpl_send_chat (PurpleConnection *gc, int id, const char *message, PurpleM
   return tgp_msg_send (gc_get_tls (gc), message, P->id);
 }
 
+unsigned int tgprpl_send_chat_typing (PurpleConversation *conv, PurpleTypingState typing, gpointer ignored)
+{
+  PurpleConnection *gc = purple_conversation_get_gc (conv);
+  tgl_peer_t *P;
+  PurpleConvChat *chat;
+  int id;
+
+  if (!PURPLE_CONNECTION_IS_CONNECTED (gc))
+    return 0;
+
+  if (g_strcmp0(purple_plugin_get_id (purple_connection_get_prpl (gc)), PLUGIN_ID))
+    return 0;
+  
+  debug ("tgprpl_send_chat_typing()");
+  
+  chat = purple_conversation_get_chat_data (conv);
+  id = purple_conv_chat_get_id (chat);
+  
+  P = tgl_peer_get (gc_get_tls (gc), TGL_MK_CHAT(id));
+  if (! P) {
+    P = tgl_peer_get (gc_get_tls (gc), TGL_MK_CHANNEL(id));
+  }
+  g_return_val_if_fail(P != NULL, -1);
+  
+  tgl_do_send_typing (gc_get_tls (gc), P->id, typing == PURPLE_TYPING ? tgl_typing_typing : tgl_typing_cancel,
+        0, 0);
+
+  // when the group receives a typing notification it is obvious that the previous messages were read
+  pending_reads_send_user (gc_get_tls (gc), P->id);
+  
+  return 2;
+}
+
+void update_chat_typing (struct tgl_state *TLS, struct tgl_user *U, struct tgl_chat *C, enum tgl_typing_status status) {
+  debug ("update_chat_typing()");
+  
+  PurpleConvChat *chat = NULL;
+  PurpleConversation *conv = purple_find_chat (tls_get_conn (TLS), tgl_get_peer_id (C->id));
+  if (conv) {
+    chat = purple_conversation_get_chat_data (conv);
+  }
+  g_return_if_fail(chat != NULL);
+  
+  const char *name = tgp_blist_lookup_purple_name (TLS, U->id);
+  g_return_if_fail(name != NULL);
+  
+  PurpleConvChatBuddyFlags flags = purple_conv_chat_user_get_flags (chat, name);
+  
+  if (status == tgl_typing_typing) {
+    flags |= PURPLE_CBFLAGS_TYPING;
+  } else {
+    flags &= ~PURPLE_CBFLAGS_TYPING;
+  }
+  
+  purple_conv_chat_user_set_flags(chat, name, flags);
+}
+
+void tgprpl_kick_from_chat (PurpleConnection *gc, int id, const char *who) {
+  debug ("tgprpl_kick_from_chat()");
+  
+  tgl_peer_t *P = tgl_peer_get (gc_get_tls (gc), TGL_MK_CHAT(id));
+  if (! P) {
+    P = tgl_peer_get (gc_get_tls (gc), TGL_MK_CHANNEL(id));
+  }
+  g_return_if_fail(P != NULL);
+  
+  tgl_peer_t *other_id = tgp_blist_lookup_peer_get (gc_get_tls (gc), who);
+  g_return_if_fail(P != NULL);
+  
+  tgl_do_del_user_from_chat (gc_get_tls (gc), P->id, other_id->id, tgp_notify_on_error_gw, NULL);
+}
+
 GList *tgprpl_chat_join_info (PurpleConnection *gc) {
   struct proto_chat_entry *pce;
   pce = g_new0 (struct proto_chat_entry, 1);
