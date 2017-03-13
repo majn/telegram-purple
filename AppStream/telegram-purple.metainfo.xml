@@ -18,6 +18,7 @@
     <name xml:lang="pl-PL">Telegram</name>
     <name xml:lang="ru-RU">Telegram</name>
     <name xml:lang="sq">Telegram</name>
+    <name xml:lang="uk">Телеграм</name>
     <summary>A plugin that adds support for Telegram</summary>
     <summary xml:lang="bg">Добавка, която добавя поддръжка на Telegram</summary>
     <summary xml:lang="cs-CZ">Zásuvný modul, který přidá podporu pro Telegram</summary>
@@ -30,6 +31,7 @@
     <summary xml:lang="pl-PL">Wtyczka dodająca obsługę protokołu Telegram</summary>
     <summary xml:lang="ru-RU">Плагин, добавляющий поддержку Telegram</summary>
     <summary xml:lang="sq">Një shtojcë që shton mbulim për Telegram-in</summary>
+    <summary xml:lang="uk">Плагін, що додає підтримку у Телеграм</summary>
     <url type="homepage">https://github.com/majn/telegram-purple</url>
     <url type="bugtracker">https://github.com/majn/telegram-purple/issues/</url>
     <metadata_license>GFDL-1.3</metadata_license>
