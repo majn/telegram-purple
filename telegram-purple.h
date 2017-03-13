@@ -67,7 +67,7 @@
 #define TGP_MAX_MSG_SIZE 4096
 #define TGP_DEFAULT_MAX_MSG_SPLIT_COUNT 4
 
-#define TGP_DEFAULT_MEDIA_SIZE 8192
+#define TGP_DEFAULT_MEDIA_SIZE 32768
 #define TGP_KEY_MEDIA_SIZE "media-size-threshold"
 
 #define TGP_KEY_PASSWORD_TWO_FACTOR "password-two-factor"
