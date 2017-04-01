@@ -187,7 +187,7 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
   }
 
   if (flags & TGL_UPDATE_REQUESTED) {
-    const char* choice = purple_account_get_string (tls_get_pa (TLS), "accept-secret-chats", "ask");
+    const char* choice = purple_account_get_string (tls_get_pa (TLS), TGP_KEY_ACCEPT_SECRET_CHATS, "ask");
     if (! strcmp (choice, "always")) {
       tgl_do_accept_encr_chat_request (TLS, U, write_secret_chat_gw, 0);
     } else if (! strcmp (choice, "ask")) {
@@ -860,13 +860,13 @@ static void tgprpl_init (PurplePlugin *plugin) {
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
 
   // Messaging
-  GList *verification_values = NULL;
-  ADD_VALUE(verification_values, _("always"), "always");
-  ADD_VALUE(verification_values, _("never"), "never");
-  ADD_VALUE(verification_values, _("ask"), "ask");
+  GList *choices = NULL;
+  ADD_VALUE(choices, _("Always"), "always");
+  ADD_VALUE(choices, _("Never"), "never");
+  ADD_VALUE(choices, _("Ask"), "ask");
   
   opt = purple_account_option_list_new (_("Accept secret chats"),
-      TGP_KEY_ACCEPT_SECRET_CHATS, verification_values);
+      TGP_KEY_ACCEPT_SECRET_CHATS, choices);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
   
   opt = purple_account_option_int_new (_("Display buddies offline after (days)"),
