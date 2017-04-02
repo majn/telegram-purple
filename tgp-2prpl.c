@@ -36,9 +36,17 @@ connection_data *tls_get_data (struct tgl_state *TLS) {
   return TLS->ev_base;
 }
 
-int tls_get_media_threshold (struct tgl_state *TLS) {
+int tls_get_ft_threshold (struct tgl_state *TLS) {
   return purple_account_get_int (tls_get_pa (TLS),
              TGP_KEY_MEDIA_SIZE, TGP_DEFAULT_MEDIA_SIZE) << 10;
+}
+
+int tls_get_ft_autoload (struct tgl_state *TLS) {
+  return ! strcmp (purple_account_get_string (tls_get_pa (TLS), TGP_KEY_FT_HANDLING, TGP_DEFAULT_FT_HANDLING), "autoload");
+}
+
+int tls_get_ft_discard (struct tgl_state *TLS) {
+  return ! strcmp (purple_account_get_string (tls_get_pa (TLS), TGP_KEY_FT_HANDLING, TGP_DEFAULT_FT_HANDLING), "discard");
 }
 
 connection_data *gc_get_data (PurpleConnection *gc) {

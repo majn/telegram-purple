@@ -864,11 +864,11 @@ static void tgprpl_init (PurplePlugin *plugin) {
   ADD_VALUE(choices, _("Always"), "always");
   ADD_VALUE(choices, _("Never"), "never");
   ADD_VALUE(choices, _("Ask"), "ask");
-  
+
   opt = purple_account_option_list_new (_("Accept secret chats"),
       TGP_KEY_ACCEPT_SECRET_CHATS, choices);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
-  
+
   opt = purple_account_option_int_new (_("Display buddies offline after (days)"),
       TGP_KEY_INACTIVE_DAYS_OFFLINE, TGP_DEFAULT_INACTIVE_DAYS_OFFLINE);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
@@ -876,26 +876,34 @@ static void tgprpl_init (PurplePlugin *plugin) {
   opt = purple_account_option_int_new (_("Don't fetch history older than (days)\n(0 for unlimited)"),
       TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD, TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
-  
-  // Media
-  opt = purple_account_option_int_new (_("Autoload media size (kb)"), TGP_KEY_MEDIA_SIZE,
-            TGP_DEFAULT_MEDIA_SIZE);
+
+  // Media and documents
+  choices = NULL;
+  ADD_VALUE(choices, _("Discard"), "discard");
+  ADD_VALUE(choices, _("Auto load"), "autoload");
+  ADD_VALUE(choices, _("Ask"), "ask");
+
+  opt = purple_account_option_list_new (_("Handle file transfers"), TGP_KEY_FT_HANDLING, choices);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
-  
+
+  opt = purple_account_option_int_new (_("Auto load file transfers up to (kb)"), TGP_KEY_MEDIA_SIZE,
+                                       TGP_DEFAULT_MEDIA_SIZE);
+  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
+
   // Chats
   opt = purple_account_option_bool_new (_("Add all group chats to buddy list"),
       TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
 
-  // Read notifications
+  // Receipts
   opt = purple_account_option_bool_new (_("Display notices of receipt"),
       TGP_KEY_DISPLAY_READ_NOTIFICATIONS, TGP_DEFAULT_DISPLAY_READ_NOTIFICATIONS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
-  
+
   opt = purple_account_option_bool_new (_("Send notices of receipt when present"),
       TGP_KEY_SEND_READ_NOTIFICATIONS, TGP_DEFAULT_SEND_READ_NOTIFICATIONS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
-  
+
   _telegram_protocol = plugin;
   debug ("tgprpl_init finished: This is " PACKAGE_VERSION "+g" GIT_COMMIT " on libtgl " TGL_VERSION);
 }

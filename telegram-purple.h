@@ -67,6 +67,9 @@
 #define TGP_MAX_MSG_SIZE 4096
 #define TGP_DEFAULT_MAX_MSG_SPLIT_COUNT 4
 
+#define TGP_DEFAULT_FT_HANDLING "ask"
+#define TGP_KEY_FT_HANDLING "media-handling-behavior"
+
 #define TGP_DEFAULT_MEDIA_SIZE 32768
 #define TGP_KEY_MEDIA_SIZE "media-size-threshold"
 

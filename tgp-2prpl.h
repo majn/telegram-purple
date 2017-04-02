@@ -27,7 +27,9 @@
 PurpleAccount *tls_get_pa (struct tgl_state *TLS);
 PurpleConnection *tls_get_conn (struct tgl_state *TLS);
 connection_data *tls_get_data (struct tgl_state *TLS);
-int tls_get_media_threshold (struct tgl_state *TLS);
+int tls_get_ft_threshold (struct tgl_state *TLS);
+int tls_get_ft_discard (struct tgl_state *TLS);
+int tls_get_ft_autoload (struct tgl_state *TLS);
 connection_data *gc_get_data (PurpleConnection *gc);
 connection_data *pa_get_data (PurpleAccount *pa);
 connection_data *pbn_get_data (PurpleBlistNode *node);
