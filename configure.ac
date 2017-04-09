@@ -20,7 +20,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([telegram-purple], [1.3.0])
+AC_INIT([telegram-purple], [1.3.1])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
 

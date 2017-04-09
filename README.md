@@ -265,14 +265,6 @@ and `.dsc` files, do this:
     false # Move tar to parent directory, by hand
     dpkg-source -b .
 
-1.3.0
------
-
-- channel/supergroup support
-- support sending code tags in markdown "backtick" format (see README for example)
-- reduce amount of file-transfer popups in Pidgin, auto-load media in the background
-- fix stability issues for the win32 build
-- fix multiple crashes in libtgl
 
 Discussion / Help
 -----------------
