@@ -281,15 +281,11 @@ Discussion / Help
 
 As we want to avoid OpenSSL, it has become necessary to replace the PEM file format. This means that if you use a custom pubkey (which you really REALLY shouldn't be doing), you have to adapt, sorry.
 
-We no longer ship `tg-server.pub` (old format), but instead `tg-server.tglpub` (new format). If you have a `.pub` and want to continue using telegram-purple, please use this (hopefully highly portable) tool: [pem2bignum](https://github.com/BenWiederhake/pem2bignum)
-
-You can also write your own conversion tool if you prefer. The format is really simple:
-
-1. `e`, the public exponent, encoded as big endian 32 bit fixed length (e.g. `0x00 01 00 01` for 65537)
-2. `n_len`, the length of `n` in bytes, encoded as big endian 32 bit fixed length (e.g. `0x00 00 01 00` for a 2048-bit = 256-byte key)
-3. `n_raw`, the raw modulus, encoded as big endian, using the previously indicated length (e.g. `0xC1 50 02 3E [248 bytes omitted] 21 79 25 1F` in the case of telegram's public RSA key.)
-
-If you are interested in developing a non-OpenSSL-licensed converter, look into [insane-triangle-banana](https://github.com/BenWiederhake/insane-triangle-banana).
+We no longer read the public key of the Telegram servers from a file.
+If you really need a different public key, and know what you're doing
+(e.g., connecting to some kind of test environment internal to Telegram,
+which also is a very bad idea), you need to find the call to `tgl_set_rsa_key_direct` in `telegram-purple.c`,
+and provide the key directly by yourself.
 
 
 FAQ

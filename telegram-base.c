@@ -35,68 +35,6 @@
 #define STATE_FILE_MAGIC 0x28949a93
 #define SECRET_CHAT_FILE_MAGIC 0x37a1988a
 
-static gboolean read_ui32 (int fd, unsigned int *ret) {
-  typedef char check_int_size[(sizeof (int) >= 4) ? 1 : -1];
-  (void) sizeof (check_int_size);
-
-  unsigned char buf[4];
-  if (4 != read (fd, buf, 4)) {
-    return 0;
-  }
-  // Ugly but works.
-  *ret = 0;
-  *ret |= buf[0];
-  *ret <<= 8;
-  *ret |= buf[1];
-  *ret <<= 8;
-  *ret |= buf[2];
-  *ret <<= 8;
-  *ret |= buf[3];
-  return 1;
-}
-
-int read_pubkey_file (const char *name, struct rsa_pubkey *dst) {
-  // Just to make sure nobody reads garbage.
-  dst->e = 0;
-  dst->n_len = 0;
-  dst->n_raw = NULL;
-
-  int pubkey_fd = open (name, O_RDONLY | O_BINARY);
-  if (pubkey_fd < 0) {
-    return 0;
-  }
-
-  unsigned int e;
-  unsigned int n_len;
-  if (!read_ui32 (pubkey_fd, &e) || !read_ui32 (pubkey_fd, &n_len) // Ensure successful reads
-      || n_len < 128 || n_len > 1024 || e < 5) { // Ensure (at least remotely) sane parameters.
-    close (pubkey_fd);
-    return 0;
-  }
-
-  unsigned char *n_raw = malloc (n_len);
-  if (!n_raw) {
-    close (pubkey_fd);
-    return 0;
-  }
-
-  gint readret;
-  readret = read (pubkey_fd, n_raw, n_len);
-  if (readret <= 0 || (n_len != (guint) readret)) {
-    free (n_raw);
-    close (pubkey_fd);
-    return 0;
-  }
-  close (pubkey_fd);
-
-  dst->e = e;
-  dst->n_len = n_len;
-  dst->n_raw = n_raw;
-  
-  info ("read pubkey file: n_len=%u e=%u", n_len, e);
-  return 1;
-}
-
 void read_state_file (struct tgl_state *TLS) {
   char *name = 0;
   name = g_strdup_printf("%s/%s", TLS->base_path, "state");
@@ -438,20 +376,6 @@ gchar *get_config_dir (char const *username) {
   }
   g_mkdir_with_parents (dir, 0700);
   return dir;
-}
-
-gchar *get_user_pk_path () {
-  /*
-     This can't be conditional on whether or not we're using telepathy, because
-     then we would need to make sure that `make local_install` also knows about
-     that location. So we *always* use ${HOME}/.purple/telegram-purple,
-     even when the other files aren't in this folder.
-     Note that this is only visible when using Telepathy/Empathy with
-     local_install, which should be kinda rare anyway (use telepathy-morse!).
-   */
-  return g_strconcat (g_get_home_dir(), G_DIR_SEPARATOR_S, ".purple",
-                                G_DIR_SEPARATOR_S, "telegram-purple",
-                                G_DIR_SEPARATOR_S, user_pk_filename, NULL);
 }
 
 gchar *get_download_dir (struct tgl_state *TLS) {
