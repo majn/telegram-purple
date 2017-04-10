@@ -1,0 +1,21 @@
+Bug-Database: https://github.com/majn/telegram-purple/issues/
+Bug-Submit: https://github.com/majn/telegram-purple/issues/new
+#Cite-As: <a href="https://github.com/majn/telegram-purple">telegram-purple</ a>
+## Intentionally left out, to make sure that we don't accidentally break someone's
+## workflow. We err on the side of not prescribing anyone how to cite this work.
+#Changelog: https://github.com/majn/telegram-purple/blob/master/CHANGELOG.md
+## Intentionally left out as it's already outdated at the time of writing.
+Contact: https://goo.gl/QHttTR
+## The development chat group.
+#Donation: See 'Contact'
+#FAQ: https://github.com/majn/telegram-purple/#faq
+## Intentionally left out: no real content yet.
+Name: telegram-purple
+## Might be superfluous, but I want to confirm that the upstream name is
+## indeed telegram-purple, hence the package name in Debian.
+Repository: https://github.com/majn/telegram-purple/
+Repository-Browse: https://github.com/majn/telegram-purple/
+Security-Contact:
+  Main developer: Matthias Jentch <mtthsjntsch AT gmail DOT com>
+  Debian packager: Ben Wiederhake <Ben DOT Wiederhake AT gmail DOT com>
+  Development channel (public): https://goo.gl/QHttTR

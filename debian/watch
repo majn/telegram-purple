@@ -1,0 +1,17 @@
+version=4
+opts="\
+  downloadurlmangle=s/tag\/v(.*)$/download\/v$1\/telegram-purple_$1.orig.tar.gz/,\
+  filenamemangle=s/.*tag\/v(.*)$/telegram-purple_$1.orig.tar.gz/,\
+  uversionmangle=s/-(beta\d*)$/~$1/,\
+  " \
+  https://github.com/majn/telegram-purple/releases \
+  /tag/v([\d\.]*(?:-beta\d*)?) \
+  debian \
+  uupdate
+
+# Rationales (from bottom up):
+# - There will always be tags of the style "v1.2.5", so search for that
+# - The "beta" group must be non-capturing, otherwise uscan tries to concatenate them (e.g. "1.2.3-beta.-beta")
+# - Github tars are unusable; use the (hopefully attached) origtar
+# - Beta-releases should be ordered before the "main" release (was never relevant so far)
+# - Spacing in order to have exactly one rule per line

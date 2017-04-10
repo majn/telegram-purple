@@ -1,0 +1,121 @@
+Packing, unpacking, and modifying (as per §4.14)
+================================================
+
+1. Generate the fully patched source, in a form ready for editing, that 
+   would be built to create Debian packages.
+
+This step does not need any special attention. The standard invocation 
+of "dpkg-source -x" does exactly what is needed.
+
+2. Modify the source and save those modifications so that they will be 
+   applied when building the package.
+ == AND ==
+3. Remove source modifications that are currently being applied when 
+building the package.
+
+There is no standard procedure for this package. Please note that:
+- quilt seems to be the default tool for this kind of work.
+- git-buildpackage (gbp) might not work as expected, so I refrained 
+  from trying it for this task. See below.
+
+So far, issues reported against the project have been resolved quickly 
+enough to avoid scenarios that usually need the d/patches/ directory.
+
+4. Generate a *.orig.tar.gz from the git repository, e.g., upgrade the 
+   Debian source package to a new upstream version.
+
+Easy way:
+    use the provided orig-tars, e.g., 'telegram-purple_1.2.6.orig.tar.gz'
+
+Hard way (the procedure used to create these files):
+    $ git clone --recursive --branch debian-master \
+           https://github.com/majn/telegram-purple.git
+    $ cd telegram-purple
+    ...$ make dist
+
+The output should look like this:
+    Refresh commit.h
+    ./gen-origtar
+    mv -f bin/result.tar.gz telegram-purple_deb-v1.2.4-2-161-gb5272d4.orig.tar.gz
+
+The following approaches do NOT work:
+- Github's "download source tar", as this leaves out submodules.
+- git-buildpackage (gpb). No support for submodules-within-submodules.
+
+The file README.md of the project contains some hints about how to 
+build packages, so here's a cheat sheet:
+- Just build a *.deb, ideal for local use:
+  fakeroot ./debian/rules binary
+- Build the package for analysis, e.g. lintian:
+  dpkg-buildpackage
+- Only produce a *.dsc and *.debian.tar.xz file:
+  ( cd .. && dpkg-source -b telegram-purple )
+- Run pbuilder (needs the previous step):
+  ( cd .. && sudo pbuilder --build telegram-purple_*.dsc )
+
+
+
+Package name
+============
+
+At the time of writing (2016-01-03), the Debian repository contained 
+the following libpurple-backends:
+- pidgin-encryption
+- pidgin-latex
+- pidgin-otr
+- pidgin-plugin-pack
+- pidgin-privacy-please
+So following that tradition, this package would be called "pidgin-telegram".
+
+However, this would have a lot of disadvantages:
+- This is a frontend-agnostic backend that works with Adium, pidgin, 
+  and Finch. We hope that it works nicely with all other frontends, too. 
+  Calling it "pidgin-something" would be highly misleading.
+- All error messages and their translations would need to be adapted
+- paths would need to change that aren't configurable
+- some users are expecting the name to be "telegram-purple"
+  (at least initially)
+
+Overall, we consider this a needlessly confusing convention, and 
+intentionally break with it.
+
+
+
+Packaging libtgl separately (as per §4.13)
+==========================================
+
+No.
+
+So far, ABI-compatibility was broken between virtually every other 
+commit to libtgl, and the library is still under development. The 
+latest "stable" release is heavily outdated and can no longer be used 
+productively (missing features, known breaking bugs, etc.), so if we were to 
+package tgl we would need to repackage it constantly, with no defined 
+concept of version, soname, or anything reliable. No other program 
+(*including* tg-cli) can be expected to use the same version of libtgl 
+as telegram-purple does. (This might happen every now and then, but 
+that would be random chance. Finally, it's highly unlikely that someone 
+installs and uses both telegram-purple and tg-cli.)
+
+Packaging "tl-parser" or the intermediate "generate" program is also a 
+bad idea: One *could* do that, but it's only useful for libtgl. So 
+there is a significant lack of users.
+
+Note that tl-parser is a relatively (in comparison to the rest of 
+libtgl) stable, portable application (not library). The output format 
+hasn't changed in a over a year. If you believe that these six files 
+will be used by a lot of people, I'll be happy to package tl-parser for 
+you. However, please note that this would require at least two 
+packages: tl-parser (binary), tl-parser-dev (headers), and possibly 
+libtl-parser (common object files).
+
+In short: there's no set of component that could be packaged in a more 
+clever way.
+
+
+
+About this document
+===================
+
+This is not written in Markdown. All formatting is in the hope of
+making it easy to read.

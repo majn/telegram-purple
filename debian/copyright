@@ -1,0 +1,102 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: pidgin-telegram
+Source: https://github.com/majn/telegram-purple
+
+Files: *
+Copyright: 2014-2015 Matthias Jentsch <mtthsjntsch@gmail.com>
+           2014 Vitaly Valtman <mail@vysheng.ru>
+           2014 Christopher Althaus <althaus.christopher@gmail.com>
+           2014 Markus Endres <endresma45241@th-nuernberg.de>
+License: GPL-2+
+
+Files: AppStream/telegram-purple.metainfo.untranslated.xml
+Copyright: 2015 Jiri Eischmann <eischmann@redhat.com>
+License: GFDL-NIV
+License-Grant:
+ <metadata_license>GFDL-1.3</metadata_license>
+
+Files: debian/*
+Copyright: 2015 Hugues Morisset <morisset.hugues@gmail.com>
+           2015 Ben Wiederhake <BenWiederhake.GitHub@gmail.com>
+License: GPL-2+
+
+Files: tgl/*
+Copyright: 2013-2015 Vitaly Valtman <mail@vysheng.ru>
+           2015 Matthias Jentsch <mtthsjntsch@gmail.com>
+           2015 Ben Wiederhake <BenWiederhake.GitHub@gmx.de>
+License: LGPL-2.1+
+
+Files: tgl/tl-parser/*
+Copyright: 2015 Matthias Jentsch <mtthsjntsch@gmail.com>
+           2015 Vitaly Valtman <mail@vysheng.ru>
+           2015 Christopher Althaus <althaus.christopher@gmail.com>
+           2015 Markus Endres <endresma45241@th-nuernberg.de>
+License: GPL-2+
+
+Files: tgl/tl-parser/portable_endian.h
+Copyright: 2013-2014 Mathias Panzenböck <grosser.meister.morti@gmx.net>
+           2015 PkmX <pkmx.tw@gmail.com>
+License: BSD-3-clause or Expat or Apache-2
+License-Grant:
+ I, Mathias Panzenböck, place this file hereby into the public domain.
+ Use it at your own risk for whatever you like. In case there are
+ jurisdictions that don't support putting things in the public domain
+ you can also consider it to be "dual licensed" under the BSD, MIT and
+ Apache licenses, if you want to. This code is trivial anyway. Consider
+ it an example on how to get the endian conversion functions on
+ different platforms.
+FIXME:
+ This is a tag for the sole purpose and hope that one day, someone
+ searches for "Fixme" (possibly case-sensitive). Thus, the issue in the
+ following "Comment" field can be found in both the Debian archive and
+ the original project.
+Comment:
+ This is a comment from the person who wrote this debian/copyright file.
+ .
+ The licensing was obviously meant to be "use whatever". However, we
+ have to mirror it precisely, and verbatim.  I took the freedom to
+ interprete the terms "the MIT licenses" as "Expat"; "the BSD licenses"
+ as BSD 3-clause; and "the Apache licenses" as Apache 2.0.  I do this
+ in order to keep the list reasonably small and close enough. However,
+ someone who understands the legal implications should take a close
+ look at this.
+
+License: LGPL-2.1+
+ On Debian systems, the complete text of the GNU Lesser General
+ Public License can be found in "/usr/share/common-licenses/LGPL-2.1".
+
+License: GPL-2+
+ On Debian systems, the complete text of the GNU General Public License
+ version 2 can be found in "/usr/share/common-licenses/GPL-2".
+
+License: BSD-3-clause
+ On Debian systems, the complete text of the Revised BSD License
+ (3-clause) can be found in "/usr/share/common-licenses/GPL-3".
+
+License: Apache-2
+ On Debian systems, the complete text of version 2.0 of the Apache License
+ can be found in ‘/usr/share/common-licenses/Apache-2.0’.
+
+License: GFDL-NIV
+ On Debian systems, the complete text of version 1.3 of the GNU Free
+ Document License ‘/usr/share/common-licenses/GFDL-1.3’.
+
+License: Expat
+ Permission is hereby granted, free of charge, to any person obtaining
+ a copy of this software and associated documentation files (the
+ "Software"), to deal in the Software without restriction, including
+ without limitation the rights to use, copy, modify, merge, publish,
+ distribute, sublicense, and/or sell copies of the Software, and to
+ permit persons to whom the Software is furnished to do so, subject to
+ the following conditions:
+ .
+ The above copyright notice and this permission notice shall be included
+ in all copies or substantial portions of the Software.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
