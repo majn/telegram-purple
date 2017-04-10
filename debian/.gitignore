@@ -1,3 +1,8 @@
 /files
 /telegram-purple/
 /telegram-purple.*
+
+/.debhelper/
+/autoreconf.after
+/autoreconf.before
+/debhelper-build-stamp
