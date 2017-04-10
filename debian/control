@@ -16,8 +16,8 @@ Build-Depends:
  zlib1g-dev
 Standards-Version: 3.9.8
 Homepage: https://github.com/majn/telegram-purple
-Vcs-Git: https://github.com/BenWiederhake/telegram-purple
-Vcs-Browser: https://github.com/BenWiederhake/telegram-purple/tree/debian-develop
+Vcs-Git: https://github.com/majn/telegram-purple.git
+Vcs-Browser: https://github.com/majn/telegram-purple
 
 Package: telegram-purple
 Architecture: any
