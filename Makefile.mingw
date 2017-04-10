@@ -106,7 +106,6 @@ strip: $(PRPL_LIBNAME)
 install: $(PRPL_LIBNAME) $(LOCALES)
 	mkdir -m $(DIR_PERM) -p $(PLUGIN_DIR_PURPLE)
 	install -m $(FILE_PERM) $(PRPL_LIBNAME) $(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
-	install -m $(FILE_PERM) tg-server.tglpub $(DATA_ROOT_DIR_PURPLE)/server.tglpub
 ifeq ($(COPY_ICONS),no)
 	@echo "Not copying icons due to configure-option --disable-icons."
 	@echo " If you're using Finch, Empathy, or Telepathy, then this is a good idea."

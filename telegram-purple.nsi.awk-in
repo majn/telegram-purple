@@ -94,7 +94,6 @@ Section "MainSection" SEC01
 	File /nonfatal "/oname=%\LC_MESSAGES\telegram-purple.mo" "po\%.mo"
 	
 	SetOutPath "$PidginDir"
-	File "/oname=server.tglpub" "tg-server.tglpub"
 	File "${WIN32_DEV_TOP}\libgpg-error-1.12-2\bin\libgpg-error-0.dll"
 	File "${WIN32_DEV_TOP}\libgcrypt-1.6.3\bin\libgcrypt-20.dll"
 	File "${WIN32_DEV_TOP}\libwebp-0.4.3-1\bin\libwebp-5.dll"

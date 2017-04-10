@@ -121,7 +121,6 @@ noicon_install: $(PRPL_LIBNAME) $(LOCALE_MOS)
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(PLUGIN_DIR_PURPLE)
 	install -m $(FILE_PERM) $(PRPL_LIBNAME) $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)/etc/telegram-purple
-	install -m $(FILE_PERM) tg-server.tglpub $(DESTDIR)/etc/telegram-purple/server.tglpub
 # Assume that the user does not use AppStream if she doesn't want icons
 	@for lang in $(LOCALES); do \
 		mkdir -p $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES; \
@@ -133,7 +132,7 @@ noicon_install: $(PRPL_LIBNAME) $(LOCALE_MOS)
 noicon_uninstall:
 	rm -f $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
 	rm -f $(DESTDIR)/etc/telegram-purple/server.pub # TODO: Remove this in later versions
-	rm -f $(DESTDIR)/etc/telegram-purple/server.tglpub
+	rm -f $(DESTDIR)/etc/telegram-purple/server.tglpub # TODO: Remove this in later versions
 # TODO: Delete all installed .mo's, no matter what LINGUAS says.
 	@for lang in $(LOCALES); do \
 		echo "removing $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
