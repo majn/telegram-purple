@@ -108,7 +108,7 @@ ${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c tgl/libs/libtgl.a | create_dirs
 	echo $@ && ${CC} ${CFLAGS} ${CPPFLAGS} -I ${srcdir}/tgl -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
 
 po/%.mo: po/%.po
-	${MSGFMT_PATH} -cf -o $@ $<
+	${MSGFMT_PATH} -cf -o $@ $< >/dev/null 2>&1
 
 ${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} tgl/libs/libtgl.a | create_dirs
 	${CC} -shared -o $@ $^ ${LDFLAGS}
