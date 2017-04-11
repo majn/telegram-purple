@@ -1,6 +1,13 @@
 Changelog
 ---------
 
+##### 1.3.1
+
+- Stability improvements
+- Support auto-loading for documents
+- Add support for "typing" in group chats (using group-typing-notifications plugin)
+- Add support for /kick command in group chats
+
 ##### 1.3.0
 
 - channel/supergroup support
