@@ -43,7 +43,6 @@
 		C4B57BF01B1598D4006997F4 /* libtgl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C4B57BEF1B1598D4006997F4 /* libtgl.a */; };
 		C4D12DF01BC534CF00C0F6E1 /* tgp-blist.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D12DEF1BC534CF00C0F6E1 /* tgp-blist.c */; };
 		C4D3EB5A1C3824C5003C895B /* tgp-info.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D3EB581C3824C5003C895B /* tgp-info.c */; };
-		C4D432D81BC2783C00561667 /* tg-server.tglpub in Resources */ = {isa = PBXBuildFile; fileRef = C4D432D71BC2783C00561667 /* tg-server.tglpub */; };
 		C4D819061A5C862E0044CBA9 /* tgp-structs.c in Sources */ = {isa = PBXBuildFile; fileRef = C4D819041A5C862E0044CBA9 /* tgp-structs.c */; };
 		C4D9185B1C1C6B3900AECCA2 /* libgpg-error.0.dylib in Resources */ = {isa = PBXBuildFile; fileRef = C4D9185A1C1C6B3900AECCA2 /* libgpg-error.0.dylib */; };
 		C4D9185C1C1C6B9C00AECCA2 /* libgpg-error.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C4D9185A1C1C6B3900AECCA2 /* libgpg-error.0.dylib */; };
@@ -333,7 +332,6 @@
 			files = (
 				C4D9185B1C1C6B3900AECCA2 /* libgpg-error.0.dylib in Resources */,
 				C465FC231C0D01B5001CCEE8 /* libgcrypt.20.dylib in Resources */,
-				C4D432D81BC2783C00561667 /* tg-server.tglpub in Resources */,
 				C438CE271A12BEAF00E1DA0F /* telegram.png in Resources */,
 				C4B4BE391AB613950064AC17 /* TelegramJoinChatView.xib in Resources */,
 				C4B4BE2E1AB392F80064AC17 /* TelegramAccountView.xib in Resources */,
