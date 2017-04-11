@@ -167,14 +167,11 @@ uninstall: noicon_uninstall
 local_install:
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(HOME)/.purple/plugins
 	install -m $(FILE_PERM) $(PRPL_LIBNAME) $(DESTDIR)$(HOME)/.purple/plugins/$(PRPL_NAME)
-# See telegram-base.c, function get_user_pk_path for justification:
-	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(HOME)/.purple/telegram-purple
-	install -m $(FILE_PERM) tg-server.tglpub $(DESTDIR)$(HOME)/.purple/telegram-purple/server.tglpub
 
 .PHONY: local_uninstall
 local_uninstall:
 	rm -f $(DESTDIR)$(HOME)/.purple/plugins/$(PRPL_NAME)
-	rm -f $(DESTDIR)$(HOME)/.purple/telegram-purple/server.tglpub
+	rm -f $(DESTDIR)$(HOME)/.purple/telegram-purple/server.tglpub # TODO: Remove this in later versions
 
 
 ### == Handling and maintenance. Subject to rapid change, shouldn't be used in scripts. == ###
