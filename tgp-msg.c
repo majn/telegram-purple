@@ -518,12 +518,16 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
           if (C->data) {
             const char* path = C->data;
 
+            // Content of a file transfer
             const char *caption = _("document");
             if (M->media.document->flags & TGLDF_AUDIO) {
+              // Content of a file transfer
               caption = _("audio");
             } else if (M->media.document->flags & TGLDF_ANIMATED) {
+              // Content of a file transfer
               caption = _("animation");
             } else if (M->media.document->flags & TGLDF_VIDEO) {
+              // Content of a file transfer
               caption = _("video");
             }
 
@@ -564,6 +568,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         } else {
           if (! tgp_our_msg (TLS, M)) {
             if (C->data) {
+              // Content of a file transfer
               text = format_document (C->data, M->media.encr_document->caption, _("document"),
                                            M->media.encr_document->mime_type, M->media.encr_document->size);
               

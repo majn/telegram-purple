@@ -820,8 +820,11 @@ static void tgprpl_init (PurplePlugin *plugin) {
 
   // Messaging
   GList *choices = NULL;
+  // Whether to do fallback SMS verification
   ADD_VALUE(choices, _("Always"), "always");
+  // Whether to do fallback SMS verification
   ADD_VALUE(choices, _("Never"), "never");
+  // Whether to do fallback SMS verification
   ADD_VALUE(choices, _("Ask"), "ask");
 
   opt = purple_account_option_list_new (_("Accept secret chats"),
@@ -838,8 +841,11 @@ static void tgprpl_init (PurplePlugin *plugin) {
 
   // Media and documents
   choices = NULL;
+  // How to handle "large" files
   ADD_VALUE(choices, _("Discard"), "discard");
+  // How to handle "large" files
   ADD_VALUE(choices, _("Auto load"), "autoload");
+  // How to handle "large" files
   ADD_VALUE(choices, _("Ask"), "ask");
 
   opt = purple_account_option_int_new (_("Auto load file transfers up to (kb)"), TGP_KEY_MEDIA_SIZE,

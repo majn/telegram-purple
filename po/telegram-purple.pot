@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-04-12 00:53+0200\n"
+"POT-Creation-Date: 2017-04-12 01:22+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -144,63 +144,69 @@ msgid ""
 "(Helps when not using Pidgin and you aren't being prompted for the code)"
 msgstr ""
 
-#: ../telegram-purple.c:823
+#. Whether to do fallback SMS verification
+#: ../telegram-purple.c:824
 msgid "Always"
 msgstr ""
 
-#: ../telegram-purple.c:824
+#. Whether to do fallback SMS verification
+#: ../telegram-purple.c:826
 msgid "Never"
 msgstr ""
 
-#: ../telegram-purple.c:825 ../telegram-purple.c:843
+#. Whether to do fallback SMS verification
+#. How to handle "large" files
+#: ../telegram-purple.c:828 ../telegram-purple.c:849
 msgid "Ask"
 msgstr ""
 
-#: ../telegram-purple.c:827
+#: ../telegram-purple.c:830
 msgid "Accept secret chats"
 msgstr ""
 
-#: ../telegram-purple.c:831
+#: ../telegram-purple.c:834
 msgid "Display buddies offline after (days)"
 msgstr ""
 
-#: ../telegram-purple.c:835
+#: ../telegram-purple.c:838
 msgid ""
 "Don't fetch history older than (days)\n"
 "(0 for unlimited)"
 msgstr ""
 
-#: ../telegram-purple.c:841
+#. How to handle "large" files
+#: ../telegram-purple.c:845
 msgid "Discard"
 msgstr ""
 
-#: ../telegram-purple.c:842
+#. How to handle "large" files
+#: ../telegram-purple.c:847
 msgid "Auto load"
 msgstr ""
 
-#: ../telegram-purple.c:845
+#: ../telegram-purple.c:851
 msgid "Auto load file transfers up to (kb)"
 msgstr ""
 
-#: ../telegram-purple.c:849
+#: ../telegram-purple.c:855
 msgid "Bigger file transfers"
 msgstr ""
 
 #. Chats
-#: ../telegram-purple.c:853
+#: ../telegram-purple.c:859
 msgid "Add all group chats to buddy list"
 msgstr ""
 
 #. Receipts
-#: ../telegram-purple.c:858
+#: ../telegram-purple.c:864
 msgid "Display notices of receipt"
 msgstr ""
 
-#: ../telegram-purple.c:862
+#: ../telegram-purple.c:868
 msgid "Send notices of receipt when present"
 msgstr ""
 
-#: ../telegram-purple.c:887
+#: ../telegram-purple.c:893
 msgid "Telegram Protocol Plugin."
 msgstr ""
 
@@ -294,34 +300,38 @@ msgstr ""
 msgid "failed loading message"
 msgstr ""
 
-#: ../tgp-msg.c:521 ../tgp-msg.c:567
+#. Content of a file transfer
+#: ../tgp-msg.c:522 ../tgp-msg.c:572
 msgid "document"
 msgstr ""
 
-#: ../tgp-msg.c:523
+#. Content of a file transfer
+#: ../tgp-msg.c:525
 msgid "audio"
 msgstr ""
 
-#: ../tgp-msg.c:525
+#. Content of a file transfer
+#: ../tgp-msg.c:528
 msgid "animation"
 msgstr ""
 
-#: ../tgp-msg.c:527
+#. Content of a file transfer
+#: ../tgp-msg.c:531
 msgid "video"
 msgstr ""
 
-#: ../tgp-msg.c:644
+#: ../tgp-msg.c:649
 #, c-format
 msgid "<b>Forwarded message from: %s</b><br>%s"
 msgstr ""
 
 #. FIXME: sometimes users aren't part of the response when receiving a forwarded message
-#: ../tgp-msg.c:647
+#: ../tgp-msg.c:652
 #, c-format
 msgid "<b>Forwarded message:</b><br>%s"
 msgstr ""
 
-#: ../tgp-msg.c:760
+#: ../tgp-msg.c:765
 msgid "loading document or picture failed"
 msgstr ""
 
