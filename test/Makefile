@@ -16,6 +16,7 @@ ${PLUGIN_TESTS}: %: test/bin/% test/tmp/user
 
 .PHONY: check
 check: ${PLUGIN_TESTS} test/tmp/user
+	@echo "'make check' passed."
 
 .PHONY: recheck
 recheck: clean-test check
