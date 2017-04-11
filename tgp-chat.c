@@ -408,7 +408,9 @@ static void tgp_chat_roomlist_it (tgl_peer_t *P, void *extra) {
     char *id = g_strdup_printf ("%d", tgl_get_peer_id (P->id));
     
     PurpleRoomlistRoom *room = purple_roomlist_room_new (PURPLE_ROOMLIST_ROOMTYPE_ROOM, P->chat.print_title, NULL);
+    
     purple_roomlist_room_add_field (conn->roomlist, room, id);
+    
     if (tgl_get_peer_type (P->id) == TGL_PEER_CHANNEL) {
       purple_roomlist_room_add_field (conn->roomlist, room, GINT_TO_POINTER(0));
       purple_roomlist_room_add_field (conn->roomlist, room, (P->channel.flags & TGLCHF_MEGAGROUP) ? _("Supergroup") : _("Channel"));
@@ -429,9 +431,11 @@ PurpleRoomlist *tgprpl_roomlist_get_list (PurpleConnection *gc) {
   if (conn->roomlist) {
     purple_roomlist_unref (conn->roomlist);
   }
-  
+
   conn->roomlist = purple_roomlist_new (purple_connection_get_account (gc));
-  
+
+  purple_roomlist_set_in_progress (conn->roomlist, TRUE);
+
   GList *fields = NULL;
   PurpleRoomlistField *f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_STRING, "", "id", TRUE);
   fields = g_list_append (fields, f);
@@ -444,7 +448,9 @@ PurpleRoomlist *tgprpl_roomlist_get_list (PurpleConnection *gc) {
 
   purple_roomlist_set_fields (conn->roomlist, fields);
   tgl_peer_iterator_ex (conn->TLS, tgp_chat_roomlist_it, conn);
-  
+
+  purple_roomlist_set_in_progress (conn->roomlist, FALSE);
+
   return conn->roomlist;
 }
 
