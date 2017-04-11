@@ -842,11 +842,11 @@ static void tgprpl_init (PurplePlugin *plugin) {
   ADD_VALUE(choices, _("Auto load"), "autoload");
   ADD_VALUE(choices, _("Ask"), "ask");
 
-  opt = purple_account_option_list_new (_("Handle file transfers"), TGP_KEY_FT_HANDLING, choices);
-  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
-
   opt = purple_account_option_int_new (_("Auto load file transfers up to (kb)"), TGP_KEY_MEDIA_SIZE,
                                        TGP_DEFAULT_MEDIA_SIZE);
+  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
+  
+  opt = purple_account_option_list_new (_("Bigger file transfers"), TGP_KEY_FT_HANDLING, choices);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
 
   // Chats
