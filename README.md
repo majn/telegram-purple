@@ -41,10 +41,8 @@ https://aur.archlinux.org/packages/telegram-purple/
 
 #### Debian
 
-At the time of writing, the package hasn't been accepted yet.
-Please first check if it's already available to you: `sudo apt-get install telegram-purple`
-
-If this doesn't work because the package doesn't exist (yet), please build it from source.
+You can build it from source (see following section) or build a `.deb` file
+for your package manager.
 
 
 Building From Source
@@ -84,12 +82,6 @@ this indicates that this version is in fact much further than just
 
 
 ##### Debian / Ubuntu
-
-We are working on a Debian package! Please first check if it's already available to you: `sudo apt-get install telegram-purple`
-
-If the above works, then you should stop here: It is now installed.
-
-If the above fails: Don't worry, just continue building it by yourself. Next you need to install these dependencies:
 
         sudo apt-get install libgcrypt20-dev libpurple-dev libwebp-dev gettext build-essential
 
@@ -223,17 +215,16 @@ Building the Debian Package
 If you just need a `.deb`, simply do:
 
     sudo apt-get install debhelper
-    git checkout debian-master
-    git submodule update --recursive
     fakeroot ./debian/rules binary
 
-And you're done! The `.deb` is in the directory at which you started.
+And you're done!  The `telegram-purple_….deb` and `telegram-purple-dbgsym_….deb` files
+are in the parent directory.
 To show some info about it, try this:
 
     dpkg --info telegram-purple_*.deb
 
-`debian-master` always points to a version that was submitted to Debian. (Note that this doesn't exist yet, as we haven't released to Debian yet.)
-`debian-develop` is the candidate for the next submission.
+Please note that installing the debugging symbols (`dbgsym`)
+help a lot in troubleshooting, so please do install them, too!
 
 #### Debian Maintainers ####
 
@@ -244,15 +235,14 @@ Here's how you can generate a `.orig.tar.gz`:
 
     make dist
 
-Note that these are incompatible with the old `debian/genorigtar.sh`
-tarballs, and can't be made compatible easily. If you need the tarball
-from "back then", see the documentation there.
-
-This command requires the original tar to exist (and will fail otherwise,
-although the error message will be misleading) will build all further files,
+The following command requires the original tar to exist,
+and will build all further files,
 specifically `.debian.tar.xz`, `.dsc`, `.deb`, and `.changes`:
 
     dpkg-buildpackage
+
+If this fails with a cryptic error message,
+first make sure that the `….orig.tar` really is in place.
 
 For the upload, you should use `pbuilder` and similar to build the package
 in a more minimalistic environment. That covers the official part of the work-flow.
@@ -265,6 +255,8 @@ and `.dsc` files, do this:
     false # Move tar to parent directory, by hand
     dpkg-source -b .
 
+Note that we no longer actively try to get it into the Debian repository.
+
 
 Discussion / Help
 -----------------
@@ -273,15 +265,11 @@ Discussion / Help
 
 As we want to avoid OpenSSL, it has become necessary to replace the PEM file format. This means that if you use a custom pubkey (which you really REALLY shouldn't be doing), you have to adapt, sorry.
 
-We no longer ship `tg-server.pub` (old format), but instead `tg-server.tglpub` (new format). If you have a `.pub` and want to continue using telegram-purple, please use this (hopefully highly portable) tool: [pem2bignum](https://github.com/BenWiederhake/pem2bignum)
-
-You can also write your own conversion tool if you prefer. The format is really simple:
-
-1. `e`, the public exponent, encoded as big endian 32 bit fixed length (e.g. `0x00 01 00 01` for 65537)
-2. `n_len`, the length of `n` in bytes, encoded as big endian 32 bit fixed length (e.g. `0x00 00 01 00` for a 2048-bit = 256-byte key)
-3. `n_raw`, the raw modulus, encoded as big endian, using the previously indicated length (e.g. `0xC1 50 02 3E [248 bytes omitted] 21 79 25 1F` in the case of telegram's public RSA key.)
-
-If you are interested in developing a non-OpenSSL-licensed converter, look into [insane-triangle-banana](https://github.com/BenWiederhake/insane-triangle-banana).
+We no longer read the public key of the Telegram servers from a file.
+If you really need a different public key, and know what you're doing
+(e.g., connecting to some kind of test environment internal to Telegram,
+which also is a very bad idea), you need to find the call to `tgl_set_rsa_key_direct` in `telegram-purple.c`,
+and provide the key directly by yourself.
 
 
 FAQ
