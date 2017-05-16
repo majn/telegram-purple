@@ -232,6 +232,8 @@ static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_messa
 static void on_get_dialog_list_done (struct tgl_state *TLS, void *extra, int success, int size,
     tgl_peer_id_t peers[], tgl_message_id_t *last_msg_id[], int unread_count[]) {
   info ("Fetched dialogue list of size: %d", size);
+  
+  connection_data *conn = tls_get_data(TLS);
   if (tgp_error_if_false (TLS, success, "Fetching dialogue list failed", TLS->error)) {
     return;
   }
@@ -255,7 +257,12 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *extra, int suc
     }
   }
   
-  // now that the dialogue list is loaded, handle all pending chat joins
+  // handle pending roomlist request
+  if (conn->roomlist != NULL && purple_roomlist_get_in_progress (conn->roomlist)) {
+    tgp_chat_roomlist_populate (TLS);
+  }
+  
+  // handle all pending chat joins
   tls_get_data (TLS)->dialogues_ready = TRUE;
   tgp_chat_join_all_pending (TLS);
 }
