@@ -567,6 +567,9 @@ static void tgprpl_login (PurpleAccount * acct) {
     return;
   }
 
+  if (purple_account_get_bool (acct, TGP_KEY_USE_IPV6, FALSE))
+    tgl_enable_ipv6(TLS);
+
   if (! tgp_startswith (purple_account_get_username (acct), "+")) {
     // TRANSLATORS: Please fill in your own prefix!
     char *cause = g_strdup_printf (_("Unable to sign on as %s: phone number lacks country prefix."
@@ -874,6 +877,11 @@ static void tgprpl_init (PurplePlugin *plugin) {
 
   opt = purple_account_option_bool_new (_("Send notices of receipt when present"),
       TGP_KEY_SEND_READ_NOTIFICATIONS, TGP_DEFAULT_SEND_READ_NOTIFICATIONS);
+  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
+
+  // IPv6
+  opt = purple_account_option_bool_new (_("Use IPv6 for connecting"),
+      TGP_KEY_USE_IPV6, TGP_DEFAULT_USE_IPV6);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
 
   _telegram_protocol = plugin;

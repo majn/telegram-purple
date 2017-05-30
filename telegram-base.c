@@ -112,8 +112,14 @@ void write_files_schedule (struct tgl_state *TLS) {
   }
 }
 
+struct write_dc_extra {
+  int auth_file;
+  int flags;
+};
+
 void write_dc (struct tgl_dc *DC, void *extra) {
-  int auth_file_fd = *(int *)extra;
+  struct write_dc_extra *ex = extra;
+  int auth_file_fd = ex->auth_file;
   if (!DC) { 
     int x = 0;
     assert (write (auth_file_fd, &x, 4) == 4);
@@ -125,15 +131,16 @@ void write_dc (struct tgl_dc *DC, void *extra) {
 
   assert (DC->flags & TGLDCF_LOGGED_IN);
 
-  assert (write (auth_file_fd, &DC->options[0]->port, 4) == 4);
-  int l = strlen (DC->options[0]->ip);
+  assert (write (auth_file_fd, &DC->options[ex->flags]->port, 4) == 4);
+  int l = strlen (DC->options[ex->flags]->ip);
   assert (write (auth_file_fd, &l, 4) == 4);
-  assert (write (auth_file_fd, DC->options[0]->ip, l) == l);
+  assert (write (auth_file_fd, DC->options[ex->flags]->ip, l) == l);
   assert (write (auth_file_fd, &DC->auth_key_id, 8) == 8);
   assert (write (auth_file_fd, DC->auth_key, 256) == 256);
 }
 
 void write_auth_file (struct tgl_state *TLS) {
+  struct write_dc_extra extra;
   char *name = 0;
   name = g_strdup_printf("%s/%s", TLS->base_path, "auth");
   int auth_file_fd = open (name, O_CREAT | O_RDWR | O_BINARY, 0600);
@@ -144,7 +151,10 @@ void write_auth_file (struct tgl_state *TLS) {
   assert (write (auth_file_fd, &TLS->max_dc_num, 4) == 4);
   assert (write (auth_file_fd, &TLS->dc_working_num, 4) == 4);
 
-  tgl_dc_iterator_ex (TLS, write_dc, &auth_file_fd);
+  extra.auth_file = auth_file_fd;
+  extra.flags     = TLS->ipv6_enabled ? 1 : 0;
+
+  tgl_dc_iterator_ex (TLS, write_dc, &extra);
 
   assert (write (auth_file_fd, &TLS->our_id, 4) == 4);
   close (auth_file_fd);
@@ -166,7 +176,7 @@ void read_dc (struct tgl_state *TLS, int auth_file_fd, int id, unsigned ver) {
   assert (read (auth_file_fd, &auth_key_id, 8) == 8);
   assert (read (auth_file_fd, auth_key, 256) == 256);
 
-  bl_do_dc_option (TLS, 0, id, "DC", 2, ip, l, port);
+  bl_do_dc_option (TLS, TLS->ipv6_enabled ? 1: 0, id, "DC", 2, ip, l, port);
   bl_do_set_auth_key (TLS, id, auth_key);
   bl_do_dc_signed (TLS, id);
   debug ("read dc: id=%d", id);
@@ -190,11 +200,19 @@ void empty_auth_file (struct tgl_state *TLS) {
     bl_do_dc_option (TLS, 0, 3, "", 0, TG_SERVER_TEST_3, strlen (TG_SERVER_TEST_3), 443);
     bl_do_set_working_dc (TLS, TG_SERVER_TEST_DEFAULT);
   } else {
-    bl_do_dc_option (TLS, 0, 1, "", 0, TG_SERVER_1, strlen (TG_SERVER_1), 443);
-    bl_do_dc_option (TLS, 0, 2, "", 0, TG_SERVER_2, strlen (TG_SERVER_2), 443);
-    bl_do_dc_option (TLS, 0, 3, "", 0, TG_SERVER_3, strlen (TG_SERVER_3), 443);
-    bl_do_dc_option (TLS, 0, 4, "", 0, TG_SERVER_4, strlen (TG_SERVER_4), 443);
-    bl_do_dc_option (TLS, 0, 5, "", 0, TG_SERVER_5, strlen (TG_SERVER_5), 443);
+    if (TLS->ipv6_enabled) {
+      bl_do_dc_option (TLS, 1, 1, "", 0, TG_SERVER_IPV6_1, strlen (TG_SERVER_IPV6_1), 443);
+      bl_do_dc_option (TLS, 1, 2, "", 0, TG_SERVER_IPV6_2, strlen (TG_SERVER_IPV6_2), 443);
+      bl_do_dc_option (TLS, 1, 3, "", 0, TG_SERVER_IPV6_3, strlen (TG_SERVER_IPV6_3), 443);
+      bl_do_dc_option (TLS, 1, 4, "", 0, TG_SERVER_IPV6_4, strlen (TG_SERVER_IPV6_4), 443);
+      bl_do_dc_option (TLS, 1, 5, "", 0, TG_SERVER_IPV6_5, strlen (TG_SERVER_IPV6_5), 443);
+    } else {
+      bl_do_dc_option (TLS, 0, 1, "", 0, TG_SERVER_1, strlen (TG_SERVER_1), 443);
+      bl_do_dc_option (TLS, 0, 2, "", 0, TG_SERVER_2, strlen (TG_SERVER_2), 443);
+      bl_do_dc_option (TLS, 0, 3, "", 0, TG_SERVER_3, strlen (TG_SERVER_3), 443);
+      bl_do_dc_option (TLS, 0, 4, "", 0, TG_SERVER_4, strlen (TG_SERVER_4), 443);
+      bl_do_dc_option (TLS, 0, 5, "", 0, TG_SERVER_5, strlen (TG_SERVER_5), 443);
+    }
     bl_do_set_working_dc (TLS, TG_SERVER_DEFAULT);
   }
 }
