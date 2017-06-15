@@ -316,6 +316,16 @@ static char *tgp_msg_markdown_convert (const char *msg) {
   int len = (int) strlen (msg);
   char *html = g_new0(gchar, 3 * len);
 
+  // strip any known-breaking html tags
+  #define STRIP_BROKEN_HTML(PREFIX,SUFFIX) \
+    if (g_str_has_prefix (msg, (PREFIX)) && g_str_has_suffix (msg, (SUFFIX))) { \
+        msg += sizeof(PREFIX) - 1; \
+        len -= (sizeof(PREFIX) - 1) + (sizeof(SUFFIX) - 1); \
+    }
+  STRIP_BROKEN_HTML("<SPAN style=\"direction:rtl;text-align:right;\">","</SPAN>");
+  // more STRIP_BROKEN_HTML invocations here, if necessary
+  #undef STRIP_BROKEN_HTML
+
   int open = FALSE;
   int i, j;
   for (i = 0, j = 0; i < len; i ++) {
@@ -341,7 +351,6 @@ static char *tgp_msg_markdown_convert (const char *msg) {
 }
 
 int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
-
   // send all inline images
   GList *imgs = tgp_msg_imgs_parse (message);
   debug ("parsed %d images in messages", g_list_length (imgs));
