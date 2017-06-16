@@ -193,7 +193,16 @@ static char *format_document (const char *path, const char *filename, const char
   gchar *pth = g_markup_escape_text (path, -1);
   gchar *fle = g_markup_escape_text (filename, -1);
   gchar *mme = g_markup_escape_text (mime, -1);
-  gchar *fsize = g_format_size (size);
+  gchar *fsize =
+#if GLIB_CHECK_VERSION(2,30,0)
+    g_format_size (size)
+#elif GLIB_CHECK_VERSION(2,16,0)
+    /* Necessary as we compile on windows with glibc 2.24.2 */
+    g_format_size_for_display (size)
+#else /* even older */
+  #error "Too outdated glibc version!"
+#endif
+  ;
 
   format = g_strdup_printf ("[%s <a href=\"file:///%s\">%s</a> %s %s]", capt, pth, fle, mme, fsize);
 
