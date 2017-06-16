@@ -22,6 +22,18 @@ datarootdir=@datarootdir@
 localedir=@localedir@
 gettext_package=@GETTEXT_PACKAGE@
 
+PIDGIN_VERSION=2.10.12
+WIN32_GTK_BUNDLE_DIR=win32/gtk_2_0-2.16
+WIN32_GTK_BUNDLE_URL=http://ftp.acc.umu.se/pub/gnome/binaries/win32/gtk+/2.16/gtk+-bundle_2.16.6-20100912_win32.zip
+WIN32_GTK_BUNDLE_FILE=win32/gtk+-bundle_2.16.6-20100912_win32.zip
+WIN32_PIDGIN_SRC_URL=http://sourceforge.net/projects/pidgin/files/Pidgin/${PIDGIN_VERSION}/pidgin-${PIDGIN_VERSION}.tar.gz/download
+WIN32_PIDGIN_SRC_FILE=win32/pidgin-${PIDGIN_VERSION}.tar.gz
+WIN32_PIDGIN_SRC_DIR=win32/pidgin-${PIDGIN_VERSION}
+WIN32_PIDGIN_BIN_URL=http://sourceforge.net/projects/pidgin/files/Pidgin/${PIDGIN_VERSION}/pidgin-${PIDGIN_VERSION}-win32-bin.zip/download
+WIN32_PIDGIN_BIN_FILE=win32/pidgin-${PIDGIN_VERSION}-win32-bin.zip
+WIN32_PIDGIN_BIN_DIR=win32/pidgin-${PIDGIN_VERSION}-win32bin
+WIN32_DIRS=${WIN32_GTK_BUNDLE_DIR} ${WIN32_PIDGIN_SRC_DIR} ${WIN32_PIDGIN_BIN_DIR}
+
 CFLAGS_INTL=-DENABLE_NLS -DLOCALEDIR='"$(localedir)"'
 CFLAGS_WARN=-Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter
 CFLAGS_EXTRA=-I${srcdir} -I. -fno-strict-aliasing -fPIC -D_FORTIFY_SOURCE=2
@@ -178,6 +190,33 @@ local_install:
 local_uninstall:
 	rm -f $(DESTDIR)$(HOME)/.purple/plugins/$(PRPL_NAME)
 	rm -f $(DESTDIR)$(HOME)/.purple/telegram-purple/server.tglpub # TODO: Remove this in later versions
+
+
+### == Windows sources downloads == ###
+
+.PHONY: download_win32_sources
+download_win32_sources: | ${WIN32_DIRS}
+
+win32:
+	@mkdir -p $@
+
+${WIN32_GTK_BUNDLE_DIR}: | ${WIN32_GTK_BUNDLE_FILE}
+	unzip -q $| -d $@
+
+${WIN32_GTK_BUNDLE_FILE}: | win32
+	wget -q -O $@ ${WIN32_GTK_BUNDLE_URL}
+
+${WIN32_PIDGIN_SRC_DIR}: | ${WIN32_PIDGIN_SRC_FILE}
+	tar xf $| -C win32/
+
+${WIN32_PIDGIN_SRC_FILE}: | win32
+	wget -q -O $@ ${WIN32_PIDGIN_SRC_URL}
+
+${WIN32_PIDGIN_BIN_DIR}: | ${WIN32_PIDGIN_BIN_FILE}
+	unzip -q $| -d win32/
+
+${WIN32_PIDGIN_BIN_FILE}: | win32
+	wget -q -O $@ ${WIN32_PIDGIN_BIN_URL}
 
 
 ### == Handling and maintenance. Subject to rapid change, shouldn't be used in scripts. == ###
