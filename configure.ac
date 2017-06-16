@@ -75,8 +75,7 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdlib.h string.h sys
 AC_TYPE_SIZE_T
 
 # Checks for library functions.
-AC_FUNC_MALLOC
-AC_CHECK_FUNCS([memset strdup])
+AC_CHECK_FUNCS([malloc memset strdup])
 
 AC_SUBST(PURPLE_CFLAGS)
 AC_SUBST(PURPLE_CPPFLAGS)

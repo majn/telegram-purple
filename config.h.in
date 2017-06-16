@@ -24,8 +24,7 @@
 /* Define to 1 if you have `z' library (-lz) */
 #undef HAVE_LIBZ
 
-/* Define to 1 if your system has a GNU libc compatible `malloc' function, and
-   to 0 otherwise. */
+/* Define to 1 if you have the `malloc' function. */
 #undef HAVE_MALLOC
 
 /* Define to 1 if you have the <memory.h> header file. */
@@ -90,9 +89,6 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
-
-/* Define to rpl_malloc if the replacement function should be used. */
-#undef malloc
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
