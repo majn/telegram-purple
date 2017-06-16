@@ -22,8 +22,14 @@ datarootdir=@datarootdir@
 localedir=@localedir@
 gettext_package=@GETTEXT_PACKAGE@
 
-CFLAGS=@CFLAGS@ @PURPLE_CFLAGS@ @DEFS@ -DENABLE_NLS -DLOCALEDIR='"$(localedir)"' -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing -fPIC -D_FORTIFY_SOURCE=2
-LDFLAGS=@LDFLAGS@ @OPENSSL_LIBS@ @PURPLE_LIBS@ @LIBS@ -rdynamic -ggdb
+CFLAGS_INTL=-DENABLE_NLS -DLOCALEDIR='"$(localedir)"'
+CFLAGS_WARN=-Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter
+CFLAGS_EXTRA=-I${srcdir} -I. -fno-strict-aliasing -fPIC -D_FORTIFY_SOURCE=2
+CFLAGS=@CFLAGS@ @PURPLE_CFLAGS@ @DEFS@ ${CFLAGS_INTL} ${CFLAGS_WARN} ${CFLAGS_EXTRA}
+
+LDFLAGS_EXTRA=-rdynamic -ggdb
+LDFLAGS=@LDFLAGS@ @OPENSSL_LIBS@ @PURPLE_LIBS@ @LIBS@ ${LDFLAGS_EXTRA}
+
 DIR_PERM=0755
 FILE_PERM=0644
 
