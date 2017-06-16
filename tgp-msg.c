@@ -193,7 +193,18 @@ static char *tgp_msg_file_display (const char *path, const char *filename, const
   gchar *pth = g_markup_escape_text (path, -1);
   gchar *fle = g_markup_escape_text (filename, -1);
   gchar *mme = g_markup_escape_text (mime, -1);
-  gchar *fsize = g_format_size (size);
+  gchar *fsize =
+#if GLIB_CHECK_VERSION(2,30,0)
+    /* 'g_format_size' only exists since 2.30.0. */
+    g_format_size (size)
+#elif GLIB_CHECK_VERSION(2,16,0)
+    /* 'g_format_size_for_display' only exists since 2.16.0.
+     * We compile on Windows with glib 2.28.8. */
+    g_format_size_for_display (size)
+#else /* even older */
+  #error "Too outdated glib version!"
+#endif
+  ;
 
   format = g_strdup_printf ("[%s <a href=\"file:///%s\">%s</a> %s %s]", capt, pth, fle, mme, fsize);
 
