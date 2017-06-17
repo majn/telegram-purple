@@ -80,7 +80,7 @@ echo "===== 4: Configure for cross-compilation"
 export WIN32_GTK_DEV_DIR=`realpath win32/gtk_2_0-2.16`
 export WIN32_PIDGIN_DIR=`realpath win32/pidgin-2.12.0`
 ./configure -q --host x86_64-linux-gnu --target i686-w64-mingw32 \
-    --disable-libwebp --disable-translation \
+    --disable-libwebp \
     --includedir="/usr/share/mingw-w64/include" \
     --oldincludedir="/usr/share/mingw-w64/include" \
     --libdir="/usr/i686-w64-mingw32" \

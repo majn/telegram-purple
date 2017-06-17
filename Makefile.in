@@ -34,15 +34,15 @@ WIN32_PIDGIN_BIN_FILE=win32/pidgin-${PIDGIN_VERSION}-win32-bin.zip
 WIN32_PIDGIN_BIN_DIR=win32/pidgin-${PIDGIN_VERSION}-win32bin
 WIN32_DIRS=${WIN32_GTK_BUNDLE_DIR} ${WIN32_PIDGIN_SRC_DIR} ${WIN32_PIDGIN_BIN_DIR}
 # Not directly used here, but the usage will be injected via the CFLAGS configure var.
-WIN32_INC=-I${WIN32_PIDGIN_DIR}/pidgin \
-          -I${WIN32_PIDGIN_DIR}/pidgin/win32 \
-          -I${WIN32_PIDGIN_DIR}/libpurple \
-          -I${WIN32_PIDGIN_DIR}/libpurple/win32 \
-          -I${WIN32_GTK_DEV_DIR}/include \
-          -I${WIN32_GTK_DEV_DIR}/include/glib-2.0 \
-          -I${WIN32_GTK_DEV_DIR}/lib/glib-2.0/include \
-          -I${WIN32_GTK_DEV_DIR}/include/gtk-2.0 \
-          -I${WIN32_GTK_DEV_DIR}/lib/gtk-2.0/include
+WIN32_INC=-I${WIN32_PIDGIN_SRC_DIR}/pidgin \
+          -I${WIN32_PIDGIN_SRC_DIR}/pidgin/win32 \
+          -I${WIN32_PIDGIN_SRC_DIR}/libpurple \
+          -I${WIN32_PIDGIN_SRC_DIR}/libpurple/win32 \
+          -I${WIN32_GTK_BUNDLE_DIR}/include \
+          -I${WIN32_GTK_BUNDLE_DIR}/include/glib-2.0 \
+          -I${WIN32_GTK_BUNDLE_DIR}/lib/glib-2.0/include \
+          -I${WIN32_GTK_BUNDLE_DIR}/include/gtk-2.0 \
+          -I${WIN32_GTK_BUNDLE_DIR}/lib/gtk-2.0/include
 
 CFLAGS_INTL=-DENABLE_NLS -DLOCALEDIR='"$(localedir)"'
 CFLAGS_WARN=-Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter
