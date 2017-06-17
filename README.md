@@ -26,6 +26,9 @@ Eion Robb provides a binary for Windows users:
 1. Download and execute the setup from http://eion.robbmob.com/telegram/
 2. Restart Pidgin
 
+From 1.4.0 onwards, we also offer an installer from the [releases page](https://github.com/majn/telegram-purple/releases).
+This installer is built in a different way, and may still have some issues.
+
 #### Fedora (22, 23)
 
 The package is available in the Fedora 22 and 23 testing repositories:
@@ -256,6 +259,26 @@ and `.dsc` files, do this:
     dpkg-source -b .
 
 Note that we no longer actively try to get it into the Debian repository.
+
+Building the Windows Installer
+---------------------------
+
+You will need a Debian-ish operating system, and the following packages:
+
+```
+apt-get install build-essentials gcc-mingw-w64-i686 libgcrypt-mingw-w64-dev \
+        libgpg-error-mingw-w64-dev libz-mingw-w64-dev \
+        gettext libgcrypt20-dev libpurple-dev libwebp-dev
+```
+
+After that, run the build script:
+
+```
+./mkwindows.sh
+```
+
+This generates a file like `telegram-purple-1.3.1+gcb96ff77aa.exe`,
+which contains everything the Windows users need.
 
 
 Discussion / Help
