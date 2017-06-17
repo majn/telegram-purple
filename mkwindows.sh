@@ -6,21 +6,13 @@ set -e
 # === Ensure that all tools are available. ===
 
 # Commands
-for cmd in file make makensis i686-w64-mingw32-gcc realpath tar unzip ; do
+for cmd in file make makensis i686-w64-mingw32-gcc realpath sed tar unzip ; do
     if ! command -v $cmd >/dev/null 2>&1 ; then
         echo "No '$cmd' available.  Are you sure you know what you're doing?"
         exit 1
     fi
 done
 WIN_CC=i686-w64-mingw32-gcc
-
-# Folder-symlink
-LINK_TYPE=`LC_ALL=C file /usr/share/mingw-w64/include/webp`
-if [ "/usr/share/mingw-w64/include/webp: symbolic link to /usr/include/webp" != "${LINK_TYPE}" ] ; then
-    echo "Need a way to directly link into libwebp.  Please run this as root:"
-    echo "    ln -s /usr/include/webp /usr/share/mingw-w64/include/webp"
-    exit 1
-fi
 
 # Fail-early for some obvious dependencies:
 if [ ! -r /usr/i686-w64-mingw32/lib/zlib1.dll ] ; then
@@ -56,6 +48,64 @@ echo "===== 1: Prepare sources"
 make clean download_win32_sources
 
 
+# === Build libwebp ===
+
+# Sadly, we cannot use the pre-built binaries from Google,
+# as they are built with MVSC and that seems to be incompatible with MinGW.
+# Specifically, reading their libwebp.lib (requires special linker flags to
+# find that file) fails with the error "corrupt .drectve at end of def file".
+# GCC version 6.3.0 20170516 (GCC)
+echo "===== 1b: Cross-compile webp"
+WEBP_DIR="objs/webp"
+mkdir -p ${WEBP_DIR}
+WEBP_DIR_FULL="`realpath ${WEBP_DIR}`"
+WEBP_BUILD_DIR="objs/webp-build"
+# -a to (hopefully) preserve some timestamps
+cp -ar win32/libwebp-0.6.0 "${WEBP_BUILD_DIR}"
+cd "${WEBP_BUILD_DIR}"
+    # ./configure && make
+    #
+    # So libtool.m4 (line 10043 in configure) thinks that:
+    # - if the default configuration of the compiler contains ' -lc' (note the space), then do nothing
+    # - else, append ' -lc' to the config.
+    # I'm not sure why this is a good idea, but '-lc' is definitely wrong here.
+    sed -i -re 's%lt_cv_archive_cmds_need_lc=yes%lt_cv_archive_cmds_need_lc=no%' configure
+    #
+    # Disable linking against PNG, JPEG, TIFF, GIF, WIC,
+    # as those would either need cross-compilation, too, or some other magic.
+    ./configure -q --host x86_64-linux-gnu --target i686-w64-mingw32 \
+        --disable-dependency-tracking --prefix="${WEBP_DIR_FULL}/" \
+        --disable-static --enable-shared \
+        --enable-swap-16bit-csp --enable-experimental \
+        --disable-libwebpmux --disable-libwebpdemux \
+        --disable-libwebpdecoder --disable-libwebpextras \
+        --disable-png --disable-jpeg --disable-tiff --disable-gif --disable-wic \
+        CC=i686-w64-mingw32-gcc
+    # The warning
+    # "configure: WARNING: using cross tools not prefixed with host triplet"
+    # stems from the fact that 'mt' (magnetic tape control) is not available
+    # for i686-w64-mingw32, so the x86_64 version is used.  We can ignore that.
+    #
+    # Try to avoid too extreme autotools overhead:
+    touch Makefile.in
+    #
+    # Finally.
+    make --quiet -j4 install
+    #
+    # Fix bad naming by rebuilding that one file.  With blackjack and hookers!
+    rm -rf ../webp/lib
+    mkdir ../webp/lib
+    i686-w64-mingw32-gcc -shared -fPIC -DPIC  -Wl,--whole-archive src/dec/.libs/libwebpdecode.a src/dsp/.libs/libwebpdsp.a src/enc/.libs/libwebpencode.a src/utils/.libs/libwebputils.a -Wl,--no-whole-archive -lm -O2 -pthread -o ../webp/lib/libwebp.dll
+cd ../..
+if ! [ -r ${WEBP_DIR}/include/webp/decode.h -a -r ${WEBP_DIR}/lib/libwebp.a ] ; then
+    # I expect that cross-compiling webp is going to be very fragile,
+    # so print a nice error in case this happens.
+    echo "Cross-compilation apparently failed:"
+    echo "Some files in ${WEBP_DIR} are missing."
+    echo "Please submit a bugreport."
+fi
+
+
 # === Build auto-gen files ===
 
 # Create and backup all auto/ files
@@ -79,8 +129,8 @@ echo "===== 4: Configure for cross-compilation"
 # AND, they must be absolute.  Sigh.
 export WIN32_GTK_DEV_DIR=`realpath win32/gtk_2_0-2.16`
 export WIN32_PIDGIN_DIR=`realpath win32/pidgin-2.12.0`
+export WIN32_WEBP_DIR="${WEBP_DIR_FULL}"
 ./configure -q --host x86_64-linux-gnu --target i686-w64-mingw32 \
-    --disable-libwebp \
     --includedir="/usr/share/mingw-w64/include" \
     --oldincludedir="/usr/share/mingw-w64/include" \
     --libdir="/usr/i686-w64-mingw32" \
@@ -89,7 +139,7 @@ export WIN32_PIDGIN_DIR=`realpath win32/pidgin-2.12.0`
     CC=i686-w64-mingw32-gcc CFLAGS="-g -O2" \
     PURPLE_CFLAGS="\${WIN32_INC}" \
     PURPLE_LIBS="-lpurple -lglib-2.0" \
-    LDFLAGS="-Wl,--export-all-symbols -L${WIN32_GTK_DEV_DIR}/lib -L${WIN32_PIDGIN_DIR}-win32bin" \
+    LDFLAGS="-Wl,--export-all-symbols -L${WIN32_GTK_DEV_DIR}/lib -L${WIN32_PIDGIN_DIR}-win32bin -L${WIN32_WEBP_DIR}/lib" \
     LIBS="-lssp -lintl -lz -lgcrypt -lws2_32"
 cd tgl
 ./configure -q --host x86_64-linux-gnu --target i686-w64-mingw32 \
