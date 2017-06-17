@@ -48,6 +48,7 @@ WIN32_INC=-I${WIN32_PIDGIN_SRC_DIR}/pidgin \
           -I${WIN32_GTK_BUNDLE_DIR}/include/gtk-2.0 \
           -I${WIN32_GTK_BUNDLE_DIR}/lib/gtk-2.0/include \
           -Iobjs/webp/include
+WIN32_CONTRIB_FILES=contrib/libgcrypt-20.dll contrib/libgpg-error-0.dll contrib/libgcc_s_sjlj-1.dll
 
 CFLAGS_INTL=-DENABLE_NLS -DLOCALEDIR='"$(localedir)"'
 CFLAGS_WARN=-Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter
@@ -73,7 +74,7 @@ endif
 DEP=dep
 EXE=bin
 OBJ=objs
-DIR_LIST=${DEP} ${EXE} ${OBJ}
+DIR_LIST=${DEP} ${EXE} ${OBJ} contrib
 
 PLUGIN_OBJECTS=${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/telegram-base.o ${OBJ}/telegram-purple.o ${OBJ}/tgp-2prpl.o ${OBJ}/tgp-structs.o ${OBJ}/tgp-utils.o ${OBJ}/tgp-chat.o ${OBJ}/tgp-ft.o ${OBJ}/tgp-msg.o ${OBJ}/tgp-request.o ${OBJ}/tgp-blist.o ${OBJ}/tgp-info.o
 ALL_OBJS=${PLUGIN_OBJECTS}
@@ -239,6 +240,36 @@ ${WIN32_WEBP_DIR}: | ${WIN32_WEBP_FILE}
 ${WIN32_WEBP_FILE}: | win32
 	wget -q -O $@ ${WIN32_WEBP_URL}
 
+.PHONY: win-installer-deps
+win-installer-deps: telegram-purple.nsi $(PRPL_LIBNAME) $(LOCALE_MOS) ${WIN32_CONTRIB_FILES} objs/webp/lib/libwebp.dll
+	@[ "x${PRPL_NAME}" = "xlibtelegram.dll" ] || { \
+		echo "WARNING: Bad PRPL_NAME.  This probably won't work." ; \
+		echo "         (The DLL file cannot be just renamed!)" ; }
+	@cp objs/webp/lib/libwebp.dll contrib/libwebp.dll
+
+objs/webp/lib/libwebp.dll:
+	@echo "Please run './mkwindows.sh' instead of trying to make win-installer-deps manually."
+	@echo "Or if you know what you're doing: build webp by hand."
+	@false
+
+/usr/%:
+	@echo "You're missing the file $@"
+	@echo "Try installing the appropriate of the following packages:"
+	@echo "    libgcrypt-mingw-w64-dev"
+	@echo "    libgpg-error-mingw-w64-dev"
+	@echo "    gcc-mingw-w64-i686"
+	@echo "Also, please file a bug report *EVEN IF THIS SOLVES THE ISSUE*,"
+	@echo "as it should have been detected earlier."
+
+contrib/libgcrypt-20.dll: | /usr/i686-w64-mingw32/bin/libgcrypt-20.dll contrib
+	cp /usr/i686-w64-mingw32/bin/libgcrypt-20.dll "$@"
+
+contrib/libgpg-error-0.dll: | /usr/i686-w64-mingw32/bin/libgpg-error-0.dll contrib
+	cp /usr/i686-w64-mingw32/bin/libgpg-error-0.dll "$@"
+
+contrib/libgcc_s_sjlj-1.dll: | /usr/lib/gcc/i686-w64-mingw32/6.3-win32/libgcc_s_sjlj-1.dll contrib
+	cp /usr/lib/gcc/i686-w64-mingw32/6.3-win32/libgcc_s_sjlj-1.dll "$@"
+
 
 ### == Handling and maintenance. Subject to rapid change, shouldn't be used in scripts. == ###
 
@@ -250,7 +281,9 @@ strip: $(PRPL_LIBNAME)
 	$(STRIP) --strip-unneeded $(PRPL_LIBNAME)
 
 .PHONY: build-nsi
-build-nsi: telegram-purple.nsi.awk telegram-purple.nsi.awk-in
+build-nsi: telegram-purple.nsi
+
+telegram-purple.nsi: telegram-purple.nsi.awk telegram-purple.nsi.awk-in
 	awk -f telegram-purple.nsi.awk telegram-purple.nsi.awk-in > telegram-purple.nsi
 
 .PHONY: run

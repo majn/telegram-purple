@@ -169,4 +169,5 @@ clean: clean-here tgl/Makefile.mingw
 	
 .PHONY: installer
 installer: telegram-purple.nsi $(PRPL_LIBNAME) $(LOCALES)
-	$(MAKENSIS) -DPLUGIN_VERSION="$(PLUGIN_VERSION)" -DPRPL_NAME="$(PRPL_NAME)" -DWIN32_DEV_TOP="$(WIN32_DEV_TOP)" telegram-purple.nsi
+	@echo "BROKEN by the transition to automated builds.  Sorry."
+#	$(MAKENSIS) -DPLUGIN_VERSION="$(PLUGIN_VERSION)" -DPRPL_NAME="$(PRPL_NAME)" -DWIN32_DEV_TOP="$(WIN32_DEV_TOP)" telegram-purple.nsi
