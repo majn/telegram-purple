@@ -22,7 +22,7 @@ datarootdir=@datarootdir@
 localedir=@localedir@
 gettext_package=@GETTEXT_PACKAGE@
 
-PIDGIN_VERSION=2.10.12
+PIDGIN_VERSION=2.12.0
 WIN32_GTK_BUNDLE_DIR=win32/gtk_2_0-2.16
 WIN32_GTK_BUNDLE_URL=http://ftp.acc.umu.se/pub/gnome/binaries/win32/gtk+/2.16/gtk+-bundle_2.16.6-20100912_win32.zip
 WIN32_GTK_BUNDLE_FILE=win32/gtk+-bundle_2.16.6-20100912_win32.zip
