@@ -28,6 +28,7 @@ Eion Robb provides a binary for Windows users:
 
 From 1.4.0 onwards, we also offer an installer from the [releases page](https://github.com/majn/telegram-purple/releases).
 This installer is built in a different way, and may still have some issues.
+Note that you will need Pidgin 2.12.0 for this!
 
 #### Fedora (22, 23)
 
