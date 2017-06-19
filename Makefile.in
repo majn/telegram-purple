@@ -190,7 +190,9 @@ strip: $(PRPL_LIBNAME)
 	$(STRIP) --strip-unneeded $(PRPL_LIBNAME)
 
 .PHONY: build-nsi
-build-nsi: telegram-purple.nsi.awk telegram-purple.nsi.awk-in
+build-nsi: telegram-purple.nsi
+
+telegram-purple.nsi: telegram-purple.nsi.awk telegram-purple.nsi.awk-in po/LINGUAS
 	awk -f telegram-purple.nsi.awk telegram-purple.nsi.awk-in > telegram-purple.nsi
 
 .PHONY: run
