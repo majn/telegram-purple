@@ -285,7 +285,9 @@ void tgprpl_kick_from_chat (PurpleConnection *gc, int id, const char *who) {
   g_return_if_fail(P != NULL);
   
   tgl_peer_t *other_id = tgp_blist_lookup_peer_get (gc_get_tls (gc), who);
-  g_return_if_fail(P != NULL);
+  if (other_id == NULL) {
+    return;
+  }
   
   tgl_do_del_user_from_chat (gc_get_tls (gc), P->id, other_id->id, tgp_notify_on_error_gw, NULL);
 }
