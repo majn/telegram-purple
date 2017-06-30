@@ -828,7 +828,7 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
     return;
   }
 
-  if (!(M->flags | TGLMF_UNREAD) && M->date != 0 && M->date < tgp_msg_oldest_relevant_ts (TLS)) {
+  if (!(M->flags & TGLMF_UNREAD) && M->date != 0 && M->date < tgp_msg_oldest_relevant_ts (TLS)) {
     debug ("Message from %d on %d too old, ignored.", tgl_get_peer_id (M->from_id), M->date);
     return;
   }
