@@ -42,7 +42,7 @@ g_utf8_substring (const gchar *str,
 }
 #endif
 
-static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
+static char *tgp_msg_service_display (struct tgl_state *TLS, struct tgl_message *M) {
   g_return_val_if_fail(M && M->flags & TGLMF_SERVICE, NULL);
 
   connection_data *conn = TLS->ev_base;
@@ -441,6 +441,81 @@ static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from,
   return text;
 }
 
+static char *tgp_msg_reply_display (struct tgl_state *TLS, tgl_peer_t *replyee, struct tgl_message *reply, const char *message) {
+  
+  g_return_val_if_fail(reply, NULL);
+  g_return_val_if_fail(message, NULL);
+  
+  // the text quoted by the reply
+  char *quote = NULL;
+  
+  if (reply->flags & TGLMF_SERVICE) {
+    quote = tgp_msg_service_display (TLS, reply);
+    g_return_val_if_fail(quote == NULL, NULL);
+    
+  } else {
+    switch (reply->media.type) {
+      case tgl_message_media_none:
+        quote = purple_markup_escape_text (reply->message, strlen (reply->message));
+        tgp_replace (quote, '\n', ' ');
+        break;
+        
+      case tgl_message_media_photo:
+        quote = g_strdup(_("[photo]"));
+        break;
+        
+      case tgl_message_media_audio:
+        quote = g_strdup(_("[audio]"));
+        break;
+        
+      case tgl_message_media_video:
+        quote = g_strdup(_("[video]"));
+        break;
+        
+      case tgl_message_media_document:
+      case tgl_message_media_document_encr:
+        quote = g_strdup(_("[document]"));
+        break;
+        
+      case tgl_message_media_geo:
+      case tgl_message_media_venue:
+        quote = g_strdup(_("[position]")); // TODO: render
+        break;
+        
+      case tgl_message_media_contact:
+        quote = g_strdup(_("[contact]")); // TODO: render
+        break;
+        
+      case tgl_message_media_webpage:
+        quote = g_strdup(_("[webpage]"));
+        break;
+        
+      case tgl_message_media_unsupported:
+        quote = g_strdup(_("[unsupported media]"));
+        break;
+        
+      default:
+        g_warn_if_reached();
+        return NULL;
+        break;
+    }
+  }
+  
+  // the combined reply
+  char *value = NULL;
+  
+  if (replyee) {
+    const char *name = replyee->print_name;
+    value = g_strdup_printf (_("<b>> %s wrote:</b><br>> %s<br>%s"), name, quote, message);
+  } else {
+    value = g_strdup_printf (_("<b>> Unknown user wrote:</b><br>> %s<br>%s"), quote, message);
+  }
+  
+  g_free (quote);
+  
+  return value;
+}
+
 static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   struct tgl_message *M = C->msg;
   char *text = NULL;
@@ -489,7 +564,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
 
   // format the message text
   if (M->flags & TGLMF_SERVICE) {
-    text = format_service_msg (TLS, M);
+    text = tgp_msg_service_display (TLS, M);
     flags |= PURPLE_MESSAGE_SYSTEM;
     
   } else if (M->media.type != tgl_message_media_none) {
@@ -634,57 +709,54 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     }
     flags |= PURPLE_MESSAGE_RECV;
   }
-  
+
   if (tgl_get_peer_type (M->to_id) != TGL_PEER_ENCR_CHAT
       && tgl_get_peer_type (M->to_id) != TGL_PEER_CHANNEL
       && ! (M->flags & TGLMF_UNREAD)) {
+    // why?
     flags |= PURPLE_MESSAGE_DELAYED;
   }
   
+  // TODO: is that a problem?
   // some service messages (like removing/adding users from chats) might print the message 
   // text through other means and leave the text empty
   if (! str_not_empty (text)) {
     return;
   }
 
-  // Handle forwarded messages
-  if (tgl_get_peer_id (M->fwd_from_id) != TGL_PEER_UNKNOWN) {
-    const char *name;
+  // forwarded messages
+  if (tgl_get_peer_type (M->fwd_from_id) != TGL_PEER_UNKNOWN) {
+    debug("forwarded message: fwd_from_id=%d", tgl_get_peer_id(M->fwd_from_id));
+    
+    // may be NULL
     tgl_peer_t *FP = tgl_peer_get (TLS, M->fwd_from_id);
     
     char *tmp = text;
-    if (FP) {
-      name = FP->print_name;
-      text = g_strdup_printf (_("<b>Forwarded message from: %s</b><br>%s"), name, text);
-    } else {
-      // FIXME: sometimes users aren't part of the response when receiving a forwarded message
-      text = g_strdup_printf (_("<b>Forwarded message:</b><br>%s"), text);
-    }
+    text = tgp_msg_reply_display(TLS, FP, M, "");
     g_free (tmp);
+    
+    g_return_if_fail(text != NULL);
   }
-
-  /*
-  FIXME: message lookup doesn't work
-  // Handle replies
-  if (M->reply_id > 0) {
-    tgl_message_id_t id;
-    id.peer_type = TGL_PEER_USER;
-    id.id = M->reply_id;
-
-    const char *msg = "Unkown Message";
-    struct tgl_message *MM = tgl_message_get (TLS, &id);
-    if (MM) {
-      msg = MM->message;
-    }
-    const char *usr = "Unknown User";
-    if (MM) {
-      tgl_peer_t *P = tgl_peer_get (TLS, MM->from_id);
-      usr = P->print_name;
-    }
-    g_free (text);
-    text = g_strdup_printf (_("<b>%s: %s</b><br>%s"), msg, usr, M->message);
+  
+  // replys
+  if (M->reply_id) {
+    debug("message reply: reply_id=%d", M->reply_id);
+    
+    tgl_message_id_t msg_id = M->permanent_id;
+    msg_id.id = M->reply_id;
+    
+    struct tgl_message *reply = tgl_message_get (TLS, &msg_id);
+    g_return_if_fail(reply != NULL);
+  
+    tgl_peer_t *replyee = tgl_peer_get (TLS, reply->from_id);
+    g_return_if_fail(replyee != NULL);
+    
+    char *tmp = text;
+    text = tgp_msg_reply_display(TLS, replyee, reply, tmp);
+    g_free (tmp);
+    
+    g_return_if_fail(text != NULL);
   }
-  */
 
   // display the message to the user
   switch (tgl_get_peer_type (M->to_id)) {
