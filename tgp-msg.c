@@ -186,7 +186,7 @@ static char *format_geo_link_osm (double lat, double lon) {
   return link;
 }
 
-static char *format_document (const char *path, const char *filename, const char* caption, const char *mime, long long size) {
+static char *tgp_msg_file_display (const char *path, const char *filename, const char* caption, const char *mime, long long size) {
   gchar *format;
 
   gchar *capt = g_markup_escape_text (caption, -1);
@@ -501,14 +501,22 @@ static char *tgp_msg_reply_display (struct tgl_state *TLS, tgl_peer_t *replyee, 
     }
   }
   
-  // the combined reply
-  char *value = NULL;
   
+  // the combined reply
+
+  // insert line-break in non-adium clients to display
+  // all lines of the quotation on the same level
+  const char *br = "";
+#ifndef __ADIUM_
+  br = "<br>";
+#endif
+  
+  char *value = NULL;
   if (replyee) {
     const char *name = replyee->print_name;
-    value = g_strdup_printf (_("<b>> %s wrote:</b><br>> %s<br>%s"), name, quote, message);
+    value = g_strdup_printf (_("%s<b>> %s wrote:</b><br>> %s<br>%s"), br, name, quote, message);
   } else {
-    value = g_strdup_printf (_("<b>> Unknown user wrote:</b><br>> %s<br>%s"), quote, message);
+    value = g_strdup_printf (_("%s<b>> Unknown user wrote:</b><br>> %s<br>%s"), br, quote, message);
   }
   
   g_free (quote);
@@ -630,7 +638,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
               mime = M->media.document->mime_type;
             }
 
-            text = format_document (path, filename, caption, mime, M->media.document->size);
+            text = tgp_msg_file_display (path, filename, caption, mime, M->media.document->size);
           } else {
             if (! tgp_our_msg (TLS, M) && ! tls_get_ft_discard (TLS)) {
               tgprpl_recv_file (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, M->from_id), M);
@@ -653,7 +661,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
           if (! tgp_our_msg (TLS, M)) {
             if (C->data) {
               // Content of a file transfer
-              text = format_document (C->data, M->media.encr_document->caption, _("document"),
+              text = tgp_msg_file_display (C->data, M->media.encr_document->caption, _("document"),
                                            M->media.encr_document->mime_type, M->media.encr_document->size);
               
             } else {
