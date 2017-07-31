@@ -41,8 +41,10 @@ https://aur.archlinux.org/packages/telegram-purple/
 
 #### Debian
 
-At the time of writing, the package hasn't been accepted yet.
-Please first check if it's already available to you: `sudo apt-get install telegram-purple`
+At the time of writing, there is no ongoing effort to package
+Telegram-purple for Debian
+(https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=833793). 
+As soon as it will be packaged, you can install it via `sudo apt-get install telegram-purple`
 
 If this doesn't work because the package doesn't exist (yet), please build it from source.
 
