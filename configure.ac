@@ -62,6 +62,15 @@ AS_IF([test "x$enable_libwebp" != "xno"], [
     AC_CHECK_LIB([webp], [WebPDecodeRGBA], [], [AC_MSG_ERROR([no libwebp found, try --disable-libwebp, but stickers won't be displayed in the chat])])
   ])
 
+AC_MSG_CHECKING([for libpng])
+AC_ARG_ENABLE([libpng],
+  AS_HELP_STRING([--disable-libpng], [Disable libpng, stickers won't be converted]))
+
+AS_IF([test "x$enable_libpng" != "xno"], [
+    AC_MSG_RESULT([enabled])
+    AC_CHECK_LIB([png], [png_write_png], [], [AC_MSG_ERROR([no libpng found, try --disable-libpng])])
+  ])
+
 AC_ARG_ENABLE([icons],
   AS_HELP_STRING([--disable-icons], [Unsupported option. Use 'make noicon_install' instead.]))
 AS_IF([test "x$enable_icons" == "xno"], [
