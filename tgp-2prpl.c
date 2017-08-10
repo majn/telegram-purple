@@ -252,7 +252,7 @@ int p2tgl_imgstore_add_with_id_png (const unsigned char *raw_bitmap, unsigned wi
                 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
   
   // alloc row pointers
-  rows = (png_bytepp) malloc(height * sizeof(png_bytep));
+  rows = g_new0 (png_bytep, height);
   if (rows == NULL) {
     png_destroy_write_struct(&png_ptr, &info_ptr);
     warning ("error converting to png: malloc failed");
@@ -271,7 +271,7 @@ int p2tgl_imgstore_add_with_id_png (const unsigned char *raw_bitmap, unsigned wi
   png_write_png (png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
 
   // cleanup
-  free(rows);
+  g_free(rows);
   png_destroy_write_struct (&png_ptr, &info_ptr);
   
   return purple_imgstore_add_with_id (state.buffer, state.size, NULL);
