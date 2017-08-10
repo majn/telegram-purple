@@ -261,7 +261,7 @@ int p2tgl_imgstore_add_with_id_png (const unsigned char *raw_bitmap, unsigned wi
   
   unsigned i;
   for (i = 0; i < height; i++)
-    rows[i] = (png_bytep)(raw_bitmap + (height - i) * width * 4);
+    rows[i] = (png_bytep)(raw_bitmap + i * width * 4);
   
   // set own png write function
   png_set_write_fn (png_ptr, &state, p2tgl_png_mem_write, NULL);
