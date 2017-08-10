@@ -199,27 +199,13 @@ int p2tgl_imgstore_add_with_id_raw (const unsigned char *raw_bgra, unsigned widt
 
 #ifdef HAVE_LIBPNG
 
-struct mem_encode
-{
-  char *buffer;
-  size_t size;
-};
-
 static void p2tgl_png_mem_write (png_structp png_ptr, png_bytep data, png_size_t length) {
-  struct mem_encode *p = (struct mem_encode *) png_get_io_ptr(png_ptr);
-  size_t nsize = p->size + length;
-  
-  if (p->buffer)
-    p->buffer = g_realloc(p->buffer, nsize);
-  else
-    p->buffer = g_malloc(nsize);
-  
-  memcpy(p->buffer + p->size, data, length);
-  p->size = nsize;
+  GByteArray *png_mem = (GByteArray *) png_get_io_ptr(png_ptr);
+  g_byte_array_append (png_mem, data, length);
 }
 
 int p2tgl_imgstore_add_with_id_png (const unsigned char *raw_bitmap, unsigned width, unsigned height) {
-  struct mem_encode state = {NULL, 0};
+  GByteArray *png_mem = NULL;
   png_structp png_ptr = NULL;
   png_infop info_ptr = NULL;
   png_bytepp rows = NULL;
@@ -263,8 +249,9 @@ int p2tgl_imgstore_add_with_id_png (const unsigned char *raw_bitmap, unsigned wi
   for (i = 0; i < height; i++)
     rows[i] = (png_bytep)(raw_bitmap + i * width * 4);
   
-  // set own png write function
-  png_set_write_fn (png_ptr, &state, p2tgl_png_mem_write, NULL);
+  // create array and set own png write function
+  png_mem = g_byte_array_new();
+  png_set_write_fn (png_ptr, png_mem, p2tgl_png_mem_write, NULL);
   
   // write png
   png_set_rows (png_ptr, info_ptr, rows);
@@ -273,8 +260,10 @@ int p2tgl_imgstore_add_with_id_png (const unsigned char *raw_bitmap, unsigned wi
   // cleanup
   g_free(rows);
   png_destroy_write_struct (&png_ptr, &info_ptr);
+  unsigned png_size = png_mem->len;
+  gpointer png_data = g_byte_array_free (png_mem, FALSE);
   
-  return purple_imgstore_add_with_id (state.buffer, state.size, NULL);
+  return purple_imgstore_add_with_id (png_data, png_size, NULL);
 }
 
 #endif /* HAVE_LIBPNG */
