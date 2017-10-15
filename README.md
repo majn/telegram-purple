@@ -290,6 +290,15 @@ FAQ
 - I receive pictures in a chat, but they aren't showing up
   * A: Make sure that you don't have a plugin like "Conversation Colors" that strips HTML from messages and removes the pictures.
 
+- I receive RPC_CALL_FAIL_401: SESSION REVOKED
+
+  * A: This basically means your session has been terminated but the program
+    doesn't handle terminated sessions properly yet. You have to clean the
+    $PURPLEDIR/telegram-purple/$PHONENUMBER directory to fix this issue.
+
+    For Arch Linux users you can find this directory in
+    `/var/lib/bitlbee/purple/telegram-purple/`
+
 #### Group chat
 
 Telegram group chat for telegram-purple or libtgl related discussions or questions:
