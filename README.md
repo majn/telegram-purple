@@ -294,9 +294,9 @@ FAQ
 
   * A: This basically means your session has been terminated but the program
     doesn't handle terminated sessions properly yet. You have to clean the
-    $PURPLEDIR/telegram-purple/$PHONENUMBER directory to fix this issue.
+    ~/.purple/telegram-purple/$PHONENUMBER directory to fix this issue.
 
-    For Arch Linux users you can find this directory in
+    For Arch Linux users that use Bitlbee you can find this directory in
     `/var/lib/bitlbee/purple/telegram-purple/`
 
 #### Group chat
