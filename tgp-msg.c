@@ -234,8 +234,16 @@ static gboolean tgp_msg_send_schedule_cb (gpointer data) {
         && !(tgl_peer_get (conn->TLS, D->to)->channel.flags & TGLCHF_MEGAGROUP)) {
       flags |= TGLMF_POST_AS_CHANNEL;
     }
-
+    
+    // secret chats do not unescape html
+    if (tgl_get_peer_type (D->to) == TGL_PEER_ENCR_CHAT) {
+       gchar *unescaped = purple_unescape_html (D->msg);
+       g_free (D->msg);
+       D->msg = unescaped;
+    }
+    
     tgl_do_send_message (D->TLS, D->to, D->msg, (int)strlen (D->msg), flags, NULL, tgp_msg_send_done, D->msg);
+    
     tgp_msg_sending_free (D);
   }
   return FALSE;
