@@ -48,7 +48,7 @@ tgl_peer_id_t tgp_chat_get_id (PurpleChat *C) {
 }
 
 void tgp_chat_set_last_server_id (struct tgl_state *TLS, tgl_peer_id_t chat, int id) {
-  info ("setting channel message server_id=d%", id);
+  info ("setting channel message server_id=%d", id);
 
   char *key = g_strdup_printf ("last-server-id/%d", tgl_get_peer_id (chat));
   purple_account_set_int (tls_get_pa (TLS), key, id);
