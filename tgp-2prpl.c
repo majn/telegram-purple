@@ -24,6 +24,10 @@
 #include <webp/decode.h>
 #endif
 
+#ifdef HAVE_LIBPNG
+#include <png.h>
+#endif
+
 PurpleAccount *tls_get_pa (struct tgl_state *TLS) {
   return tls_get_data (TLS)->pa;
 }
@@ -193,6 +197,77 @@ int p2tgl_imgstore_add_with_id_raw (const unsigned char *raw_bgra, unsigned widt
   return purple_imgstore_add_with_id (tga, tga_len, NULL);
 }
 
+#ifdef HAVE_LIBPNG
+
+static void p2tgl_png_mem_write (png_structp png_ptr, png_bytep data, png_size_t length) {
+  GByteArray *png_mem = (GByteArray *) png_get_io_ptr(png_ptr);
+  g_byte_array_append (png_mem, data, length);
+}
+
+int p2tgl_imgstore_add_with_id_png (const unsigned char *raw_bitmap, unsigned width, unsigned height) {
+  GByteArray *png_mem = NULL;
+  png_structp png_ptr = NULL;
+  png_infop info_ptr = NULL;
+  png_bytepp rows = NULL;
+
+  // init png write struct
+  png_ptr = png_create_write_struct (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  if (png_ptr == NULL) {
+    warning ("error encoding png (create_write_struct failed)");
+    return 0;
+  }
+  
+  // init png info struct 
+  info_ptr = png_create_info_struct (png_ptr);
+  if (info_ptr == NULL) {
+    png_destroy_write_struct(&png_ptr, NULL);
+    warning ("error encoding png (create_info_struct failed)");
+    return 0;
+  }
+  
+  // Set up error handling.
+  if (setjmp(png_jmpbuf(png_ptr))) {
+    png_destroy_write_struct(&png_ptr, &info_ptr);
+    warning ("error while writing png");
+    return 0;
+  }
+  
+  // set img attributes
+  png_set_IHDR (png_ptr, info_ptr, width, height, 
+                8, PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE,
+                PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+  
+  // alloc row pointers
+  rows = g_new0 (png_bytep, height);
+  if (rows == NULL) {
+    png_destroy_write_struct(&png_ptr, &info_ptr);
+    warning ("error converting to png: malloc failed");
+    return 0;
+  }
+  
+  unsigned i;
+  for (i = 0; i < height; i++)
+    rows[i] = (png_bytep)(raw_bitmap + i * width * 4);
+  
+  // create array and set own png write function
+  png_mem = g_byte_array_new();
+  png_set_write_fn (png_ptr, png_mem, p2tgl_png_mem_write, NULL);
+  
+  // write png
+  png_set_rows (png_ptr, info_ptr, rows);
+  png_write_png (png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
+
+  // cleanup
+  g_free(rows);
+  png_destroy_write_struct (&png_ptr, &info_ptr);
+  unsigned png_size = png_mem->len;
+  gpointer png_data = g_byte_array_free (png_mem, FALSE);
+  
+  return purple_imgstore_add_with_id (png_data, png_size, NULL);
+}
+
+#endif /* HAVE_LIBPNG */
+
 #ifdef HAVE_LIBWEBP
 
 static const int MAX_W = 256;
@@ -235,7 +310,11 @@ int p2tgl_imgstore_add_with_id_webp (const char *filename) {
     }
     config.options.use_scaling = 1;
   }
+#ifdef HAVE_LIBPNG
+  config.output.colorspace = MODE_RGBA;
+#else
   config.output.colorspace = MODE_BGRA;
+#endif
   if (WebPDecode(data, len, &config) != VP8_STATUS_OK) {
     warning ("error decoding webp: %s", filename);
     g_free ((gchar *)data);
@@ -245,7 +324,11 @@ int p2tgl_imgstore_add_with_id_webp (const char *filename) {
   const uint8_t *decoded = config.output.u.RGBA.rgba;
 
   // convert and add
+#ifdef HAVE_LIBPNG
+  int imgStoreId = p2tgl_imgstore_add_with_id_png(decoded, config.options.scaled_width, config.options.scaled_height);
+#else
   int imgStoreId = p2tgl_imgstore_add_with_id_raw(decoded, config.options.scaled_width, config.options.scaled_height);
+#endif
   WebPFreeDecBuffer (&config.output);
   return imgStoreId;
 }

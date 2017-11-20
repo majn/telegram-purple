@@ -692,6 +692,7 @@ enable_gcrypt
 with_openssl
 with_zlib
 enable_libwebp
+enable_libpng
 enable_icons
 enable_translation
 '
@@ -1322,6 +1323,7 @@ Optional Features:
                           DISTRIBUTE BINARIES!
   --disable-libwebp       Disable libwebp, stickers won't be displayed in the
                           chat
+  --disable-libpng        Disable libpng, stickers won't be converted
   --disable-icons         Unsupported option. Use 'make noicon_install'
                           instead.
   --disable-translation   Disable gettext translation
@@ -4399,6 +4401,68 @@ _ACEOF
 
 else
   as_fn_error $? "no libwebp found, try --disable-libwebp, but stickers won't be displayed in the chat" "$LINENO" 5
+fi
+
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libpng" >&5
+$as_echo_n "checking for libpng... " >&6; }
+# Check whether --enable-libpng was given.
+if test "${enable_libpng+set}" = set; then :
+  enableval=$enable_libpng;
+fi
+
+
+if test "x$enable_libpng" != "xno"; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabled" >&5
+$as_echo "enabled" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for png_write_png in -lpng" >&5
+$as_echo_n "checking for png_write_png in -lpng... " >&6; }
+if ${ac_cv_lib_png_png_write_png+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpng  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char png_write_png ();
+int
+main ()
+{
+return png_write_png ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_png_png_write_png=yes
+else
+  ac_cv_lib_png_png_write_png=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_png_png_write_png" >&5
+$as_echo "$ac_cv_lib_png_png_write_png" >&6; }
+if test "x$ac_cv_lib_png_png_write_png" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBPNG 1
+_ACEOF
+
+  LIBS="-lpng $LIBS"
+
+else
+  as_fn_error $? "no libpng found, try --disable-libpng" "$LINENO" 5
 fi
 
 
