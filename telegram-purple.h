@@ -93,7 +93,7 @@
 #define TGP_DEFAULT_SEND_READ_NOTIFICATIONS TRUE
 #define TGP_KEY_SEND_READ_NOTIFICATIONS "send-read-notifications"
 
-#define TGP_DEFAULT_CHANNEL_MEMBERS 500
+#define TGP_DEFAULT_CHANNEL_MEMBERS 200
 #define TGP_KEY_CHANNEL_MEMBERS "channel-member-count"
 
 #define TGP_DEFAULT_USE_IPV6 FALSE
@@ -101,7 +101,7 @@
 
 #define TGP_KEY_RESET_AUTH "reset-authorization"
 
-#define TGP_CHANNEL_HISTORY_LIMIT 500
+#define TGP_CHANNEL_HISTORY_LIMIT 100
 
 extern const char *pk_path;
 extern const char *user_pk_filename;
