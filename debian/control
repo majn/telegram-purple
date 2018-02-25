@@ -13,7 +13,9 @@ Build-Depends:
  libpurple-dev,
  libwebp-dev,
  pkg-config,
- zlib1g-dev
+ zlib1g-dev,
+ libpng-dev,
+ git
 Standards-Version: 3.9.8
 Homepage: https://github.com/majn/telegram-purple
 Vcs-Git: https://github.com/majn/telegram-purple.git
