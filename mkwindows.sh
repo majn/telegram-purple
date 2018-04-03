@@ -163,7 +163,17 @@ make -j4 bin/libtelegram.dll \
     PRPL_NAME=libtelegram.dll \
     LDFLAGS_EXTRA=-ggdb
 
+# Package it up
+echo "===== 10: Create installer"
+VERSION=`grep -E 'PACKAGE_VERSION' config.h | sed -re 's/^.*"(.*)".*$/\1/'`
+COMMIT=`grep -E 'define' commit.h | sed -re 's/^.*"(.*)".*$/\1/'`
+make PRPL_NAME=libtelegram.dll win-installer-deps
+makensis -DPLUGIN_VERSION="${VERSION}+g${COMMIT}" -DPRPL_NAME=libtelegram.dll \
+    -DWIN32_DEV_TOP=contrib telegram-purple.nsi
+
 # There's no monster under your bed, I swear.
-echo "===== 10: Unspoof files"
+echo "===== 11: Unspoof files"
 # Stealth cleanup
 cd tgl && git checkout tl-parser/tl-parser.c tl-parser/tlc.c && cd ..
+
+echo "===== COMPLETE: All done.  Installer executable is in top directory."
