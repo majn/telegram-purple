@@ -24,6 +24,8 @@ set -e
 rm -f bin/tgl.tar bin/commit.h.tar bin/result.tar bin/result.tar.gz
 # Very old artifact
 rm -f bin/tgl_tl-parser.tar
+# Setup
+mkdir -p bin
 
 # -- Create parts
 # Abuse the "bin" dir for temporary files.
