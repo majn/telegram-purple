@@ -533,9 +533,9 @@ static char *tgp_msg_reply_display (struct tgl_state *TLS, tgl_peer_t *replyee, 
   char *value = NULL;
   if (replyee) {
     const char *name = replyee->print_name;
-    value = g_strdup_printf (_("%s<b>> %s wrote:</b><br>> %s<br>%s"), br, name, quote, message);
+    value = g_strdup_printf (_("%s<b>&gt; %s wrote:</b><br>&gt; %s<br>%s"), br, name, quote, message);
   } else {
-    value = g_strdup_printf (_("%s<b>> Unknown user wrote:</b><br>> %s<br>%s"), br, quote, message);
+    value = g_strdup_printf (_("%s<b>&gt; Unknown user wrote:</b><br>&gt; %s<br>%s"), br, quote, message);
   }
   
   g_free (quote);
