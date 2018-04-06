@@ -96,7 +96,7 @@ Section "MainSection" SEC01
 	SetOutPath "$PidginDir"
 	File "${WIN32_DEV_TOP}\libgpg-error-0.dll"
 	File "${WIN32_DEV_TOP}\libgcrypt-20.dll"
-	;File "${WIN32_DEV_TOP}\libwebp.dll"
+	或File "${WIN32_DEV_TOP}\libwebp-7.dll"
 	File "${WIN32_DEV_TOP}\libgcc_s_sjlj-1.dll"
 SectionEnd
 

@@ -21,7 +21,19 @@
 set -e
 
 
-# === Set up environment, ===
+# === What flavor? ===
+
+if [ -z "${USE_WEBP}" ]
+then
+    USE_WEBP=y
+    # Otherwise:
+    # USE_WEBP=n
+fi
+
+# Other flags go here, i.e., libpng
+
+
+# === Set up environment. ===
 
 # If you want to run parts by hand, these might be helpful.
 # These are *all* variables used anywhere in the script.
@@ -36,12 +48,19 @@ MINGW_TARGET="${MINGW_MACHINE}-w64-mingw32"
 MINGW_BASE=/usr/${MINGW_TARGET}
 MINGW_INCLUDEDIR=/usr/share/mingw-w64/include
 
+# WebP compilation
+WEBP_INSTALL_DIR="objs/webp-install/"
+mkdir -p ${WEBP_INSTALL_DIR}
+WEBP_INSTALL_DIR_FULL="$(realpath ${WEBP_INSTALL_DIR})"
+WEBP_BUILD_DIR="objs/webp-build/"
+
 # Win32 references
 # Sadly, the library paths must be resolved *now* already.
 # AND, they must be absolute.  Sigh.
 mkdir -p win32
 WIN32_GTK_DEV_DIR=`realpath win32/gtk+-bundle_2.24.10-20120208_win32`
 WIN32_PIDGIN_DIR=`realpath win32/pidgin-2.12.0`
+WIN32_WEBP_PRISTINE="win32/libwebp-0.6.1/"
 
 # Versioning information
 ./configure -q
@@ -95,8 +114,53 @@ make clean download_win32_sources
 
 # === Build libpng and libwebp ===
 
+# Sadly, we cannot use the pre-built binaries from Google,
+# as they are built with MVSC and that seems to be incompatible with MinGW.
+# Specifically, reading their libwebp.lib (requires special linker flags to
+# find that file) fails with the error "corrupt .drectve at end of def file".
+# GCC version 6.3.0 20170516 (GCC)
 echo "===== 02: Cross-compile libpng, libwebp"
-echo "    SKIPPED"
+if [ "n" = "${USE_WEBP}" ]
+then
+    echo "    Skipping webp"
+else
+    mkdir -p "${WEBP_INSTALL_DIR}"
+    # -a to (hopefully) preserve some timestamps
+    cp -ar "${WIN32_WEBP_PRISTINE}" "${WEBP_BUILD_DIR}"
+    cd "${WEBP_BUILD_DIR}"
+        # ./configure && make
+
+        # Disable linking against PNG, JPEG, TIFF, GIF, WIC,
+        # as those would either need cross-compilation, too, or some other magic.
+        ./configure -q --build ${HOST} --host ${MINGW_TARGET} --target ${MINGW_TARGET} \
+            --disable-dependency-tracking --prefix="${WEBP_INSTALL_DIR_FULL}/" \
+            --disable-static --enable-shared \
+            --enable-swap-16bit-csp --enable-experimental \
+            --disable-libwebpmux --disable-libwebpdemux \
+            --disable-libwebpdecoder --disable-libwebpextras \
+            --disable-png --disable-jpeg --disable-tiff --disable-gif --disable-wic
+        # The warning
+        # "configure: WARNING: using cross tools not prefixed with host triplet"
+        # stems from the fact that 'mt' (magnetic tape control) is not available
+        # for i686-w64-mingw32, so the x86_64 version is used.  We can ignore that.
+        #
+        # Try to avoid too extreme autotools overhead:
+        touch Makefile.in
+        #
+        # Finally.
+        make --quiet -j4 install
+    cd ../..
+    if ! [ -r ${WEBP_INSTALL_DIR}/include/webp/decode.h -a -r ${WEBP_INSTALL_DIR}/bin/libwebp-7.dll ] ; then
+        # I expect that cross-compiling webp is going to be very fragile,
+        # so print a nice error in case this happens.
+        echo "Cross-compilation apparently failed:"
+        echo "Some files in ${WEBP_INSTALL_DIR} are missing."
+        echo "Please submit a bugreport."
+        exit 1
+    fi
+    mkdir -p contrib
+    cp ${WEBP_INSTALL_DIR}/bin/libwebp-7.dll contrib
+fi
 
 
 # === Build auto-gen files ===
@@ -119,13 +183,19 @@ make -C tgl clean
 # Reconfigure
 echo "===== 05: Configure for cross-compilation"
 # Must first configure telegram-purple, otherwise it thinks tgl/Makefile is outdated.
+if [ "y" = "${USE_WEBP}" ]
+then
+    LDFLAGS_WEBP="-L${WEBP_INSTALL_DIR_FULL}/bin"
+    CONFFLAGS_WEBP="--enable-libwebp"
+fi
 ./configure -q --build ${HOST} --host ${MINGW_TARGET} --target ${MINGW_TARGET} \
-    --disable-libwebp --disable-libpng \
+    --disable-libpng --disable-libwebp \
     --with-zlib="${MINGW_BASE}" \
     PURPLE_CFLAGS="\${WIN32_INC}" \
     PURPLE_LIBS="-lpurple -lglib-2.0" \
-    LDFLAGS="-L${WIN32_GTK_DEV_DIR}/lib -L${WIN32_PIDGIN_DIR}-win32bin" \
-    LIBS="-lssp -lintl -lws2_32"
+    LDFLAGS="-L${WIN32_GTK_DEV_DIR}/lib -L${WIN32_PIDGIN_DIR}-win32bin ${LDFLAGS_WEBP}" \
+    LIBS="-lssp -lintl -lws2_32" \
+    ${CONFFLAGS_WEBP}
 cd tgl
 ./configure -q --build ${HOST} --host ${MINGW_TARGET} --target ${MINGW_TARGET} \
     --disable-openssl --disable-extf \

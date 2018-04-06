@@ -32,8 +32,12 @@ WIN32_PIDGIN_SRC_DIR=win32/pidgin-${PIDGIN_VERSION}
 WIN32_PIDGIN_BIN_URL=http://sourceforge.net/projects/pidgin/files/Pidgin/${PIDGIN_VERSION}/pidgin-${PIDGIN_VERSION}-win32-bin.zip/download
 WIN32_PIDGIN_BIN_FILE=win32/pidgin-${PIDGIN_VERSION}-win32-bin.zip
 WIN32_PIDGIN_BIN_DIR=win32/pidgin-${PIDGIN_VERSION}-win32bin
-WIN32_DIRS=${WIN32_GTK_BUNDLE_DIR} ${WIN32_PIDGIN_SRC_DIR} ${WIN32_PIDGIN_BIN_DIR}
+WIN32_WEBP_URL=https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-0.6.1.tar.gz
+WIN32_WEBP_FILE=win32/libwebp-0.6.1.tar.gz
+WIN32_WEBP_DIR=win32/libwebp-0.6.1
+WIN32_DIRS=${WIN32_GTK_BUNDLE_DIR} ${WIN32_PIDGIN_SRC_DIR} ${WIN32_PIDGIN_BIN_DIR} ${WIN32_WEBP_DIR}
 # Not directly used here, but the usage will be injected via the CFLAGS configure var.
+# Note on webp: locally cross-built!  That's why it violates the pattern.
 WIN32_INC=-I${WIN32_PIDGIN_SRC_DIR}/pidgin \
           -I${WIN32_PIDGIN_SRC_DIR}/pidgin/win32 \
           -I${WIN32_PIDGIN_SRC_DIR}/libpurple \
@@ -42,7 +46,8 @@ WIN32_INC=-I${WIN32_PIDGIN_SRC_DIR}/pidgin \
           -I${WIN32_GTK_BUNDLE_DIR}/include/glib-2.0 \
           -I${WIN32_GTK_BUNDLE_DIR}/lib/glib-2.0/include \
           -I${WIN32_GTK_BUNDLE_DIR}/include/gtk-2.0 \
-          -I${WIN32_GTK_BUNDLE_DIR}/lib/gtk-2.0/include
+          -I${WIN32_GTK_BUNDLE_DIR}/lib/gtk-2.0/include \
+          -Iobjs/webp-install/include
 WIN32_CONTRIB_FILES=contrib/libgcrypt-20.dll contrib/libgpg-error-0.dll contrib/libgcc_s_sjlj-1.dll
 
 CFLAGS_INTL=-DENABLE_NLS -DLOCALEDIR='"$(localedir)"'
@@ -229,6 +234,12 @@ ${WIN32_PIDGIN_BIN_DIR}: | ${WIN32_PIDGIN_BIN_FILE}
 ${WIN32_PIDGIN_BIN_FILE}: | win32
 	wget -q -O $@ ${WIN32_PIDGIN_BIN_URL}
 
+${WIN32_WEBP_DIR}: | ${WIN32_WEBP_FILE}
+	tar xf $| -C win32/
+
+${WIN32_WEBP_FILE}: | win32
+	wget -q -O $@ ${WIN32_WEBP_URL}
+
 .PHONY: win-installer-deps
 win-installer-deps: telegram-purple.nsi $(PRPL_LIBNAME) $(LOCALE_MOS) ${WIN32_CONTRIB_FILES}
 	@[ "x${PRPL_NAME}" = "xlibtelegram.dll" ] || { \
@@ -266,7 +277,12 @@ strip: $(PRPL_LIBNAME)
 .PHONY: build-nsi
 build-nsi: telegram-purple.nsi
 
-telegram-purple.nsi: telegram-purple.nsi.awk telegram-purple.nsi.awk-in po/LINGUAS
+config.h:
+	@echo "How did you manage to do that?"
+	@echo "You probably want to call ./config.status first."
+	@exit 1
+
+telegram-purple.nsi: telegram-purple.nsi.awk telegram-purple.nsi.awk-in po/LINGUAS config.h
 	awk -f telegram-purple.nsi.awk telegram-purple.nsi.awk-in > telegram-purple.nsi
 
 .PHONY: run

@@ -59,7 +59,14 @@ AC_ARG_ENABLE([libwebp],
 
 AS_IF([test "x$enable_libwebp" != "xno"], [
     AC_MSG_RESULT([enabled])
-    AC_CHECK_LIB([webp], [WebPDecodeRGBA], [], [AC_MSG_ERROR([no libwebp found, try --disable-libwebp, but stickers won't be displayed in the chat])])
+    AC_CHECK_LIB([webp], [WebPDecodeRGBA], [], [
+        AC_SEARCH_LIBS([WebPDecodeRGBA], [webp-7], [], [AC_MSG_ERROR([no libwebp found, try --disable-libwebp, but stickers won't be displayed in the chat])])
+        # If we get here, then it's one of the special-case scenarios.
+        # So we *do* want to set 'HAVE_LIBWEBP' to 1.  But because the primary check
+        # failed, it would now go to "undefined".
+        # Therefore, override it:
+        AC_DEFINE(HAVE_LIBWEBP, 1)
+    ])
   ])
 
 AC_MSG_CHECKING([for libpng])
