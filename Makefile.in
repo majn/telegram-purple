@@ -98,8 +98,8 @@ CRYPTO_FLAG=@CRYPTO_FLAG@
 
 
 ### == 'Magic' targets and infrastructure. == ###
-# Here be dragons! See https://github.com/majn/telegram-purple/issues/242
-# For the full list of requirements, goals, and rationale.
+# Here be dragons! See HACKING.BUILD.md
+# for the full list of requirements, goals, and rationale.
 
 .PHONY: create_dirs
 create_dirs: ${DIR_LIST}

@@ -15,6 +15,9 @@
 /* Define to 1 if you have the `gcrypt' library (-lgcrypt). */
 #undef HAVE_LIBGCRYPT
 
+/* Define to 1 if you have the `png' library (-lpng). */
+#undef HAVE_LIBPNG
+
 /* Define to 1 if you have the `rt' library (-lrt). */
 #undef HAVE_LIBRT
 
