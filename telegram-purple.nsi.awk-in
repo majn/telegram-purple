@@ -91,7 +91,7 @@ Section "MainSection" SEC01
 	after_copy:
 	
 	SetOutPath "$PidginDir\locale"
-	File /nonfatal "/oname=%\LC_MESSAGES\telegram-purple.mo" "po\%.mo"
+	File /nonfatal "/oname=變\LC_MESSAGES\telegram-purple.mo" "po\變.mo"
 	
 	SetOutPath "$PidginDir"
 	File "${WIN32_DEV_TOP}\libgpg-error-0.dll"
