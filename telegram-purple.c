@@ -880,7 +880,7 @@ static void tgprpl_init (PurplePlugin *plugin) {
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
 
   // IPv6
-  opt = purple_account_option_bool_new (_("Use IPv6 for connecting"),
+  opt = purple_account_option_bool_new (_("Use IPv6 for connecting (restart required)"),
       TGP_KEY_USE_IPV6, TGP_DEFAULT_USE_IPV6);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
 
