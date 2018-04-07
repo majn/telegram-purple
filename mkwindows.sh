@@ -29,6 +29,12 @@ then
     # Otherwise:
     # USE_WEBP=n
 fi
+if [ -z "${USE_VERSIONINFO}" ]
+then
+    USE_VERSIONINFO=y
+    # Otherwise:
+    # USE_VERSIONINFO=n
+fi
 
 # Other flags go here, i.e., libpng
 
@@ -224,6 +230,31 @@ make -C tgl -j4 LOCAL_LDFLAGS="-lz -lgcrypt -lssp -ggdb" libs/libtgl.a
 
 # Don't let your DREAMS stay DREAMS!
 echo "===== 09: Compile telegram-purple"
+# Optionally, prepare and add the "resources" file.
+VERSIONINFO_OBJECTS=""
+if [ "y" = "${USE_VERSIONINFO}" ]
+then
+    mkdir -p objs
+    cat <<EOFRC > objs/info.rc
+#include "../commit.h"
+1 VERSIONINFO
+FILEVERSION MAGIC_SED_VERSION
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "0409"
+    BEGIN
+      VALUE "FileDescription", "Telegram protocol plug-in for libpurple"
+      VALUE "FileVersion", GIT_COMMIT
+    END
+  END
+END
+EOFRC
+    COMMA_VERSION=`grep -E 'PACKAGE_VERSION' config.h | sed -re 's/^.*"(.*)".*$/\1/' -e 's/\./,/g'`
+    sed -i -re "s/MAGIC_SED_VERSION/${COMMA_VERSION}/" objs/info.rc
+    ${MINGW_TARGET}-windres objs/info.rc -O coff -o objs/info.res
+    VERSIONINFO_OBJECTS="objs/info.res"
+fi
 # CFLAGS: Remove LOCALEDIR definition.
 # PRPL_NAME: Assign Windows-specific name.
 #            (Baked into the file, so we can't just rename it.)
@@ -231,6 +262,7 @@ echo "===== 09: Compile telegram-purple"
 make -j4 bin/libtelegram.dll \
     CFLAGS_INTL=-DENABLE_NLS \
     PRPL_NAME=libtelegram.dll \
+    EXTRA_OBJECTS="${VERSIONINFO_OBJECTS}" \
     LDFLAGS_EXTRA=-ggdb
 
 # Package it up

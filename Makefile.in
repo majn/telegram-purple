@@ -77,7 +77,7 @@ OBJ=objs
 DIR_LIST=${DEP} ${EXE} ${OBJ} contrib
 
 PLUGIN_OBJECTS=${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/telegram-base.o ${OBJ}/telegram-purple.o ${OBJ}/tgp-2prpl.o ${OBJ}/tgp-structs.o ${OBJ}/tgp-utils.o ${OBJ}/tgp-chat.o ${OBJ}/tgp-ft.o ${OBJ}/tgp-msg.o ${OBJ}/tgp-request.o ${OBJ}/tgp-blist.o ${OBJ}/tgp-info.o
-ALL_OBJS=${PLUGIN_OBJECTS}
+ALL_OBJS=${PLUGIN_OBJECTS} ${EXTRA_OBJECTS}
 
 ifdef MSGFMT_PATH
 LOCALES=$(shell cat po/LINGUAS)
@@ -144,7 +144,7 @@ ${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c tgl/libs/libtgl.a | create_dirs
 po/%.mo: po/%.po
 	${MSGFMT_PATH} -cf -o $@ $< >/dev/null 2>&1
 
-${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} tgl/libs/libtgl.a | create_dirs
+${PRPL_LIBNAME}: ${ALL_OBJS} tgl/libs/libtgl.a | create_dirs
 	${CC} -shared -o $@ $^ ${LDFLAGS}
 
 
