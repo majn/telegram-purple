@@ -32,6 +32,13 @@ m4_include([m4_ax_pkg_config.m4])
 AC_PROG_CC
 AC_PROG_INSTALL
 
+AC_TRY_COMPILE([], [
+#ifdef NDEBUG
+#error "NDEBUG detected"
+#endif], [],
+[AC_MSG_ERROR([The macro NDEBUG cannot work.  All writes and reads are wrapped in asserts.
+For more info, see https://github.com/majn/telegram-purple/issues/429])])
+
 AC_CHECK_LIB([rt], [clock_gettime])
 
 AC_ARG_ENABLE([gcrypt],
@@ -40,8 +47,9 @@ AC_ARG_ENABLE([gcrypt],
 AS_IF([test "x$enable_gcrypt" != "xno"], [
   # Even though tgl/configure will do this too, still call our own libgcrypt check to assure that -lgcrypt is added to our makefile
   AC_CHECK_LIB([gcrypt], [gcry_mpi_snatch], [], [
-    echo "no libgcrypt >= 1.60 found. If its not available try --disable-gcrypt to link against openssl, but in that case YOU MAY NOT REDISTRIBUTE THE BINARY due to licensing restrictions."
-    exit -1
+    AC_MSG_ERROR([no libgcrypt >= 1.60 found.
+    If its not available try --disable-gcrypt to link against openssl, but in that case
+    YOU MAY NOT REDISTRIBUTE THE BINARY due to licensing restrictions.])
   ])
   AC_SUBST([CRYPTO_FLAG], [--disable-openssl])
 ], [

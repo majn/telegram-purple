@@ -3336,6 +3336,28 @@ test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 
 
 
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+#ifdef NDEBUG
+#error "NDEBUG detected"
+#endif
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+else
+  as_fn_error $? "The macro NDEBUG cannot work.  All writes and reads are wrapped in asserts.
+For more info, see https://github.com/majn/telegram-purple/issues/429" "$LINENO" 5
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clock_gettime in -lrt" >&5
 $as_echo_n "checking for clock_gettime in -lrt... " >&6; }
 if ${ac_cv_lib_rt_clock_gettime+:} false; then :
@@ -3436,8 +3458,9 @@ _ACEOF
 
 else
 
-    echo "no libgcrypt >= 1.60 found. If its not available try --disable-gcrypt to link against openssl, but in that case YOU MAY NOT REDISTRIBUTE THE BINARY due to licensing restrictions."
-    exit -1
+    as_fn_error $? "no libgcrypt >= 1.60 found.
+    If its not available try --disable-gcrypt to link against openssl, but in that case
+    YOU MAY NOT REDISTRIBUTE THE BINARY due to licensing restrictions." "$LINENO" 5
 
 fi
 
