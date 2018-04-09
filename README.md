@@ -21,13 +21,22 @@ If your platform is not supported or you want to contribute by testing or develo
 
 #### Windows
 
-Eion Robb provides a binary for Windows users:
+We provide an installer for Windows users:
 
-1. Download and execute the setup from http://eion.robbmob.com/telegram/
+1. Download and execute the corresponding setup from https://github.com/majn/telegram-purple/releases
 2. Restart Pidgin
+3. If not detected, restart pidgin again
 
-From 1.4.0 onwards, we also offer an installer from the [releases page](https://github.com/majn/telegram-purple/releases).
-This installer is built in a different way, and may still have some issues.
+This installer is built in a different way than previous builds
+(specifically, by Eion Robb http://eion.robbmob.com/telegram/),
+and may still have some issues.
+
+Specifically, the installer is compressed, so if you have an overzealous anti-virus installed,
+the installer may get flagged.
+
+The build is 32-bit, so connecting with Telegram for the first time may take a few moments.
+
+Alternatively, see "Building the Windows Installer" below.
 
 #### Fedora (22, 23)
 
