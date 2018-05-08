@@ -219,7 +219,7 @@ msgstr "Dërgo njoftime dëftese kur ka"
 #. IPv6
 #: ../telegram-purple.c:883
 msgid "Use IPv6 for connecting (restart required)"
-msgstr ""
+msgstr "Për lidhje përdor IPv6 (lyp rinisje)"
 
 #: ../telegram-purple.c:908
 msgid "Telegram Protocol Plugin."
@@ -313,45 +313,45 @@ msgstr "%s dërgoi një ngjitëse."
 
 #: ../tgp-msg.c:483
 msgid "[photo]"
-msgstr ""
+msgstr "[foto]"
 
 #: ../tgp-msg.c:487
 msgid "[audio]"
-msgstr ""
+msgstr "[audio]"
 
 #: ../tgp-msg.c:491
 msgid "[video]"
-msgstr ""
+msgstr "[video]"
 
 #: ../tgp-msg.c:496
 msgid "[document]"
-msgstr ""
+msgstr "[dokument]"
 
 #: ../tgp-msg.c:501
 msgid "[position]"
-msgstr ""
+msgstr "[pozicion]"
 
 #: ../tgp-msg.c:505
 msgid "[contact]"
-msgstr ""
+msgstr "[kontakt]"
 
 #: ../tgp-msg.c:509
 msgid "[webpage]"
-msgstr ""
+msgstr "[faqe web]"
 
 #: ../tgp-msg.c:513
 msgid "[unsupported media]"
-msgstr ""
+msgstr "[media që nuk mbulohet]"
 
 #: ../tgp-msg.c:536
 #, c-format
 msgid "%s<b>&gt; %s wrote:</b><br>&gt; %s<br>%s"
-msgstr ""
+msgstr "%s<b>&gt; %s shkroi:</b><br>&gt; %s<br>%s"
 
 #: ../tgp-msg.c:538
 #, c-format
 msgid "%s<b>&gt; Unknown user wrote:</b><br>&gt; %s<br>%s"
-msgstr ""
+msgstr "%s<b>&gt; Një përdorues i panjohur shkroi:</b><br>&gt; %s<br>%s"
 
 #: ../tgp-msg.c:586
 msgid "failed loading message"

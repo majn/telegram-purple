@@ -218,7 +218,7 @@ msgstr "V přítomnosti zasílat oznámení o doručení"
 #. IPv6
 #: ../telegram-purple.c:883
 msgid "Use IPv6 for connecting (restart required)"
-msgstr ""
+msgstr "Pro připojení použít IPv6 (vyžaduje restart)"
 
 #: ../telegram-purple.c:908
 msgid "Telegram Protocol Plugin."
@@ -316,31 +316,31 @@ msgstr "%s odeslal nálepku."
 
 #: ../tgp-msg.c:483
 msgid "[photo]"
-msgstr ""
+msgstr "[fotka]"
 
 #: ../tgp-msg.c:487
 msgid "[audio]"
-msgstr ""
+msgstr "[audio]"
 
 #: ../tgp-msg.c:491
 msgid "[video]"
-msgstr ""
+msgstr "[video]"
 
 #: ../tgp-msg.c:496
 msgid "[document]"
-msgstr ""
+msgstr "[dokument]"
 
 #: ../tgp-msg.c:501
 msgid "[position]"
-msgstr ""
+msgstr "[pozice]"
 
 #: ../tgp-msg.c:505
 msgid "[contact]"
-msgstr ""
+msgstr "[kontakt]"
 
 #: ../tgp-msg.c:509
 msgid "[webpage]"
-msgstr ""
+msgstr "[webová stránka]"
 
 #: ../tgp-msg.c:513
 msgid "[unsupported media]"
@@ -349,12 +349,12 @@ msgstr ""
 #: ../tgp-msg.c:536
 #, c-format
 msgid "%s<b>&gt; %s wrote:</b><br>&gt; %s<br>%s"
-msgstr ""
+msgstr "%s<b>&gt; %s napsal(a):</b><br>&gt; %s<br>%s"
 
 #: ../tgp-msg.c:538
 #, c-format
 msgid "%s<b>&gt; Unknown user wrote:</b><br>&gt; %s<br>%s"
-msgstr ""
+msgstr "%s<b>&gt; Neznámý uživatel napsal:</b><br>&gt; %s<br>%s"
 
 #: ../tgp-msg.c:586
 msgid "failed loading message"
