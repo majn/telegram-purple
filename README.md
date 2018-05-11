@@ -41,10 +41,7 @@ https://aur.archlinux.org/packages/telegram-purple/
 
 #### Debian
 
-At the time of writing, the package hasn't been accepted yet.
-Please first check if it's already available to you: `sudo apt-get install telegram-purple`
-
-If this doesn't work because the package doesn't exist (yet), please build it from source.
+You have to build it from source.  For more information, see the dev-1.4.0 branch.
 
 
 Building From Source
@@ -85,13 +82,7 @@ this indicates that this version is in fact much further than just
 
 ##### Debian / Ubuntu
 
-We are working on a Debian package! Please first check if it's already available to you: `sudo apt-get install telegram-purple`
-
-If the above works, then you should stop here: It is now installed.
-
-If the above fails: Don't worry, just continue building it by yourself. Next you need to install these dependencies:
-
-        sudo apt-get install libgcrypt20-dev libpurple-dev libwebp-dev gettext build-essential
+Please see the dev-1.4.0 branch.
 
 
 ##### OpenSUSE
@@ -220,50 +211,7 @@ Compiling with XCode is a little bit problematic, since it requires you to compi
 Building the Debian Package
 ---------------------------
 
-If you just need a `.deb`, simply do:
-
-    sudo apt-get install debhelper
-    git checkout debian-master
-    git submodule update --recursive
-    fakeroot ./debian/rules binary
-
-And you're done! The `.deb` is in the directory at which you started.
-To show some info about it, try this:
-
-    dpkg --info telegram-purple_*.deb
-
-`debian-master` always points to a version that was submitted to Debian. (Note that this doesn't exist yet, as we haven't released to Debian yet.)
-`debian-develop` is the candidate for the next submission.
-
-#### Debian Maintainers ####
-
-If you're a maintainer (if you're not sure, then you aren't a
-maintainer), you need to produce a lot more files than that.
-
-Here's how you can generate a `.orig.tar.gz`:
-
-    make dist
-
-Note that these are incompatible with the old `debian/genorigtar.sh`
-tarballs, and can't be made compatible easily. If you need the tarball
-from "back then", see the documentation there.
-
-This command requires the original tar to exist (and will fail otherwise,
-although the error message will be misleading) will build all further files,
-specifically `.debian.tar.xz`, `.dsc`, `.deb`, and `.changes`:
-
-    dpkg-buildpackage
-
-For the upload, you should use `pbuilder` and similar to build the package
-in a more minimalistic environment. That covers the official part of the work-flow.
-
-Of course, you can call small parts of the build process directly, in order to avoid
-overhead like rebuilding. For example, if you only need the `.debian.tar.xz`
-and `.dsc` files, do this:
-
-    make dist
-    false # Move tar to parent directory, by hand
-    dpkg-source -b .
+See https://github.com/majn/telegram-purple/tree/dev-1.4.0#building-the-debian-package
 
 
 Discussion / Help
