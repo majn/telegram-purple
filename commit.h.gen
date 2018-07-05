@@ -27,8 +27,11 @@ then
     echo "No git available. Assuming everything is up-to-date."
     exit 0
   else
-    echo >&2 "No git available. Can't reconstruct commit.h"
-    exit 1
+    echo >&2 "No git available. Commit info will be missing in build!"
+    echo "#ifndef GIT_COMMIT" > commit.h
+    echo "#  define GIT_COMMIT \"Unknown revision\"" >> commit.h
+    echo "#endif" >> commit.h
+    exit 0
   fi
 fi
 
