@@ -3,7 +3,7 @@ Telegram-Purple Unofficial (Beta)
 
 Telegram-purple is a Libpurple protocol plugin that adds support for the Telegram messenger.
 
-I keep getting many questions about this plugin in my E-mail, so I've created a [telegram group chat] (https://goo.gl/VudXys) for
+I keep getting many questions about this plugin in my E-mail, so I've created a [telegram group chat](https://goo.gl/VudXys) for
 telegram-purple related discussions or questions.
 
 Installation
@@ -310,6 +310,15 @@ FAQ
 
 - I receive pictures in a chat, but they aren't showing up
   * A: Make sure that you don't have a plugin like "Conversation Colors" that strips HTML from messages and removes the pictures.
+
+- I receive RPC_CALL_FAIL_401: SESSION REVOKED
+
+  * A: This basically means your session has been terminated but the program
+    doesn't handle terminated sessions properly yet. You have to clean the
+    ~/.purple/telegram-purple/$PHONENUMBER directory to fix this issue.
+
+    For Arch Linux users that use Bitlbee you can find this directory in
+    `/var/lib/bitlbee/purple/telegram-purple/`
 
 #### Group chat
 
