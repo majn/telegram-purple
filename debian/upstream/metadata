@@ -20,7 +20,7 @@ Repository: https://github.com/majn/telegram-purple/
 Repository-Browse: https://github.com/majn/telegram-purple/
 Security-Contact:
   Main developer: Matthias Jentch <mtthsjntsch AT gmail DOT com>
-  Debian packager: Ben Wiederhake <Ben DOT Wiederhake AT gmail DOT com>
+  Debian packager: Ben Wiederhake <Ben Wiederhake DOT GitHub AT gmx DOT de>
 #  Development channel (public): https://goo.gl/QHttTR
 ##    Intentionally left out as the link changes constantly.
 ##    https://github.com/majn/telegram-purple#group-chat

@@ -17,7 +17,7 @@ License-Grant:
 
 Files: debian/*
 Copyright: 2015 Hugues Morisset <morisset.hugues@gmail.com>
-           2015 Ben Wiederhake <BenWiederhake.GitHub@gmail.com>
+           2015 Ben Wiederhake <BenWiederhake.GitHub@gmx.de>
 License: GPL-2+
 
 Files: tgl/*

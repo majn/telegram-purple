@@ -1,7 +1,7 @@
 Source: telegram-purple
 Section: net
 Priority: optional
-Maintainer: Ben Wiederhake <Ben.Wiederhake@gmail.com>
+Maintainer: Ben Wiederhake <BenWiederhake.GitHub@gmx.de>
 Uploaders:
  Hugues Morisset <morisset.hugues@gmail.com>
 Build-Depends:

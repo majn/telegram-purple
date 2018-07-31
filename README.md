@@ -342,7 +342,7 @@ Telegram-Purple was written by:
 
     - Matthias Jentsch <mtthsjntsch@gmail.com>
     - Vitaly Valtman
-    - Ben Wiederhake <Ben.Wiederhake@gmail.com>
+    - Ben Wiederhake <BenWiederhake.GitHub@gmx.de>
     - Christopher Althaus <althaus.christopher@gmail.com>
 
 Acknowledgements
