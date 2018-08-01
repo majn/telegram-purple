@@ -1,19 +1,20 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
+# Translation (template) of telegram-purple
+# Copyright (C) 2014-2018 Matthias Jentsch, Ben Wiederhake, Christopher Althaus, Markus Endres
+# This file is distributed under the same license as the telegram-purple plugin.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 
-#, fuzzy
+# Translators:
+# Ben Wiederhake <BenWiederhake.GitHub@gmx.de>, 2017
+# Piotr Drąg <piotrdrag@gmail.com>, 2017
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-04-15 15:42+0200\n"
+"Project-Id-Version: telegram-purple\n"
+"POT-Creation-Date: 2018-08-01 23:11+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>, 2017\n"
 "Language-Team: Polish (Poland) (https://www.transifex.com/telegram-purple-developers/teams/53149/pl_PL/)\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: pl_PL\n"
 "Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
@@ -218,7 +219,7 @@ msgstr "Wysyłanie powiadomień o odebraniu podczas obecności"
 #. IPv6
 #: ../telegram-purple.c:883
 msgid "Use IPv6 for connecting (restart required)"
-msgstr ""
+msgstr "Używanie IPv6 do łączenia (wymaga ponownego uruchomienia)"
 
 #: ../telegram-purple.c:908
 msgid "Telegram Protocol Plugin."
@@ -320,45 +321,45 @@ msgstr "Użytkownik %s wysłał naklejkę."
 
 #: ../tgp-msg.c:483
 msgid "[photo]"
-msgstr ""
+msgstr "[zdjęcie]"
 
 #: ../tgp-msg.c:487
 msgid "[audio]"
-msgstr ""
+msgstr "[dźwięk]"
 
 #: ../tgp-msg.c:491
 msgid "[video]"
-msgstr ""
+msgstr "[film]"
 
 #: ../tgp-msg.c:496
 msgid "[document]"
-msgstr ""
+msgstr "[dokument]"
 
 #: ../tgp-msg.c:501
 msgid "[position]"
-msgstr ""
+msgstr "[pozycja]"
 
 #: ../tgp-msg.c:505
 msgid "[contact]"
-msgstr ""
+msgstr "[kontakt]"
 
 #: ../tgp-msg.c:509
 msgid "[webpage]"
-msgstr ""
+msgstr "[strona WWW]"
 
 #: ../tgp-msg.c:513
 msgid "[unsupported media]"
-msgstr ""
+msgstr "[nieobsługiwane multimedia]"
 
 #: ../tgp-msg.c:536
 #, c-format
 msgid "%s<b>&gt; %s wrote:</b><br>&gt; %s<br>%s"
-msgstr ""
+msgstr "%s<b>&gt; Użytkownik %s napisał:</b><br>&gt; %s<br>%s"
 
 #: ../tgp-msg.c:538
 #, c-format
 msgid "%s<b>&gt; Unknown user wrote:</b><br>&gt; %s<br>%s"
-msgstr ""
+msgstr "%s<b>&gt; Nieznany użytkownik napisał:</b><br>&gt; %s<br>%s"
 
 #: ../tgp-msg.c:586
 msgid "failed loading message"
@@ -382,7 +383,7 @@ msgstr "animacja"
 #. Content of a file transfer
 #: ../tgp-msg.c:642
 msgid "video"
-msgstr "wideo"
+msgstr "film"
 
 #: ../tgp-msg.c:873
 msgid "loading document or picture failed"

@@ -1,19 +1,20 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
+# Translation (template) of telegram-purple
+# Copyright (C) 2014-2018 Matthias Jentsch, Ben Wiederhake, Christopher Althaus, Markus Endres
+# This file is distributed under the same license as the telegram-purple plugin.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 
-#, fuzzy
+# Translators:
+# Ben Wiederhake <BenWiederhake.GitHub@gmx.de>, 2017
+# ЌИГЯФ <kntro@msn.com>, 2017
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-04-15 15:42+0200\n"
+"Project-Id-Version: telegram-purple\n"
+"POT-Creation-Date: 2018-08-01 23:11+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: ЌИГЯФ <kntro@msn.com>, 2017\n"
 "Language-Team: Spanish (Argentina) (https://www.transifex.com/telegram-purple-developers/teams/53149/es_AR/)\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: es_AR\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -219,7 +220,7 @@ msgstr "Enviar acuses de recibo al estar presente"
 #. IPv6
 #: ../telegram-purple.c:883
 msgid "Use IPv6 for connecting (restart required)"
-msgstr ""
+msgstr "Usar IPv6 para conectarse (requiere reinicio)"
 
 #: ../telegram-purple.c:908
 msgid "Telegram Protocol Plugin."
@@ -238,12 +239,12 @@ msgstr "%2$s cambió el título a %1$s."
 #: ../tgp-msg.c:64
 #, c-format
 msgid "%s changed photo."
-msgstr "%s cambió la foto."
+msgstr "%s cambió la imagen."
 
 #: ../tgp-msg.c:67
 #, c-format
 msgid "%s deleted photo."
-msgstr "%s eliminó la foto."
+msgstr "%s eliminó la imagen."
 
 #: ../tgp-msg.c:75
 #, c-format
@@ -291,7 +292,7 @@ msgstr[1] "%2$s tomó una captura de pantalla de %1$d mensajes."
 #: ../tgp-msg.c:162
 #, c-format
 msgid "Channel %1$s created"
-msgstr "Canal %1$s creado"
+msgstr "Se creó el canal %1$s"
 
 #. FIXME: check if this makes sense
 #: ../tgp-msg.c:165 ../tgp-chat.c:124 ../tgp-chat.c:665
@@ -313,45 +314,45 @@ msgstr "%s envió un sticker."
 
 #: ../tgp-msg.c:483
 msgid "[photo]"
-msgstr ""
+msgstr "[imagen]"
 
 #: ../tgp-msg.c:487
 msgid "[audio]"
-msgstr ""
+msgstr "[audio]"
 
 #: ../tgp-msg.c:491
 msgid "[video]"
-msgstr ""
+msgstr "[video]"
 
 #: ../tgp-msg.c:496
 msgid "[document]"
-msgstr ""
+msgstr "[documento]"
 
 #: ../tgp-msg.c:501
 msgid "[position]"
-msgstr ""
+msgstr "[ubicación]"
 
 #: ../tgp-msg.c:505
 msgid "[contact]"
-msgstr ""
+msgstr "[contacto]"
 
 #: ../tgp-msg.c:509
 msgid "[webpage]"
-msgstr ""
+msgstr "[página web]"
 
 #: ../tgp-msg.c:513
 msgid "[unsupported media]"
-msgstr ""
+msgstr "[medio no compatible]"
 
 #: ../tgp-msg.c:536
 #, c-format
 msgid "%s<b>&gt; %s wrote:</b><br>&gt; %s<br>%s"
-msgstr ""
+msgstr "%s<b>&gt;%sescribió:</b><br>&gt;%s<br>%s"
 
 #: ../tgp-msg.c:538
 #, c-format
 msgid "%s<b>&gt; Unknown user wrote:</b><br>&gt; %s<br>%s"
-msgstr ""
+msgstr "%s<b>&gt; Un usuario desconocido escribió:</b><br>&gt;%s<br>%s"
 
 #: ../tgp-msg.c:586
 msgid "failed loading message"
