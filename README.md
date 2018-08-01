@@ -308,6 +308,21 @@ and provide the key directly by yourself.
 FAQ
 ---
 
+- How do I set telegram-purple up with Bitlbee?
+  * A (easy): Use bitlbee-telegram instead.  It is made for bitlbee.
+  * A (hard): Mainly just followed the wiki steps:
+    - First install bitlbee with purple enabled.  In Arch, use the bitlbee-libpurple aur package.
+    - Started the Bitlbee daemon, which runs with the bitlbee user:
+
+          # systemctl start bitlbee.service
+
+    - With any IRC client (e.g., irssi), connect to localhost with `/connect localhost`, then create the account with the commands:
+
+          account add telegram <phone_number_with_region_prefix>
+          account telegram on
+
+    This was adapted from https://github.com/majn/telegram-purple/issues/461 . Thanks!
+
 - I receive pictures in a chat, but they aren't showing up
   * A: Make sure that you don't have a plugin like "Conversation Colors" that strips HTML from messages and removes the pictures.
 
