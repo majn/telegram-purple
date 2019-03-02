@@ -1,0 +1,44 @@
+Source: telegram-purple
+Section: net
+Priority: optional
+Maintainer: Ben Wiederhake <BenWiederhake.GitHub@gmx.de>
+Uploaders:
+ Hugues Morisset <morisset.hugues@gmail.com>
+Build-Depends:
+ autotools-dev,
+ debhelper (>= 9),
+ dh-autoreconf,
+ libgcrypt20-dev,
+ libglib2.0-dev,
+ libpurple-dev,
+ libwebp-dev,
+ pkg-config,
+ zlib1g-dev,
+ libpng-dev,
+ git
+Standards-Version: 3.9.8
+Homepage: https://github.com/majn/telegram-purple
+Vcs-Git: https://github.com/majn/telegram-purple.git
+Vcs-Browser: https://github.com/majn/telegram-purple
+
+Package: telegram-purple
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends}
+Suggests:
+ pidgin | finch
+Description: Purple plugin to support Telegram
+ Plugin for purple which lets you use and manage your Telegram account
+ like any other account in purple. Some features like self-destruct
+ messages are currently in development.
+X-Comment: Traditionally, this plugin should be named "telegram-pidgin".
+ However, this plugin is also designed to work with at least Adium,
+ Finch, and hopefully all other libpurple-frontends, so this name would
+ be highly misleading. Furthermore, the plugin refers to itself as
+ "telegram-purple", and changing this (e.g. via a patch) would be highly
+ non-trivial and fragile. Finally, several users know this plugin under
+ the name telegram-purple only, so naming the Debian package differently
+ would be another source of confusion. Thus we intentionally break with
+ this tradition, and re-used the name telegram-purple from the original
+ project.

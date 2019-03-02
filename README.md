@@ -21,10 +21,22 @@ If your platform is not supported or you want to contribute by testing or develo
 
 #### Windows
 
-Eion Robb provides a binary for Windows users:
+We provide an installer for Windows users:
 
-1. Download and execute the setup from http://eion.robbmob.com/telegram/
+1. Download and execute the corresponding setup from https://github.com/majn/telegram-purple/releases
 2. Restart Pidgin
+3. If not detected, restart pidgin again
+
+This installer is built in a different way than previous builds
+(specifically, by Eion Robb http://eion.robbmob.com/telegram/),
+and may still have some issues.
+
+Specifically, the installer is compressed, so if you have an overzealous anti-virus installed,
+the installer may get flagged.
+
+The build is 32-bit, so connecting with Telegram for the first time may take a few moments.
+
+Alternatively, see "Building the Windows Installer" below.
 
 #### Fedora (22, 23)
 
@@ -41,7 +53,8 @@ https://aur.archlinux.org/packages/telegram-purple/
 
 #### Debian
 
-You have to build it from source.  For more information, see the dev-1.4.0 branch.
+You can build it from source (see following section) or build a `.deb` file
+for your package manager.
 
 
 Building From Source
@@ -82,7 +95,7 @@ this indicates that this version is in fact much further than just
 
 ##### Debian / Ubuntu
 
-Please see the dev-1.4.0 branch.
+        sudo apt-get install libgcrypt20-dev libpurple-dev libwebp-dev gettext build-essential
 
 
 ##### OpenSUSE
@@ -176,6 +189,8 @@ Since 1.3.0 it is possible to write messages in monospaced fonts using the markd
 Building the Adium Plugin
 -------------------------
 
+(This part may be a little outdated.)
+
 Compiling with XCode is a little bit problematic, since it requires you to compile Adium first to get the necessary framework files. My advice is to just use the [prebuilt bundle](https://github.com/majn/telegram-purple/releases), but if you really want to do it, follow these steps:
 
 1. Get the Adium source, compile it with XCode and copy the build output into telegram-adium/Frameworks/Adium. It should contain at least Adium.framework, AdiumLibpurple.framework and AIUitilies.framework
@@ -211,7 +226,71 @@ Compiling with XCode is a little bit problematic, since it requires you to compi
 Building the Debian Package
 ---------------------------
 
-See https://github.com/majn/telegram-purple/tree/dev-1.4.0#building-the-debian-package
+If you just need a `.deb`, simply do:
+
+    sudo apt-get install debhelper
+    fakeroot ./debian/rules binary
+
+And you're done!  The `telegram-purple_….deb` and `telegram-purple-dbgsym_….deb` files
+are in the parent directory.
+To show some info about it, try this:
+
+    dpkg --info telegram-purple_*.deb
+
+Please note that installing the debugging symbols (`dbgsym`)
+help a lot in troubleshooting, so please do install them, too!
+
+#### Debian Maintainers ####
+
+If you're a maintainer (if you're not sure, then you aren't a
+maintainer), you need to produce a lot more files than that.
+
+Here's how you can generate a `.orig.tar.gz`:
+
+    make dist
+
+The following command requires the original tar to exist,
+and will build all further files,
+specifically `.debian.tar.xz`, `.dsc`, `.deb`, and `.changes`:
+
+    dpkg-buildpackage
+
+If this fails with a cryptic error message,
+first make sure that the `….orig.tar` really is in place.
+
+For the upload, you should use `pbuilder` and similar to build the package
+in a more minimalistic environment. That covers the official part of the work-flow.
+
+Of course, you can call small parts of the build process directly, in order to avoid
+overhead like rebuilding. For example, if you only need the `.debian.tar.xz`
+and `.dsc` files, do this:
+
+    make dist
+    false # Move tar to parent directory, by hand
+    dpkg-source -b .
+
+Note that we no longer actively try to get it into the Debian repository.
+
+Building the Windows Installer
+---------------------------
+
+You will need a Debian-ish operating system, and the following packages:
+
+```
+apt-get install build-essentials gcc-mingw-w64-i686 libgcrypt-mingw-w64-dev \
+        libgpg-error-mingw-w64-dev libz-mingw-w64-dev \
+        gettext libgcrypt20-dev libpurple-dev libwebp-dev \
+        nsis
+```
+
+After that, run the build script:
+
+```
+./mkwindows.sh
+```
+
+This generates a file like `telegram-purple-1.3.1+gcb96ff77aa.exe`,
+which contains everything the Windows users need.
 
 
 Discussion / Help
@@ -221,19 +300,30 @@ Discussion / Help
 
 As we want to avoid OpenSSL, it has become necessary to replace the PEM file format. This means that if you use a custom pubkey (which you really REALLY shouldn't be doing), you have to adapt, sorry.
 
-We no longer ship `tg-server.pub` (old format), but instead `tg-server.tglpub` (new format). If you have a `.pub` and want to continue using telegram-purple, please use this (hopefully highly portable) tool: [pem2bignum](https://github.com/BenWiederhake/pem2bignum)
-
-You can also write your own conversion tool if you prefer. The format is really simple:
-
-1. `e`, the public exponent, encoded as big endian 32 bit fixed length (e.g. `0x00 01 00 01` for 65537)
-2. `n_len`, the length of `n` in bytes, encoded as big endian 32 bit fixed length (e.g. `0x00 00 01 00` for a 2048-bit = 256-byte key)
-3. `n_raw`, the raw modulus, encoded as big endian, using the previously indicated length (e.g. `0xC1 50 02 3E [248 bytes omitted] 21 79 25 1F` in the case of telegram's public RSA key.)
-
-If you are interested in developing a non-OpenSSL-licensed converter, look into [insane-triangle-banana](https://github.com/BenWiederhake/insane-triangle-banana).
+We no longer read the public key of the Telegram servers from a file.
+If you really need a different public key, and know what you're doing
+(e.g., connecting to some kind of test environment internal to Telegram,
+which also is a very bad idea), you need to find the call to `tgl_set_rsa_key_direct` in `telegram-purple.c`,
+and provide the key directly by yourself.
 
 
 FAQ
 ---
+
+- How do I set telegram-purple up with Bitlbee?
+  * A (easy): Use bitlbee-telegram instead.  It is made for bitlbee.
+  * A (hard): Mainly just followed the wiki steps:
+    - First install bitlbee with purple enabled.  In Arch, use the bitlbee-libpurple aur package.
+    - Started the Bitlbee daemon, which runs with the bitlbee user:
+
+          # systemctl start bitlbee.service
+
+    - With any IRC client (e.g., irssi), connect to localhost with `/connect localhost`, then create the account with the commands:
+
+          account add telegram <phone_number_with_region_prefix>
+          account telegram on
+
+    This was adapted from https://github.com/majn/telegram-purple/issues/461 . Thanks!
 
 - I receive pictures in a chat, but they aren't showing up
   * A: Make sure that you don't have a plugin like "Conversation Colors" that strips HTML from messages and removes the pictures.
@@ -278,7 +368,7 @@ Telegram-Purple was written by:
 
     - Matthias Jentsch <mtthsjntsch@gmail.com>
     - Vitaly Valtman
-    - Ben Wiederhake <Ben.Wiederhake@gmail.com>
+    - Ben Wiederhake <BenWiederhake.GitHub@gmx.de>
     - Christopher Althaus <althaus.christopher@gmail.com>
 
 Acknowledgements

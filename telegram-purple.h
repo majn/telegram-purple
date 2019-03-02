@@ -67,6 +67,9 @@
 #define TGP_MAX_MSG_SIZE 4096
 #define TGP_DEFAULT_MAX_MSG_SPLIT_COUNT 4
 
+#define TGP_DEFAULT_FT_HANDLING "ask"
+#define TGP_KEY_FT_HANDLING "media-handling-behavior"
+
 #define TGP_DEFAULT_MEDIA_SIZE 32768
 #define TGP_KEY_MEDIA_SIZE "media-size-threshold"
 
@@ -90,12 +93,15 @@
 #define TGP_DEFAULT_SEND_READ_NOTIFICATIONS TRUE
 #define TGP_KEY_SEND_READ_NOTIFICATIONS "send-read-notifications"
 
-#define TGP_DEFAULT_CHANNEL_MEMBERS 500
+#define TGP_DEFAULT_CHANNEL_MEMBERS 200
 #define TGP_KEY_CHANNEL_MEMBERS "channel-member-count"
+
+#define TGP_DEFAULT_USE_IPV6 FALSE
+#define TGP_KEY_USE_IPV6 "ipv6"
 
 #define TGP_KEY_RESET_AUTH "reset-authorization"
 
-#define TGP_CHANNEL_HISTORY_LIMIT 500
+#define TGP_CHANNEL_HISTORY_LIMIT 100
 
 extern const char *pk_path;
 extern const char *user_pk_filename;

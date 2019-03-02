@@ -32,7 +32,6 @@ extern void purple_init_telegram_plugin();
 
 - (void) installPlugin
 {
-  pk_path = [self getPkName];
   purple_init_telegram_plugin();
   [TelegramService registerService];
 }

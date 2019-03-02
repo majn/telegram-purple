@@ -42,7 +42,7 @@ g_utf8_substring (const gchar *str,
 }
 #endif
 
-static char *format_service_msg (struct tgl_state *TLS, struct tgl_message *M) {
+static char *tgp_msg_service_display (struct tgl_state *TLS, struct tgl_message *M) {
   g_return_val_if_fail(M && M->flags & TGLMF_SERVICE, NULL);
 
   connection_data *conn = TLS->ev_base;
@@ -186,6 +186,37 @@ static char *format_geo_link_osm (double lat, double lon) {
   return link;
 }
 
+static char *tgp_msg_file_display (const char *path, const char *filename, const char* caption, const char *mime, long long size) {
+  gchar *format;
+
+  gchar *capt = g_markup_escape_text (caption, -1);
+  gchar *pth = g_markup_escape_text (path, -1);
+  gchar *fle = g_markup_escape_text (filename, -1);
+  gchar *mme = g_markup_escape_text (mime, -1);
+  gchar *fsize =
+#if GLIB_CHECK_VERSION(2,30,0)
+    /* 'g_format_size' only exists since 2.30.0. */
+    g_format_size (size)
+#elif GLIB_CHECK_VERSION(2,16,0)
+    /* 'g_format_size_for_display' only exists since 2.16.0.
+     * We compile on Windows with glib 2.28.8. */
+    g_format_size_for_display (size)
+#else /* even older */
+  #error "Too outdated glib version!"
+#endif
+  ;
+
+  format = g_strdup_printf ("[%s <a href=\"file:///%s\">%s</a> %s %s]", capt, pth, fle, mme, fsize);
+
+  g_free (capt);
+  g_free (pth);
+  g_free (fle);
+  g_free (mme);
+  g_free (fsize);
+
+  return format;
+}
+
 static void tgp_msg_send_done (struct tgl_state *TLS, void *callback_extra, int success, struct tgl_message *M) {
   if (! success) {
     char *err = _("Sending message failed.");
@@ -214,8 +245,16 @@ static gboolean tgp_msg_send_schedule_cb (gpointer data) {
         && !(tgl_peer_get (conn->TLS, D->to)->channel.flags & TGLCHF_MEGAGROUP)) {
       flags |= TGLMF_POST_AS_CHANNEL;
     }
-
+    
+    // secret chats do not unescape html
+    if (tgl_get_peer_type (D->to) == TGL_PEER_ENCR_CHAT) {
+       gchar *unescaped = purple_unescape_html (D->msg);
+       g_free (D->msg);
+       D->msg = unescaped;
+    }
+    
     tgl_do_send_message (D->TLS, D->to, D->msg, (int)strlen (D->msg), flags, NULL, tgp_msg_send_done, D->msg);
+    
     tgp_msg_sending_free (D);
   }
   return FALSE;
@@ -296,6 +335,16 @@ static char *tgp_msg_markdown_convert (const char *msg) {
   int len = (int) strlen (msg);
   char *html = g_new0(gchar, 3 * len);
 
+  // strip any known-breaking html tags
+  #define STRIP_BROKEN_HTML(PREFIX,SUFFIX) \
+    if (g_str_has_prefix (msg, (PREFIX)) && g_str_has_suffix (msg, (SUFFIX))) { \
+        msg += sizeof(PREFIX) - 1; \
+        len -= (sizeof(PREFIX) - 1) + (sizeof(SUFFIX) - 1); \
+    }
+  STRIP_BROKEN_HTML("<SPAN style=\"direction:rtl;text-align:right;\">","</SPAN>");
+  // more STRIP_BROKEN_HTML invocations here, if necessary
+  #undef STRIP_BROKEN_HTML
+
   int open = FALSE;
   int i, j;
   for (i = 0, j = 0; i < len; i ++) {
@@ -321,7 +370,6 @@ static char *tgp_msg_markdown_convert (const char *msg) {
 }
 
 int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) {
-
   // send all inline images
   GList *imgs = tgp_msg_imgs_parse (message);
   debug ("parsed %d images in messages", g_list_length (imgs));
@@ -376,15 +424,6 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
   return 0;
 }
 
-static char *tgp_msg_file_display (const char *path, const char *filename, const char* caption, const char *mime, long long size) {
-  gchar *fsize = g_format_size(size);
-  gchar *format;
-  format = g_strdup_printf ("[%s <a href=\"file:///%s\">%s</a> %s %s]", g_markup_escape_text (caption, -1), g_markup_escape_text (path, -1),
-                          g_markup_escape_text (filename, -1), g_markup_escape_text (mime, -1), fsize);
-  g_free (fsize);
-  return format;
-}
-
 static char *tgp_msg_photo_display (struct tgl_state *TLS, const char *filename, int *flags) {
   connection_data *conn = TLS->ev_base;
   int img = p2tgl_imgstore_add_with_id (filename);
@@ -419,6 +458,89 @@ static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from,
   *flags |= PURPLE_MESSAGE_SYSTEM;
 #endif
   return text;
+}
+
+static char *tgp_msg_reply_display (struct tgl_state *TLS, tgl_peer_t *replyee, struct tgl_message *reply, const char *message) {
+  
+  g_return_val_if_fail(reply, NULL);
+  g_return_val_if_fail(message, NULL);
+  
+  // the text quoted by the reply
+  char *quote = NULL;
+  
+  if (reply->flags & TGLMF_SERVICE) {
+    quote = tgp_msg_service_display (TLS, reply);
+    g_return_val_if_fail(quote == NULL, NULL);
+    
+  } else {
+    switch (reply->media.type) {
+      case tgl_message_media_none:
+        quote = purple_markup_escape_text (reply->message, strlen (reply->message));
+        tgp_replace (quote, '\n', ' ');
+        break;
+        
+      case tgl_message_media_photo:
+        quote = g_strdup(_("[photo]"));
+        break;
+        
+      case tgl_message_media_audio:
+        quote = g_strdup(_("[audio]"));
+        break;
+        
+      case tgl_message_media_video:
+        quote = g_strdup(_("[video]"));
+        break;
+        
+      case tgl_message_media_document:
+      case tgl_message_media_document_encr:
+        quote = g_strdup(_("[document]"));
+        break;
+        
+      case tgl_message_media_geo:
+      case tgl_message_media_venue:
+        quote = g_strdup(_("[position]")); // TODO: render
+        break;
+        
+      case tgl_message_media_contact:
+        quote = g_strdup(_("[contact]")); // TODO: render
+        break;
+        
+      case tgl_message_media_webpage:
+        quote = g_strdup(_("[webpage]"));
+        break;
+        
+      case tgl_message_media_unsupported:
+        quote = g_strdup(_("[unsupported media]"));
+        break;
+        
+      default:
+        g_warn_if_reached();
+        return NULL;
+        break;
+    }
+  }
+  
+  
+  // the combined reply
+
+  // insert line-break in non-adium clients to display
+  // all lines of the quotation on the same level
+  const char *br = "";
+#ifndef __ADIUM_
+  br = "<br>";
+#endif
+  
+  char *value = NULL;
+  if (replyee) {
+    const char *name = replyee->print_name;
+    value = g_strdup_printf (_("%s<b>&gt; %s wrote:</b><br>&gt; %s<br>%s"), br, name, quote, message);
+  } else {
+    value = g_strdup_printf (_("%s<b>&gt; Unknown user wrote:</b><br>&gt; %s<br>%s"), br, quote, message);
+  }
+  
+  g_free (quote);
+  
+  return value;
 }
 
 static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
@@ -469,7 +591,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
 
   // format the message text
   if (M->flags & TGLMF_SERVICE) {
-    text = format_service_msg (TLS, M);
+    text = tgp_msg_service_display (TLS, M);
     flags |= PURPLE_MESSAGE_SYSTEM;
     
   } else if (M->media.type != tgl_message_media_none) {
@@ -490,55 +612,61 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         }
         break;
       }
-        
+
       case tgl_message_media_document:
-        
+      case tgl_message_media_video:
+      case tgl_message_media_audio:
         if (M->media.document->flags & TGLDF_STICKER) {
           g_return_if_fail(C->data != NULL);
           text = tgp_msg_sticker_display (TLS, M->from_id, C->data, &flags);
 
-        } else if (M->media.document->flags & TGLDF_ANIMATED) {
-          g_return_if_fail(C->data != NULL);
-          text = tgp_msg_file_display (C->data, M->media.document->caption, _("animation"),
-                                       M->media.document->mime_type, M->media.document->size);
-
-        } else if (M->media.document->flags & TGLDF_IMAGE) {
+        } else if (M->media.document->flags & TGLDF_IMAGE && !(M->media.document->flags & TGLDF_ANIMATED)) {
           g_return_if_fail(C->data != NULL);
           text = tgp_msg_photo_display (TLS, C->data, &flags);
 
         } else {
-          if (! tgp_our_msg (TLS, M)) {
-            if (C->data) {
-              text = tgp_msg_file_display (C->data, M->media.document->caption, _("document"),
-                                           M->media.document->mime_type, M->media.document->size);
-            } else {
-              tgprpl_recv_file (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, M->from_id), M);
-              return;
+          // Automatically loaded files have C->data set to the file path
+          if (C->data) {
+            const char* path = C->data;
+
+            // Content of a file transfer
+            const char *caption = _("document");
+            if (M->media.document->flags & TGLDF_AUDIO) {
+              // Content of a file transfer
+              caption = _("audio");
+            } else if (M->media.document->flags & TGLDF_ANIMATED) {
+              // Content of a file transfer
+              caption = _("animation");
+            } else if (M->media.document->flags & TGLDF_VIDEO) {
+              // Content of a file transfer
+              caption = _("video");
             }
+
+            const char *filename = M->media.document->caption;
+            if (! str_not_empty (filename)) {
+              // audio and video snippets recorded from Telegram don't have captions
+              const char *segment = path + strlen(path) - 1;
+              while (segment > (char *)path && *segment != G_DIR_SEPARATOR) {
+                segment --;
+              }
+              filename = segment + 1;
+            }
+
+            const char *mime = "";
+            if (str_not_empty (M->media.document->mime_type)) {
+              mime = M->media.document->mime_type;
+            }
+
+            text = tgp_msg_file_display (path, filename, caption, mime, M->media.document->size);
+          } else {
+            if (! tgp_our_msg (TLS, M) && ! tls_get_ft_discard (TLS)) {
+              tgprpl_recv_file (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, M->from_id), M);
+            }
+            return;
           }
         }
         break;
 
-      case tgl_message_media_video:
-      case tgl_message_media_audio: {
-        if (! tgp_our_msg (TLS, M)) {
-          if (C->data) {
-            const char *filename = C->data + strlen(C->data) - 1;
-            while (filename > (char *)C->data && *filename != G_DIR_SEPARATOR) {
-              filename --;
-            }
-            filename ++;
-            text = tgp_msg_file_display (C->data, filename,
-                       M->media.type == tgl_message_media_audio ? _("audio") : _("video"),
-                                         M->media.document->mime_type, M->media.document->size);
-          } else {
-            tgprpl_recv_file (tls_get_conn (TLS), tgp_blist_lookup_purple_name (TLS, M->from_id), M);
-            return;
-          }
-        }
-      }
-      break;
-        
       case tgl_message_media_document_encr:
         if (M->media.encr_document->flags & TGLDF_STICKER) {
           g_return_if_fail(C->data != NULL);
@@ -551,6 +679,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         } else {
           if (! tgp_our_msg (TLS, M)) {
             if (C->data) {
+              // Content of a file transfer
               text = tgp_msg_file_display (C->data, M->media.encr_document->caption, _("document"),
                                            M->media.encr_document->mime_type, M->media.encr_document->size);
               
@@ -607,57 +736,54 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     }
     flags |= PURPLE_MESSAGE_RECV;
   }
-  
+
   if (tgl_get_peer_type (M->to_id) != TGL_PEER_ENCR_CHAT
       && tgl_get_peer_type (M->to_id) != TGL_PEER_CHANNEL
       && ! (M->flags & TGLMF_UNREAD)) {
+    // why?
     flags |= PURPLE_MESSAGE_DELAYED;
   }
   
+  // TODO: is that a problem?
   // some service messages (like removing/adding users from chats) might print the message 
   // text through other means and leave the text empty
   if (! str_not_empty (text)) {
     return;
   }
 
-  // Handle forwarded messages
-  if (tgl_get_peer_id (M->fwd_from_id) != TGL_PEER_UNKNOWN) {
-    const char *name;
+  // forwarded messages
+  if (tgl_get_peer_type (M->fwd_from_id) != TGL_PEER_UNKNOWN) {
+    debug("forwarded message: fwd_from_id=%d", tgl_get_peer_id(M->fwd_from_id));
+    
+    // may be NULL
     tgl_peer_t *FP = tgl_peer_get (TLS, M->fwd_from_id);
     
     char *tmp = text;
-    if (FP) {
-      name = FP->print_name;
-      text = g_strdup_printf (_("<b>Forwarded message from: %s</b><br>%s"), name, text);
-    } else {
-      // FIXME: sometimes users aren't part of the response when receiving a forwarded message
-      text = g_strdup_printf (_("<b>Forwarded message:</b><br>%s"), text);
-    }
+    text = tgp_msg_reply_display(TLS, FP, M, "");
     g_free (tmp);
+    
+    g_return_if_fail(text != NULL);
   }
-
-  /*
-  FIXME: message lookup doesn't work
-  // Handle replies
-  if (M->reply_id > 0) {
-    tgl_message_id_t id;
-    id.peer_type = TGL_PEER_USER;
-    id.id = M->reply_id;
-
-    const char *msg = "Unkown Message";
-    struct tgl_message *MM = tgl_message_get (TLS, &id);
-    if (MM) {
-      msg = MM->message;
-    }
-    const char *usr = "Unknown User";
-    if (MM) {
-      tgl_peer_t *P = tgl_peer_get (TLS, MM->from_id);
-      usr = P->print_name;
-    }
-    g_free (text);
-    text = g_strdup_printf (_("<b>%s: %s</b><br>%s"), msg, usr, M->message);
+  
+  // replys
+  if (M->reply_id) {
+    debug("message reply: reply_id=%d", M->reply_id);
+    
+    tgl_message_id_t msg_id = M->permanent_id;
+    msg_id.id = M->reply_id;
+    
+    struct tgl_message *reply = tgl_message_get (TLS, &msg_id);
+    g_return_if_fail(reply != NULL);
+  
+    tgl_peer_t *replyee = tgl_peer_get (TLS, reply->from_id);
+    g_return_if_fail(replyee != NULL);
+    
+    char *tmp = text;
+    text = tgp_msg_reply_display(TLS, replyee, reply, tmp);
+    g_free (tmp);
+    
+    g_return_if_fail(text != NULL);
   }
-  */
 
   // display the message to the user
   switch (tgl_get_peer_type (M->to_id)) {
@@ -801,7 +927,7 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
     return;
   }
 
-  if (!(M->flags | TGLMF_UNREAD) && M->date != 0 && M->date < tgp_msg_oldest_relevant_ts (TLS)) {
+  if (!(M->flags & TGLMF_UNREAD) && M->date != 0 && M->date < tgp_msg_oldest_relevant_ts (TLS)) {
     debug ("Message from %d on %d too old, ignored.", tgl_get_peer_id (M->from_id), M->date);
     return;
   }
@@ -836,6 +962,7 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
   }
   
   if (! (M->flags & TGLMF_SERVICE)) {
+    debug ("service msg");
     
     // handle all messages that need to load content before they can be displayed
     if (M->media.type != tgl_message_media_none) {
@@ -854,42 +981,34 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
         // documents that are stickers or images will be displayed just like regular photo messages
         // and need to be loaded beforehand
         case tgl_message_media_document:
+        case tgl_message_media_video:
+        case tgl_message_media_audio:
           if (M->media.document->flags & (TGLDF_STICKER | TGLDF_IMAGE)) {
             ++ C->pending;
             tgl_do_load_document (TLS, M->media.document, tgp_msg_on_loaded_document, C);
             
           } else {
-            // adium doesn't support file links, autoloading media would mean that it
-            // wouldn't be possible to show a usable link to the user
+
+            // adium doesn't support printing an inline file link to the downloaded file
 #ifndef __ADIUM_
-            if (M->media.document->size <= tls_get_media_threshold (TLS)) {
+
+            if (M->media.document->size <= tls_get_ft_threshold (TLS) || tls_get_ft_autoload (TLS)) {
               ++ C->pending;
+
               if (M->media.document->flags & TGLDF_AUDIO) {
                 tgl_do_load_audio (TLS, M->media.document, tgp_msg_on_loaded_document, C);
+
               } else if (M->media.document->flags & TGLDF_VIDEO) {
                 tgl_do_load_video (TLS, M->media.document, tgp_msg_on_loaded_document, C);
+
               } else {
                 tgl_do_load_document (TLS, M->media.document, tgp_msg_on_loaded_document, C);
               }
             }
-#endif
-          }
-          break;
 
-#ifndef __ADIUM_
-        case tgl_message_media_video:
-          if (M->media.document->size <= tls_get_media_threshold (TLS)) {
-            ++ C->pending;
-            tgl_do_load_video (TLS, M->media.document, tgp_msg_on_loaded_document, C);
-          }
-          break;
-        case tgl_message_media_audio:
-          if (M->media.document->size <= tls_get_media_threshold (TLS)) {
-            ++ C->pending;
-            tgl_do_load_audio (TLS, M->media.document, tgp_msg_on_loaded_document, C);
-          }
-          break;
 #endif
+          }
+          break;
 
         case tgl_message_media_document_encr:
           if (M->media.encr_document->flags & TGLDF_STICKER || M->media.encr_document->flags & TGLDF_IMAGE) {

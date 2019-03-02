@@ -18,6 +18,8 @@
     Copyright Matthias Jentsch, Vitaly Valtman, Ben Wiederhake, Christopher Althaus 2014-2015
 */
 
+#include <mtproto-key.h>
+
 #include "telegram-purple.h"
 #include "commit.h"
 
@@ -37,12 +39,6 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
 static void update_on_failed_login (struct tgl_state *TLS);
 
 const char *config_dir = "telegram-purple";
-const char *user_pk_filename = "server.tglpub";
-#ifdef WIN32
-const char *pk_path = "server.tglpub";
-#else
-const char *pk_path = "/etc/telegram-purple/server.tglpub";
-#endif
 
 struct tgl_update_callback tgp_callback = {
   .new_msg = update_message_handler,
@@ -187,7 +183,7 @@ static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret
   }
 
   if (flags & TGL_UPDATE_REQUESTED) {
-    const char* choice = purple_account_get_string (tls_get_pa (TLS), "accept-secret-chats", "ask");
+    const char* choice = purple_account_get_string (tls_get_pa (TLS), TGP_KEY_ACCEPT_SECRET_CHATS, "ask");
     if (! strcmp (choice, "always")) {
       tgl_do_accept_encr_chat_request (TLS, U, write_secret_chat_gw, 0);
     } else if (! strcmp (choice, "ask")) {
@@ -236,6 +232,8 @@ static void update_marked_read (struct tgl_state *TLS, int num, struct tgl_messa
 static void on_get_dialog_list_done (struct tgl_state *TLS, void *extra, int success, int size,
     tgl_peer_id_t peers[], tgl_message_id_t *last_msg_id[], int unread_count[]) {
   info ("Fetched dialogue list of size: %d", size);
+  
+  connection_data *conn = tls_get_data(TLS);
   if (tgp_error_if_false (TLS, success, "Fetching dialogue list failed", TLS->error)) {
     return;
   }
@@ -259,7 +257,12 @@ static void on_get_dialog_list_done (struct tgl_state *TLS, void *extra, int suc
     }
   }
   
-  // now that the dialogue list is loaded, handle all pending chat joins
+  // handle pending roomlist request
+  if (conn->roomlist != NULL && purple_roomlist_get_in_progress (conn->roomlist)) {
+    tgp_chat_roomlist_populate (TLS);
+  }
+  
+  // handle all pending chat joins
   tls_get_data (TLS)->dialogues_ready = TRUE;
   tgp_chat_join_all_pending (TLS);
 }
@@ -541,46 +544,9 @@ static void tgprpl_login (PurpleAccount * acct) {
   tgl_set_download_directory (TLS, get_download_dir(TLS));
   debug ("base configuration path: '%s'", TLS->base_path);
   
-  struct rsa_pubkey pubkey;
-#ifdef WIN32
-  gchar *global_pk_path = g_strdup_printf("%s/%s", DATADIR, pk_path);
-#else
-  gchar *global_pk_path = g_strdup(pk_path);
-#endif
-  debug ("trying global pubkey at %s", global_pk_path);
-  gboolean global_pk_loaded = read_pubkey_file (global_pk_path, &pubkey);
-  g_free(global_pk_path);
-
-  tgl_set_verbosity (TLS, 4);
-  if (global_pk_loaded) {
-    info ("using global pubkey");
-    tgl_set_rsa_key_direct (TLS, pubkey.e, pubkey.n_len, pubkey.n_raw);
-  } else {
-    char *user_pk_path = get_user_pk_path ();
-    debug ("trying local pubkey at %s", user_pk_path);
-    gboolean user_pk_loaded = read_pubkey_file (user_pk_path, &pubkey);
-
-    if (user_pk_loaded) {
-      info ("using local pubkey");
-      tgl_set_rsa_key_direct (TLS, pubkey.e, pubkey.n_len, pubkey.n_raw);
-    } else {
-      failure ("both didn't work. abort.");
-      char *cause = g_strdup_printf (_("Unable to sign on as %s: file (public key) not found."),
-                      purple_account_get_username (acct));
-      purple_connection_error_reason (gc, PURPLE_CONNECTION_ERROR_INVALID_SETTINGS, cause);
-      char *long_hint = g_strdup_printf (
-        _("Make sure telegram-purple is installed properly,\n"
-          "including the .tglpub file.\n"
-          "If you're running SELinux (e.g. when using Tails),\n"
-          "try 'make local_install', or simply copy\n"
-          "%1$s to %2$s."), pk_path, user_pk_path);
-      purple_notify_message (_telegram_protocol, PURPLE_NOTIFY_MSG_ERROR, cause,
-                             long_hint, NULL, NULL, NULL);
-      g_free (cause);
-      g_free (long_hint);
-      return;
-    }
-  }
+  tgl_set_rsa_key_direct (TLS, tglmp_get_default_e(),
+                               tglmp_get_default_key_len(),
+                               tglmp_get_default_key());
 
   tgl_set_ev_base (TLS, conn);
   tgl_set_net_methods (TLS, &tgp_conn_methods);
@@ -600,6 +566,9 @@ static void tgprpl_login (PurpleAccount * acct) {
     g_free (cause);
     return;
   }
+
+  if (purple_account_get_bool (acct, TGP_KEY_USE_IPV6, FALSE))
+    tgl_enable_ipv6(TLS);
 
   if (! tgp_startswith (purple_account_get_username (acct), "+")) {
     // TRANSLATORS: Please fill in your own prefix!
@@ -860,15 +829,18 @@ static void tgprpl_init (PurplePlugin *plugin) {
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
 
   // Messaging
-  GList *verification_values = NULL;
-  ADD_VALUE(verification_values, _("always"), "always");
-  ADD_VALUE(verification_values, _("never"), "never");
-  ADD_VALUE(verification_values, _("ask"), "ask");
-  
+  GList *choices = NULL;
+  // Whether to do fallback SMS verification
+  ADD_VALUE(choices, _("Always"), "always");
+  // Whether to do fallback SMS verification
+  ADD_VALUE(choices, _("Never"), "never");
+  // Whether to do fallback SMS verification
+  ADD_VALUE(choices, _("Ask"), "ask");
+
   opt = purple_account_option_list_new (_("Accept secret chats"),
-      TGP_KEY_ACCEPT_SECRET_CHATS, verification_values);
+      TGP_KEY_ACCEPT_SECRET_CHATS, choices);
   prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, opt);
-  
+
   opt = purple_account_option_int_new (_("Display buddies offline after (days)"),
       TGP_KEY_INACTIVE_DAYS_OFFLINE, TGP_DEFAULT_INACTIVE_DAYS_OFFLINE);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
@@ -876,26 +848,42 @@ static void tgprpl_init (PurplePlugin *plugin) {
   opt = purple_account_option_int_new (_("Don't fetch history older than (days)\n(0 for unlimited)"),
       TGP_KEY_HISTORY_RETRIEVAL_THRESHOLD, TGP_DEFAULT_HISTORY_RETRIEVAL_THRESHOLD);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
-  
-  // Media
-  opt = purple_account_option_int_new (_("Autoload media size (kb)"), TGP_KEY_MEDIA_SIZE,
-            TGP_DEFAULT_MEDIA_SIZE);
+
+  // Media and documents
+  choices = NULL;
+  // How to handle "large" files
+  ADD_VALUE(choices, _("Discard"), "discard");
+  // How to handle "large" files
+  ADD_VALUE(choices, _("Auto load"), "autoload");
+  // How to handle "large" files
+  ADD_VALUE(choices, _("Ask"), "ask");
+
+  opt = purple_account_option_int_new (_("Auto load file transfers up to (kb)"), TGP_KEY_MEDIA_SIZE,
+                                       TGP_DEFAULT_MEDIA_SIZE);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
   
+  opt = purple_account_option_list_new (_("Bigger file transfers"), TGP_KEY_FT_HANDLING, choices);
+  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
+
   // Chats
   opt = purple_account_option_bool_new (_("Add all group chats to buddy list"),
       TGP_KEY_JOIN_GROUP_CHATS, TGP_DEFAULT_JOIN_GROUP_CHATS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
 
-  // Read notifications
+  // Receipts
   opt = purple_account_option_bool_new (_("Display notices of receipt"),
       TGP_KEY_DISPLAY_READ_NOTIFICATIONS, TGP_DEFAULT_DISPLAY_READ_NOTIFICATIONS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
-  
+
   opt = purple_account_option_bool_new (_("Send notices of receipt when present"),
       TGP_KEY_SEND_READ_NOTIFICATIONS, TGP_DEFAULT_SEND_READ_NOTIFICATIONS);
   prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
-  
+
+  // IPv6
+  opt = purple_account_option_bool_new (_("Use IPv6 for connecting (restart required)"),
+      TGP_KEY_USE_IPV6, TGP_DEFAULT_USE_IPV6);
+  prpl_info.protocol_options = g_list_append (prpl_info.protocol_options, opt);
+
   _telegram_protocol = plugin;
   debug ("tgprpl_init finished: This is " PACKAGE_VERSION "+g" GIT_COMMIT " on libtgl " TGL_VERSION);
 }

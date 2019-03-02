@@ -14,6 +14,9 @@ script:
   - ./configure $CONFIGURE_FLAGS
   - make -j2
   - make check
+# Test both installation routines:
+  - sudo make install
+  - make local_install
 compiler:
   - clang
   - gcc
@@ -27,6 +30,14 @@ env:
 #  - CONFIGURE_FLAGS="--disable-gcrypt                   --disable-translation"
 #  - CONFIGURE_FLAGS="                 --disable-libwebp --disable-translation"
   - CONFIGURE_FLAGS="--disable-gcrypt --disable-libwebp --disable-translation"
+  - CONFIGURE_FLAGS="--disable-png"
+#  - CONFIGURE_FLAGS="--disable-png --disable-gcrypt"
+  - CONFIGURE_FLAGS="--disable-png                  --disable-libwebp"
+#  - CONFIGURE_FLAGS="--disable-png --disable-gcrypt --disable-libwebp"
+#  - CONFIGURE_FLAGS="--disable-png                                    --disable-translation"
+#  - CONFIGURE_FLAGS="--disable-png --disable-gcrypt                   --disable-translation"
+#  - CONFIGURE_FLAGS="--disable-png                  --disable-libwebp --disable-translation"
+#  - CONFIGURE_FLAGS="--disable-png --disable-gcrypt --disable-libwebp --disable-translation"
 matrix:
 # Be even nicer by excluding half of the combinations
   exclude:
@@ -40,9 +51,25 @@ matrix:
 #      env: CONFIGURE_FLAGS="--disable-gcrypt --disable-libwebp"
     - compiler: gcc
       env: CONFIGURE_FLAGS="                                   --disable-translation"
-#    - compiler: clang
+#    - compiler: XXX
 #      env: CONFIGURE_FLAGS="--disable-gcrypt                   --disable-translation"
-#    - compiler: gcc
+#    - compiler: XXX
 #      env: CONFIGURE_FLAGS="                 --disable-libwebp --disable-translation"
     - compiler: clang
       env: CONFIGURE_FLAGS="--disable-gcrypt --disable-libwebp --disable-translation"
+    - compiler: clang
+      env: CONFIGURE_FLAGS="--disable-png"
+#    - compiler: XXX
+#      env: CONFIGURE_FLAGS="--disable-png --disable-gcrypt"
+    - compiler: gcc
+      env: CONFIGURE_FLAGS="--disable-png                  --disable-libwebp"
+#    - compiler: XXX
+#      env: CONFIGURE_FLAGS="--disable-png --disable-gcrypt --disable-libwebp"
+#    - compiler: XXX
+#      env: CONFIGURE_FLAGS="--disable-png                                    --disable-translation"
+#    - compiler: XXX
+#      env: CONFIGURE_FLAGS="--disable-png --disable-gcrypt                   --disable-translation"
+#    - compiler: XXX
+#      env: CONFIGURE_FLAGS="--disable-png                  --disable-libwebp --disable-translation"
+#    - compiler: XXX
+#      env: CONFIGURE_FLAGS="--disable-png --disable-gcrypt --disable-libwebp --disable-translation"

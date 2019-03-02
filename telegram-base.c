@@ -35,68 +35,6 @@
 #define STATE_FILE_MAGIC 0x28949a93
 #define SECRET_CHAT_FILE_MAGIC 0x37a1988a
 
-static gboolean read_ui32 (int fd, unsigned int *ret) {
-  typedef char check_int_size[(sizeof (int) >= 4) ? 1 : -1];
-  (void) sizeof (check_int_size);
-
-  unsigned char buf[4];
-  if (4 != read (fd, buf, 4)) {
-    return 0;
-  }
-  // Ugly but works.
-  *ret = 0;
-  *ret |= buf[0];
-  *ret <<= 8;
-  *ret |= buf[1];
-  *ret <<= 8;
-  *ret |= buf[2];
-  *ret <<= 8;
-  *ret |= buf[3];
-  return 1;
-}
-
-int read_pubkey_file (const char *name, struct rsa_pubkey *dst) {
-  // Just to make sure nobody reads garbage.
-  dst->e = 0;
-  dst->n_len = 0;
-  dst->n_raw = NULL;
-
-  int pubkey_fd = open (name, O_RDONLY | O_BINARY);
-  if (pubkey_fd < 0) {
-    return 0;
-  }
-
-  unsigned int e;
-  unsigned int n_len;
-  if (!read_ui32 (pubkey_fd, &e) || !read_ui32 (pubkey_fd, &n_len) // Ensure successful reads
-      || n_len < 128 || n_len > 1024 || e < 5) { // Ensure (at least remotely) sane parameters.
-    close (pubkey_fd);
-    return 0;
-  }
-
-  unsigned char *n_raw = malloc (n_len);
-  if (!n_raw) {
-    close (pubkey_fd);
-    return 0;
-  }
-
-  gint readret;
-  readret = read (pubkey_fd, n_raw, n_len);
-  if (readret <= 0 || (n_len != (guint) readret)) {
-    free (n_raw);
-    close (pubkey_fd);
-    return 0;
-  }
-  close (pubkey_fd);
-
-  dst->e = e;
-  dst->n_len = n_len;
-  dst->n_raw = n_raw;
-  
-  info ("read pubkey file: n_len=%u e=%u", n_len, e);
-  return 1;
-}
-
 void read_state_file (struct tgl_state *TLS) {
   char *name = 0;
   name = g_strdup_printf("%s/%s", TLS->base_path, "state");
@@ -174,8 +112,14 @@ void write_files_schedule (struct tgl_state *TLS) {
   }
 }
 
+struct write_dc_extra {
+  int auth_file;
+  int flags;
+};
+
 void write_dc (struct tgl_dc *DC, void *extra) {
-  int auth_file_fd = *(int *)extra;
+  struct write_dc_extra *ex = extra;
+  int auth_file_fd = ex->auth_file;
   if (!DC) { 
     int x = 0;
     assert (write (auth_file_fd, &x, 4) == 4);
@@ -187,15 +131,16 @@ void write_dc (struct tgl_dc *DC, void *extra) {
 
   assert (DC->flags & TGLDCF_LOGGED_IN);
 
-  assert (write (auth_file_fd, &DC->options[0]->port, 4) == 4);
-  int l = strlen (DC->options[0]->ip);
+  assert (write (auth_file_fd, &DC->options[ex->flags]->port, 4) == 4);
+  int l = strlen (DC->options[ex->flags]->ip);
   assert (write (auth_file_fd, &l, 4) == 4);
-  assert (write (auth_file_fd, DC->options[0]->ip, l) == l);
+  assert (write (auth_file_fd, DC->options[ex->flags]->ip, l) == l);
   assert (write (auth_file_fd, &DC->auth_key_id, 8) == 8);
   assert (write (auth_file_fd, DC->auth_key, 256) == 256);
 }
 
 void write_auth_file (struct tgl_state *TLS) {
+  struct write_dc_extra extra;
   char *name = 0;
   name = g_strdup_printf("%s/%s", TLS->base_path, "auth");
   int auth_file_fd = open (name, O_CREAT | O_RDWR | O_BINARY, 0600);
@@ -206,7 +151,10 @@ void write_auth_file (struct tgl_state *TLS) {
   assert (write (auth_file_fd, &TLS->max_dc_num, 4) == 4);
   assert (write (auth_file_fd, &TLS->dc_working_num, 4) == 4);
 
-  tgl_dc_iterator_ex (TLS, write_dc, &auth_file_fd);
+  extra.auth_file = auth_file_fd;
+  extra.flags     = TLS->ipv6_enabled ? 1 : 0;
+
+  tgl_dc_iterator_ex (TLS, write_dc, &extra);
 
   assert (write (auth_file_fd, &TLS->our_id, 4) == 4);
   close (auth_file_fd);
@@ -228,7 +176,7 @@ void read_dc (struct tgl_state *TLS, int auth_file_fd, int id, unsigned ver) {
   assert (read (auth_file_fd, &auth_key_id, 8) == 8);
   assert (read (auth_file_fd, auth_key, 256) == 256);
 
-  bl_do_dc_option (TLS, 0, id, "DC", 2, ip, l, port);
+  bl_do_dc_option (TLS, TLS->ipv6_enabled ? 1: 0, id, "DC", 2, ip, l, port);
   bl_do_set_auth_key (TLS, id, auth_key);
   bl_do_dc_signed (TLS, id);
   debug ("read dc: id=%d", id);
@@ -252,11 +200,19 @@ void empty_auth_file (struct tgl_state *TLS) {
     bl_do_dc_option (TLS, 0, 3, "", 0, TG_SERVER_TEST_3, strlen (TG_SERVER_TEST_3), 443);
     bl_do_set_working_dc (TLS, TG_SERVER_TEST_DEFAULT);
   } else {
-    bl_do_dc_option (TLS, 0, 1, "", 0, TG_SERVER_1, strlen (TG_SERVER_1), 443);
-    bl_do_dc_option (TLS, 0, 2, "", 0, TG_SERVER_2, strlen (TG_SERVER_2), 443);
-    bl_do_dc_option (TLS, 0, 3, "", 0, TG_SERVER_3, strlen (TG_SERVER_3), 443);
-    bl_do_dc_option (TLS, 0, 4, "", 0, TG_SERVER_4, strlen (TG_SERVER_4), 443);
-    bl_do_dc_option (TLS, 0, 5, "", 0, TG_SERVER_5, strlen (TG_SERVER_5), 443);
+    if (TLS->ipv6_enabled) {
+      bl_do_dc_option (TLS, 1, 1, "", 0, TG_SERVER_IPV6_1, strlen (TG_SERVER_IPV6_1), 443);
+      bl_do_dc_option (TLS, 1, 2, "", 0, TG_SERVER_IPV6_2, strlen (TG_SERVER_IPV6_2), 443);
+      bl_do_dc_option (TLS, 1, 3, "", 0, TG_SERVER_IPV6_3, strlen (TG_SERVER_IPV6_3), 443);
+      bl_do_dc_option (TLS, 1, 4, "", 0, TG_SERVER_IPV6_4, strlen (TG_SERVER_IPV6_4), 443);
+      bl_do_dc_option (TLS, 1, 5, "", 0, TG_SERVER_IPV6_5, strlen (TG_SERVER_IPV6_5), 443);
+    } else {
+      bl_do_dc_option (TLS, 0, 1, "", 0, TG_SERVER_1, strlen (TG_SERVER_1), 443);
+      bl_do_dc_option (TLS, 0, 2, "", 0, TG_SERVER_2, strlen (TG_SERVER_2), 443);
+      bl_do_dc_option (TLS, 0, 3, "", 0, TG_SERVER_3, strlen (TG_SERVER_3), 443);
+      bl_do_dc_option (TLS, 0, 4, "", 0, TG_SERVER_4, strlen (TG_SERVER_4), 443);
+      bl_do_dc_option (TLS, 0, 5, "", 0, TG_SERVER_5, strlen (TG_SERVER_5), 443);
+    }
     bl_do_set_working_dc (TLS, TG_SERVER_DEFAULT);
   }
 }
@@ -438,20 +394,6 @@ gchar *get_config_dir (char const *username) {
   }
   g_mkdir_with_parents (dir, 0700);
   return dir;
-}
-
-gchar *get_user_pk_path () {
-  /*
-     This can't be conditional on whether or not we're using telepathy, because
-     then we would need to make sure that `make local_install` also knows about
-     that location. So we *always* use ${HOME}/.purple/telegram-purple,
-     even when the other files aren't in this folder.
-     Note that this is only visible when using Telepathy/Empathy with
-     local_install, which should be kinda rare anyway (use telepathy-morse!).
-   */
-  return g_strconcat (g_get_home_dir(), G_DIR_SEPARATOR_S, ".purple",
-                                G_DIR_SEPARATOR_S, "telegram-purple",
-                                G_DIR_SEPARATOR_S, user_pk_filename, NULL);
 }
 
 gchar *get_download_dir (struct tgl_state *TLS) {

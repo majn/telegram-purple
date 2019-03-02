@@ -18,3 +18,49 @@ Here's a few places to start:
 ## How to contribute
 
 Write [an issue](https://github.com/majn/telegram-purple/issues/new), shoot us a mail (scrape the address from the git history), or contact us in dev chat (changing URL, see README for that).
+
+## How to release
+
+#### Translations
+
+Make sure that the string freeze has already happened.
+
+Go to the [translation site](https://www.transifex.com/telegram-purple-developers/telegram-purple/content/),
+and close the current resource for new translations.  Rename and re-prioritize it appropriately.
+Download the zip-file, extract it, remove the annoying prefix.  Move all files to `po/`.
+
+Run `make po/*.po` to fix the filenames.  Do not delete any files.  Rationale see `Makefile`.
+
+Adjust `po/LINGUAS*` as you see fit.
+
+#### Increment version
+
+Attempt to use semver.
+
+Adjust `configure.ac`, in macro `AC_INIT`.  Remember to run `autoreconf`.
+
+Update `CHANGELOG.md`.
+
+#### Run some tests
+
+First locally, then on Travis.
+Also, install it locally.  Don't forget to `./configure` first.
+
+#### Prepare release files
+
+Make a tag: `git tag v1.something`
+Remember to push the tag to github.
+
+Make a dist-bundle: `make dist`
+Keep the resulting `telegram-purple_1.something.orig.tar.gz` safe.
+
+Make the windows installer: `./mkwindows.sh`
+Keep the resulting `telegram-purple-1.something+gcafebabe5.exe` safe.
+
+#### Create release on github
+
+FIXME
+
+#### Close associated issues
+
+All relevant issues are marked with `in-pipeline`, but sadly too many are marked this way.

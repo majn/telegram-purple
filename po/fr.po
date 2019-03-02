@@ -1,109 +1,89 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
+# Translation (template) of telegram-purple
+# Copyright (C) 2014-2018 Matthias Jentsch, Ben Wiederhake, Christopher Althaus, Markus Endres
+# This file is distributed under the same license as the telegram-purple plugin.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 
-#, fuzzy
+# Translators:
+# Ben Wiederhake <BenWiederhake.GitHub@gmx.de>, 2017
+# 
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-08-31 22:53+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: kekh <tukhnet@gmail.com>, 2016\n"
+"Project-Id-Version: telegram-purple\n"
+"POT-Creation-Date: 2018-08-01 23:11+0200\n"
+"PO-Revision-Date: 2017-04-11 23:02+0000\n"
+"Last-Translator: Ben Wiederhake <BenWiederhake.GitHub@gmx.de>, 2017\n"
 "Language-Team: French (https://www.transifex.com/telegram-purple-developers/teams/53149/fr/)\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: fr\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: ../telegram-base.c:500
+#: ../telegram-base.c:442
 msgid "Couldn't create group"
 msgstr "N'a pas pu créer le groupe"
 
-#: ../telegram-base.c:501
+#: ../telegram-base.c:443
 msgid "Please select at least one other user."
 msgstr "Veuillez sélectionner au moins un autre utilisateur."
 
-#: ../telegram-base.c:555
+#: ../telegram-base.c:497
 msgid "Query Failed"
 msgstr "Requête échouée"
 
-#: ../telegram-purple.c:162
+#: ../telegram-purple.c:159
 msgid "Secret chat ready."
 msgstr "Conversation secrète prête."
 
-#: ../telegram-purple.c:170
+#: ../telegram-purple.c:167
 msgid "Secret chat terminated."
 msgstr "Conversation secrète terminée."
 
-#: ../telegram-purple.c:182
+#: ../telegram-purple.c:179
 msgid "Telegram"
 msgstr "Telegram"
 
-#: ../telegram-purple.c:229
+#: ../telegram-purple.c:226
 msgid "Message marked as read."
 msgstr "Message marqué comme lu."
 
-#: ../telegram-purple.c:339
+#: ../telegram-purple.c:343
 #, c-format
 msgid "Invite link: %s"
 msgstr "Lien d'invitation : %s"
 
 #. FIXME: Can TGLCHF_MODERATOR export links?
-#: ../telegram-purple.c:350
+#: ../telegram-purple.c:354
 msgid "Creating chat link failed"
 msgstr "Création du lien d'invitation échouée"
 
-#: ../telegram-purple.c:351
+#: ../telegram-purple.c:355
 msgid "You need to be admin of the group  to do that."
 msgstr "Vous devez être administrateur du groupe pour faire cela."
 
-#: ../telegram-purple.c:416
+#: ../telegram-purple.c:439
 msgid "Chat joined"
 msgstr "Conversation atteinte."
 
-#: ../telegram-purple.c:417
+#: ../telegram-purple.c:440
 msgid "Chat added to list of chat rooms."
 msgstr "Conversation ajoutée dans la liste des conversations."
 
-#: ../telegram-purple.c:443
+#: ../telegram-purple.c:466
 msgid "Start secret chat..."
 msgstr "Commencer une conversation secrète..."
 
 #. Generate Public Link
-#: ../telegram-purple.c:450
+#: ../telegram-purple.c:473
 msgid "Invite users by link..."
 msgstr "Inviter des utilisateurs avec un lien..."
 
 #. Delete self from chat
-#: ../telegram-purple.c:458
+#: ../telegram-purple.c:481
 msgid "Delete and exit..."
 msgstr "Supprimer et quitter..."
 
-#: ../telegram-purple.c:546
-#, c-format
-msgid "Unable to sign on as %s: file (public key) not found."
-msgstr ""
-"Impossible de se connecter comme %s : fichier de clé publique manquant."
-
-#: ../telegram-purple.c:550
-#, c-format
-msgid ""
-"Make sure telegram-purple is installed properly,\n"
-"including the .tglpub file.\n"
-"If you're running SELinux (e.g. when using Tails),\n"
-"try 'make local_install', or simply copy\n"
-"%1$s to %2$s."
-msgstr ""
-"Soyez sûr que telegram-purple est installé proprement,\n"
-"particulièrement le fichier .tglpub.\n"
-"Si vous avez SELinux (ex: En utilisant Tails),\n"
-"essayez 'make local_install', ou copiez simplement\n"
-"%1$s dans %2$s."
-
-#: ../telegram-purple.c:572
+#: ../telegram-purple.c:560
 #, c-format
 msgid ""
 "Unable to sign on as %s: problem in the underlying library 'tgl'. Please "
@@ -113,12 +93,12 @@ msgstr ""
 "jacente 'tgl'. Veuillez svp soumettre un rapport de bug incluant des "
 "informations de débug."
 
-#: ../telegram-purple.c:576
+#: ../telegram-purple.c:564
 msgid "Problem in tgl"
 msgstr "Problème relatif à Tgl"
 
 #. TRANSLATORS: Please fill in your own prefix!
-#: ../telegram-purple.c:584
+#: ../telegram-purple.c:575
 #, c-format
 msgid ""
 "Unable to sign on as %s: phone number lacks country prefix. Numbers must "
@@ -128,40 +108,44 @@ msgstr ""
 "numéro de téléphone doit commencer avec le numéro de préfixe international, "
 "ex: +33 pour la France."
 
-#: ../telegram-purple.c:589
+#: ../telegram-purple.c:580
 msgid "Incomplete phone number"
 msgstr "Numéro de téléphone incomplet"
 
-#: ../telegram-purple.c:642
+#: ../telegram-purple.c:638
 msgid "Secret chat was already deleted"
 msgstr "Conversation secrète déjà supprimée."
 
-#: ../telegram-purple.c:644
+#: ../telegram-purple.c:640
 msgid "Secret chat is not ready"
 msgstr "Conversation secrète non prête"
 
-#: ../telegram-purple.c:652
+#: ../telegram-purple.c:648
 msgid "Only the creator of a channel can post messages."
 msgstr "Seul le créateur du canal peut publier des messages"
 
-#: ../telegram-purple.c:695
+#: ../telegram-purple.c:691
 msgid "Cannot invite buddy to chat"
 msgstr "Impossible d'ajouter le contact à la conversation"
 
-#: ../telegram-purple.c:696
+#: ../telegram-purple.c:692
 msgid "Specified user does not exist."
 msgstr "L'utilisateur spécifié n'existe pas."
 
-#: ../telegram-purple.c:709
+#: ../telegram-purple.c:705
 msgid "phone no. (+ country prefix)"
 msgstr "n° téléphone (+ préfixe pays)"
 
+#: ../telegram-purple.c:800
+msgid "kick <user>:  Kick a user from the room."
+msgstr ""
+
 #. Login
-#: ../telegram-purple.c:817
+#: ../telegram-purple.c:822
 msgid "Password (two factor authentication)"
 msgstr "Mot de passe (authentification à deux facteurs)"
 
-#: ../telegram-purple.c:822
+#: ../telegram-purple.c:827
 msgid ""
 "Fallback SMS verification\n"
 "(Helps when not using Pidgin and you aren't being prompted for the code)"
@@ -169,27 +153,31 @@ msgstr ""
 "Vérification par SMS\n"
 "(Cela aide si vous n’utilisez pas Pidgin et que vous n'êtes pas notifié pour le code)"
 
-#: ../telegram-purple.c:828
-msgid "always"
-msgstr "toujours"
+#. Whether to do fallback SMS verification
+#: ../telegram-purple.c:834
+msgid "Always"
+msgstr ""
 
-#: ../telegram-purple.c:829
-msgid "never"
-msgstr "jamais"
+#. Whether to do fallback SMS verification
+#: ../telegram-purple.c:836
+msgid "Never"
+msgstr ""
 
-#: ../telegram-purple.c:830
-msgid "ask"
-msgstr "demander"
+#. Whether to do fallback SMS verification
+#. How to handle "large" files
+#: ../telegram-purple.c:838 ../telegram-purple.c:859
+msgid "Ask"
+msgstr ""
 
-#: ../telegram-purple.c:832
+#: ../telegram-purple.c:840
 msgid "Accept secret chats"
 msgstr "Accepter la conversation secrète"
 
-#: ../telegram-purple.c:836
+#: ../telegram-purple.c:844
 msgid "Display buddies offline after (days)"
 msgstr "Afficher les contacts déconnectés après (jours)"
 
-#: ../telegram-purple.c:840
+#: ../telegram-purple.c:848
 msgid ""
 "Don't fetch history older than (days)\n"
 "(0 for unlimited)"
@@ -197,26 +185,44 @@ msgstr ""
 "Ne pas récupérer l'historique plus vieux que (jours)\n"
 "(0 pour infinie)"
 
-#. Media
-#: ../telegram-purple.c:845
-msgid "Autoload media size (kb)"
-msgstr "Taille max. chargement auto. des médias (Kb)"
+#. How to handle "large" files
+#: ../telegram-purple.c:855
+msgid "Discard"
+msgstr ""
+
+#. How to handle "large" files
+#: ../telegram-purple.c:857
+msgid "Auto load"
+msgstr ""
+
+#: ../telegram-purple.c:861
+msgid "Auto load file transfers up to (kb)"
+msgstr ""
+
+#: ../telegram-purple.c:865
+msgid "Bigger file transfers"
+msgstr ""
 
 #. Chats
-#: ../telegram-purple.c:850
+#: ../telegram-purple.c:869
 msgid "Add all group chats to buddy list"
 msgstr "Ajouter tous les membres de la conversation dans la liste de contact"
 
-#. Read notifications
-#: ../telegram-purple.c:855
+#. Receipts
+#: ../telegram-purple.c:874
 msgid "Display notices of receipt"
 msgstr "Afficher les notifications de réception"
 
-#: ../telegram-purple.c:859
+#: ../telegram-purple.c:878
 msgid "Send notices of receipt when present"
 msgstr "Envoyer des notifications de réception quand vous êtes présent."
 
-#: ../telegram-purple.c:884
+#. IPv6
+#: ../telegram-purple.c:883
+msgid "Use IPv6 for connecting (restart required)"
+msgstr ""
+
+#: ../telegram-purple.c:908
 msgid "Telegram Protocol Plugin."
 msgstr "Extension Protocole Telegram"
 
@@ -289,52 +295,90 @@ msgid "Channel %1$s created"
 msgstr "Canal %1$s créé"
 
 #. FIXME: check if this makes sense
-#: ../tgp-msg.c:165 ../tgp-chat.c:124 ../tgp-chat.c:576
+#: ../tgp-msg.c:165 ../tgp-chat.c:124 ../tgp-chat.c:665
 msgid "Telegram Channels"
 msgstr "Canaux Telegram"
 
-#: ../tgp-msg.c:191
+#: ../tgp-msg.c:222
 msgid "Sending message failed."
 msgstr "L'envoi du message a échoué."
 
-#: ../tgp-msg.c:253
+#: ../tgp-msg.c:293
 msgid "Sending image failed."
 msgstr "L'envoi de l'image a échoué."
 
-#: ../tgp-msg.c:417
+#: ../tgp-msg.c:457
 #, c-format
 msgid "%s sent a sticker."
 msgstr "%s a envoyé un sticker."
 
-#: ../tgp-msg.c:463
+#: ../tgp-msg.c:483
+msgid "[photo]"
+msgstr ""
+
+#: ../tgp-msg.c:487
+msgid "[audio]"
+msgstr ""
+
+#: ../tgp-msg.c:491
+msgid "[video]"
+msgstr ""
+
+#: ../tgp-msg.c:496
+msgid "[document]"
+msgstr ""
+
+#: ../tgp-msg.c:501
+msgid "[position]"
+msgstr ""
+
+#: ../tgp-msg.c:505
+msgid "[contact]"
+msgstr ""
+
+#: ../tgp-msg.c:509
+msgid "[webpage]"
+msgstr ""
+
+#: ../tgp-msg.c:513
+msgid "[unsupported media]"
+msgstr ""
+
+#: ../tgp-msg.c:536
+#, c-format
+msgid "%s<b>&gt; %s wrote:</b><br>&gt; %s<br>%s"
+msgstr ""
+
+#: ../tgp-msg.c:538
+#, c-format
+msgid "%s<b>&gt; Unknown user wrote:</b><br>&gt; %s<br>%s"
+msgstr ""
+
+#: ../tgp-msg.c:586
 msgid "failed loading message"
 msgstr "échec au chargement du message"
 
-#: ../tgp-msg.c:498
-msgid "[animation]"
-msgstr "[animation]"
+#. Content of a file transfer
+#: ../tgp-msg.c:633 ../tgp-msg.c:683
+msgid "document"
+msgstr ""
 
-#: ../tgp-msg.c:515
-msgid "[audio]"
-msgstr "[audio]"
+#. Content of a file transfer
+#: ../tgp-msg.c:636
+msgid "audio"
+msgstr ""
 
-#: ../tgp-msg.c:515
-msgid "[video]"
-msgstr "[video]"
+#. Content of a file transfer
+#: ../tgp-msg.c:639
+msgid "animation"
+msgstr ""
 
-#: ../tgp-msg.c:604
-#, c-format
-msgid "<b>Forwarded message from: %s</b><br>%s"
-msgstr "<b>Message transféré depuis : %s</b><br>%s"
+#. Content of a file transfer
+#: ../tgp-msg.c:642
+msgid "video"
+msgstr ""
 
-#. FIXME: sometimes users aren't part of the response when receiving a
-#. forwarded message
-#: ../tgp-msg.c:607
-#, c-format
-msgid "<b>Forwarded message:</b><br>%s"
-msgstr "<b>Message transféré :</b><br>%s"
-
-#: ../tgp-msg.c:720
+#: ../tgp-msg.c:873
 msgid "loading document or picture failed"
 msgstr "échec au chargement du document ou de l'image"
 
@@ -574,7 +618,7 @@ msgstr "mois précédent"
 msgid "unknown"
 msgstr "inconnue"
 
-#: ../tgp-chat.c:108 ../tgp-chat.c:582
+#: ../tgp-chat.c:108 ../tgp-chat.c:671
 msgid "Telegram Chats"
 msgstr "Conversations de Telegram"
 
@@ -582,34 +626,34 @@ msgstr "Conversations de Telegram"
 msgid "You have already left this chat."
 msgstr "Vous avez déjà quitté cette conversation."
 
-#: ../tgp-chat.c:224
+#: ../tgp-chat.c:298
 msgid "Subject:"
 msgstr "Sujet :"
 
-#: ../tgp-chat.c:230
+#: ../tgp-chat.c:304
 msgid "Invite link:"
 msgstr "Lien d'invitation :"
 
-#: ../tgp-chat.c:236
+#: ../tgp-chat.c:310
 msgid "Chat ID:"
 msgstr "Chat ID :"
 
-#: ../tgp-chat.c:342
+#: ../tgp-chat.c:416
 msgid "Supergroup"
 msgstr "Supergroup"
 
-#: ../tgp-chat.c:342
+#: ../tgp-chat.c:416
 msgid "Channel"
 msgstr "Canal"
 
-#: ../tgp-chat.c:345
+#: ../tgp-chat.c:419
 msgid "Group"
 msgstr "Groupe"
 
-#: ../tgp-chat.c:367
+#: ../tgp-chat.c:435
 msgid "Users in chat"
 msgstr "Utilisateurs dans la conversation"
 
-#: ../tgp-chat.c:370
+#: ../tgp-chat.c:438
 msgid "Type"
 msgstr "Type"

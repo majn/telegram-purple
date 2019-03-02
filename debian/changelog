@@ -1,0 +1,27 @@
+telegram-purple (1.4.0-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+  * No longer actively try to push it into Debian: too unstable.
+    If you really want a .deb file, see README.md in the toplevel directory.
+
+ -- Ben Wiederhake <Ben.Wiederhake@gmail.com>  Mon, 10 Apr 2017 23:31:32 +0200
+
+telegram-purple (1.3.0-1) unstable; urgency=medium
+
+  [ Hugues Morisset ]
+  * Initial Release (Closes: #833793)
+
+  [ Ben Wiederhake ]
+  * Please note that due to the format-switch in 1.2.6, the file
+    /etc/telegram-purple/server.pub is obsolete for all version after it.
+    It is ignored to allow for smooth transition from old, manual
+    installations, and may be removed in future versions.
+  * New upstream release
+    - Add translations and plural support
+    - Fix lots of bugs around secret chats (still not perfect, though)
+    - Fix behavior around hibernation
+    - Fix display errors and false warnings
+    - Fix crash on 'unsupported' media
+    - Support supergroups and channels
+
+ -- Ben Wiederhake <Ben.Wiederhake@gmail.com>  Mon, 22 Aug 2016 20:59:47 +0200

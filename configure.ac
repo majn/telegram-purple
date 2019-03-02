@@ -20,7 +20,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([telegram-purple], [1.3.1])
+AC_INIT([telegram-purple], [1.4.1])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
 
@@ -32,6 +32,13 @@ m4_include([m4_ax_pkg_config.m4])
 AC_PROG_CC
 AC_PROG_INSTALL
 
+AC_TRY_COMPILE([], [
+#ifdef NDEBUG
+#error "NDEBUG detected"
+#endif], [],
+[AC_MSG_ERROR([The macro NDEBUG cannot work.  All writes and reads are wrapped in asserts.
+For more info, see https://github.com/majn/telegram-purple/issues/429])])
+
 AC_CHECK_LIB([rt], [clock_gettime])
 
 AC_ARG_ENABLE([gcrypt],
@@ -40,8 +47,9 @@ AC_ARG_ENABLE([gcrypt],
 AS_IF([test "x$enable_gcrypt" != "xno"], [
   # Even though tgl/configure will do this too, still call our own libgcrypt check to assure that -lgcrypt is added to our makefile
   AC_CHECK_LIB([gcrypt], [gcry_mpi_snatch], [], [
-    echo "no libgcrypt >= 1.60 found. If its not available try --disable-gcrypt to link against openssl, but in that case YOU MAY NOT REDISTRIBUTE THE BINARY due to licensing restrictions."
-    exit -1
+    AC_MSG_ERROR([no libgcrypt >= 1.60 found.
+    If its not available try --disable-gcrypt to link against openssl, but in that case
+    YOU MAY NOT REDISTRIBUTE THE BINARY due to licensing restrictions.])
   ])
   AC_SUBST([CRYPTO_FLAG], [--disable-openssl])
 ], [
@@ -59,7 +67,23 @@ AC_ARG_ENABLE([libwebp],
 
 AS_IF([test "x$enable_libwebp" != "xno"], [
     AC_MSG_RESULT([enabled])
-    AC_CHECK_LIB([webp], [WebPDecodeRGBA], [], [AC_MSG_ERROR([no libwebp found, try --disable-libwebp, but stickers won't be displayed in the chat])])
+    AC_CHECK_LIB([webp], [WebPDecodeRGBA], [], [
+        AC_SEARCH_LIBS([WebPDecodeRGBA], [webp-7], [], [AC_MSG_ERROR([no libwebp found, try --disable-libwebp, but stickers won't be displayed in the chat])])
+        # If we get here, then it's one of the special-case scenarios.
+        # So we *do* want to set 'HAVE_LIBWEBP' to 1.  But because the primary check
+        # failed, it would now go to "undefined".
+        # Therefore, override it:
+        AC_DEFINE(HAVE_LIBWEBP, 1)
+    ])
+  ])
+
+AC_MSG_CHECKING([for libpng])
+AC_ARG_ENABLE([libpng],
+  AS_HELP_STRING([--disable-libpng], [Disable libpng, stickers won't be converted]))
+
+AS_IF([test "x$enable_libpng" != "xno"], [
+    AC_MSG_RESULT([enabled])
+    AC_CHECK_LIB([png], [png_write_png], [], [AC_MSG_ERROR([no libpng found, try --disable-libpng])])
   ])
 
 AC_ARG_ENABLE([icons],
@@ -75,8 +99,7 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdlib.h string.h sys
 AC_TYPE_SIZE_T
 
 # Checks for library functions.
-AC_FUNC_MALLOC
-AC_CHECK_FUNCS([memset strdup])
+AC_CHECK_FUNCS([malloc memset strdup])
 
 AC_SUBST(PURPLE_CFLAGS)
 AC_SUBST(PURPLE_CPPFLAGS)

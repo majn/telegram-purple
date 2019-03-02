@@ -1,1 +1,7 @@
 /*.mo
+
+# See Makefile, section "Translation fixes":
+/de.po
+/it.po
+/pl.po
+/ru.po

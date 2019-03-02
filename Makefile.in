@@ -14,7 +14,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
 #
-# Copyright Matthias Jentsch, Vitaly Valtman, Christopher Althaus, Markus Endres 2014-2015
+# Copyright Matthias Jentsch, Vitaly Valtman, Christopher Althaus, Markus Endres 2014-2017
 
 srcdir=@srcdir@
 prefix=@prefix@
@@ -22,8 +22,42 @@ datarootdir=@datarootdir@
 localedir=@localedir@
 gettext_package=@GETTEXT_PACKAGE@
 
-CFLAGS=@CFLAGS@ @PURPLE_CFLAGS@ @DEFS@ -DENABLE_NLS -DLOCALEDIR='"$(localedir)"' -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter -I${srcdir} -I. -fno-strict-aliasing -fPIC -D_FORTIFY_SOURCE=2
-LDFLAGS=@LDFLAGS@ @OPENSSL_LIBS@ @PURPLE_LIBS@ @LIBS@ -rdynamic -ggdb
+PIDGIN_VERSION=2.12.0
+WIN32_GTK_BUNDLE_DIR=win32/gtk+-bundle_2.24.10-20120208_win32
+WIN32_GTK_BUNDLE_URL=http://ftp.acc.umu.se/pub/gnome/binaries/win32/gtk+/2.24/gtk+-bundle_2.24.10-20120208_win32.zip
+WIN32_GTK_BUNDLE_FILE=win32/gtk+-bundle_2.24.10-20120208_win32.zip
+WIN32_PIDGIN_SRC_URL=http://sourceforge.net/projects/pidgin/files/Pidgin/${PIDGIN_VERSION}/pidgin-${PIDGIN_VERSION}.tar.gz/download
+WIN32_PIDGIN_SRC_FILE=win32/pidgin-${PIDGIN_VERSION}.tar.gz
+WIN32_PIDGIN_SRC_DIR=win32/pidgin-${PIDGIN_VERSION}
+WIN32_PIDGIN_BIN_URL=http://sourceforge.net/projects/pidgin/files/Pidgin/${PIDGIN_VERSION}/pidgin-${PIDGIN_VERSION}-win32-bin.zip/download
+WIN32_PIDGIN_BIN_FILE=win32/pidgin-${PIDGIN_VERSION}-win32-bin.zip
+WIN32_PIDGIN_BIN_DIR=win32/pidgin-${PIDGIN_VERSION}-win32bin
+WIN32_WEBP_URL=https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-0.6.1.tar.gz
+WIN32_WEBP_FILE=win32/libwebp-0.6.1.tar.gz
+WIN32_WEBP_DIR=win32/libwebp-0.6.1
+WIN32_DIRS=${WIN32_GTK_BUNDLE_DIR} ${WIN32_PIDGIN_SRC_DIR} ${WIN32_PIDGIN_BIN_DIR} ${WIN32_WEBP_DIR}
+# Not directly used here, but the usage will be injected via the CFLAGS configure var.
+# Note on webp: locally cross-built!  That's why it violates the pattern.
+WIN32_INC=-I${WIN32_PIDGIN_SRC_DIR}/pidgin \
+          -I${WIN32_PIDGIN_SRC_DIR}/pidgin/win32 \
+          -I${WIN32_PIDGIN_SRC_DIR}/libpurple \
+          -I${WIN32_PIDGIN_SRC_DIR}/libpurple/win32 \
+          -I${WIN32_GTK_BUNDLE_DIR}/include \
+          -I${WIN32_GTK_BUNDLE_DIR}/include/glib-2.0 \
+          -I${WIN32_GTK_BUNDLE_DIR}/lib/glib-2.0/include \
+          -I${WIN32_GTK_BUNDLE_DIR}/include/gtk-2.0 \
+          -I${WIN32_GTK_BUNDLE_DIR}/lib/gtk-2.0/include \
+          -Iobjs/webp-install/include
+WIN32_CONTRIB_FILES=contrib/libgcrypt-20.dll contrib/libgpg-error-0.dll contrib/libgcc_s_sjlj-1.dll
+
+CFLAGS_INTL=-DENABLE_NLS -DLOCALEDIR='"$(localedir)"'
+CFLAGS_WARN=-Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter
+CFLAGS_EXTRA=-I${srcdir} -I. -fno-strict-aliasing -fPIC -D_FORTIFY_SOURCE=2
+CFLAGS=@CFLAGS@ @PURPLE_CFLAGS@ @DEFS@ ${CFLAGS_INTL} ${CFLAGS_WARN} ${CFLAGS_EXTRA}
+
+LDFLAGS_EXTRA=-rdynamic -ggdb
+LDFLAGS=@LDFLAGS@ @OPENSSL_LIBS@ @PURPLE_LIBS@ @LIBS@ ${LDFLAGS_EXTRA}
+
 DIR_PERM=0755
 FILE_PERM=0644
 
@@ -40,10 +74,10 @@ endif
 DEP=dep
 EXE=bin
 OBJ=objs
-DIR_LIST=${DEP} ${EXE} ${OBJ}
+DIR_LIST=${DEP} ${EXE} ${OBJ} contrib
 
 PLUGIN_OBJECTS=${OBJ}/tgp-net.o ${OBJ}/tgp-timers.o ${OBJ}/msglog.o ${OBJ}/telegram-base.o ${OBJ}/telegram-purple.o ${OBJ}/tgp-2prpl.o ${OBJ}/tgp-structs.o ${OBJ}/tgp-utils.o ${OBJ}/tgp-chat.o ${OBJ}/tgp-ft.o ${OBJ}/tgp-msg.o ${OBJ}/tgp-request.o ${OBJ}/tgp-blist.o ${OBJ}/tgp-info.o
-ALL_OBJS=${PLUGIN_OBJECTS}
+ALL_OBJS=${PLUGIN_OBJECTS} ${EXTRA_OBJECTS}
 
 ifdef MSGFMT_PATH
 LOCALES=$(shell cat po/LINGUAS)
@@ -64,8 +98,8 @@ CRYPTO_FLAG=@CRYPTO_FLAG@
 
 
 ### == 'Magic' targets and infrastructure. == ###
-# Here be dragons! See https://github.com/majn/telegram-purple/issues/242
-# For the full list of requirements, goals, and rationale.
+# Here be dragons! See HACKING.BUILD.md
+# for the full list of requirements, goals, and rationale.
 
 .PHONY: create_dirs
 create_dirs: ${DIR_LIST}
@@ -110,8 +144,28 @@ ${PLUGIN_OBJECTS}: ${OBJ}/%.o: ${srcdir}/%.c tgl/libs/libtgl.a | create_dirs
 po/%.mo: po/%.po
 	${MSGFMT_PATH} -cf -o $@ $< >/dev/null 2>&1
 
-${PRPL_LIBNAME}: ${PLUGIN_OBJECTS} tgl/libs/libtgl.a | create_dirs
+${PRPL_LIBNAME}: ${ALL_OBJS} tgl/libs/libtgl.a | create_dirs
 	${CC} -shared -o $@ $^ ${LDFLAGS}
+
+
+### == Translation fixes == ###
+# I fucked up some of the language codes.
+# Fixing it in Transifex would require me to recreate these groups,
+# deleting all old translations and potentially losing the translators.
+# This is ugly, but better than losing translators.
+# The space in the matching pattern excludes the "Language-Team:" field.
+
+po/de.po: po/de_DE.po
+	sed -re 's/ de_DE/ de/' $< > $@
+
+po/it.po: po/it_IT.po
+	sed -re 's/ it_IT/ it/' $< > $@
+
+po/pl.po: po/pl_PL.po
+	sed -re 's/ pl_PL/ pl/' $< > $@
+
+po/ru.po: po/ru_RU.po
+	sed -re 's/ru_RU/ru/' $< > $@
 
 
 ### == noicon_{,un}install targets. Use only if you know that you don't need icons. Note that pidgin uses those files. == ###
@@ -121,7 +175,6 @@ noicon_install: $(PRPL_LIBNAME) $(LOCALE_MOS)
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(PLUGIN_DIR_PURPLE)
 	install -m $(FILE_PERM) $(PRPL_LIBNAME) $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)/etc/telegram-purple
-	install -m $(FILE_PERM) tg-server.tglpub $(DESTDIR)/etc/telegram-purple/server.tglpub
 # Assume that the user does not use AppStream if she doesn't want icons
 	@for lang in $(LOCALES); do \
 		mkdir -p $(DESTDIR)$(localedir)/$$lang/LC_MESSAGES; \
@@ -133,7 +186,7 @@ noicon_install: $(PRPL_LIBNAME) $(LOCALE_MOS)
 noicon_uninstall:
 	rm -f $(DESTDIR)$(PLUGIN_DIR_PURPLE)/$(PRPL_NAME)
 	rm -f $(DESTDIR)/etc/telegram-purple/server.pub # TODO: Remove this in later versions
-	rm -f $(DESTDIR)/etc/telegram-purple/server.tglpub
+	rm -f $(DESTDIR)/etc/telegram-purple/server.tglpub # TODO: Remove this in later versions
 # TODO: Delete all installed .mo's, no matter what LINGUAS says.
 	@for lang in $(LOCALES); do \
 		echo "removing $(localedir)/$$lang/LC_MESSAGES/$(gettext_package).mo"; \
@@ -168,14 +221,68 @@ uninstall: noicon_uninstall
 local_install:
 	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(HOME)/.purple/plugins
 	install -m $(FILE_PERM) $(PRPL_LIBNAME) $(DESTDIR)$(HOME)/.purple/plugins/$(PRPL_NAME)
-# See telegram-base.c, function get_user_pk_path for justification:
-	mkdir -m $(DIR_PERM) -p $(DESTDIR)$(HOME)/.purple/telegram-purple
-	install -m $(FILE_PERM) tg-server.tglpub $(DESTDIR)$(HOME)/.purple/telegram-purple/server.tglpub
 
 .PHONY: local_uninstall
 local_uninstall:
 	rm -f $(DESTDIR)$(HOME)/.purple/plugins/$(PRPL_NAME)
-	rm -f $(DESTDIR)$(HOME)/.purple/telegram-purple/server.tglpub
+	rm -f $(DESTDIR)$(HOME)/.purple/telegram-purple/server.tglpub # TODO: Remove this in later versions
+
+
+### == Windows sources downloads == ###
+
+.PHONY: download_win32_sources
+download_win32_sources: | ${WIN32_DIRS}
+
+win32:
+	@mkdir -p $@
+
+${WIN32_GTK_BUNDLE_DIR}: | ${WIN32_GTK_BUNDLE_FILE}
+	unzip -q $| -d $@
+
+${WIN32_GTK_BUNDLE_FILE}: | win32
+	wget -q -O $@ ${WIN32_GTK_BUNDLE_URL}
+
+${WIN32_PIDGIN_SRC_DIR}: | ${WIN32_PIDGIN_SRC_FILE}
+	tar xf $| -C win32/
+
+${WIN32_PIDGIN_SRC_FILE}: | win32
+	wget -q -O $@ ${WIN32_PIDGIN_SRC_URL}
+
+${WIN32_PIDGIN_BIN_DIR}: | ${WIN32_PIDGIN_BIN_FILE}
+	unzip -q $| -d win32/
+
+${WIN32_PIDGIN_BIN_FILE}: | win32
+	wget -q -O $@ ${WIN32_PIDGIN_BIN_URL}
+
+${WIN32_WEBP_DIR}: | ${WIN32_WEBP_FILE}
+	tar xf $| -C win32/
+
+${WIN32_WEBP_FILE}: | win32
+	wget -q -O $@ ${WIN32_WEBP_URL}
+
+.PHONY: win-installer-deps
+win-installer-deps: telegram-purple.nsi $(PRPL_LIBNAME) $(LOCALE_MOS) ${WIN32_CONTRIB_FILES}
+	@[ "x${PRPL_NAME}" = "xlibtelegram.dll" ] || { \
+		echo "WARNING: Bad PRPL_NAME.  This probably won't work." ; \
+		echo "         (The DLL file cannot be just renamed!)" ; }
+
+/usr/%:
+	@echo "You're missing the file $@"
+	@echo "Try installing the appropriate of the following packages:"
+	@echo "    libgcrypt-mingw-w64-dev"
+	@echo "    libgpg-error-mingw-w64-dev"
+	@echo "    gcc-mingw-w64-i686"
+	@echo "Also, please file a bug report *EVEN IF THIS SOLVES THE ISSUE*,"
+	@echo "as it should have been detected earlier."
+
+contrib/libgcrypt-20.dll: /usr/i686-w64-mingw32/bin/libgcrypt-20.dll | contrib
+	cp $< "$@"
+
+contrib/libgpg-error-0.dll: /usr/i686-w64-mingw32/bin/libgpg-error-0.dll | contrib
+	cp $< "$@"
+
+contrib/libgcc_s_sjlj-1.dll: /usr/lib/gcc/i686-w64-mingw32/*-win32/libgcc_s_sjlj-1.dll | contrib
+	cp $< "$@"
 
 
 ### == Handling and maintenance. Subject to rapid change, shouldn't be used in scripts. == ###
@@ -188,7 +295,14 @@ strip: $(PRPL_LIBNAME)
 	$(STRIP) --strip-unneeded $(PRPL_LIBNAME)
 
 .PHONY: build-nsi
-build-nsi: telegram-purple.nsi.awk telegram-purple.nsi.awk-in
+build-nsi: telegram-purple.nsi
+
+config.h:
+	@echo "How did you manage to do that?"
+	@echo "You probably want to call ./config.status first."
+	@exit 1
+
+telegram-purple.nsi: telegram-purple.nsi.awk telegram-purple.nsi.awk-in po/LINGUAS config.h
 	awk -f telegram-purple.nsi.awk telegram-purple.nsi.awk-in > telegram-purple.nsi
 
 .PHONY: run
@@ -225,7 +339,7 @@ dist: check-clean commit.h .git create_dirs
 
 .PHONY: clean-here
 clean-here:
-	rm -rf ${DIR_LIST} $(PRPL_LIBNAME) po/*.mo autom4te.cache AppStream/po/*.mo
+	rm -rf ${DIR_LIST} $(PRPL_LIBNAME) telegram-purple.nsi po/*.mo autom4te.cache AppStream/po/*.mo
 
 -include test/Makefile
 

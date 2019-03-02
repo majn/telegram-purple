@@ -48,7 +48,7 @@ tgl_peer_id_t tgp_chat_get_id (PurpleChat *C) {
 }
 
 void tgp_chat_set_last_server_id (struct tgl_state *TLS, tgl_peer_id_t chat, int id) {
-  info ("setting channel message server_id=d%", id);
+  info ("setting channel message server_id=%d", id);
 
   char *key = g_strdup_printf ("last-server-id/%d", tgl_get_peer_id (chat));
   purple_account_set_int (tls_get_pa (TLS), key, id);
@@ -285,7 +285,9 @@ void tgprpl_kick_from_chat (PurpleConnection *gc, int id, const char *who) {
   g_return_if_fail(P != NULL);
   
   tgl_peer_t *other_id = tgp_blist_lookup_peer_get (gc_get_tls (gc), who);
-  g_return_if_fail(P != NULL);
+  if (other_id == NULL) {
+    return;
+  }
   
   tgl_do_del_user_from_chat (gc_get_tls (gc), P->id, other_id->id, tgp_notify_on_error_gw, NULL);
 }
@@ -400,7 +402,7 @@ char *tgprpl_get_chat_name (GHashTable * data) {
   return g_strdup (g_hash_table_lookup (data, "subject"));
 }
 
-static void tgp_chat_roomlist_it (tgl_peer_t *P, void *extra) {
+static void tgp_chat_roomlist_add (tgl_peer_t *P, void *extra) {
   connection_data *conn = extra;
   
   if ((tgl_get_peer_type (P->id) == TGL_PEER_CHAT || tgl_get_peer_type (P->id) == TGL_PEER_CHANNEL)
@@ -422,6 +424,26 @@ static void tgp_chat_roomlist_it (tgl_peer_t *P, void *extra) {
   }
 }
 
+void tgp_chat_roomlist_populate (struct tgl_state *TLS) {
+  connection_data *conn = tls_get_data (TLS);
+  g_return_if_fail(purple_roomlist_get_in_progress (conn->roomlist));
+  
+  GList *fields = NULL;
+  PurpleRoomlistField *f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_STRING, "", "id", TRUE);
+  fields = g_list_append (fields, f);
+  
+  f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_INT, _("Users in chat"), "users", FALSE);
+  fields = g_list_append (fields, f);
+  
+  f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_STRING, _("Type"), "type", FALSE);
+  fields = g_list_append (fields, f);
+  
+  purple_roomlist_set_fields (conn->roomlist, fields);
+  tgl_peer_iterator_ex (conn->TLS, tgp_chat_roomlist_add, conn);
+  
+  purple_roomlist_set_in_progress (conn->roomlist, FALSE);
+}
+
 PurpleRoomlist *tgprpl_roomlist_get_list (PurpleConnection *gc) {
   debug ("tgprpl_roomlist_get_list()");
   connection_data *conn = gc_get_data (gc);
@@ -429,21 +451,16 @@ PurpleRoomlist *tgprpl_roomlist_get_list (PurpleConnection *gc) {
   if (conn->roomlist) {
     purple_roomlist_unref (conn->roomlist);
   }
-  
+
   conn->roomlist = purple_roomlist_new (purple_connection_get_account (gc));
   
-  GList *fields = NULL;
-  PurpleRoomlistField *f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_STRING, "", "id", TRUE);
-  fields = g_list_append (fields, f);
-
-  f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_INT, _("Users in chat"), "users", FALSE);
-  fields = g_list_append (fields, f);
-
-  f = purple_roomlist_field_new (PURPLE_ROOMLIST_FIELD_STRING, _("Type"), "type", FALSE);
-  fields = g_list_append (fields, f);
-
-  purple_roomlist_set_fields (conn->roomlist, fields);
-  tgl_peer_iterator_ex (conn->TLS, tgp_chat_roomlist_it, conn);
+  purple_roomlist_set_in_progress (conn->roomlist, TRUE);
+  
+  // spectrum2 calls this function when the account is still connection
+  // all roomlists in progress are being initialised by tgp_on_ready
+  if (conn->dialogues_ready) {
+    tgp_chat_roomlist_populate (conn->TLS);
+  }
   
   return conn->roomlist;
 }

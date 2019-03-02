@@ -37,6 +37,7 @@ appstream-util validate-relax --nonet %{buildroot}/%{_datadir}/appdata/telegram-
 %{_datadir}/pixmaps/pidgin/protocols/16/telegram.png
 %{_datadir}/pixmaps/pidgin/protocols/22/telegram.png
 %{_datadir}/pixmaps/pidgin/protocols/48/telegram.png
+%{_datadir}/appdata/telegram-purple.metainfo.xml
 
 %changelog
 * Sun Apr 9 2017 mjentsch 1.3.1-1

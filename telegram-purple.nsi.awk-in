@@ -18,7 +18,7 @@
 
 ; Script based on the Skype4Pidgin and Off-the-Record Messaging NSI files
 
-SetCompress off
+SetCompressor /SOLID /FINAL lzma
 
 ; todo: SetBrandingImage
 ; HM NIS Edit Wizard helper defines
@@ -91,15 +91,13 @@ Section "MainSection" SEC01
 	after_copy:
 	
 	SetOutPath "$PidginDir\locale"
-	File /nonfatal "/oname=%\LC_MESSAGES\telegram-purple.mo" "po\%.mo"
+	File /nonfatal "/oname=變\LC_MESSAGES\telegram-purple.mo" "po\變.mo"
 	
 	SetOutPath "$PidginDir"
-	File "/oname=server.tglpub" "tg-server.tglpub"
-	File "${WIN32_DEV_TOP}\libgpg-error-1.12-2\bin\libgpg-error-0.dll"
-	File "${WIN32_DEV_TOP}\libgcrypt-1.6.3\bin\libgcrypt-20.dll"
-	File "${WIN32_DEV_TOP}\libwebp-0.4.3-1\bin\libwebp-5.dll"
-	File "${WIN32_DEV_TOP}\mingw\bin\libgcc_s_sjlj-1.dll"
-	
+	File "${WIN32_DEV_TOP}\libgpg-error-0.dll"
+	File "${WIN32_DEV_TOP}\libgcrypt-20.dll"
+	或File "${WIN32_DEV_TOP}\libwebp-7.dll"
+	File "${WIN32_DEV_TOP}\libgcc_s_sjlj-1.dll"
 SectionEnd
 
 Function GetPidginInstPath

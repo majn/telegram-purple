@@ -21,11 +21,14 @@
 set -e
 
 # -- Cleanup possibly left-over artifacts
-rm -f bin/tgl_tl-parser.tar bin/tgl.tar bin/commit.h.tar bin/result.tar bin/result.tar.gz
+rm -f bin/tgl.tar bin/commit.h.tar bin/result.tar bin/result.tar.gz
+# Very old artifact
+rm -f bin/tgl_tl-parser.tar
+# Setup
+mkdir -p bin
 
 # -- Create parts
 # Abuse the "bin" dir for temporary files.
-( cd tgl/tl-parser && git archive --prefix=telegram-purple/tgl/tl-parser/ --output=../../bin/tgl_tl-parser.tar HEAD )
 ( cd tgl && git archive --prefix=telegram-purple/tgl/ --output=../bin/tgl.tar HEAD )
 git archive --prefix=telegram-purple/ --output=bin/result.tar HEAD
 # This is a lot of options. Here's why.
@@ -39,7 +42,6 @@ tar --sort=name --mtime="1970-01-01 00:00Z" --owner=root --group=root --transfor
 
 # -- Concatenate it all
 tar --concatenate -f bin/result.tar bin/tgl.tar
-tar --concatenate -f bin/result.tar bin/tgl_tl-parser.tar
 tar --concatenate -f bin/result.tar bin/commit.h.tar
 gzip -n bin/result.tar
 
@@ -50,4 +52,4 @@ echo mv -f bin/result.tar.gz $TARNAME
 mv -f bin/result.tar.gz $TARNAME
 
 # -- Cleanup (never fail)
-rm -f bin/tgl_tl-parser.tar bin/tgl.tar bin/commit.h.tar bin/result.tar bin/result.tar.gz || true
+rm -f bin/tgl.tar bin/commit.h.tar bin/result.tar bin/result.tar.gz || true
