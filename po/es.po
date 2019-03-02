@@ -5,12 +5,14 @@
 # 
 # Translators:
 # aguador <waterbearer54@gmx.com>, 2017
+# C0D3C <gomezgleonardob@gmail.com>, 2019
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: telegram-purple\n"
 "POT-Creation-Date: 2018-08-01 23:11+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: aguador <waterbearer54@gmx.com>, 2017\n"
+"PO-Revision-Date: 2017-04-11 23:02+0000\n"
+"Last-Translator: C0D3C <gomezgleonardob@gmail.com>, 2019\n"
 "Language-Team: Spanish (https://www.transifex.com/telegram-purple-developers/teams/53149/es/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -218,7 +220,7 @@ msgstr "Enviar acuses de recibo al estar presente"
 #. IPv6
 #: ../telegram-purple.c:883
 msgid "Use IPv6 for connecting (restart required)"
-msgstr ""
+msgstr "Usar IPV6 para conectarse (reinicio es requerido)"
 
 #: ../telegram-purple.c:908
 msgid "Telegram Protocol Plugin."

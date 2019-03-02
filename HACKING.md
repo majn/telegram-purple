@@ -18,3 +18,15 @@ Here's a few places to start:
 ## How to contribute
 
 Write [an issue](https://github.com/majn/telegram-purple/issues/new), shoot us a mail (scrape the address from the git history), or contact us in dev chat (changing URL, see README for that).
+
+## How to release
+
+#### Translations
+
+Make sure that the string freeze has already happened.
+
+Go to the [translation site](https://www.transifex.com/telegram-purple-developers/telegram-purple/content/),
+and close the current resource for new translations.  Rename and re-prioritize it appropriately.
+Download the zip-file, extract it, remove the annoying prefix.  Move all files to `po/`.
+
+Run `make po/*.po` to fix the filenames.  Do not delete any files.  Rationale see `Makefile`.

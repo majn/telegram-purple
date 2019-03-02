@@ -5,11 +5,12 @@
 # 
 # Translators:
 # TitanusEramius <titanus@aptget.dk>, 2017
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: telegram-purple\n"
 "POT-Creation-Date: 2018-08-01 23:11+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2017-04-11 23:02+0000\n"
 "Last-Translator: TitanusEramius <titanus@aptget.dk>, 2017\n"
 "Language-Team: Danish (https://www.transifex.com/telegram-purple-developers/teams/53149/da/)\n"
 "MIME-Version: 1.0\n"
