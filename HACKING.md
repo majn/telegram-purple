@@ -33,6 +33,8 @@ Run `make po/*.po` to fix the filenames.  Do not delete any files.  Rationale se
 
 Adjust `po/LINGUAS*` as you see fit.
 
+Also import the translations for `AppStream/po/`.
+
 #### Increment version
 
 Attempt to use semver.
@@ -73,3 +75,12 @@ All relevant issues are marked with `in-pipeline`, but sadly too many are marked
 #### Organize branches
 
 Create a new branch `dev-1.nextsomething`, delete the old branch.
+
+#### Create new translation goal on transifex
+
+Be pessimistic in the slug-name.
+
+Run `./autogen.sh` to make all string changes available.
+
+Also, create an announcement that yes there is a new resource,
+but this resource may change significantly until the next string freeze.
