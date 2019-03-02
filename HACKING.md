@@ -30,3 +30,5 @@ and close the current resource for new translations.  Rename and re-prioritize i
 Download the zip-file, extract it, remove the annoying prefix.  Move all files to `po/`.
 
 Run `make po/*.po` to fix the filenames.  Do not delete any files.  Rationale see `Makefile`.
+
+Adjust `po/LINGUAS*` as you see fit.
