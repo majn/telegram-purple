@@ -48,6 +48,8 @@ Also, install it locally.  Don't forget to `./configure` first.
 
 #### Prepare release files
 
+Merge into `master`.
+
 Make a tag: `git tag v1.something`
 Remember to push the tag to github.
 
@@ -59,8 +61,15 @@ Keep the resulting `telegram-purple-1.something+gcafebabe5.exe` safe.
 
 #### Create release on github
 
-FIXME
+See the [release page](https://github.com/majn/telegram-purple/releases/).
+Feel free to be inspired by the previous release-messages.
+
+Remember to upload the origtar *and* Windows installer.
 
 #### Close associated issues
 
 All relevant issues are marked with `in-pipeline`, but sadly too many are marked this way.
+
+#### Organize branches
+
+Create a new branch `dev-1.nextsomething`, delete the old branch.
