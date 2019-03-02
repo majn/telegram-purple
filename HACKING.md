@@ -32,3 +32,12 @@ Download the zip-file, extract it, remove the annoying prefix.  Move all files t
 Run `make po/*.po` to fix the filenames.  Do not delete any files.  Rationale see `Makefile`.
 
 Adjust `po/LINGUAS*` as you see fit.
+
+#### Increment version
+
+Attempt to use semver.
+
+Adjust `configure.ac`, in macro `AC_INIT`.  Remember to run `autoreconf`.
+
+Update `CHANGELOG.md`.
+

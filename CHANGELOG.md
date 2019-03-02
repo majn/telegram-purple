@@ -1,6 +1,22 @@
 Changelog
 ---------
 
+##### 1.4.1
+
+- *REMOVED* active support for Adium.  We just don't know how!  Help wanted!
+- Had to skip 1.4.0 as someone distributed an intermediate version as "1.4.0"
+- Import awesomeness from kenorb's mega-merge:
+    * Support for pinned and other action types.
+    * Stability improvements in general
+- Better build support:
+    * No `-Werror`
+    * Compatibility with LibreSSL
+    * Compatibility with C++
+- Simplify: Only one level of submodules
+- Add support for replies/forwarded messages
+- Add support for IPv6-only
+- Add windows cross-compilation script
+
 ##### 1.3.1
 
 - Stability improvements
