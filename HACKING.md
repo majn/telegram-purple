@@ -41,3 +41,26 @@ Adjust `configure.ac`, in macro `AC_INIT`.  Remember to run `autoreconf`.
 
 Update `CHANGELOG.md`.
 
+#### Run some tests
+
+First locally, then on Travis.
+Also, install it locally.  Don't forget to `./configure` first.
+
+#### Prepare release files
+
+Make a tag: `git tag v1.something`
+Remember to push the tag to github.
+
+Make a dist-bundle: `make dist`
+Keep the resulting `telegram-purple_1.something.orig.tar.gz` safe.
+
+Make the windows installer: `./mkwindows.sh`
+Keep the resulting `telegram-purple-1.something+gcafebabe5.exe` safe.
+
+#### Create release on github
+
+FIXME
+
+#### Close associated issues
+
+All relevant issues are marked with `in-pipeline`, but sadly too many are marked this way.
