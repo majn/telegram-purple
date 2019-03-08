@@ -29,6 +29,12 @@ then
     # Otherwise:
     # USE_WEBP=n
 fi
+if [ -z "${USE_PNG}" ]
+then
+    USE_PNG=y
+    # Otherwise:
+    # USE_PNG=n
+fi
 if [ -z "${USE_VERSIONINFO}" ]
 then
     USE_VERSIONINFO=y
@@ -196,6 +202,11 @@ then
     LDFLAGS_WEBP="-L${WEBP_INSTALL_DIR_FULL}/bin"
     CONFFLAGS_WEBP="--enable-libwebp"
 fi
+if [ "y" = "${USE_PNG}" ]
+then
+    # Library should already be present in win32/gtk+-bundle_2.24.10-20120208_win32/lib
+    CONFFLAGS_PNG="--enable-libpng"
+fi
 # pkg-config is used to find the right directories for icons, library, etc on linux.
 # For Windows, this is already hardcoded in telegram-purple.nsi, so pkg-config isn't needed.
 PKG_CONFIG=/bin/false ./configure -q --build ${HOST} --host ${MINGW_TARGET} --target ${MINGW_TARGET} \
@@ -279,6 +290,6 @@ makensis -DPLUGIN_VERSION="${VERSION}+g${COMMIT}" -DPRPL_NAME=libtelegram.dll \
 # There's no monster under your bed, I swear.
 echo "===== 11: Unspoof files"
 # Stealth cleanup
-cd tgl && git checkout tl-parser/tl-parser.c tl-parser/tlc.c && cd ..
+( cd tgl && git checkout tl-parser/tl-parser.c tl-parser/tlc.c )
 
 echo "===== COMPLETE: All done.  Installer executable is in top directory."
