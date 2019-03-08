@@ -55,18 +55,18 @@ MINGW_BASE=/usr/${MINGW_TARGET}
 MINGW_INCLUDEDIR=/usr/share/mingw-w64/include
 
 # WebP compilation
-WEBP_INSTALL_DIR="objs/webp-install/"
+WEBP_INSTALL_DIR="objs/webp/install/"
 mkdir -p ${WEBP_INSTALL_DIR}  # Needed for realpath
 WEBP_INSTALL_DIR_FULL="$(realpath ${WEBP_INSTALL_DIR})"
-WEBP_BUILD_DIR="objs/webp-build/"
+WEBP_BUILD_DIR="objs/webp/build/"
 
 # Win32 references
 # Sadly, the library paths must be resolved *now* already.
 # AND, they must be absolute.  Sigh.
 mkdir -p win32
 WIN32_GTK_DEV_DIR=`realpath win32/gtk+-bundle_2.24.10-20120208_win32`
-WIN32_PIDGIN_DIR=`realpath win32/pidgin-2.12.0`
-WIN32_WEBP_PRISTINE="win32/libwebp-0.6.1/"
+WIN32_PIDGIN_DIR=`realpath win32/pidgin-2.13.0`
+WIN32_WEBP_PRISTINE="win32/libwebp-1.0.2/"
 
 # Versioning information
 ./configure -q
@@ -133,15 +133,20 @@ else
     mkdir -p "${WEBP_INSTALL_DIR}"
     # -a to (hopefully) preserve some timestamps
     cp -ar "${WIN32_WEBP_PRISTINE}" "${WEBP_BUILD_DIR}"
-    cd "${WEBP_BUILD_DIR}"
-        # ./configure && make
+    (
+        cd "${WEBP_BUILD_DIR}"
+        # ./autogen.sh && ./configure && make
 
         # Disable linking against PNG, JPEG, TIFF, GIF, WIC,
         # as those would either need cross-compilation, too, or some other magic.
+        ./autogen.sh
+        # libtoolize (called by autoreconf, called by autogen.sh) must not see
+        # `install-sh` because it would become confused by it.
+        # That's why the hierarchy is so deep.
         ./configure -q --build ${HOST} --host ${MINGW_TARGET} --target ${MINGW_TARGET} \
             --disable-dependency-tracking --prefix="${WEBP_INSTALL_DIR_FULL}/" \
             --disable-static --enable-shared \
-            --enable-swap-16bit-csp --enable-experimental \
+            --enable-swap-16bit-csp \
             --disable-libwebpmux --disable-libwebpdemux \
             --disable-libwebpdecoder --disable-libwebpextras \
             --disable-png --disable-jpeg --disable-tiff --disable-gif --disable-wic
@@ -150,12 +155,9 @@ else
         # stems from the fact that 'mt' (magnetic tape control) is not available
         # for i686-w64-mingw32, so the x86_64 version is used.  We can ignore that.
         #
-        # Try to avoid too extreme autotools overhead:
-        touch Makefile.in
-        #
         # Finally.
         make --quiet -j4 install
-    cd ../..
+    )
     if ! [ -r ${WEBP_INSTALL_DIR}/include/webp/decode.h -a -r ${WEBP_INSTALL_DIR}/bin/libwebp-7.dll ] ; then
         # I expect that cross-compiling webp is going to be very fragile,
         # so print a nice error in case this happens.
@@ -194,7 +196,9 @@ then
     LDFLAGS_WEBP="-L${WEBP_INSTALL_DIR_FULL}/bin"
     CONFFLAGS_WEBP="--enable-libwebp"
 fi
-./configure -q --build ${HOST} --host ${MINGW_TARGET} --target ${MINGW_TARGET} \
+# pkg-config is used to find the right directories for icons, library, etc on linux.
+# For Windows, this is already hardcoded in telegram-purple.nsi, so pkg-config isn't needed.
+PKG_CONFIG=/bin/false ./configure -q --build ${HOST} --host ${MINGW_TARGET} --target ${MINGW_TARGET} \
     --disable-libpng --disable-libwebp \
     --with-zlib="${MINGW_BASE}" \
     PURPLE_CFLAGS="\${WIN32_INC}" \
@@ -202,12 +206,13 @@ fi
     LDFLAGS="-L${WIN32_GTK_DEV_DIR}/lib -L${WIN32_PIDGIN_DIR}-win32bin ${LDFLAGS_WEBP}" \
     LIBS="-lssp -lintl -lws2_32" \
     ${CONFFLAGS_WEBP}
-cd tgl
-./configure -q --build ${HOST} --host ${MINGW_TARGET} --target ${MINGW_TARGET} \
-    --disable-openssl --disable-extf \
-    --with-zlib="${MINGW_BASE}" \
-    LIBS="-lssp"
-cd ..
+(
+    cd tgl
+    ./configure -q --build ${HOST} --host ${MINGW_TARGET} --target ${MINGW_TARGET} \
+        --disable-openssl --disable-extf \
+        --with-zlib="${MINGW_BASE}" \
+        LIBS="-lssp"
+)
 
 # Pretend we're building up the preliminaries for auto/
 echo "===== 06: Compile tgl, pre-'generate' files"
