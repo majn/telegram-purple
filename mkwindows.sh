@@ -56,7 +56,7 @@ MINGW_INCLUDEDIR=/usr/share/mingw-w64/include
 
 # WebP compilation
 WEBP_INSTALL_DIR="objs/webp-install/"
-mkdir -p ${WEBP_INSTALL_DIR}
+mkdir -p ${WEBP_INSTALL_DIR}  # Needed for realpath
 WEBP_INSTALL_DIR_FULL="$(realpath ${WEBP_INSTALL_DIR})"
 WEBP_BUILD_DIR="objs/webp-build/"
 
@@ -234,7 +234,7 @@ echo "===== 09: Compile telegram-purple"
 VERSIONINFO_OBJECTS=""
 if [ "y" = "${USE_VERSIONINFO}" ]
 then
-    mkdir -p objs
+    make objs commit.h
     cat <<EOFRC > objs/info.rc
 #include "../commit.h"
 1 VERSIONINFO
@@ -267,8 +267,6 @@ make -j4 bin/libtelegram.dll \
 
 # Package it up
 echo "===== 10: Create installer"
-VERSION=`grep -E 'PACKAGE_VERSION' config.h | sed -re 's/^.*"(.*)".*$/\1/'`
-COMMIT=`grep -E 'define' commit.h | sed -re 's/^.*"(.*)".*$/\1/'`
 make PRPL_NAME=libtelegram.dll win-installer-deps
 makensis -DPLUGIN_VERSION="${VERSION}+g${COMMIT}" -DPRPL_NAME=libtelegram.dll \
     -DWIN32_DEV_TOP=contrib telegram-purple.nsi
