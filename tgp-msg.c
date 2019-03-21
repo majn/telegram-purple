@@ -758,8 +758,15 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     // may be NULL
     tgl_peer_t *FP = tgl_peer_get (TLS, M->fwd_from_id);
     
+    // do not run this through tgp_message_reply_display! it doesn't handle media, forwards are all about media
+    // keep the full body we've generated
     char *tmp = text;
-    text = tgp_msg_reply_display(TLS, FP, M, "");
+    if (FP) {
+      const char *name = FP->print_name;
+      text = g_strdup_printf (_("<b>&gt; Forwarded from %s:</b><br>&gt; %s"), name, text);
+    } else {
+      text = g_strdup_printf (_("<b>&gt; Forwarded:</b><br>&gt; %s"), text);
+    }
     g_free (tmp);
     
     g_return_if_fail(text != NULL);
