@@ -523,7 +523,7 @@ static char *tgp_msg_reply_display (struct tgl_state *TLS, tgl_peer_t *replyee, 
   if (str_not_empty (reply->media.caption)) {
     char *old = quote;
     if (str_not_empty (quote))
-      quote = g_strdup_printf ("%s<br>%s", old, reply->media.caption);
+      quote = g_strdup_printf ("%s %s", old, reply->media.caption);
     else
       quote = g_strdup(reply->media.caption);
     g_free (old);
