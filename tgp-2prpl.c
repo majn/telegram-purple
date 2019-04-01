@@ -121,7 +121,7 @@ void p2tgl_got_im_combo (struct tgl_state *TLS, tgl_peer_id_t who, const char *m
           tgp_blist_lookup_purple_name (TLS, who));
     }
     purple_conv_im_write (purple_conversation_get_im_data (conv), tgp_blist_lookup_purple_name (TLS, who),
-        msg, PURPLE_MESSAGE_SEND, when);
+        msg, flags, when);
     return;
   }
 #endif
