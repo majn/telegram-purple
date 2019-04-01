@@ -579,6 +579,14 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     flags |= PURPLE_MESSAGE_NICK;
   }
   
+  // Mark carbons of our own messages
+  if (tgp_our_msg (TLS, M)) {
+    flags |= PURPLE_MESSAGE_SEND;
+    flags &= ~PURPLE_MESSAGE_RECV;
+  } else {
+    flags |= PURPLE_MESSAGE_RECV;
+  }
+  
   // handle messages that failed to load
   if (C->error) {
     const char *err = C->error_msg;
@@ -734,7 +742,6 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     if (str_not_empty (M->message)) {
       text = purple_markup_escape_text (M->message, strlen (M->message));
     }
-    flags |= PURPLE_MESSAGE_RECV;
   }
 
   if (tgl_get_peer_type (M->to_id) != TGL_PEER_ENCR_CHAT
@@ -802,7 +809,6 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         // sender is the group
         tgp_chat_got_in (TLS, P, M->from_id, text, flags, M->date);
       } else {
-        
         // sender is the channel itself
         tgp_chat_got_in (TLS, P, P->id, text, flags, M->date);
       }
@@ -811,21 +817,15 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     case TGL_PEER_CHAT: {
       tgl_peer_t *P = tgl_peer_get (TLS, M->to_id);
       g_return_if_fail(P != NULL);
-      tgp_chat_got_in (TLS, P, M->from_id, text, flags, M->date);
+      tgp_chat_got_in (TLS, P, (flags & PURPLE_MESSAGE_SEND) ? M->to_id : M->from_id, text, flags, M->date);
       break;
     }
     case TGL_PEER_ENCR_CHAT: {
-      p2tgl_got_im_combo (TLS, M->to_id, text, flags, M->date);
+      p2tgl_got_im_combo (TLS, (flags & PURPLE_MESSAGE_SEND) ? M->to_id : M->from_id, text, flags, M->date);
       break;
     }
     case TGL_PEER_USER: {
-      if (tgp_our_msg (TLS, M)) {
-        flags |= PURPLE_MESSAGE_SEND;
-        flags &= ~PURPLE_MESSAGE_RECV;
-        p2tgl_got_im_combo (TLS, M->to_id, text, flags, M->date);
-      } else {
-        p2tgl_got_im_combo (TLS, M->from_id, text, flags, M->date);
-      }
+      p2tgl_got_im_combo (TLS, (flags & PURPLE_MESSAGE_SEND) ? M->to_id : M->from_id, text, flags, M->date);
       break;
     }
   }
