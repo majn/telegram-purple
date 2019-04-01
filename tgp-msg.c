@@ -969,8 +969,7 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
   }
   
   if (! (M->flags & TGLMF_SERVICE)) {
-    debug ("service msg");
-    
+
     // handle all messages that need to load content before they can be displayed
     if (M->media.type != tgl_message_media_none) {
       switch (M->media.type) {
