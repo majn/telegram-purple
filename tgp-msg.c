@@ -519,7 +519,15 @@ static char *tgp_msg_reply_display (struct tgl_state *TLS, tgl_peer_t *replyee, 
         break;
     }
   }
-  
+
+  if (str_not_empty (reply->media.caption)) {
+    char *old = quote;
+    if (str_not_empty (quote))
+      quote = g_strdup_printf ("%s<br>%s", old, reply->media.caption);
+    else
+      quote = g_strdup(reply->media.caption);
+    g_free (old);
+  }
   
   // the combined reply
 
@@ -601,25 +609,19 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   if (M->flags & TGLMF_SERVICE) {
     text = tgp_msg_service_display (TLS, M);
     flags |= PURPLE_MESSAGE_SYSTEM;
-    
-  } else if (M->media.type != tgl_message_media_none) {
+  } else
     switch (M->media.type) {
-  
-      case tgl_message_media_photo: {
+      case tgl_message_media_none:
+        if (str_not_empty (M->message))
+          text = purple_markup_escape_text (M->message, strlen (M->message));
+        break;
+
+      case tgl_message_media_photo:
         if (M->media.photo) {
           g_return_if_fail(C->data != NULL);
-          
           text = tgp_msg_photo_display (TLS, C->data, &flags);
-          if (str_not_empty (text)) {
-            if (str_not_empty (M->media.caption)) {
-              char *old = text;
-              text = g_strdup_printf ("%s<br>%s", old, M->media.caption);
-              g_free (old);
-            }
-          }
         }
         break;
-      }
 
       case tgl_message_media_document:
       case tgl_message_media_video:
@@ -737,11 +739,15 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         warning ("received unknown media type: %d", M->media.type);
         break;
     }
-    
-  } else {
-    if (str_not_empty (M->message)) {
-      text = purple_markup_escape_text (M->message, strlen (M->message));
-    }
+
+  //Captions are only used for some media types but others will just have them empty
+  if (str_not_empty (M->media.caption)) {
+    char *old = text;
+    if (str_not_empty (text))
+      text = g_strdup_printf ("%s<br>%s", old, M->media.caption);
+    else
+      text = g_strdup(M->media.caption);
+    g_free (old);
   }
 
   if (tgl_get_peer_type (M->to_id) != TGL_PEER_ENCR_CHAT
