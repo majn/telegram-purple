@@ -336,6 +336,9 @@ FAQ
 
     For Arch Linux users that use Bitlbee you can find this directory in
     `/var/lib/bitlbee/purple/telegram-purple/`
+    
+- I don't see instructions for building on my Linux Distro, and/or I'm new to Linux as a whole! Help!
+  * A: We don't know what kind of packaging system your distro has, but it has something, we're sure, so look up something like "how to install stuff on the command line in <distro name>", and familiarize yourself with the base of that command, because you probably will find yourself using it a lot. Then, use it to install git, and whatever other dependencies you need (they may be named something different, look up something like "what <distro name> packages provide gcc" and so on for each dependency you can't find) then, do ```git clone --recursive https://github.com/majn/telegram-purple``` and ```cd cd telegram-purple``` then, as with most anything, the ```./configure```, ```make```, and ```sudo make install```. If you're using Linux, you should really be open to teaching yourself a lot of stuff, because while some people are very helpful, some other people have been helpful and dealt with enough easily googleable questions for a lifetime. There's a reason sites like https://lmgtfy.com/ exist, people often get a bit snarky about this, so of course there's a whole site dedicated to it. Anyway, we wish you well on your linux journey, stick with it and you'll find it quite rewarding!
 
 #### Group chat
 
