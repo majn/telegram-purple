@@ -522,10 +522,11 @@ static char *tgp_msg_reply_display (struct tgl_state *TLS, tgl_peer_t *replyee, 
 
   if (str_not_empty (reply->media.caption)) {
     char *old = quote;
-    if (str_not_empty (quote))
+    if (str_not_empty (quote)) {
       quote = g_strdup_printf ("%s %s", old, reply->media.caption);
-    else
+    } else {
       quote = g_strdup(reply->media.caption);
+    }
     g_free (old);
   }
   
@@ -612,8 +613,9 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   } else
     switch (M->media.type) {
       case tgl_message_media_none:
-        if (str_not_empty (M->message))
+        if (str_not_empty (M->message)) {
           text = purple_markup_escape_text (M->message, strlen (M->message));
+        }
         break;
 
       case tgl_message_media_photo:
@@ -743,10 +745,11 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   //Captions are only used for some media types but others will just have them empty
   if (str_not_empty (M->media.caption)) {
     char *old = text;
-    if (str_not_empty (text))
+    if (str_not_empty (text)) {
       text = g_strdup_printf ("%s<br>%s", old, M->media.caption);
-    else
+    } else {
       text = g_strdup(M->media.caption);
+    }
     g_free (old);
   }
 
@@ -955,7 +958,6 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
    */
   if (tgl_get_peer_type (C->msg->from_id) == TGL_PEER_CHANNEL
       || tgl_get_peer_type (C->msg->to_id) == TGL_PEER_CHANNEL) {
-    
     tgl_peer_id_t id = tgl_get_peer_type (C->msg->from_id) == TGL_PEER_CHANNEL ?
       C->msg->from_id : C->msg->to_id;
     

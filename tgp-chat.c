@@ -225,11 +225,13 @@ unsigned int tgprpl_send_chat_typing (PurpleConversation *conv, PurpleTypingStat
   PurpleConvChat *chat;
   int id;
 
-  if (!PURPLE_CONNECTION_IS_CONNECTED (gc))
+  if (!PURPLE_CONNECTION_IS_CONNECTED (gc)) {
     return 0;
+  }
 
-  if (g_strcmp0(purple_plugin_get_id (purple_connection_get_prpl (gc)), PLUGIN_ID))
+  if (g_strcmp0(purple_plugin_get_id (purple_connection_get_prpl (gc)), PLUGIN_ID)) {
     return 0;
+  }
   
   debug ("tgprpl_send_chat_typing()");
   

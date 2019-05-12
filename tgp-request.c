@@ -54,7 +54,6 @@ static void request_code (struct tgl_state *TLS, void (*callback) (struct tgl_st
       !purple_request_input (tls_get_conn (TLS), _("Login code"), _("Enter login code"), explanation, NULL, 0, 0, _("the code"), _("OK"),
           G_CALLBACK(request_code_entered), _("Cancel"), G_CALLBACK(request_canceled_disconnect), tls_get_pa (TLS),
           NULL, NULL, request_values_data_init (TLS, callback, arg, 0))) {
-    
     // the purple request API is not supported, create a new conversation (the Telegram system account "Telegram") to
     // prompt the user for the code.
     tls_get_data (TLS)->request_code_data = request_values_data_init (TLS, callback, arg, 0);
