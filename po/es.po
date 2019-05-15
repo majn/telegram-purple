@@ -26,19 +26,19 @@ msgstr "No se pudo crear el grupo"
 
 #: ../telegram-base.c:443
 msgid "Please select at least one other user."
-msgstr "Por favor, seleccionÃ¡ al menos otro usuario."
+msgstr "Por favor, seleccioná al menos otro usuario."
 
 #: ../telegram-base.c:497
 msgid "Query Failed"
-msgstr "FallÃ³ la consulta"
+msgstr "Falló la consulta"
 
 #: ../telegram-purple.c:159
 msgid "Secret chat ready."
-msgstr "ConversaciÃ³n secreta lista."
+msgstr "Conversación secreta lista."
 
 #: ../telegram-purple.c:167
 msgid "Secret chat terminated."
-msgstr "FinalizÃ³ la conversaciÃ³n secreta."
+msgstr "Finalizó la conversación secreta."
 
 #: ../telegram-purple.c:179
 msgid "Telegram"
@@ -46,17 +46,17 @@ msgstr "Telegram"
 
 #: ../telegram-purple.c:226
 msgid "Message marked as read."
-msgstr "Mensaje marcado como leÃ­do."
+msgstr "Mensaje marcado como leído."
 
 #: ../telegram-purple.c:343
 #, c-format
 msgid "Invite link: %s"
-msgstr "Enlace de invitaciÃ³n: %s"
+msgstr "Enlace de invitación: %s"
 
 #. FIXME: Can TGLCHF_MODERATOR export links?
 #: ../telegram-purple.c:354
 msgid "Creating chat link failed"
-msgstr "FallÃ³ la creaciÃ³n del enlace de converesaciÃ³n"
+msgstr "Falló la creación del enlace de converesación"
 
 #: ../telegram-purple.c:355
 msgid "You need to be admin of the group  to do that."
@@ -64,15 +64,15 @@ msgstr "Necesite ser administrador del grupo para hacer eso."
 
 #: ../telegram-purple.c:439
 msgid "Chat joined"
-msgstr "Unido a la conversaciÃ³n"
+msgstr "Unido a la conversación"
 
 #: ../telegram-purple.c:440
 msgid "Chat added to list of chat rooms."
-msgstr "ConversaciÃ³n agregada a la lista de salas de conversaciones."
+msgstr "Conversación agregada a la lista de salas de conversaciones."
 
 #: ../telegram-purple.c:466
 msgid "Start secret chat..."
-msgstr "Iniciar conversaciÃ³n secreta..."
+msgstr "Iniciar conversación secreta..."
 
 #. Generate Public Link
 #: ../telegram-purple.c:473
@@ -90,8 +90,8 @@ msgid ""
 "Unable to sign on as %s: problem in the underlying library 'tgl'. Please "
 "submit a bug report with the debug log."
 msgstr ""
-"No se pudo iniciar sesiÃ³n como %s: problema con la biblioteca 'tgl'. Por "
-"favor, envÃ­e un informe de error con el registro de depuraciÃ³n."
+"No se pudo iniciar sesión como %s: problema con la biblioteca 'tgl'. Por "
+"favor, envíe un informe de error con el registro de depuración."
 
 #: ../telegram-purple.c:564
 msgid "Problem in tgl"
@@ -104,29 +104,29 @@ msgid ""
 "Unable to sign on as %s: phone number lacks country prefix. Numbers must "
 "start with the full international prefix code, e.g. +1 for USA."
 msgstr ""
-"No se pudo iniciar sesiÃ³n como %s: al nÃºmero de telÃ©fono le falta el "
-"prefijo del paÃ­s. Los nÃºmeros deben comenzar con el cÃ³digo de prefijo "
-"internacional, por ejemplo: +34 para EspaÃ±a."
+"No se pudo iniciar sesión como %s: al número de teléfono le falta el "
+"prefijo del país. Los números deben comenzar con el código de prefijo "
+"internacional, por ejemplo: +34 para España."
 
 #: ../telegram-purple.c:580
 msgid "Incomplete phone number"
-msgstr "NÃºmero de telÃ©fono incompleto"
+msgstr "Número de teléfono incompleto"
 
 #: ../telegram-purple.c:638
 msgid "Secret chat was already deleted"
-msgstr "Ya se eliminÃ³ la conversaciÃ³n secreta"
+msgstr "Ya se eliminó la conversación secreta"
 
 #: ../telegram-purple.c:640
 msgid "Secret chat is not ready"
-msgstr "La conversaciÃ³n secreta no estÃ¡ lista"
+msgstr "La conversación secreta no está lista"
 
 #: ../telegram-purple.c:648
 msgid "Only the creator of a channel can post messages."
-msgstr "SÃ³lo el creador de un canal puede publicar mensajes."
+msgstr "Sólo el creador de un canal puede publicar mensajes."
 
 #: ../telegram-purple.c:691
 msgid "Cannot invite buddy to chat"
-msgstr "No se pudo invitar al contacto a la conversaciÃ³n"
+msgstr "No se pudo invitar al contacto a la conversación"
 
 #: ../telegram-purple.c:692
 msgid "Specified user does not exist."
@@ -134,7 +134,7 @@ msgstr "El usuario especificado no existe."
 
 #: ../telegram-purple.c:705
 msgid "phone no. (+ country prefix)"
-msgstr "NÃºm. tlf. (+ prefijo paÃ­s)"
+msgstr "Núm. tlf. (+ prefijo país)"
 
 #: ../telegram-purple.c:800
 msgid "kick <user>:  Kick a user from the room."
@@ -143,15 +143,15 @@ msgstr "Echar <usuario>: Echar al usuario de la sala."
 #. Login
 #: ../telegram-purple.c:822
 msgid "Password (two factor authentication)"
-msgstr "ContraseÃ±a (autenticaciÃ³n de dos pasos)"
+msgstr "Contraseña (autenticación de dos pasos)"
 
 #: ../telegram-purple.c:827
 msgid ""
 "Fallback SMS verification\n"
 "(Helps when not using Pidgin and you aren't being prompted for the code)"
 msgstr ""
-"VerificaciÃ³n por mensaje de texto\n"
-"(Sirve para cuando no estÃ¡ usando Pidgin y no se le pido el cÃ³digo)"
+"Verificación por mensaje de texto\n"
+"(Sirve para cuando no está usando Pidgin y no se le pido el código)"
 
 #. Whether to do fallback SMS verification
 #: ../telegram-purple.c:834
@@ -175,15 +175,15 @@ msgstr "Aceptar conversaciones secretas"
 
 #: ../telegram-purple.c:844
 msgid "Display buddies offline after (days)"
-msgstr "Mostrar contactos desconectados despuÃ©s de (dÃ­as)"
+msgstr "Mostrar contactos desconectados después de (días)"
 
 #: ../telegram-purple.c:848
 msgid ""
 "Don't fetch history older than (days)\n"
 "(0 for unlimited)"
 msgstr ""
-"No recuperar el historial anterior a (dÃ­as)\n"
-"(introducir '0' para no aplicar lÃ­mites)"
+"No recuperar el historial anterior a (días)\n"
+"(introducir '0' para no aplicar límites)"
 
 #. How to handle "large" files
 #: ../telegram-purple.c:855
@@ -229,65 +229,65 @@ msgstr "Plugin de protocolo de Telegram."
 #: ../tgp-msg.c:58
 #, c-format
 msgid "%2$s created chat %1$s."
-msgstr "%2$s creÃ³ la conversaciÃ³n %1$s."
+msgstr "%2$s creó la conversación %1$s."
 
 #: ../tgp-msg.c:61
 #, c-format
 msgid "%2$s changed title to %1$s."
-msgstr "%2$s cambiÃ³ el tÃ­tulo a %1$s."
+msgstr "%2$s cambió el título a %1$s."
 
 #: ../tgp-msg.c:64
 #, c-format
 msgid "%s changed photo."
-msgstr "%s cambiÃ³ la foto."
+msgstr "%s cambió la foto."
 
 #: ../tgp-msg.c:67
 #, c-format
 msgid "%s deleted photo."
-msgstr "%s eliminÃ³ la foto."
+msgstr "%s eliminó la foto."
 
 #: ../tgp-msg.c:75
 #, c-format
 msgid "%1$s added user %2$s by link."
-msgstr "%1$s agregÃ³ al usuario %2$s mediante un enlace."
+msgstr "%1$s agregó al usuario %2$s mediante un enlace."
 
 #: ../tgp-msg.c:90
 #, c-format
 msgid "%2$s added user %1$s."
-msgstr "%2$s agregÃ³ al usuario %1$s."
+msgstr "%2$s agregó al usuario %1$s."
 
 #: ../tgp-msg.c:114 ../tgp-msg.c:131
 #, c-format
 msgid "%2$s deleted user %1$s."
-msgstr "%2$s eliminÃ³ al usuario %1$s."
+msgstr "%2$s eliminó al usuario %1$s."
 
 #: ../tgp-msg.c:138
 #, c-format
 msgid "%2$s set self destruction timer to %1$d second."
 msgid_plural "%2$s set self destruction timer to %1$d seconds."
-msgstr[0] "%2$s estableciÃ³ un temporizador autodestructivo a %1$d segundo."
-msgstr[1] "%2$s estableciÃ³ un temporizador autodestructivo a %1$d segundos."
+msgstr[0] "%2$s estableció un temporizador autodestructivo a %1$d segundo."
+msgstr[1] "%2$s estableció un temporizador autodestructivo a %1$d segundos."
 
 #: ../tgp-msg.c:144
 #, c-format
 msgid "%2$s marked %1$d message read."
 msgid_plural "%2$s marked %1$d messages read."
-msgstr[0] "%2$s marcÃ³ %1$d mensaje como leÃ­do."
-msgstr[1] "%2$s marcÃ³ %1$d mensajes como leÃ­dos."
+msgstr[0] "%2$s marcó %1$d mensaje como leído."
+msgstr[1] "%2$s marcó %1$d mensajes como leídos."
 
 #: ../tgp-msg.c:150
 #, c-format
 msgid "%2$s deleted %1$d message."
 msgid_plural "%2$s deleted %1$d messages."
-msgstr[0] "%2$s eliminÃ³ %1$d mensaje."
-msgstr[1] "%2$s eliminÃ³ %1$d mensajes."
+msgstr[0] "%2$s eliminó %1$d mensaje."
+msgstr[1] "%2$s eliminó %1$d mensajes."
 
 #: ../tgp-msg.c:156
 #, c-format
 msgid "%2$s made a screenshot of %1$d message."
 msgid_plural "%2$s made a screenshot of %1$d messages."
-msgstr[0] "%2$s tomÃ³ una captura de pantalla de %1$d mensaje."
-msgstr[1] "%2$s tomÃ³ una captura de pantalla de %1$d mensajes."
+msgstr[0] "%2$s tomó una captura de pantalla de %1$d mensaje."
+msgstr[1] "%2$s tomó una captura de pantalla de %1$d mensajes."
 
 #: ../tgp-msg.c:162
 #, c-format
@@ -301,16 +301,16 @@ msgstr "Canales de Telegram"
 
 #: ../tgp-msg.c:222
 msgid "Sending message failed."
-msgstr "FallÃ³ el envÃ­o de mensajes."
+msgstr "Falló el envío de mensajes."
 
 #: ../tgp-msg.c:293
 msgid "Sending image failed."
-msgstr "FallÃ³ el envÃ­o de imÃ¡genes."
+msgstr "Falló el envío de imágenes."
 
 #: ../tgp-msg.c:457
 #, c-format
 msgid "%s sent a sticker."
-msgstr "%s enviÃ³ un sticker."
+msgstr "%s envió un sticker."
 
 #: ../tgp-msg.c:483
 msgid "[photo]"
@@ -356,7 +356,7 @@ msgstr ""
 
 #: ../tgp-msg.c:586
 msgid "failed loading message"
-msgstr "fallÃ³ la carga del mensaje"
+msgstr "falló la carga del mensaje"
 
 #. Content of a file transfer
 #: ../tgp-msg.c:633 ../tgp-msg.c:683
@@ -380,7 +380,7 @@ msgstr "vídeo"
 
 #: ../tgp-msg.c:873
 msgid "loading document or picture failed"
-msgstr "fallÃ³ la carga del documento o imagen"
+msgstr "falló la carga del documento o imagen"
 
 #: ../tgp-net.c:281
 msgid "Cannot connect to main server"
@@ -392,27 +392,27 @@ msgstr "No se puede conectar al servidor: tiempo de espera agotado."
 
 #: ../tgp-net.c:365
 msgid "Lost connection to the server..."
-msgstr "Se perdiÃ³ la conexiÃ³n con el servidor..."
+msgstr "Se perdió la conexión con el servidor..."
 
 #: ../tgp-request.c:51
 msgid ""
 "Telegram wants to verify your identity. Please enter the login code that you"
 " have received via SMS."
 msgstr ""
-"Telegram quiere verificar su identidad. Por favor, introduce el cÃ³digo que "
-"recibiÃ³ en un mensaje de texto."
+"Telegram quiere verificar su identidad. Por favor, introduce el código que "
+"recibió en un mensaje de texto."
 
 #: ../tgp-request.c:54
 msgid "Login code"
-msgstr "CÃ³digo de inicio de sesiÃ³n"
+msgstr "Código de inicio de sesión"
 
 #: ../tgp-request.c:54
 msgid "Enter login code"
-msgstr "Intoducir cÃ³digo de inicio de sesiÃ³n"
+msgstr "Intoducir código de inicio de sesión"
 
 #: ../tgp-request.c:54
 msgid "the code"
-msgstr "el cÃ³digo"
+msgstr "el código"
 
 #: ../tgp-request.c:54 ../tgp-request.c:104 ../tgp-request.c:198
 #: ../tgp-request.c:233 ../tgp-request.c:263
@@ -442,7 +442,7 @@ msgstr "Registrar"
 
 #: ../tgp-request.c:103
 msgid "Please register your phone number."
-msgstr "Por favor, registre su nÃºmero de telÃ©fono."
+msgstr "Por favor, registre su número de teléfono."
 
 #. purple_request API not available
 #: ../tgp-request.c:108
@@ -450,7 +450,7 @@ msgid ""
 "Phone number is not registered. Please register your phone on a different "
 "client."
 msgstr ""
-"No se registrÃ³ el nÃºmero de telÃ©fono. Por favor, registre su telÃ©fono en"
+"No se registró el número de teléfono. Por favor, registre su teléfono en"
 " un cliente diferente."
 
 #: ../tgp-request.c:110
@@ -459,11 +459,11 @@ msgstr "No registrado"
 
 #: ../tgp-request.c:122
 msgid "Password needed"
-msgstr "Se necesita la contraseÃ±a"
+msgstr "Se necesita la contraseña"
 
 #: ../tgp-request.c:122
 msgid "Enter password for two factor authentication"
-msgstr "Introducir contraseÃ±a para la autenticaciÃ³n de dos pasos"
+msgstr "Introducir contraseña para la autenticación de dos pasos"
 
 #: ../tgp-request.c:123
 msgid "Ok"
@@ -474,21 +474,21 @@ msgid ""
 "No password set for two factor authentication. Please enter it in the "
 "extended settings."
 msgstr ""
-"No se estableciÃ³ contraseÃ±a para la autenticaciÃ³n de dos pasos. Por "
-"favor, introdÃºcela en la configuraciÃ³n extendida."
+"No se estableció contraseña para la autenticación de dos pasos. Por "
+"favor, introdúcela en la configuración extendida."
 
 #: ../tgp-request.c:127
 msgid "Password invalid"
-msgstr "ContraseÃ±a no vÃ¡lida"
+msgstr "Contraseña no válida"
 
 #: ../tgp-request.c:150
 #, c-format
 msgid "Accept secret chat '%s' on this device?"
-msgstr "Â¿Acepte la conversaciÃ³n secreta '%s' en este dispositivo?"
+msgstr "¿Acepte la conversación secreta '%s' en este dispositivo?"
 
 #: ../tgp-request.c:151
 msgid "Secret chat"
-msgstr "ConversaciÃ³n secreta"
+msgstr "Conversación secreta"
 
 #: ../tgp-request.c:151
 msgid ""
@@ -496,9 +496,9 @@ msgid ""
 "this device, its messages will not be available anywhere else. If you "
 "decline, you can still accept the chat on other devices."
 msgstr ""
-"Las conversaciones secretas son uno a uno. Si acepte una conversaciÃ³n "
-"secreta en este dispositivo, la misma no estarÃ¡ disponible en ningÃºn otro "
-"lado. Si decline, pueda aceptar la conversaciÃ³n en otro dispositivo."
+"Las conversaciones secretas son uno a uno. Si acepte una conversación "
+"secreta en este dispositivo, la misma no estará disponible en ningún otro "
+"lado. Si decline, pueda aceptar la conversación en otro dispositivo."
 
 #: ../tgp-request.c:182
 msgid ""
@@ -506,9 +506,9 @@ msgid ""
 " their full name (autocompletion available).\n"
 "You can add more users once the chat was created."
 msgstr ""
-"Invite al menos a un usuario mÃ¡s especificando\n"
+"Invite al menos a un usuario más especificando\n"
 "su nombre completo (disponible autocompletado).\n"
-"Pueda agregar mÃ¡s usuarios una vez que se cree la conversaciÃ³n."
+"Pueda agregar más usuarios una vez que se cree la conversación."
 
 #: ../tgp-request.c:185 ../tgp-request.c:189 ../tgp-request.c:193
 msgid "Username"
@@ -516,7 +516,7 @@ msgstr "Nombre de usuario"
 
 #: ../tgp-request.c:198
 msgid "Create group chat"
-msgstr "Crear conversaciÃ³n grupal"
+msgstr "Crear conversación grupal"
 
 #: ../tgp-request.c:198
 msgid "Invite users"
@@ -524,7 +524,7 @@ msgstr "Invitar a los usuarios"
 
 #: ../tgp-request.c:217 ../tgp-request.c:232
 msgid "Change password"
-msgstr "Cambiar contraseÃ±a"
+msgstr "Cambiar contraseña"
 
 #: ../tgp-request.c:219
 msgid "Current"
@@ -532,7 +532,7 @@ msgstr "Actual"
 
 #: ../tgp-request.c:223 ../tgp-request.c:253
 msgid "Password"
-msgstr "ContraseÃ±a"
+msgstr "Contraseña"
 
 #: ../tgp-request.c:227 ../tgp-request.c:257
 msgid "Confirm"
@@ -540,7 +540,7 @@ msgstr "Confirmar"
 
 #: ../tgp-request.c:251 ../tgp-request.c:262
 msgid "New password"
-msgstr "Nueva contraseÃ±a"
+msgstr "Nueva contraseña"
 
 #. if we arrive here for the second time the specified phone number is not
 #. valid. We do not
@@ -549,32 +549,32 @@ msgstr "Nueva contraseÃ±a"
 #. named with the invalid phone number, even though the login will work
 #: ../tgp-request.c:300
 msgid "Invalid phone number"
-msgstr "NÃºmero de telÃ©fono no vÃ¡lido"
+msgstr "Número de teléfono no válido"
 
 #: ../tgp-request.c:301
 msgid ""
 "Please enter only numbers in the international phone number format, a leading + following by the country prefix and the phone number.\n"
 "Do not use any other special chars."
 msgstr ""
-"Por favor, introduce sÃ³lo nÃºmeros en el formato de nÃºmeros de telÃ©fono internacional, con el signo '+' seguido del cÃ³digo de paÃ­s [mÃ¡s prefijo para el acceso a la red celular, si corresponde] y el nÃºmero de telÃ©fono.\n"
-"No use ningÃºn otro carÃ¡cter."
+"Por favor, introduce sólo números en el formato de números de teléfono internacional, con el signo '+' seguido del código de país [más prefijo para el acceso a la red celular, si corresponde] y el número de teléfono.\n"
+"No use ningún otro carácter."
 
 #: ../tgp-request.c:370
 msgid "Leave Chat"
-msgstr "Abandonar conversaciÃ³n"
+msgstr "Abandonar conversación"
 
 #: ../tgp-request.c:372
 msgid "Do you want to leave this chat permantently?"
-msgstr "Â¿QuerÃ©s abandonar esta conversaciÃ³n permanentemente?"
+msgstr "¿Querés abandonar esta conversación permanentemente?"
 
 #: ../tgp-request.c:377
 msgid "Abort Secret Chat"
-msgstr "Cancelar conversaciÃ³n secreta"
+msgstr "Cancelar conversación secreta"
 
 #: ../tgp-request.c:379
 msgid "Do you want to terminate this secret chat permantently?"
 msgstr ""
-"Â¿EstÃ© seguro que quiere eliminar esta conversaciÃ³n secreta "
+"¿Esté seguro que quiere eliminar esta conversación secreta "
 "permanentemente?"
 
 #: ../tgp-request.c:384
@@ -583,7 +583,7 @@ msgstr "Eliminar contacto"
 
 #: ../tgp-request.c:386
 msgid "Do you want to remove this user from your global contact list?"
-msgstr "Â¿Quiere quitar este usuario de su lista global de contactos?"
+msgstr "¿Quiere quitar este usuario de su lista global de contactos?"
 
 #: ../tgp-request.c:401
 msgid "Leave Channel"
@@ -591,7 +591,7 @@ msgstr "Abandonar canal"
 
 #: ../tgp-request.c:403
 msgid "Do you want to leave this channel?"
-msgstr "Â¿Quiere abandonar este canal?"
+msgstr "¿Quiere abandonar este canal?"
 
 #. This should be the language's timestamp format. This is preceded by a
 #. colon.
@@ -625,7 +625,7 @@ msgstr "Conversaciones de Telegram"
 
 #: ../tgp-chat.c:113
 msgid "You have already left this chat."
-msgstr "Ya ha abandonado esta conversaciÃ³n."
+msgstr "Ya ha abandonado esta conversación."
 
 #: ../tgp-chat.c:298
 msgid "Subject:"
@@ -633,15 +633,15 @@ msgstr "Asunto:"
 
 #: ../tgp-chat.c:304
 msgid "Invite link:"
-msgstr "Enlace de invitaciÃ³n:"
+msgstr "Enlace de invitación:"
 
 #: ../tgp-chat.c:310
 msgid "Chat ID:"
-msgstr "IdentificaciÃ³n de conversaciÃ³n:"
+msgstr "Identificación de conversación:"
 
 #: ../tgp-chat.c:416
 msgid "Supergroup"
-msgstr "SÃºpergrupo"
+msgstr "Súpergrupo"
 
 #: ../tgp-chat.c:416
 msgid "Channel"
@@ -653,7 +653,7 @@ msgstr "Grupo"
 
 #: ../tgp-chat.c:435
 msgid "Users in chat"
-msgstr "Usuarios en la conversaciÃ³n"
+msgstr "Usuarios en la conversación"
 
 #: ../tgp-chat.c:438
 msgid "Type"
