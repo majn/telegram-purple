@@ -460,14 +460,17 @@ static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from,
   return text;
 }
 
+// `reply` and `replyee` can be nil
 static char *tgp_msg_reply_display (struct tgl_state *TLS, tgl_peer_t *replyee, struct tgl_message *reply, const char *message) {
-  
-  g_return_val_if_fail(reply, NULL);
   g_return_val_if_fail(message, NULL);
   
   // the text quoted by the reply
   char *quote = NULL;
   
+  // reply body may unavailable locally due to tgl lib not having older messages cached
+  if (!reply) {
+    quote = g_strdup(_("[message unavailable]"));
+  } else
   if (reply->flags & TGLMF_SERVICE) {
     quote = tgp_msg_service_display (TLS, reply);
     g_return_val_if_fail(quote == NULL, NULL);
@@ -520,7 +523,7 @@ static char *tgp_msg_reply_display (struct tgl_state *TLS, tgl_peer_t *replyee, 
     }
   }
 
-  if (str_not_empty (reply->media.caption)) {
+  if (reply && str_not_empty (reply->media.caption)) {
     char *old = quote;
     if (str_not_empty (quote)) {
       quote = g_strdup_printf ("%s %s", old, reply->media.caption);
@@ -796,10 +799,14 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     msg_id.id = M->reply_id;
     
     struct tgl_message *reply = tgl_message_get (TLS, &msg_id);
-    g_return_if_fail(reply != NULL);
-  
-    tgl_peer_t *replyee = tgl_peer_get (TLS, reply->from_id);
-    g_return_if_fail(replyee != NULL);
+    
+    // tgl only retrieves messages already cached locally
+    // so if it fails at least post the reply itself
+    tgl_peer_t *replyee = NULL;
+    if (reply) {
+      replyee = tgl_peer_get (TLS, reply->from_id);
+      g_return_if_fail(replyee != NULL);
+    };
     
     char *tmp = text;
     text = tgp_msg_reply_display(TLS, replyee, reply, tmp);
