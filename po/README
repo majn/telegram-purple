@@ -1,0 +1,10 @@
+Do not edit these files!
+
+The translations are maintained in Transifex:
+    https://www.transifex.com/telegram-purple-developers/telegram-purple/
+
+Contributors therefore should have no need to meddle with these files directly.
+
+The main developers are supposed to fetch the translations from there,
+unzip the result into this folder, and NOT TOUCH the files.
+(See CONTRIBUTING.md for details.)
