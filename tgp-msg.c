@@ -460,7 +460,7 @@ static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from,
   return text;
 }
 
-// `reply` and `replyee` can be nil
+// `reply` and `replyee` can be NULL if locally unavailable
 static char *tgp_msg_reply_display (struct tgl_state *TLS, tgl_peer_t *replyee, struct tgl_message *reply, const char *message) {
   g_return_val_if_fail(message, NULL);
   
@@ -800,8 +800,8 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     
     struct tgl_message *reply = tgl_message_get (TLS, &msg_id);
     
-    // tgl only retrieves messages already cached locally
-    // so if it fails at least post the reply itself
+    //The quoted message body should be prefetched by tgp_msg_recv(),
+    //but if we don't have it cached, at least display the reply itself
     tgl_peer_t *replyee = NULL;
     if (reply) {
       replyee = tgl_peer_get (TLS, reply->from_id);
@@ -919,6 +919,15 @@ static void tgp_msg_on_loaded_channel_history (struct tgl_state *TLS, void *extr
   struct tgp_msg_loading *C = extra;
   -- C->pending;
 
+  tgp_msg_process_in_ready (TLS);
+}
+
+//A callback for when tgp_do_load_message finishes loading a requested message to be cached
+static void tgp_msg_on_loaded_message_for_cache(struct tgl_state *TLS, void *extra, int success, struct tgl_message *M) {
+  struct tgp_msg_loading *C = extra;
+  -- C->pending;
+  //Do nothing: The message is cached automatically by the underlying library
+  //and we don't want to pass it to tgp_msg_recv() for publishing
   tgp_msg_process_in_ready (TLS);
 }
 
@@ -1071,6 +1080,14 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
         g_hash_table_replace (tls_get_data (TLS)->pending_chat_info, to_ptr, to_ptr);
       }
     }
+  }
+  
+  //Reply processing requires quoted messages to also be available
+  if (M->reply_id) {
+    ++ C->pending;
+    tgl_message_id_t msg_id = M->permanent_id;
+    msg_id.id = M->reply_id;
+    tgl_do_get_message(TLS, &msg_id, tgp_msg_on_loaded_message_for_cache, C);
   }
 
   GList *b = g_queue_find (tls_get_data (TLS)->new_messages, before);
