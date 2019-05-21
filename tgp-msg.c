@@ -460,14 +460,15 @@ static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from,
   return text;
 }
 
-// `reply` and `replyee` can be NULL if locally unavailable
+//`reply` and `replyee` can be NULL if it comes to that
 static char *tgp_msg_reply_display (struct tgl_state *TLS, tgl_peer_t *replyee, struct tgl_message *reply, const char *message) {
   g_return_val_if_fail(message, NULL);
   
   // the text quoted by the reply
   char *quote = NULL;
   
-  // reply body may unavailable locally due to tgl lib not having older messages cached
+  // Degrade gracefully if the caller doesn't have the quoted message --
+  // at least display the reply itself
   if (!reply) {
     quote = g_strdup(_("[message unavailable]"));
   } else
@@ -800,8 +801,8 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     
     struct tgl_message *reply = tgl_message_get (TLS, &msg_id);
     
-    //The quoted message body should be prefetched by tgp_msg_recv(),
-    //but if we don't have it cached, at least display the reply itself
+    //The quoted message should have been prefetched by tgp_msg_recv()
+    //but if we don't have it, at least display the reply itself
     tgl_peer_t *replyee = NULL;
     if (reply) {
       replyee = tgl_peer_get (TLS, reply->from_id);
@@ -922,12 +923,12 @@ static void tgp_msg_on_loaded_channel_history (struct tgl_state *TLS, void *extr
   tgp_msg_process_in_ready (TLS);
 }
 
-//A callback for when tgp_do_load_message finishes loading a requested message to be cached
+//A callback for when tgp_do_load_message finishes preloading a requested message
 static void tgp_msg_on_loaded_message_for_cache(struct tgl_state *TLS, void *extra, int success, struct tgl_message *M) {
   struct tgp_msg_loading *C = extra;
   -- C->pending;
   //Do nothing: The message is cached automatically by the underlying library
-  //and we don't want to pass it to tgp_msg_recv() for publishing
+  //and we don't want to pass it to tgp_msg_recv() for display
   tgp_msg_process_in_ready (TLS);
 }
 
