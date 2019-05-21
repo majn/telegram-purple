@@ -310,6 +310,14 @@ and provide the key directly by yourself.
 FAQ
 ---
 
+- How can I improve the translations?
+  * A: Request access in some form or another, for example through the
+    development chat (see below), a GitHub issue, or request it directly on the
+    [Transifex website](https://www.transifex.com/telegram-purple-developers/telegram-purple/).
+    You will need an account on that website, and need to make all changes
+    there.  I will then pull it at my next convenience.  If you want it any
+    faster, you can poke me on the dev chat.
+
 - How do I set telegram-purple up with Bitlbee?
   * A (easy): Use bitlbee-telegram instead.  It is made for bitlbee.
   * A (hard): Mainly just followed the wiki steps:
