@@ -14,7 +14,7 @@ If you are just interested in using the plugin you probably want to use one of t
 If your platform is not supported or you want to contribute by testing or development, scroll down to "Building form Source".
 
 
-#### OSX (Adium)
+#### macOS (Adium)
 
 1. Download and execute the [Telegram-Adium bundle] (https://github.com/majn/telegram-purple/releases/download/v1.3.0/telegram-adium-1.3.0.AdiumLibpurplePlugin.zip)
 2. Restart Adium
@@ -185,9 +185,40 @@ Since 1.3.0 it is possible to write messages in monospaced fonts using the markd
     }
 
 
-
-Building the Adium Plugin
+Compiling on macOS
 -------------------------
+
+On macOS you probably want to use the [prebuilt Bundle](https://github.com/majn/telegram-purple/releases) for Adium (see above) and not compile it from source. Compiling the bundle for Adium oder Pidgin on macOS is rather complicated and usually not required.
+
+# Building the Pidgin Plugin
+
+These steps are necessary when you want to build telegram-purple as a libpurple Plugin for macOS. The outputs of this build are also necessary when building the Adium bundle.
+
+
+1. [Install Homebrew](https://brew.sh/)
+2. Clone repository
+
+        git clone --recursive https://github.com/majn/telegram-purple
+        cd telegram-purple
+
+3. Install dependencies using homebrew
+
+       brew install glib
+       brew install pkg-config
+       brew install pidgin
+       brew install webp
+       brew install libgcrypt libgpg-error
+
+4. Configure make install
+
+       ./configure CFLAGS="-I/usr/local/include -ggdb -O0" LDFLAGS="-L/usr/local/lib" --disable-translation
+       # I currently don't know of an easy to support translations for Pidgin under macOS (sorry)
+
+       make
+       sudo make install
+
+
+# Building the Adium Plugin
 
 (This part may be a little outdated.)
 
