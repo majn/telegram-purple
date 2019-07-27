@@ -229,27 +229,27 @@ Compiling with XCode is a little bit problematic, since it requires you to compi
 3. Build the tgl submodule and delete libtgl.so from libs/ (it should only contain libtgl.a)
 4. Install libwebp, libgcrypt and gnupg with homebrew:
 
-    brew install webp
-    brew install libgcrypt libgpg-error
+       brew install webp
+       brew install libgcrypt libgpg-error
 
 5. If you already downloaded libwebp/libgcrypt in previous builds make sure that the binaries are up-to-date
 
-    brew update
-    brew upgrade webp libgcrypt
+        brew update
+        brew upgrade webp libgcrypt
 
 6. Install with homebrew and move it into the appropriate directory so that XCode can find them. Note that the versions might differ, use the one that is
 
-    mkdir -p ./telegram-adium/Frameworks/Adium
-    cp /usr/local/Cellar/webp/0.4.3/lib/libwebp.a ./telegram-adium/Frameworks
-    cp /usr/local/Cellar/libgcrypt/1.6.4/lib/libgcrypt.20.dylib ./telegram-adium/Frameworks/Adium
-    cp /usr/local/Cellar/libgpg-error/1.20_1/lib/libgpg-error.0.dylib ./telegram-adium/Frameworks/Adium
+        mkdir -p ./telegram-adium/Frameworks/Adium
+        cp /usr/local/Cellar/webp/0.4.3/lib/libwebp.a ./telegram-adium/Frameworks
+        cp /usr/local/Cellar/libgcrypt/1.6.4/lib/libgcrypt.20.dylib ./telegram-adium/Frameworks/Adium
+        cp /usr/local/Cellar/libgpg-error/1.20_1/lib/libgpg-error.0.dylib ./telegram-adium/Frameworks/Adium
 
 7. Update the paths in the dylibs, to assure that the resulting binary will load them form within the bundle.
 
-    cd ./telegram-adium/Frameworks/Adium
-    install_name_tool -id "@loader_path/../Resources/libgcrypt.20.dylib" ./libgcrypt.20.dylib
-    install_name_tool -id "@loader_path/../Resources/libgpg-error.0.dylib" ./libgpg-error.0.dylib
-    install_name_tool -change "/usr/local/lib/libgpg-error.0.dylib" "@loader_path/../Resources/libgpg-error.0.dylib" ./libgcrypt.20.dylib
+         cd ./telegram-adium/Frameworks/Adium
+         install_name_tool -id "@loader_path/../Resources/libgcrypt.20.dylib" ./libgcrypt.20.dylib
+         install_name_tool -id "@loader_path/../Resources/libgpg-error.0.dylib" ./libgpg-error.0.dylib
+         install_name_tool -change "/usr/local/lib/libgpg-error.0.dylib" "@loader_path/../Resources/libgpg-error.0.dylib" ./libgcrypt.20.dylib
 
 7. Build the XCode-Project and execute the created bundle
 
