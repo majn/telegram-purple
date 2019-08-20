@@ -95,7 +95,7 @@ this indicates that this version is in fact much further than just
 
 ##### Debian / Ubuntu
 
-        sudo apt-get install libgcrypt20-dev libpurple-dev libwebp-dev gettext build-essential
+        sudo apt-get install libgcrypt20-dev libpurple-dev libwebp-dev gettext build-essential libpng-dev
 
 
 ##### OpenSUSE
