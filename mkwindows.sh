@@ -28,12 +28,16 @@ then
     USE_WEBP=y
     # Otherwise:
     # USE_WEBP=n
+else
+    echo "Note: webp disabled"
 fi
 if [ -z "${USE_PNG}" ]
 then
     USE_PNG=y
     # Otherwise:
     # USE_PNG=n
+else
+    echo "Note: png disabled"
 fi
 if [ -z "${USE_VERSIONINFO}" ]
 then
@@ -284,7 +288,16 @@ make -j4 bin/libtelegram.dll \
 # Package it up
 echo "===== 10: Create installer"
 make PRPL_NAME=libtelegram.dll win-installer-deps
-makensis -DPLUGIN_VERSION="${VERSION}+g${COMMIT}" -DPRPL_NAME=libtelegram.dll \
+VARIANT_SUFFIX=""
+if [ "y" != "${USE_PNG}" ]
+then
+    VARIANT_SUFFIX="${VARIANT_SUFFIX}_nopng"
+fi
+if [ "y" != "${USE_WEBP}" ]
+then
+    VARIANT_SUFFIX="${VARIANT_SUFFIX}_nowebp"
+fi
+makensis -DPLUGIN_VERSION="${VERSION}+g${COMMIT}${VARIANT_SUFFIX}" -DPRPL_NAME=libtelegram.dll \
     -DWIN32_DEV_TOP=contrib telegram-purple.nsi
 
 # There's no monster under your bed, I swear.
