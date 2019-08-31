@@ -27,7 +27,7 @@ Make sure that the string freeze has already happened.
 
 Go to the [translation site](https://www.transifex.com/telegram-purple-developers/telegram-purple/content/),
 and close the current resource for new translations.  Rename and re-prioritize it appropriately.
-Download the zip-file, extract it, remove the annoying prefix.  Move all files to `po/`.
+Download the zip-file, extract it, remove the annoying prefix.  Move all files to `po/`, except `en.po`.
 
 While waiting for the download link, create the new resource with the new potfile,
 then re-upload all the old translations there.
