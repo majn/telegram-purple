@@ -61,6 +61,8 @@ Also, install it locally.  Don't forget to `./configure` first.
 
 #### Prepare release files
 
+Fetch/pull recent changes.
+
 Merge into `master`.
 
 Make a tag: `git tag v1.something`
