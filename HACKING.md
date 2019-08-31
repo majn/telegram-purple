@@ -29,6 +29,9 @@ Go to the [translation site](https://www.transifex.com/telegram-purple-developer
 and close the current resource for new translations.  Rename and re-prioritize it appropriately.
 Download the zip-file, extract it, remove the annoying prefix.  Move all files to `po/`.
 
+While waiting for the download link, create the new resource with the new potfile,
+then re-upload all the old translations there.
+
 Run `make po/*.po` to fix the filenames.  Do not delete any files.  Rationale see `Makefile`.
 
 Adjust `po/LINGUAS*` as you see fit.
