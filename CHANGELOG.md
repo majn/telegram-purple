@@ -1,6 +1,19 @@
 Changelog
 ---------
 
+##### 1.4.2
+
+- Still no support for Adium.  We just don't know how!  Help wanted!  PLEASE!
+- Update Windows dependencies
+- Support ancient glib (See #501)
+- Update translations.  Thanks to the following people:
+    * Eduardo Trápani <etrapani@gmail.com> (es)
+    * Olesya Gerasimenko <gammaray@basealt.ru> (ru)
+- Fix: Handle forwarded messages and captioned images better
+- Fix: Handle replies better
+- Fix: Images in own messages
+- Fix: Remove *some* of the duplicate messages seen (Maybe fixes #258?)
+
 ##### 1.4.1
 
 - *REMOVED* active support for Adium.  We just don't know how!  Help wanted!

@@ -460,14 +460,18 @@ static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from,
   return text;
 }
 
+//`reply` and `replyee` can be NULL if it comes to that
 static char *tgp_msg_reply_display (struct tgl_state *TLS, tgl_peer_t *replyee, struct tgl_message *reply, const char *message) {
-  
-  g_return_val_if_fail(reply, NULL);
   g_return_val_if_fail(message, NULL);
   
   // the text quoted by the reply
   char *quote = NULL;
   
+  // Degrade gracefully if the caller doesn't have the quoted message --
+  // at least display the reply itself
+  if (!reply) {
+    quote = g_strdup(_("[message unavailable]"));
+  } else
   if (reply->flags & TGLMF_SERVICE) {
     quote = tgp_msg_service_display (TLS, reply);
     g_return_val_if_fail(quote == NULL, NULL);
@@ -519,7 +523,16 @@ static char *tgp_msg_reply_display (struct tgl_state *TLS, tgl_peer_t *replyee, 
         break;
     }
   }
-  
+
+  if (reply && str_not_empty (reply->media.caption)) {
+    char *old = quote;
+    if (str_not_empty (quote)) {
+      quote = g_strdup_printf ("%s %s", old, reply->media.caption);
+    } else {
+      quote = g_strdup(reply->media.caption);
+    }
+    g_free (old);
+  }
   
   // the combined reply
 
@@ -579,6 +592,14 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     flags |= PURPLE_MESSAGE_NICK;
   }
   
+  // Mark carbons of our own messages
+  if (tgp_our_msg (TLS, M)) {
+    flags |= PURPLE_MESSAGE_SEND;
+    flags &= ~PURPLE_MESSAGE_RECV;
+  } else {
+    flags |= PURPLE_MESSAGE_RECV;
+  }
+  
   // handle messages that failed to load
   if (C->error) {
     const char *err = C->error_msg;
@@ -593,25 +614,20 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
   if (M->flags & TGLMF_SERVICE) {
     text = tgp_msg_service_display (TLS, M);
     flags |= PURPLE_MESSAGE_SYSTEM;
-    
-  } else if (M->media.type != tgl_message_media_none) {
+  } else
     switch (M->media.type) {
-  
-      case tgl_message_media_photo: {
-        if (M->media.photo) {
-          g_return_if_fail(C->data != NULL);
-          
-          text = tgp_msg_photo_display (TLS, C->data, &flags);
-          if (str_not_empty (text)) {
-            if (str_not_empty (M->media.caption)) {
-              char *old = text;
-              text = g_strdup_printf ("%s<br>%s", old, M->media.caption);
-              g_free (old);
-            }
-          }
+      case tgl_message_media_none:
+        if (str_not_empty (M->message)) {
+          text = purple_markup_escape_text (M->message, strlen (M->message));
         }
         break;
-      }
+
+      case tgl_message_media_photo:
+        if (M->media.photo) {
+          g_return_if_fail(C->data != NULL);
+          text = tgp_msg_photo_display (TLS, C->data, &flags);
+        }
+        break;
 
       case tgl_message_media_document:
       case tgl_message_media_video:
@@ -729,12 +745,16 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         warning ("received unknown media type: %d", M->media.type);
         break;
     }
-    
-  } else {
-    if (str_not_empty (M->message)) {
-      text = purple_markup_escape_text (M->message, strlen (M->message));
+
+  //Captions are only used for some media types but others will just have them empty
+  if (str_not_empty (M->media.caption)) {
+    char *old = text;
+    if (str_not_empty (text)) {
+      text = g_strdup_printf ("%s<br>%s", old, M->media.caption);
+    } else {
+      text = g_strdup(M->media.caption);
     }
-    flags |= PURPLE_MESSAGE_RECV;
+    g_free (old);
   }
 
   if (tgl_get_peer_type (M->to_id) != TGL_PEER_ENCR_CHAT
@@ -758,8 +778,15 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     // may be NULL
     tgl_peer_t *FP = tgl_peer_get (TLS, M->fwd_from_id);
     
+    // do not run this through tgp_message_reply_display! it doesn't handle media, forwards are all about media
+    // keep the full body we've generated
     char *tmp = text;
-    text = tgp_msg_reply_display(TLS, FP, M, "");
+    if (FP) {
+      const char *name = FP->print_name;
+      text = g_strdup_printf (_("<b>&gt; Forwarded from %s:</b><br>&gt; %s"), name, text);
+    } else {
+      text = g_strdup_printf (_("<b>&gt; Forwarded:</b><br>&gt; %s"), text);
+    }
     g_free (tmp);
     
     g_return_if_fail(text != NULL);
@@ -773,10 +800,14 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     msg_id.id = M->reply_id;
     
     struct tgl_message *reply = tgl_message_get (TLS, &msg_id);
-    g_return_if_fail(reply != NULL);
-  
-    tgl_peer_t *replyee = tgl_peer_get (TLS, reply->from_id);
-    g_return_if_fail(replyee != NULL);
+    
+    //The quoted message should have been prefetched by tgp_msg_recv()
+    //but if we don't have it, at least display the reply itself
+    tgl_peer_t *replyee = NULL;
+    if (reply) {
+      replyee = tgl_peer_get (TLS, reply->from_id);
+      g_return_if_fail(replyee != NULL);
+    };
     
     char *tmp = text;
     text = tgp_msg_reply_display(TLS, replyee, reply, tmp);
@@ -795,7 +826,6 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         // sender is the group
         tgp_chat_got_in (TLS, P, M->from_id, text, flags, M->date);
       } else {
-        
         // sender is the channel itself
         tgp_chat_got_in (TLS, P, P->id, text, flags, M->date);
       }
@@ -804,21 +834,15 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
     case TGL_PEER_CHAT: {
       tgl_peer_t *P = tgl_peer_get (TLS, M->to_id);
       g_return_if_fail(P != NULL);
-      tgp_chat_got_in (TLS, P, M->from_id, text, flags, M->date);
+      tgp_chat_got_in (TLS, P, (flags & PURPLE_MESSAGE_SEND) ? M->to_id : M->from_id, text, flags, M->date);
       break;
     }
     case TGL_PEER_ENCR_CHAT: {
-      p2tgl_got_im_combo (TLS, M->to_id, text, flags, M->date);
+      p2tgl_got_im_combo (TLS, (flags & PURPLE_MESSAGE_SEND) ? M->to_id : M->from_id, text, flags, M->date);
       break;
     }
     case TGL_PEER_USER: {
-      if (tgp_our_msg (TLS, M)) {
-        flags |= PURPLE_MESSAGE_SEND;
-        flags &= ~PURPLE_MESSAGE_RECV;
-        p2tgl_got_im_combo (TLS, M->to_id, text, flags, M->date);
-      } else {
-        p2tgl_got_im_combo (TLS, M->from_id, text, flags, M->date);
-      }
+      p2tgl_got_im_combo (TLS, (flags & PURPLE_MESSAGE_SEND) ? M->to_id : M->from_id, text, flags, M->date);
       break;
     }
   }
@@ -899,6 +923,15 @@ static void tgp_msg_on_loaded_channel_history (struct tgl_state *TLS, void *extr
   tgp_msg_process_in_ready (TLS);
 }
 
+//A callback for when tgp_do_load_message finishes preloading a requested message
+static void tgp_msg_on_loaded_message_for_cache(struct tgl_state *TLS, void *extra, int success, struct tgl_message *M) {
+  struct tgp_msg_loading *C = extra;
+  -- C->pending;
+  //Do nothing: The message is cached automatically by the underlying library
+  //and we don't want to pass it to tgp_msg_recv() for display
+  tgp_msg_process_in_ready (TLS);
+}
+
 /*
 static void tgp_msg_on_loaded_user_full (struct tgl_state *TLS, void *extra, int success, struct tgl_user *U) {
   debug ("tgp_msg_on_loaded_user_full()");
@@ -942,7 +975,6 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
    */
   if (tgl_get_peer_type (C->msg->from_id) == TGL_PEER_CHANNEL
       || tgl_get_peer_type (C->msg->to_id) == TGL_PEER_CHANNEL) {
-    
     tgl_peer_id_t id = tgl_get_peer_type (C->msg->from_id) == TGL_PEER_CHANNEL ?
       C->msg->from_id : C->msg->to_id;
     
@@ -962,8 +994,7 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
   }
   
   if (! (M->flags & TGLMF_SERVICE)) {
-    debug ("service msg");
-    
+
     // handle all messages that need to load content before they can be displayed
     if (M->media.type != tgl_message_media_none) {
       switch (M->media.type) {
@@ -1050,6 +1081,14 @@ void tgp_msg_recv (struct tgl_state *TLS, struct tgl_message *M, GList *before) 
         g_hash_table_replace (tls_get_data (TLS)->pending_chat_info, to_ptr, to_ptr);
       }
     }
+  }
+  
+  //Reply processing requires quoted messages to also be available
+  if (M->reply_id) {
+    ++ C->pending;
+    tgl_message_id_t msg_id = M->permanent_id;
+    msg_id.id = M->reply_id;
+    tgl_do_get_message(TLS, &msg_id, tgp_msg_on_loaded_message_for_cache, C);
   }
 
   GList *b = g_queue_find (tls_get_data (TLS)->new_messages, before);

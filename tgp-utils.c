@@ -92,11 +92,20 @@ void tgp_g_queue_free_full (GQueue *queue, GDestroyNotify free_func) {
   g_queue_free (queue);
 }
 
+#if GLIB_CHECK_VERSION(2,28,0)
 void tgp_g_list_free_full (GList *list, GDestroyNotify free_func) {
   if (list) {
     g_list_free_full (list, free_func);
   }
 }
+#else
+void tgp_g_list_free_full (GList *list, GDestroyNotify free_func) {
+  if (list) {
+    g_list_foreach (list, (GFunc)free_func, NULL);
+    g_list_free (list);
+  }
+}
+#endif
 
 const char *tgp_mime_to_filetype (const char *mime) {
   int len = (int) strlen (mime);

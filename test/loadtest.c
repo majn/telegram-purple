@@ -212,7 +212,7 @@ static void init_libpurple (void) {
   printf ("Checking version:\n");
   tgp = purple_plugins_find_with_id (PLUGIN_ID);
   if (!tgp) {
-    printf ("Huh! Can't find plugin! Expected ID \"" PLUGIN_ID "\"");
+    printf ("Huh! Can't find plugin! Expected ID \"" PLUGIN_ID "\"\n");
     abort ();
   }
 

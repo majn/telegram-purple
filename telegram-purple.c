@@ -421,8 +421,9 @@ static PurpleCmdRet tgprpl_cmd_kick(PurpleConversation *conv, const gchar *cmd, 
   pc = conv->account->gc;
   id = purple_conv_chat_get_id(PURPLE_CONV_CHAT(conv));
   
-  if (pc == NULL || id == -1)
+  if (pc == NULL || id == -1) {
     return PURPLE_CMD_RET_FAILED;
+  }
   
   who = g_strjoinv(" ", args);
   tgprpl_kick_from_chat(pc, id, who);
@@ -460,7 +461,6 @@ static GList* tgprpl_blist_node_menu (PurpleBlistNode *node) {
   GList* menu = NULL;
   if (PURPLE_BLIST_NODE_IS_BUDDY(node) &&
       tgl_get_peer_type (tgp_blist_buddy_get_id ((PurpleBuddy *)node)) == TGL_PEER_USER) {
-    
     // Add encrypted chat option to the right click menu of all buddies
     PurpleBuddy* buddy = (PurpleBuddy *)node;
     PurpleMenuAction* action = purple_menu_action_new (_("Start secret chat..."), PURPLE_CALLBACK(start_secret_chat),
@@ -567,8 +567,9 @@ static void tgprpl_login (PurpleAccount * acct) {
     return;
   }
 
-  if (purple_account_get_bool (acct, TGP_KEY_USE_IPV6, FALSE))
+  if (purple_account_get_bool (acct, TGP_KEY_USE_IPV6, FALSE)) {
     tgl_enable_ipv6(TLS);
+  }
 
   if (! tgp_startswith (purple_account_get_username (acct), "+")) {
     // TRANSLATORS: Please fill in your own prefix!
