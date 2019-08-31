@@ -14,7 +14,7 @@ If you are just interested in using the plugin you probably want to use one of t
 If your platform is not supported or you want to contribute by testing or development, scroll down to "Building form Source".
 
 
-#### OSX (Adium)
+#### macOS (Adium)
 
 1. Download and execute the [Telegram-Adium bundle] (https://github.com/majn/telegram-purple/releases/download/v1.3.0/telegram-adium-1.3.0.AdiumLibpurplePlugin.zip)
 2. Restart Adium
@@ -185,9 +185,40 @@ Since 1.3.0 it is possible to write messages in monospaced fonts using the markd
     }
 
 
-
-Building the Adium Plugin
+Compiling on macOS
 -------------------------
+
+On macOS you probably want to use the [prebuilt Bundle](https://github.com/majn/telegram-purple/releases) for Adium (see above) and not compile it from source. Compiling the bundle for Adium oder Pidgin on macOS is rather complicated and usually not required.
+
+# Building the Pidgin Plugin
+
+These steps are necessary when you want to build telegram-purple as a libpurple Plugin for macOS. The outputs of this build are also necessary when building the Adium bundle.
+
+
+1. [Install Homebrew](https://brew.sh/)
+2. Clone repository
+
+        git clone --recursive https://github.com/majn/telegram-purple
+        cd telegram-purple
+
+3. Install dependencies using homebrew
+
+       brew install glib
+       brew install pkg-config
+       brew install pidgin
+       brew install webp
+       brew install libgcrypt libgpg-error
+
+4. Configure make install
+
+       ./configure CFLAGS="-I/usr/local/include -ggdb -O0" LDFLAGS="-L/usr/local/lib" --disable-translation
+       # I currently don't know of an easy to support translations for Pidgin under macOS (sorry)
+
+       make
+       sudo make install
+
+
+# Building the Adium Plugin
 
 (This part may be a little outdated.)
 
@@ -196,29 +227,30 @@ Compiling with XCode is a little bit problematic, since it requires you to compi
 1. Get the Adium source, compile it with XCode and copy the build output into telegram-adium/Frameworks/Adium. It should contain at least Adium.framework, AdiumLibpurple.framework and AIUitilies.framework
 2. Open the Adium source code, go to ./Frameworks and copy libglib.framework and libpurple.framework into telegram-adium/Frameworks/Adium
 3. Build the tgl submodule and delete libtgl.so from libs/ (it should only contain libtgl.a)
-4. Install libwebp, libgcrypt and gnupg with homebrew:
+4. Install libpng, libwebp, libgcrypt and gnupg with homebrew:
 
-    brew install webp
-    brew install libgcrypt libgpg-error
+       brew install libpng webp
+       brew install libgcrypt libgpg-error
 
 5. If you already downloaded libwebp/libgcrypt in previous builds make sure that the binaries are up-to-date
 
-    brew update
-    brew upgrade webp libgcrypt
+       brew update
+       brew upgrade libpng webp libgcrypt
 
 6. Install with homebrew and move it into the appropriate directory so that XCode can find them. Note that the versions might differ, use the one that is
 
-    mkdir -p ./telegram-adium/Frameworks/Adium
-    cp /usr/local/Cellar/webp/0.4.3/lib/libwebp.a ./telegram-adium/Frameworks
-    cp /usr/local/Cellar/libgcrypt/1.6.4/lib/libgcrypt.20.dylib ./telegram-adium/Frameworks/Adium
-    cp /usr/local/Cellar/libgpg-error/1.20_1/lib/libgpg-error.0.dylib ./telegram-adium/Frameworks/Adium
+       mkdir -p ./telegram-adium/Frameworks/Adium
+       cp /usr/local/Cellar/libpng/1.6.37/lib/libpng.a ./telegram-adium/Frameworks
+       cp /usr/local/Cellar/webp/1.0.3/lib/libwebp.a ./telegram-adium/Frameworks
+       cp /usr/local/Cellar/libgcrypt/1.8.4/lib/libgcrypt.20.dylib ./telegram-adium/Frameworks/Adium
+       cp /usr/local/Cellar/libgpg-error/1.36/lib/libgpg-error.0.dylib ./telegram-adium/Frameworks/Adium
 
 7. Update the paths in the dylibs, to assure that the resulting binary will load them form within the bundle.
 
-    cd ./telegram-adium/Frameworks/Adium
-    install_name_tool -id "@loader_path/../Resources/libgcrypt.20.dylib" ./libgcrypt.20.dylib
-    install_name_tool -id "@loader_path/../Resources/libgpg-error.0.dylib" ./libgpg-error.0.dylib
-    install_name_tool -change "/usr/local/lib/libgpg-error.0.dylib" "@loader_path/../Resources/libgpg-error.0.dylib" ./libgcrypt.20.dylib
+       cd ./telegram-adium/Frameworks/Adium
+       install_name_tool -id "@loader_path/../Resources/libgcrypt.20.dylib" ./libgcrypt.20.dylib
+       install_name_tool -id "@loader_path/../Resources/libgpg-error.0.dylib" ./libgpg-error.0.dylib
+       install_name_tool -change "/usr/local/lib/libgpg-error.0.dylib" "@loader_path/../Resources/libgpg-error.0.dylib" ./libgcrypt.20.dylib
 
 7. Build the XCode-Project and execute the created bundle
 
@@ -309,6 +341,14 @@ and provide the key directly by yourself.
 
 FAQ
 ---
+
+- How can I improve the translations?
+  * A: Request access in some form or another, for example through the
+    development chat (see below), a GitHub issue, or request it directly on the
+    [Transifex website](https://www.transifex.com/telegram-purple-developers/telegram-purple/).
+    You will need an account on that website, and need to make all changes
+    there.  I will then pull it at my next convenience.  If you want it any
+    faster, you can poke me on the dev chat.
 
 - How do I set telegram-purple up with Bitlbee?
   * A (easy): Use bitlbee-telegram instead.  It is made for bitlbee.
