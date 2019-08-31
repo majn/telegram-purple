@@ -44,9 +44,11 @@ Attempt to use semver.
 
 Adjust `configure.ac`, in macro `AC_INIT`.  Remember to run `autoreconf`.
 
+Adjust `telegram-adium/telegram-adium/telegram-adium-Info.plist`.
+
 Adjust `rpm/purple-telegram.spec`, in version at the top and "changelog" below.
 
-Don't update debian: It's abondoned anyway.
+Don't update debian: It's abandoned anyway.
 
 AppStream: Nothing to do.
 
