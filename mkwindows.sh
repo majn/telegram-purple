@@ -45,6 +45,12 @@ then
     # Otherwise:
     # USE_VERSIONINFO=n
 fi
+if [ -z "${USE_REPRODUCIBLE}" ]
+then
+    USE_REPRODUCIBLE=y
+    # Otherwise:
+    # USE_REPRODUCIBLE=n
+fi
 
 # Other flags go here, i.e., libpng
 
@@ -147,9 +153,37 @@ else
         cd "${WEBP_BUILD_DIR}"
         # ./autogen.sh && ./configure && make
 
+        ./autogen.sh
+
+        WEBP_CFLAGS="-g -O2 -pthread"  # Default CFLAGS.  Why can't I just add some?
+        if [ "y" = "${USE_REPRODUCIBLE}" ]
+        then
+            # Check if -fstack-protector-strong is supported before enabling it
+            WEBP_CC=i686-w64-mingw32-gcc
+            if ${WEBP_CC} -fstack-protector-strong 2>&1 | grep -q 'stack-protector-strong'
+            then
+                true  # Don't add flag: not supported.
+            else
+                WEBP_CFLAGS="${WEBP_CFLAGS} -fstack-protector-strong"
+            fi
+            # Check if -frandom-seed is supported before enabling it
+            if ${WEBP_CC} -frandom-seed=77e0418a98676b76729b50fe91cc1f250c14fd8f664f8430649487a6f918926d 2>&1 | grep -q 'random-seed'
+            then
+                true  # Don't add flag: not supported.
+            else
+                WEBP_CFLAGS="${WEBP_CFLAGS} "'-frandom-seed=0x$$(sha256sum $< | cut -f1 -d" ")'
+            fi
+            # Check if -ffile-prefix-map is supported before enabling it
+            if ${WEBP_CC} -ffile-prefix-map=/foo/bar/baz=/quux 2>&1 | grep -q 'file-prefix-map'
+            then
+                true  # Don't add flag: not supported.
+            else
+                WEBP_CFLAGS="${WEBP_CFLAGS} -ffile-prefix-map=$(realpath .)=webp"
+            fi
+        fi
+
         # Disable linking against PNG, JPEG, TIFF, GIF, WIC,
         # as those would either need cross-compilation, too, or some other magic.
-        ./autogen.sh
         # libtoolize (called by autoreconf, called by autogen.sh) must not see
         # `install-sh` because it would become confused by it.
         # That's why the hierarchy is so deep.
@@ -166,7 +200,7 @@ else
         # for i686-w64-mingw32, so the x86_64 version is used.  We can ignore that.
         #
         # Finally.
-        make --quiet -j4 install
+        make --quiet -j4 CFLAGS="${WEBP_CFLAGS}" install
     )
     if ! [ -r ${WEBP_INSTALL_DIR}/include/webp/decode.h -a -r ${WEBP_INSTALL_DIR}/bin/libwebp-7.dll ] ; then
         # I expect that cross-compiling webp is going to be very fragile,
@@ -297,6 +331,15 @@ if [ "y" != "${USE_WEBP}" ]
 then
     VARIANT_SUFFIX="${VARIANT_SUFFIX}_nowebp"
 fi
+if [ "y" != "${USE_REPRODUCIBLE}" ]
+then
+    VARIANT_SUFFIX="${VARIANT_SUFFIX}_norepro"
+fi
+if [ "i686" != "${MINGW_MACHINE}" ]
+then
+    VARIANT_SUFFIX="${VARIANT_SUFFIX}_${MINGW_MACHINE}"
+fi
+
 makensis -DPLUGIN_VERSION="${VERSION}+g${COMMIT}${VARIANT_SUFFIX}" -DPRPL_NAME=libtelegram.dll \
     -DWIN32_DEV_TOP=contrib telegram-purple.nsi
 
