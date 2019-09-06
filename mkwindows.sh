@@ -50,6 +50,17 @@ then
     USE_REPRODUCIBLE=y
     # Otherwise:
     # USE_REPRODUCIBLE=n
+    FAKETIME="with_faketime"
+    SOURCE_DATE_EPOCH="$(git log -1 --date='format:%s' --format=%cd)"
+
+    FAKETIME_DATETIME="$(git log -1 --date=iso --format=%cd)"
+    with_faketime () {
+        showargs faketime -f "${FAKETIME_DATETIME}" "$@"
+        faketime -f "${FAKETIME_DATETIME}" "$@"
+    }
+else
+    FAKETIME=""
+    SOURCE_DATE_EPOCH=""
 fi
 
 # Other flags go here, i.e., libpng
@@ -94,7 +105,7 @@ COMMIT=`grep -E 'define' commit.h | sed -re 's/^.*"(.*)".*$/\1/'`
 # === Ensure that all tools are available. ===
 
 # Commands
-for cmd in file make makensis "${MINGW_TARGET}-gcc" realpath sed tar unzip ; do
+for cmd in faketime file make makensis "${MINGW_TARGET}-gcc" realpath sed tar unzip ; do
     if ! command -v "$cmd" >/dev/null 2>&1 ; then
         echo "No '$cmd' available.  Are you sure you know what you're doing?"
         exit 1
@@ -155,6 +166,7 @@ else
 
         ./autogen.sh
 
+        WEBP_LDFLAGS=""
         WEBP_CFLAGS="-g -O2 -pthread"  # Default CFLAGS.  Why can't I just add some?
         if [ "y" = "${USE_REPRODUCIBLE}" ]
         then
@@ -198,9 +210,11 @@ else
         # "configure: WARNING: using cross tools not prefixed with host triplet"
         # stems from the fact that 'mt' (magnetic tape control) is not available
         # for i686-w64-mingw32, so the x86_64 version is used.  We can ignore that.
-        #
-        # Finally.
-        make --quiet -j4 CFLAGS="${WEBP_CFLAGS}" install
+
+        # For some reason, "--no-insert-timestamp" doesn't seem to work.
+        # To make the timestamp in the final DLL reproducible, use the time of
+        # the last commit instead.
+        ${FAKETIME} make --quiet -j4 CFLAGS="${WEBP_CFLAGS}" LDFLAGS="${WEBP_LDFLAGS}" install
     )
     if ! [ -r ${WEBP_INSTALL_DIR}/include/webp/decode.h -a -r ${WEBP_INSTALL_DIR}/bin/libwebp-7.dll ] ; then
         # I expect that cross-compiling webp is going to be very fragile,
@@ -313,8 +327,9 @@ fi
 # PRPL_NAME: Assign Windows-specific name.
 #            (Baked into the file, so we can't just rename it.)
 # LDFLAGS: Remove -rdynamic flag.
-make -j4 bin/libtelegram.dll \
-    CFLAGS_INTL=-DENABLE_NLS \
+
+${FAKETIME} make -j4 bin/libtelegram.dll \
+    CFLAGS_INTL="-DENABLE_NLS -DSOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}" \
     PRPL_NAME=libtelegram.dll \
     EXTRA_OBJECTS="${VERSIONINFO_OBJECTS}" \
     LDFLAGS_EXTRA=-ggdb
