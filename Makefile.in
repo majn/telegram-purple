@@ -23,20 +23,36 @@ localedir=@localedir@
 gettext_package=@GETTEXT_PACKAGE@
 
 # Also update mkwindows.sh
+MINGW_TARGET?=i686
 PIDGIN_VERSION=2.13.0
-WIN32_GTK_BUNDLE_DIR=win32/gtk+-bundle_2.24.10-20120208_win32
-WIN32_GTK_BUNDLE_URL=http://ftp.acc.umu.se/pub/gnome/binaries/win32/gtk+/2.24/gtk+-bundle_2.24.10-20120208_win32.zip
-WIN32_GTK_BUNDLE_FILE=win32/gtk+-bundle_2.24.10-20120208_win32.zip
-WIN32_PIDGIN_SRC_URL=http://sourceforge.net/projects/pidgin/files/Pidgin/${PIDGIN_VERSION}/pidgin-${PIDGIN_VERSION}.tar.gz/download
-WIN32_PIDGIN_SRC_FILE=win32/pidgin-${PIDGIN_VERSION}.tar.gz
-WIN32_PIDGIN_SRC_DIR=win32/pidgin-${PIDGIN_VERSION}
-WIN32_PIDGIN_BIN_URL=http://sourceforge.net/projects/pidgin/files/Pidgin/${PIDGIN_VERSION}/pidgin-${PIDGIN_VERSION}-win32-bin.zip/download
-WIN32_PIDGIN_BIN_FILE=win32/pidgin-${PIDGIN_VERSION}-win32-bin.zip
-WIN32_PIDGIN_BIN_DIR=win32/pidgin-${PIDGIN_VERSION}-win32bin
-WIN32_WEBP_URL=https://github.com/webmproject/libwebp/archive/v1.0.2.tar.gz
-WIN32_WEBP_FILE=win32/libwebp-1.0.2.tar.gz
-WIN32_WEBP_DIR=win32/libwebp-1.0.2
-WIN32_DIRS=${WIN32_GTK_BUNDLE_DIR} ${WIN32_PIDGIN_SRC_DIR} ${WIN32_PIDGIN_BIN_DIR} ${WIN32_WEBP_DIR}
+WIN_i686_GTK_BUNDLE_DIR=win/gtk+-bundle_2.24.10-20120208_win32
+WIN_i686_GTK_BUNDLE_URL=http://ftp.acc.umu.se/pub/gnome/binaries/win32/gtk+/2.24/gtk+-bundle_2.24.10-20120208_win32.zip
+WIN_i686_GTK_BUNDLE_FILE=win/gtk+-bundle_2.24.10-20120208_win32.zip
+WIN_i686_PIDGIN_SRC_URL=http://sourceforge.net/projects/pidgin/files/Pidgin/${PIDGIN_VERSION}/pidgin-${PIDGIN_VERSION}.tar.gz/download
+WIN_i686_PIDGIN_SRC_FILE=win/pidgin-${PIDGIN_VERSION}.tar.gz
+WIN_i686_PIDGIN_SRC_DIR=win/pidgin-${PIDGIN_VERSION}
+WIN_i686_PIDGIN_BIN_URL=http://sourceforge.net/projects/pidgin/files/Pidgin/${PIDGIN_VERSION}/pidgin-${PIDGIN_VERSION}-win32-bin.zip/download
+WIN_i686_PIDGIN_BIN_FILE=win/pidgin-${PIDGIN_VERSION}-win32-bin.zip
+WIN_i686_PIDGIN_BIN_DIR=win/pidgin-${PIDGIN_VERSION}-win32bin
+WIN_i686_WEBP_URL=https://github.com/webmproject/libwebp/archive/v1.0.2.tar.gz
+WIN_i686_WEBP_FILE=win/libwebp-1.0.2.tar.gz
+WIN_i686_WEBP_DIR=win/libwebp-1.0.2
+WIN_i686_DIRS=${WIN_i686_GTK_BUNDLE_DIR} ${WIN_i686_PIDGIN_SRC_DIR} ${WIN_i686_PIDGIN_BIN_DIR} ${WIN_i686_WEBP_DIR}
+WIN_x86_64_GTK_BUNDLE_DIR=win/gtk+-bundle_2.22.1-20101229_win64
+WIN_x86_64_GTK_BUNDLE_URL=http://ftp.acc.umu.se/pub/gnome/binaries/win64/gtk+/2.22/gtk+-bundle_2.22.1-20101229_win64.zip
+WIN_x86_64_GTK_BUNDLE_FILE=win/gtk+-bundle_2.22.1-20101229_win64.zip
+WIN_x86_64_PIDGIN_SRC_URL=${WIN_i686_PIDGIN_SRC_URL}
+WIN_x86_64_PIDGIN_SRC_FILE=${WIN_i686_PIDGIN_SRC_FILE}
+WIN_x86_64_PIDGIN_SRC_DIR=${WIN_i686_PIDGIN_SRC_DIR}
+
+WIN_x86_64_PIDGIN_BIN_URL=IMPOSSIBLE!  https://developer.pidgin.im/ticket/9915#comment:5
+
+error ${error} $(error)
+
+WIN_x86_64_PIDGIN_BIN_FILE=win/pidgin-${PIDGIN_VERSION}-win32-bin.zip
+WIN_x86_64_PIDGIN_BIN_DIR=win/pidgin-${PIDGIN_VERSION}-win32bin
+
+WIN_x86_64_DIRS=${WIN_x86_64_GTK_BUNDLE_DIR} ${WIN_x86_64_PIDGIN_SRC_DIR} ${WIN_x86_64_PIDGIN_BIN_DIR} ${WIN_x86_64_WEBP_DIR}
 # Not directly used here, but the usage will be injected via the CFLAGS configure var.
 # Note on webp: locally cross-built!  That's why it violates the pattern.
 WIN32_INC=-I${WIN32_PIDGIN_SRC_DIR}/pidgin \
@@ -242,34 +258,43 @@ local_uninstall:
 
 ### == Windows sources downloads == ###
 
-.PHONY: download_win32_sources
-download_win32_sources: | ${WIN32_DIRS}
+.PHONY: download_win_i686_sources
+download_win_i686_sources: | ${WIN32_DIRS}
 
-win32:
+.PHONY: download_win_x86_64_sources
+download_win_x86_64_sources: | ${WIN64_DIRS}
+
+win:
 	@mkdir -p $@
 
 ${WIN32_GTK_BUNDLE_DIR}: | ${WIN32_GTK_BUNDLE_FILE}
 	unzip -q $| -d $@
 
-${WIN32_GTK_BUNDLE_FILE}: | win32
+${WIN32_GTK_BUNDLE_FILE}: | win
 	wget -q -O $@ ${WIN32_GTK_BUNDLE_URL}
 
-${WIN32_PIDGIN_SRC_DIR}: | ${WIN32_PIDGIN_SRC_FILE}
-	tar xf $| -C win32/
+${WIN64_GTK_BUNDLE_DIR}: | ${WIN64_GTK_BUNDLE_FILE}
+	unzip -q $| -d $@
 
-${WIN32_PIDGIN_SRC_FILE}: | win32
+${WIN64_GTK_BUNDLE_FILE}: | win
+	wget -q -O $@ ${WIN64_GTK_BUNDLE_URL}
+
+${WIN32_PIDGIN_SRC_DIR}: | ${WIN32_PIDGIN_SRC_FILE}
+	tar xf $| -C win/
+
+${WIN32_PIDGIN_SRC_FILE}: | win
 	wget -q -O $@ ${WIN32_PIDGIN_SRC_URL}
 
 ${WIN32_PIDGIN_BIN_DIR}: | ${WIN32_PIDGIN_BIN_FILE}
-	unzip -q $| -d win32/
+	unzip -q $| -d win/
 
-${WIN32_PIDGIN_BIN_FILE}: | win32
+${WIN32_PIDGIN_BIN_FILE}: | win
 	wget -q -O $@ ${WIN32_PIDGIN_BIN_URL}
 
 ${WIN32_WEBP_DIR}: | ${WIN32_WEBP_FILE}
-	tar xf $| -C win32/
+	tar xf $| -C win/
 
-${WIN32_WEBP_FILE}: | win32
+${WIN32_WEBP_FILE}: | win
 	wget -q -O $@ ${WIN32_WEBP_URL}
 
 .PHONY: win-installer-deps

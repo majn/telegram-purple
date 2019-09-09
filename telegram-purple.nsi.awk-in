@@ -94,10 +94,10 @@ Section "MainSection" SEC01
 	File /nonfatal "/oname=變\LC_MESSAGES\telegram-purple.mo" "po\變.mo"
 	
 	SetOutPath "$PidginDir"
-	File "${WIN32_DEV_TOP}\libgpg-error-0.dll"
-	File "${WIN32_DEV_TOP}\libgcrypt-20.dll"
-	或File "${WIN32_DEV_TOP}\libwebp-7.dll"
-	File "${WIN32_DEV_TOP}\libgcc_s_sjlj-1.dll"
+	File "${WIN_DEV_TOP}\libgpg-error-0.dll"
+	File "${WIN_DEV_TOP}\libgcrypt-20.dll"
+	或File "${WIN_DEV_TOP}\libwebp-7.dll"
+	File "${WIN_DEV_TOP}\libgcc_s_sjlj-1.dll"
 SectionEnd
 
 Function GetPidginInstPath

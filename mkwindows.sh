@@ -76,7 +76,8 @@ HOST_MACHINE="$(uname -m)"
 HOST="${HOST_MACHINE}-linux-gnu"
 
 # MinGW
-MINGW_MACHINE="i686"
+# Either "i686" or "x86_64":
+MINGW_MACHINE="x86_64"
 MINGW_TARGET="${MINGW_MACHINE}-w64-mingw32"
 MINGW_BASE=/usr/${MINGW_TARGET}
 MINGW_INCLUDEDIR=/usr/share/mingw-w64/include
@@ -90,9 +91,9 @@ WEBP_BUILD_DIR="objs/webp/build/"
 # Win32 references
 # Sadly, the library paths must be resolved *now* already.
 # AND, they must be absolute.  Sigh.
-mkdir -p win32
-WIN32_GTK_DEV_DIR=`realpath win32/gtk+-bundle_2.24.10-20120208_win32`
-WIN32_PIDGIN_DIR=`realpath win32/pidgin-2.13.0`
+mkdir -p win
+WIN32_GTK_DEV_DIR=`realpath win/gtk+-bundle_2.24.10-20120208_win32`
+WIN32_PIDGIN_DIR=`realpath win/pidgin-2.13.0`
 WIN32_WEBP_PRISTINE="win32/libwebp-1.0.2/"
 
 # Versioning information
@@ -142,7 +143,7 @@ fi
 # === Download all sources ===
 
 echo "===== 01: Prepare sources"
-make clean download_win32_sources
+make MINGW_TARGET=${MINGW_TARGET} clean download_win_${MINGW_MACHINE}_sources
 
 
 # === Build libpng and libwebp ===
@@ -368,7 +369,7 @@ then
 fi
 
 ${FAKETIME} makensis -DPLUGIN_VERSION="${VERSION}+g${COMMIT}${VARIANT_SUFFIX}" -DPRPL_NAME=libtelegram.dll \
-    -DWIN32_DEV_TOP=contrib telegram-purple.nsi
+    -DWIN_DEV_TOP=contrib telegram-purple.nsi
 
 # There's no monster under your bed, I swear.
 echo "===== 11: Unspoof files"
