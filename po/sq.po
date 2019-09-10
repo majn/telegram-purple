@@ -5,13 +5,14 @@
 # 
 # Translators:
 # Ben Wiederhake <BenWiederhake.GitHub@gmx.de>, 2019
+# Besnik <besnik@programeshqip.org>, 2019
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: telegram-purple\n"
 "POT-Creation-Date: 2018-08-01 23:11+0200\n"
-"PO-Revision-Date: 2019-03-02 01:07+0000\n"
-"Last-Translator: Ben Wiederhake <BenWiederhake.GitHub@gmx.de>, 2019\n"
+"PO-Revision-Date: 2019-08-31 08:10+0000\n"
+"Last-Translator: Besnik <besnik@programeshqip.org>, 2019\n"
 "Language-Team: Albanian (https://www.transifex.com/telegram-purple-developers/teams/53149/sq/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -61,11 +62,11 @@ msgstr "Krijimi i lidhjes së fjalosjes dështoi"
 msgid "You need to be admin of the group  to do that."
 msgstr "Lypset të jeni përgjegjës grupi që të bëni këtë."
 
-#: ../telegram-purple.c:439
+#: ../telegram-purple.c:440
 msgid "Chat joined"
 msgstr "U hy në fjalosje"
 
-#: ../telegram-purple.c:440
+#: ../telegram-purple.c:441
 msgid "Chat added to list of chat rooms."
 msgstr "Fjalosja u shtua te listë dhomash fjalosjeje."
 
@@ -98,7 +99,7 @@ msgid "Problem in tgl"
 msgstr "Problem në tgl"
 
 #. TRANSLATORS: Please fill in your own prefix!
-#: ../telegram-purple.c:575
+#: ../telegram-purple.c:576
 #, c-format
 msgid ""
 "Unable to sign on as %s: phone number lacks country prefix. Numbers must "
@@ -108,44 +109,44 @@ msgstr ""
 "Numrat duhet të fillojnë me kodin e plotë prefiksi ndërkombëtar, p.sh. +355 "
 "për Shqipërinë."
 
-#: ../telegram-purple.c:580
+#: ../telegram-purple.c:581
 msgid "Incomplete phone number"
 msgstr "Numër telefoni jo i plotë"
 
-#: ../telegram-purple.c:638
+#: ../telegram-purple.c:639
 msgid "Secret chat was already deleted"
 msgstr "Fjalosja e fshehtë qe fshirë tashmë"
 
-#: ../telegram-purple.c:640
+#: ../telegram-purple.c:641
 msgid "Secret chat is not ready"
 msgstr "Fjalosja e fshehtë s’është gati"
 
-#: ../telegram-purple.c:648
+#: ../telegram-purple.c:649
 msgid "Only the creator of a channel can post messages."
 msgstr "Mesazhe mund të postojë vetëm krijuesi i një kanali."
 
-#: ../telegram-purple.c:691
+#: ../telegram-purple.c:692
 msgid "Cannot invite buddy to chat"
 msgstr "S’ftohet dot shok në fjalosje"
 
-#: ../telegram-purple.c:692
+#: ../telegram-purple.c:693
 msgid "Specified user does not exist."
 msgstr "Përdoruesi i treguar nuk ekziston."
 
-#: ../telegram-purple.c:705
+#: ../telegram-purple.c:706
 msgid "phone no. (+ country prefix)"
 msgstr "nr. telefoni (+ prefiks vendi)"
 
-#: ../telegram-purple.c:800
+#: ../telegram-purple.c:801
 msgid "kick <user>:  Kick a user from the room."
 msgstr "kick <përdorues>:  Përzini një përdorues nga dhoma."
 
 #. Login
-#: ../telegram-purple.c:822
+#: ../telegram-purple.c:823
 msgid "Password (two factor authentication)"
 msgstr "Fjalëkalim (mirëfilltësim dyfaktorësh)"
 
-#: ../telegram-purple.c:827
+#: ../telegram-purple.c:828
 msgid ""
 "Fallback SMS verification\n"
 "(Helps when not using Pidgin and you aren't being prompted for the code)"
@@ -154,30 +155,30 @@ msgstr ""
 "(I dobishëm kur s’përdoret Pidgin-i dhe nuk ju kërkohet kod)"
 
 #. Whether to do fallback SMS verification
-#: ../telegram-purple.c:834
+#: ../telegram-purple.c:835
 msgid "Always"
 msgstr "Përherë"
 
 #. Whether to do fallback SMS verification
-#: ../telegram-purple.c:836
+#: ../telegram-purple.c:837
 msgid "Never"
 msgstr "Kurrë"
 
 #. Whether to do fallback SMS verification
 #. How to handle "large" files
-#: ../telegram-purple.c:838 ../telegram-purple.c:859
+#: ../telegram-purple.c:839 ../telegram-purple.c:860
 msgid "Ask"
 msgstr "Pyet"
 
-#: ../telegram-purple.c:840
+#: ../telegram-purple.c:841
 msgid "Accept secret chats"
 msgstr "Prano fjalosje të fshehta"
 
-#: ../telegram-purple.c:844
+#: ../telegram-purple.c:845
 msgid "Display buddies offline after (days)"
 msgstr "Shfaqi shokët si jo të lidhur pas (ditësh)"
 
-#: ../telegram-purple.c:848
+#: ../telegram-purple.c:849
 msgid ""
 "Don't fetch history older than (days)\n"
 "(0 for unlimited)"
@@ -186,43 +187,43 @@ msgstr ""
 "(0 për pa kufizim)"
 
 #. How to handle "large" files
-#: ../telegram-purple.c:855
+#: ../telegram-purple.c:856
 msgid "Discard"
 msgstr "Hidhe tej"
 
 #. How to handle "large" files
-#: ../telegram-purple.c:857
+#: ../telegram-purple.c:858
 msgid "Auto load"
 msgstr "Vetëngarkoje"
 
-#: ../telegram-purple.c:861
+#: ../telegram-purple.c:862
 msgid "Auto load file transfers up to (kb)"
 msgstr "Vetëngarko shpërngulje kartelash deri në (kb)"
 
-#: ../telegram-purple.c:865
+#: ../telegram-purple.c:866
 msgid "Bigger file transfers"
 msgstr "Shpërngulje më të mëdha kartelash"
 
 #. Chats
-#: ../telegram-purple.c:869
+#: ../telegram-purple.c:870
 msgid "Add all group chats to buddy list"
 msgstr "Shtoji krejt fjalosjet e grupit te lista e shokëve"
 
 #. Receipts
-#: ../telegram-purple.c:874
+#: ../telegram-purple.c:875
 msgid "Display notices of receipt"
 msgstr "Shfaq njoftime dëftese"
 
-#: ../telegram-purple.c:878
+#: ../telegram-purple.c:879
 msgid "Send notices of receipt when present"
 msgstr "Dërgo njoftime dëftese kur ka"
 
 #. IPv6
-#: ../telegram-purple.c:883
+#: ../telegram-purple.c:884
 msgid "Use IPv6 for connecting (restart required)"
 msgstr "Për lidhje përdor IPv6 (lyp rinisje)"
 
-#: ../telegram-purple.c:908
+#: ../telegram-purple.c:909
 msgid "Telegram Protocol Plugin."
 msgstr "Shtojcë Protokolli Telegram."
 
@@ -295,7 +296,7 @@ msgid "Channel %1$s created"
 msgstr "Kanali %1$s u krijua"
 
 #. FIXME: check if this makes sense
-#: ../tgp-msg.c:165 ../tgp-chat.c:124 ../tgp-chat.c:665
+#: ../tgp-msg.c:165 ../tgp-chat.c:124 ../tgp-chat.c:667
 msgid "Telegram Channels"
 msgstr "Kanale Telegram-i"
 
@@ -312,73 +313,87 @@ msgstr "Dërgimi i figurës dështoi."
 msgid "%s sent a sticker."
 msgstr "%s dërgoi një ngjitëse."
 
-#: ../tgp-msg.c:483
+#: ../tgp-msg.c:473
+msgid "[message unavailable]"
+msgstr "[mesazh jo i passhëm]"
+
+#: ../tgp-msg.c:487
 msgid "[photo]"
 msgstr "[foto]"
 
-#: ../tgp-msg.c:487
+#: ../tgp-msg.c:491
 msgid "[audio]"
 msgstr "[audio]"
 
-#: ../tgp-msg.c:491
+#: ../tgp-msg.c:495
 msgid "[video]"
 msgstr "[video]"
 
-#: ../tgp-msg.c:496
+#: ../tgp-msg.c:500
 msgid "[document]"
 msgstr "[dokument]"
 
-#: ../tgp-msg.c:501
+#: ../tgp-msg.c:505
 msgid "[position]"
 msgstr "[pozicion]"
 
-#: ../tgp-msg.c:505
+#: ../tgp-msg.c:509
 msgid "[contact]"
 msgstr "[kontakt]"
 
-#: ../tgp-msg.c:509
+#: ../tgp-msg.c:513
 msgid "[webpage]"
 msgstr "[faqe web]"
 
-#: ../tgp-msg.c:513
+#: ../tgp-msg.c:517
 msgid "[unsupported media]"
 msgstr "[media që nuk mbulohet]"
 
-#: ../tgp-msg.c:536
+#: ../tgp-msg.c:549
 #, c-format
 msgid "%s<b>&gt; %s wrote:</b><br>&gt; %s<br>%s"
 msgstr "%s<b>&gt; %s shkroi:</b><br>&gt; %s<br>%s"
 
-#: ../tgp-msg.c:538
+#: ../tgp-msg.c:551
 #, c-format
 msgid "%s<b>&gt; Unknown user wrote:</b><br>&gt; %s<br>%s"
 msgstr "%s<b>&gt; Një përdorues i panjohur shkroi:</b><br>&gt; %s<br>%s"
 
-#: ../tgp-msg.c:586
+#: ../tgp-msg.c:607
 msgid "failed loading message"
 msgstr "dështoi në ngarkim mesazhi"
 
 #. Content of a file transfer
-#: ../tgp-msg.c:633 ../tgp-msg.c:683
+#: ../tgp-msg.c:649 ../tgp-msg.c:699
 msgid "document"
 msgstr "dokument"
 
 #. Content of a file transfer
-#: ../tgp-msg.c:636
+#: ../tgp-msg.c:652
 msgid "audio"
 msgstr "audio"
 
 #. Content of a file transfer
-#: ../tgp-msg.c:639
+#: ../tgp-msg.c:655
 msgid "animation"
 msgstr "animacion"
 
 #. Content of a file transfer
-#: ../tgp-msg.c:642
+#: ../tgp-msg.c:658
 msgid "video"
 msgstr "video"
 
-#: ../tgp-msg.c:873
+#: ../tgp-msg.c:786
+#, c-format
+msgid "<b>&gt; Forwarded from %s:</b><br>&gt; %s"
+msgstr "<b>&gt; Përcjellë nga %s:</b><br>&gt; %s"
+
+#: ../tgp-msg.c:788
+#, c-format
+msgid "<b>&gt; Forwarded:</b><br>&gt; %s"
+msgstr "<b>&gt; Përcjellë:</b><br>&gt; %s"
+
+#: ../tgp-msg.c:897
 msgid "loading document or picture failed"
 msgstr "Ngarkimi i dokumentit ose fotos dështoi"
 
@@ -414,38 +429,38 @@ msgstr "Jepni kodin e hyrjes postar"
 msgid "the code"
 msgstr "kodi"
 
-#: ../tgp-request.c:54 ../tgp-request.c:104 ../tgp-request.c:198
-#: ../tgp-request.c:233 ../tgp-request.c:263
+#: ../tgp-request.c:54 ../tgp-request.c:103 ../tgp-request.c:197
+#: ../tgp-request.c:232 ../tgp-request.c:262
 msgid "OK"
 msgstr "OK"
 
-#: ../tgp-request.c:55 ../tgp-request.c:104 ../tgp-request.c:123
-#: ../tgp-request.c:199 ../tgp-request.c:234 ../tgp-request.c:264
+#: ../tgp-request.c:55 ../tgp-request.c:103 ../tgp-request.c:122
+#: ../tgp-request.c:198 ../tgp-request.c:233 ../tgp-request.c:263
 msgid "Cancel"
 msgstr "Anuloje"
 
-#: ../tgp-request.c:95
+#: ../tgp-request.c:94
 msgid "Registration"
 msgstr "Regjistrim"
 
-#: ../tgp-request.c:96
+#: ../tgp-request.c:95
 msgid "First name"
 msgstr "Emër"
 
-#: ../tgp-request.c:99
+#: ../tgp-request.c:98
 msgid "Last name"
 msgstr "Mbiemër"
 
-#: ../tgp-request.c:103
+#: ../tgp-request.c:102
 msgid "Register"
 msgstr "Regjistrohuni"
 
-#: ../tgp-request.c:103
+#: ../tgp-request.c:102
 msgid "Please register your phone number."
 msgstr "Ju lutemi, regjistroni numrin tuaj të telefonit."
 
 #. purple_request API not available
-#: ../tgp-request.c:108
+#: ../tgp-request.c:107
 msgid ""
 "Phone number is not registered. Please register your phone on a different "
 "client."
@@ -453,23 +468,23 @@ msgstr ""
 "Numri i telefonit s’është i regjistruar. Ju lutemi, regjistroni telefonin "
 "tuaj me një klient tjetër."
 
-#: ../tgp-request.c:110
+#: ../tgp-request.c:109
 msgid "Not registered"
 msgstr "I paregjistruar"
 
-#: ../tgp-request.c:122
+#: ../tgp-request.c:121
 msgid "Password needed"
 msgstr "Lypset fjalëkalim"
 
-#: ../tgp-request.c:122
+#: ../tgp-request.c:121
 msgid "Enter password for two factor authentication"
 msgstr "Jepni fjalëkalim për mirëfilltësim dyfaktorësh"
 
-#: ../tgp-request.c:123
+#: ../tgp-request.c:122
 msgid "Ok"
 msgstr "Ok"
 
-#: ../tgp-request.c:125
+#: ../tgp-request.c:124
 msgid ""
 "No password set for two factor authentication. Please enter it in the "
 "extended settings."
@@ -477,20 +492,20 @@ msgstr ""
 "Pa fjalëkalim të caktuar, për mirëfilltësim dyfaktorësh. Ju lutemi, jepeni "
 "te rregullimet e thelluara."
 
-#: ../tgp-request.c:127
+#: ../tgp-request.c:126
 msgid "Password invalid"
 msgstr "Fjalëkalim i pavlefshëm"
 
-#: ../tgp-request.c:150
+#: ../tgp-request.c:149
 #, c-format
 msgid "Accept secret chat '%s' on this device?"
 msgstr "Të pranohet fjalosja e fshehtë '%s' në këtë pajisje?"
 
-#: ../tgp-request.c:151
+#: ../tgp-request.c:150
 msgid "Secret chat"
 msgstr "Fjalosje e fshehtë"
 
-#: ../tgp-request.c:151
+#: ../tgp-request.c:150
 msgid ""
 "Secret chats can only have one end point. If you accept a secret chat on "
 "this device, its messages will not be available anywhere else. If you "
@@ -501,7 +516,7 @@ msgstr ""
 "dukshme gjetiu. Nëse nuk e pranoni, mund ta pranoni fjalosjen në pajisje të "
 "tjera."
 
-#: ../tgp-request.c:182
+#: ../tgp-request.c:181
 msgid ""
 "Invite at least one additional user by specifying\n"
 " their full name (autocompletion available).\n"
@@ -511,35 +526,35 @@ msgstr ""
 " emrat e tyre të plotë (mund të përdoret vetëplotësimi).\n"
 "Pasi fjalosja të jetë krijuar, mund të shtoni më tepër përdorues."
 
-#: ../tgp-request.c:185 ../tgp-request.c:189 ../tgp-request.c:193
+#: ../tgp-request.c:184 ../tgp-request.c:188 ../tgp-request.c:192
 msgid "Username"
 msgstr "Emër përdoruesi"
 
-#: ../tgp-request.c:198
+#: ../tgp-request.c:197
 msgid "Create group chat"
 msgstr "Krijoni fjalosje grupi"
 
-#: ../tgp-request.c:198
+#: ../tgp-request.c:197
 msgid "Invite users"
 msgstr "Ftoni përdorues"
 
-#: ../tgp-request.c:217 ../tgp-request.c:232
+#: ../tgp-request.c:216 ../tgp-request.c:231
 msgid "Change password"
 msgstr "Ndryshoni fjalëkalimin"
 
-#: ../tgp-request.c:219
+#: ../tgp-request.c:218
 msgid "Current"
 msgstr "I tanishmi"
 
-#: ../tgp-request.c:223 ../tgp-request.c:253
+#: ../tgp-request.c:222 ../tgp-request.c:252
 msgid "Password"
 msgstr "Fjalëkalim"
 
-#: ../tgp-request.c:227 ../tgp-request.c:257
+#: ../tgp-request.c:226 ../tgp-request.c:256
 msgid "Confirm"
 msgstr "Ripohojeni"
 
-#: ../tgp-request.c:251 ../tgp-request.c:262
+#: ../tgp-request.c:250 ../tgp-request.c:261
 msgid "New password"
 msgstr "Fjalëkalimi i ri"
 
@@ -548,11 +563,11 @@ msgstr "Fjalëkalimi i ri"
 #. ask for the phone number directly, cause in that case the account would
 #. still be created
 #. named with the invalid phone number, even though the login will work
-#: ../tgp-request.c:300
+#: ../tgp-request.c:299
 msgid "Invalid phone number"
 msgstr "Numër telefoni i pavlefshëm"
 
-#: ../tgp-request.c:301
+#: ../tgp-request.c:300
 msgid ""
 "Please enter only numbers in the international phone number format, a leading + following by the country prefix and the phone number.\n"
 "Do not use any other special chars."
@@ -560,35 +575,35 @@ msgstr ""
 "Ju lutemi, jepni vetëm numra në formatin për numra telefonash ndërkombëtarë, një + paraprijës të ndjekur nga prefiksi i vendit dhe numri i telefonit.\n"
 "Mos përdorni shenja të tjera speciale."
 
-#: ../tgp-request.c:370
+#: ../tgp-request.c:369
 msgid "Leave Chat"
 msgstr "Braktise Fjalosjen"
 
-#: ../tgp-request.c:372
+#: ../tgp-request.c:371
 msgid "Do you want to leave this chat permantently?"
 msgstr "Doni të dilni përgjithmonë nga kjo fjalosje?"
 
-#: ../tgp-request.c:377
+#: ../tgp-request.c:376
 msgid "Abort Secret Chat"
 msgstr "Ndërprite Fjalosjen e Fshehtë"
 
-#: ../tgp-request.c:379
+#: ../tgp-request.c:378
 msgid "Do you want to terminate this secret chat permantently?"
 msgstr "Doni ta përfundoni përgjithmonë këtë fjalosje të fshehtë?"
 
-#: ../tgp-request.c:384
+#: ../tgp-request.c:383
 msgid "Delete Contact"
 msgstr "Fshije Kontaktin"
 
-#: ../tgp-request.c:386
+#: ../tgp-request.c:385
 msgid "Do you want to remove this user from your global contact list?"
 msgstr "Doni të hiqet ky përdorues prej listës suaj globale të kontakteve?"
 
-#: ../tgp-request.c:401
+#: ../tgp-request.c:400
 msgid "Leave Channel"
 msgstr "Braktise Kanalin"
 
-#: ../tgp-request.c:403
+#: ../tgp-request.c:402
 msgid "Do you want to leave this channel?"
 msgstr "Doni ta braktisni këtë kanal?"
 
@@ -618,7 +633,7 @@ msgstr "muajin e fundit"
 msgid "unknown"
 msgstr "e panjohur"
 
-#: ../tgp-chat.c:108 ../tgp-chat.c:671
+#: ../tgp-chat.c:108 ../tgp-chat.c:673
 msgid "Telegram Chats"
 msgstr "Fjalosje Telegram-i"
 
@@ -626,34 +641,34 @@ msgstr "Fjalosje Telegram-i"
 msgid "You have already left this chat."
 msgstr "E keni lëndë tashmë këtë fjalosje."
 
-#: ../tgp-chat.c:298
+#: ../tgp-chat.c:300
 msgid "Subject:"
 msgstr "Subjekt:"
 
-#: ../tgp-chat.c:304
+#: ../tgp-chat.c:306
 msgid "Invite link:"
 msgstr "Lidhje ftese:"
 
-#: ../tgp-chat.c:310
+#: ../tgp-chat.c:312
 msgid "Chat ID:"
 msgstr "ID Fjalosjeje:"
 
-#: ../tgp-chat.c:416
+#: ../tgp-chat.c:418
 msgid "Supergroup"
 msgstr "Supergrup"
 
-#: ../tgp-chat.c:416
+#: ../tgp-chat.c:418
 msgid "Channel"
 msgstr "Kanal"
 
-#: ../tgp-chat.c:419
+#: ../tgp-chat.c:421
 msgid "Group"
 msgstr "Grup"
 
-#: ../tgp-chat.c:435
+#: ../tgp-chat.c:437
 msgid "Users in chat"
 msgstr "Përdorues në fjalosje"
 
-#: ../tgp-chat.c:438
+#: ../tgp-chat.c:440
 msgid "Type"
 msgstr "Lloj"
