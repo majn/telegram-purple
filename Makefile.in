@@ -338,7 +338,7 @@ Are all submodules properly initialized and updated?"
 
 .PHONY: check-clean
 check-clean: .git
-	@test "x" = x"`git status --porcelain`" || (echo ${DIST_ERR_MSG}; exit 1)
+	@test "x" = x"$(git status --porcelain)" || (echo ${DIST_ERR_MSG}; exit 1)
 	@test -r tgl/.git || (echo ${SUBMOD_ERR_MSG}; exit 1)
 
 # Feel free to remove the "check-clean" dependency if you know what you're doing.
@@ -351,7 +351,7 @@ dist: check-clean commit.h .git create_dirs
 
 .PHONY: clean-here
 clean-here:
-	rm -rf ${DIR_LIST} $(PRPL_LIBNAME) telegram-purple.nsi po/*.mo autom4te.cache AppStream/po/*.mo commit.h
+	rm -rf ${DIR_LIST} "$(PRPL_LIBNAME)" telegram-purple.nsi po/*.mo autom4te.cache AppStream/po/*.mo commit.h
 
 -include test/Makefile
 

@@ -79,7 +79,6 @@ HOST="${HOST_MACHINE}-linux-gnu"
 MINGW_MACHINE="i686"
 MINGW_TARGET="${MINGW_MACHINE}-w64-mingw32"
 MINGW_BASE=/usr/${MINGW_TARGET}
-MINGW_INCLUDEDIR=/usr/share/mingw-w64/include
 
 # WebP compilation
 WEBP_INSTALL_DIR="objs/webp/install/"
@@ -91,15 +90,15 @@ WEBP_BUILD_DIR="objs/webp/build/"
 # Sadly, the library paths must be resolved *now* already.
 # AND, they must be absolute.  Sigh.
 mkdir -p win32
-WIN32_GTK_DEV_DIR=`realpath win32/gtk+-bundle_2.24.10-20120208_win32`
-WIN32_PIDGIN_DIR=`realpath win32/pidgin-2.13.0`
+WIN32_GTK_DEV_DIR=$(realpath win32/gtk+-bundle_2.24.10-20120208_win32)
+WIN32_PIDGIN_DIR=$(realpath win32/pidgin-2.13.0)
 WIN32_WEBP_PRISTINE="win32/libwebp-1.0.2/"
 
 # Versioning information
 ./configure -q
 make commit.h
-VERSION=`grep -E 'PACKAGE_VERSION' config.h | sed -re 's/^.*"(.*)".*$/\1/'`
-COMMIT=`grep -E 'define' commit.h | sed -re 's/^.*"(.*)".*$/\1/'`
+VERSION=$(grep -E 'PACKAGE_VERSION' config.h | sed -re 's/^.*"(.*)".*$/\1/')
+COMMIT=$(grep -E 'define' commit.h | sed -re 's/^.*"(.*)".*$/\1/')
 
 
 # === Ensure that all tools are available. ===
@@ -216,7 +215,7 @@ else
         # the last commit instead.
         ${FAKETIME} make --quiet -j4 CFLAGS="${WEBP_CFLAGS}" LDFLAGS="${WEBP_LDFLAGS}" install
     )
-    if ! [ -r ${WEBP_INSTALL_DIR}/include/webp/decode.h -a -r ${WEBP_INSTALL_DIR}/bin/libwebp-7.dll ] ; then
+    if [ ! -r ${WEBP_INSTALL_DIR}/include/webp/decode.h ] || [ ! -r ${WEBP_INSTALL_DIR}/bin/libwebp-7.dll ] ; then
         # I expect that cross-compiling webp is going to be very fragile,
         # so print a nice error in case this happens.
         echo "Cross-compilation apparently failed:"
@@ -268,7 +267,7 @@ PKG_CONFIG=/bin/false ./configure -q --build ${HOST} --host ${MINGW_TARGET} --ta
     PURPLE_LIBS="-lpurple -lglib-2.0" \
     LDFLAGS="-L${WIN32_GTK_DEV_DIR}/lib -L${WIN32_PIDGIN_DIR}-win32bin ${LDFLAGS_WEBP}" \
     LIBS="-lssp -lintl -lws2_32" \
-    ${CONFFLAGS_WEBP}
+    ${CONFFLAGS_WEBP} ${CONFFLAGS_PNG}
 (
     cd tgl
     ./configure -q --build ${HOST} --host ${MINGW_TARGET} --target ${MINGW_TARGET} \
@@ -318,7 +317,7 @@ BEGIN
   END
 END
 EOFRC
-    COMMA_VERSION=`grep -E 'PACKAGE_VERSION' config.h | sed -re 's/^.*"(.*)".*$/\1/' -e 's/\./,/g'`
+    COMMA_VERSION=$(grep -E 'PACKAGE_VERSION' config.h | sed -re 's/^.*"(.*)".*$/\1/' -e 's/\./,/g')
     sed -i -re "s/MAGIC_SED_VERSION/${COMMA_VERSION}/" objs/info.rc
     ${MINGW_TARGET}-windres objs/info.rc -O coff -o objs/info.res
     VERSIONINFO_OBJECTS="objs/info.res"
