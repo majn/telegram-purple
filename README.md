@@ -227,30 +227,24 @@ Compiling with XCode is a little bit problematic, since it requires you to compi
 1. Get the Adium source, compile it with XCode and copy the build output into telegram-adium/Frameworks/Adium. It should contain at least Adium.framework, AdiumLibpurple.framework and AIUitilies.framework
 2. Open the Adium source code, go to ./Frameworks and copy libglib.framework and libpurple.framework into telegram-adium/Frameworks/Adium
 3. Build the tgl submodule and delete libtgl.so from libs/ (it should only contain libtgl.a)
-4. Install libpng, libwebp, libgcrypt and gnupg with homebrew:
+4. Install libpng and libwebp with homebrew:
 
        brew install libpng webp
-       brew install libgcrypt libgpg-error
 
-5. If you already downloaded libwebp/libgcrypt in previous builds make sure that the binaries are up-to-date
+5. If libpng or libwebp are already installed make sure they're up to date
 
        brew update
-       brew upgrade libpng webp libgcrypt
+       brew upgrade libpng webp
 
-6. Install with homebrew and move it into the appropriate directory so that XCode can find them. Note that the versions might differ, use the one that is
+6. Move libpng and libwebp into the appropriate directory so Xcode can find them. Note that the versions might differ, use the one that is
 
        mkdir -p ./telegram-adium/Frameworks/Adium
        cp /usr/local/Cellar/libpng/1.6.37/lib/libpng.a ./telegram-adium/Frameworks
        cp /usr/local/Cellar/webp/1.0.3/lib/libwebp.a ./telegram-adium/Frameworks
-       cp /usr/local/Cellar/libgcrypt/1.8.4/lib/libgcrypt.20.dylib ./telegram-adium/Frameworks/Adium
-       cp /usr/local/Cellar/libgpg-error/1.36/lib/libgpg-error.0.dylib ./telegram-adium/Frameworks/Adium
 
-7. Update the paths in the dylibs, to assure that the resulting binary will load them form within the bundle.
+7. Build libgpg-error and libgcrypt using `build_dependencies.sh`
 
-       cd ./telegram-adium/Frameworks/Adium
-       install_name_tool -id "@loader_path/../Resources/libgcrypt.20.dylib" ./libgcrypt.20.dylib
-       install_name_tool -id "@loader_path/../Resources/libgpg-error.0.dylib" ./libgpg-error.0.dylib
-       install_name_tool -change "/usr/local/lib/libgpg-error.0.dylib" "@loader_path/../Resources/libgpg-error.0.dylib" ./libgcrypt.20.dylib
+       sh ./telegram-adium/build_dependencies.sh
 
 7. Build the XCode-Project and execute the created bundle
 
