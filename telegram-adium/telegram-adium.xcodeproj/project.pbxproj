@@ -289,6 +289,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C410949419BB2D7D0083BF3F /* Build configuration list for PBXNativeTarget "telegram-adium" */;
 			buildPhases = (
+				37D720A9235D37DE001499AF /* Update commit.h */,
 				C410948219BB2D7D0083BF3F /* Sources */,
 				C410948319BB2D7D0083BF3F /* Frameworks */,
 				C410948419BB2D7D0083BF3F /* Resources */,
@@ -350,6 +351,26 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		37D720A9235D37DE001499AF /* Update commit.h */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Update commit.h";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/../commit.h",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd \"$SRCROOT\"/..\nmake commit.h\n";
+			showEnvVarsInLog = 0;
+		};
 		C4C325A11C91BD230020D32E /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
