@@ -424,6 +424,46 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
   return 0;
 }
 
+//Some media messages provide captions for the media. If the caption is supported and not empty,
+//this adds it to the already generated supplemental text.
+//Frees the old version of the text and returns the new one.
+char *tgp_msg_add_media_caption(char *current_text, struct tgl_message *M) {
+  if (!M) return current_text; //safety
+  
+  //Only some types of media have caption field -- others may have garbage (check tgl_layout.h/tgl_message_media)
+  switch (M->media.type) {
+  	//Certainly have caption
+    case tgl_message_media_photo:
+    case tgl_message_media_document:
+    case tgl_message_media_audio: //stored as documents
+    case tgl_message_media_video: //stored as documents
+		break;
+	//Do not have captions or we're not sure
+  	case tgl_message_media_none:
+    case tgl_message_media_document_encr:
+    case tgl_message_media_geo:
+    case tgl_message_media_venue:
+    case tgl_message_media_contact:
+    case tgl_message_media_webpage:
+    case tgl_message_media_unsupported:
+    default:
+      return current_text;
+  }
+
+  //No caption
+  if (!str_not_empty (M->media.caption))
+  	  return current_text;
+
+  char *old = current_text;
+  if (str_not_empty (current_text)) {
+    current_text = g_strdup_printf ("%s<br>%s", old, M->media.caption);
+  } else {
+    current_text = g_strdup(M->media.caption);
+  }
+  g_free (old);
+  return current_text;
+}
+
 static char *tgp_msg_photo_display (struct tgl_state *TLS, const char *filename, int *flags) {
   connection_data *conn = TLS->ev_base;
   int img = p2tgl_imgstore_add_with_id (filename);
@@ -524,16 +564,9 @@ static char *tgp_msg_reply_display (struct tgl_state *TLS, tgl_peer_t *replyee, 
     }
   }
 
-  if (reply && str_not_empty (reply->media.caption)) {
-    char *old = quote;
-    if (str_not_empty (quote)) {
-      quote = g_strdup_printf ("%s %s", old, reply->media.caption);
-    } else {
-      quote = g_strdup(reply->media.caption);
-    }
-    g_free (old);
-  }
-  
+  if (reply)
+    quote = tgp_msg_add_media_caption(quote, reply); //add media caption if present
+
   // the combined reply
 
   // insert line-break in non-adium clients to display
@@ -746,16 +779,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
         break;
     }
 
-  //Captions are only used for some media types but others will just have them empty
-  if (str_not_empty (M->media.caption)) {
-    char *old = text;
-    if (str_not_empty (text)) {
-      text = g_strdup_printf ("%s<br>%s", old, M->media.caption);
-    } else {
-      text = g_strdup(M->media.caption);
-    }
-    g_free (old);
-  }
+  text = tgp_msg_add_media_caption(text, M); //add media caption if present
 
   if (tgl_get_peer_type (M->to_id) != TGL_PEER_ENCR_CHAT
       && tgl_get_peer_type (M->to_id) != TGL_PEER_CHANNEL
