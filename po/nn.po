@@ -90,7 +90,7 @@ msgid ""
 "Unable to sign on as %s: problem in the underlying library 'tgl'. Please "
 "submit a bug report with the debug log."
 msgstr ""
-"Klarer ikkje å logga på som $s: problem i det underliggjande biblioteket "
+"Klarer ikkje å logga på som %s: problem i det underliggjande biblioteket "
 "'tgl'. Send gjerne ei feilmelding saman med feilmeldingsloggen. "
 
 #: ../telegram-purple.c:564
