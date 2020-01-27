@@ -299,92 +299,92 @@ msgstr ""
 msgid "Sending image failed."
 msgstr "Afsendelse af billede fejlede."
 
-#: ../tgp-msg.c:457
+#: ../tgp-msg.c:497
 #, c-format
 msgid "%s sent a sticker."
 msgstr ""
 
-#: ../tgp-msg.c:473
+#: ../tgp-msg.c:513
 msgid "[message unavailable]"
 msgstr ""
 
-#: ../tgp-msg.c:487
+#: ../tgp-msg.c:527
 msgid "[photo]"
 msgstr ""
 
-#: ../tgp-msg.c:491
+#: ../tgp-msg.c:531
 msgid "[audio]"
 msgstr ""
 
-#: ../tgp-msg.c:495
+#: ../tgp-msg.c:535
 msgid "[video]"
 msgstr ""
 
-#: ../tgp-msg.c:500
+#: ../tgp-msg.c:540
 msgid "[document]"
 msgstr ""
 
-#: ../tgp-msg.c:505
+#: ../tgp-msg.c:545
 msgid "[position]"
 msgstr ""
 
-#: ../tgp-msg.c:509
+#: ../tgp-msg.c:549
 msgid "[contact]"
 msgstr ""
 
-#: ../tgp-msg.c:513
+#: ../tgp-msg.c:553
 msgid "[webpage]"
 msgstr ""
 
-#: ../tgp-msg.c:517
+#: ../tgp-msg.c:557
 msgid "[unsupported media]"
 msgstr ""
 
-#: ../tgp-msg.c:549
+#: ../tgp-msg.c:582
 #, c-format
 msgid "%s<b>&gt; %s wrote:</b><br>&gt; %s<br>%s"
 msgstr ""
 
-#: ../tgp-msg.c:551
+#: ../tgp-msg.c:584
 #, c-format
 msgid "%s<b>&gt; Unknown user wrote:</b><br>&gt; %s<br>%s"
 msgstr ""
 
-#: ../tgp-msg.c:607
+#: ../tgp-msg.c:640
 msgid "failed loading message"
 msgstr ""
 
 #. Content of a file transfer
-#: ../tgp-msg.c:649 ../tgp-msg.c:699
+#: ../tgp-msg.c:682 ../tgp-msg.c:732
 msgid "document"
 msgstr ""
 
 #. Content of a file transfer
-#: ../tgp-msg.c:652
+#: ../tgp-msg.c:685
 msgid "audio"
 msgstr ""
 
 #. Content of a file transfer
-#: ../tgp-msg.c:655
+#: ../tgp-msg.c:688
 msgid "animation"
 msgstr ""
 
 #. Content of a file transfer
-#: ../tgp-msg.c:658
+#: ../tgp-msg.c:691
 msgid "video"
 msgstr ""
 
-#: ../tgp-msg.c:786
+#: ../tgp-msg.c:810
 #, c-format
 msgid "<b>&gt; Forwarded from %s:</b><br>&gt; %s"
 msgstr ""
 
-#: ../tgp-msg.c:788
+#: ../tgp-msg.c:812
 #, c-format
 msgid "<b>&gt; Forwarded:</b><br>&gt; %s"
 msgstr ""
 
-#: ../tgp-msg.c:897
+#: ../tgp-msg.c:921
 msgid "loading document or picture failed"
 msgstr ""
 
@@ -558,7 +558,7 @@ msgid "Leave Chat"
 msgstr ""
 
 #: ../tgp-request.c:371
-msgid "Do you want to leave this chat permantently?"
+msgid "Do you want to leave this chat permanently?"
 msgstr ""
 
 #: ../tgp-request.c:376
@@ -566,7 +566,7 @@ msgid "Abort Secret Chat"
 msgstr ""
 
 #: ../tgp-request.c:378
-msgid "Do you want to terminate this secret chat permantently?"
+msgid "Do you want to terminate this secret chat permanently?"
 msgstr ""
 
 #: ../tgp-request.c:383

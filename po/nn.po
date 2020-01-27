@@ -5,13 +5,14 @@
 # 
 # Translators:
 # Yngve Spjeld-Landro <l10n@landro.net>, 2020
+# Ben Wiederhake <BenWiederhake.GitHub@gmx.de>, 2020
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: telegram-purple\n"
 "POT-Creation-Date: 2018-08-01 23:11+0200\n"
 "PO-Revision-Date: 2019-08-31 08:10+0000\n"
-"Last-Translator: Yngve Spjeld-Landro <l10n@landro.net>, 2020\n"
+"Last-Translator: Ben Wiederhake <BenWiederhake.GitHub@gmx.de>, 2020\n"
 "Language-Team: Norwegian Nynorsk (https://www.transifex.com/telegram-purple-developers/teams/53149/nn/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -305,92 +306,92 @@ msgstr "Klarte ikkje å senda meldinga."
 msgid "Sending image failed."
 msgstr "Klarte ikkje å senda bildet."
 
-#: ../tgp-msg.c:457
+#: ../tgp-msg.c:497
 #, c-format
 msgid "%s sent a sticker."
 msgstr "%s sende eit klistremerke."
 
-#: ../tgp-msg.c:473
+#: ../tgp-msg.c:513
 msgid "[message unavailable]"
 msgstr "[melding ikkje tilgjengeleg]"
 
-#: ../tgp-msg.c:487
+#: ../tgp-msg.c:527
 msgid "[photo]"
 msgstr "[bilde]"
 
-#: ../tgp-msg.c:491
+#: ../tgp-msg.c:531
 msgid "[audio]"
 msgstr "[lyd]"
 
-#: ../tgp-msg.c:495
+#: ../tgp-msg.c:535
 msgid "[video]"
 msgstr "[video]"
 
-#: ../tgp-msg.c:500
+#: ../tgp-msg.c:540
 msgid "[document]"
 msgstr "[dokument]"
 
-#: ../tgp-msg.c:505
+#: ../tgp-msg.c:545
 msgid "[position]"
 msgstr "[posisjon]"
 
-#: ../tgp-msg.c:509
+#: ../tgp-msg.c:549
 msgid "[contact]"
 msgstr "[kontakt]"
 
-#: ../tgp-msg.c:513
+#: ../tgp-msg.c:553
 msgid "[webpage]"
 msgstr "[nettside]"
 
-#: ../tgp-msg.c:517
+#: ../tgp-msg.c:557
 msgid "[unsupported media]"
 msgstr "[kan ikkje bruka mediet]"
 
-#: ../tgp-msg.c:549
+#: ../tgp-msg.c:582
 #, c-format
 msgid "%s<b>&gt; %s wrote:</b><br>&gt; %s<br>%s"
 msgstr "%s<b>&gt; %s skreiv:</b><br>&gt; %s<br>%s"
 
-#: ../tgp-msg.c:551
+#: ../tgp-msg.c:584
 #, c-format
 msgid "%s<b>&gt; Unknown user wrote:</b><br>&gt; %s<br>%s"
 msgstr "%s<b>&gt; Ukjed brukar skreiv:</b><br>&gt; %s<br>%s"
 
-#: ../tgp-msg.c:607
+#: ../tgp-msg.c:640
 msgid "failed loading message"
 msgstr "klarte ikkje å lasta meldinga"
 
 #. Content of a file transfer
-#: ../tgp-msg.c:649 ../tgp-msg.c:699
+#: ../tgp-msg.c:682 ../tgp-msg.c:732
 msgid "document"
 msgstr "dokument"
 
 #. Content of a file transfer
-#: ../tgp-msg.c:652
+#: ../tgp-msg.c:685
 msgid "audio"
 msgstr "lyd"
 
 #. Content of a file transfer
-#: ../tgp-msg.c:655
+#: ../tgp-msg.c:688
 msgid "animation"
 msgstr "animasjon"
 
 #. Content of a file transfer
-#: ../tgp-msg.c:658
+#: ../tgp-msg.c:691
 msgid "video"
 msgstr "video"
 
-#: ../tgp-msg.c:786
+#: ../tgp-msg.c:810
 #, c-format
 msgid "<b>&gt; Forwarded from %s:</b><br>&gt; %s"
 msgstr "<b>&gt; Vidaresendt frå %s:</b><br>&gt; %s"
 
-#: ../tgp-msg.c:788
+#: ../tgp-msg.c:812
 #, c-format
 msgid "<b>&gt; Forwarded:</b><br>&gt; %s"
 msgstr "<b>&gt; Vidaresendt:</b><br>&gt; %s"
 
-#: ../tgp-msg.c:897
+#: ../tgp-msg.c:921
 msgid "loading document or picture failed"
 msgstr "klarte ikkje å lasta dokument eller bilde"
 
@@ -576,7 +577,7 @@ msgid "Leave Chat"
 msgstr "Forlat praten"
 
 #: ../tgp-request.c:371
-msgid "Do you want to leave this chat permantently?"
+msgid "Do you want to leave this chat permanently?"
 msgstr "Vil du forlata denne praten for alltid?"
 
 #: ../tgp-request.c:376
@@ -584,7 +585,7 @@ msgid "Abort Secret Chat"
 msgstr "Avbryt privat prat"
 
 #: ../tgp-request.c:378
-msgid "Do you want to terminate this secret chat permantently?"
+msgid "Do you want to terminate this secret chat permanently?"
 msgstr "Vil du avslutta denne løynde praten for alltid?"
 
 #: ../tgp-request.c:383

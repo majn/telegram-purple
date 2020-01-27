@@ -4,15 +4,15 @@
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 
 # Translators:
-# Ben Wiederhake <BenWiederhake.GitHub@gmx.de>, 2019
 # Roberto Bellingeri <bellingeri@netguru.it>, 2020
+# Ben Wiederhake <BenWiederhake.GitHub@gmx.de>, 2020
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: telegram-purple\n"
 "POT-Creation-Date: 2018-08-01 23:11+0200\n"
 "PO-Revision-Date: 2019-08-31 08:10+0000\n"
-"Last-Translator: Roberto Bellingeri <bellingeri@netguru.it>, 2020\n"
+"Last-Translator: Ben Wiederhake <BenWiederhake.GitHub@gmx.de>, 2020\n"
 "Language-Team: Italian (Italy) (https://www.transifex.com/telegram-purple-developers/teams/53149/it_IT/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -307,92 +307,92 @@ msgstr "Invio immagine fallito."
 msgid "Sending image failed."
 msgstr "Invio immagine fallito."
 
-#: ../tgp-msg.c:457
+#: ../tgp-msg.c:497
 #, c-format
 msgid "%s sent a sticker."
 msgstr "%s ha inviato uno sticker."
 
-#: ../tgp-msg.c:473
+#: ../tgp-msg.c:513
 msgid "[message unavailable]"
 msgstr "[messaggio non disponibile]"
 
-#: ../tgp-msg.c:487
+#: ../tgp-msg.c:527
 msgid "[photo]"
 msgstr "[foto]"
 
-#: ../tgp-msg.c:491
+#: ../tgp-msg.c:531
 msgid "[audio]"
 msgstr "[audio]"
 
-#: ../tgp-msg.c:495
+#: ../tgp-msg.c:535
 msgid "[video]"
 msgstr "[video]"
 
-#: ../tgp-msg.c:500
+#: ../tgp-msg.c:540
 msgid "[document]"
 msgstr "[documento]"
 
-#: ../tgp-msg.c:505
+#: ../tgp-msg.c:545
 msgid "[position]"
 msgstr "[posizione]"
 
-#: ../tgp-msg.c:509
+#: ../tgp-msg.c:549
 msgid "[contact]"
 msgstr "[contatto]"
 
-#: ../tgp-msg.c:513
+#: ../tgp-msg.c:553
 msgid "[webpage]"
 msgstr "[pagina web]"
 
-#: ../tgp-msg.c:517
+#: ../tgp-msg.c:557
 msgid "[unsupported media]"
 msgstr "[media non supportato]"
 
-#: ../tgp-msg.c:549
+#: ../tgp-msg.c:582
 #, c-format
 msgid "%s<b>&gt; %s wrote:</b><br>&gt; %s<br>%s"
 msgstr "%s<b>&gt; %s ha scritto:</b><br>&gt; %s<br>%s"
 
-#: ../tgp-msg.c:551
+#: ../tgp-msg.c:584
 #, c-format
 msgid "%s<b>&gt; Unknown user wrote:</b><br>&gt; %s<br>%s"
 msgstr "%s<b>&gt; Utente sconosciuto ha scritto:</b><br>&gt; %s<br>%s"
 
-#: ../tgp-msg.c:607
+#: ../tgp-msg.c:640
 msgid "failed loading message"
 msgstr "caricamento del messaggio fallito"
 
 #. Content of a file transfer
-#: ../tgp-msg.c:649 ../tgp-msg.c:699
+#: ../tgp-msg.c:682 ../tgp-msg.c:732
 msgid "document"
 msgstr "documento"
 
 #. Content of a file transfer
-#: ../tgp-msg.c:652
+#: ../tgp-msg.c:685
 msgid "audio"
 msgstr "audio"
 
 #. Content of a file transfer
-#: ../tgp-msg.c:655
+#: ../tgp-msg.c:688
 msgid "animation"
 msgstr "animazione"
 
 #. Content of a file transfer
-#: ../tgp-msg.c:658
+#: ../tgp-msg.c:691
 msgid "video"
 msgstr "video"
 
-#: ../tgp-msg.c:786
+#: ../tgp-msg.c:810
 #, c-format
 msgid "<b>&gt; Forwarded from %s:</b><br>&gt; %s"
 msgstr "<b>&gt; Inoltrato da %s:</b><br>&gt; %s"
 
-#: ../tgp-msg.c:788
+#: ../tgp-msg.c:812
 #, c-format
 msgid "<b>&gt; Forwarded:</b><br>&gt; %s"
 msgstr "<b>&gt; Inoltrato:</b><br>&gt; %s"
 
-#: ../tgp-msg.c:897
+#: ../tgp-msg.c:921
 msgid "loading document or picture failed"
 msgstr "caricamento del documento o della foto fallito"
 
@@ -579,7 +579,7 @@ msgid "Leave Chat"
 msgstr "Lascia la Chat"
 
 #: ../tgp-request.c:371
-msgid "Do you want to leave this chat permantently?"
+msgid "Do you want to leave this chat permanently?"
 msgstr "Vuoi lasciare questa chat in modo permanente?"
 
 #: ../tgp-request.c:376
@@ -587,7 +587,7 @@ msgid "Abort Secret Chat"
 msgstr "Annulla Chat Segreta"
 
 #: ../tgp-request.c:378
-msgid "Do you want to terminate this secret chat permantently?"
+msgid "Do you want to terminate this secret chat permanently?"
 msgstr "Vuoi terminare questa chat segreta in modo permanente?"
 
 #: ../tgp-request.c:383
