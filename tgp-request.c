@@ -368,14 +368,14 @@ void tgprpl_request_delete_contact (PurpleConnection *gc, PurpleBuddy *buddy, Pu
       if (! (P->chat.flags & TGLCF_LEFT)) {
         title1 = _("Leave Chat");
         title2 = title1;
-        msg = _("Do you want to leave this chat permantently?");
+        msg = _("Do you want to leave this chat permanently?");
       }
       break;
 
     case TGL_PEER_ENCR_CHAT:
       title1 = _("Abort Secret Chat");
       title2 = title1;
-      msg = _("Do you want to terminate this secret chat permantently?");
+      msg = _("Do you want to terminate this secret chat permanently?");
       break;
 
     case TGL_PEER_USER:
