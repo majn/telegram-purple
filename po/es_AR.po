@@ -5,14 +5,14 @@
 # 
 # Translators:
 # Ben Wiederhake <BenWiederhake.GitHub@gmx.de>, 2019
-# oɹʇuʞ <kntro@msn.com>, 2019
+# ᏦᏁᎢᎵᏫ <kntro@msn.com>, 2019
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: telegram-purple\n"
 "POT-Creation-Date: 2018-08-01 23:11+0200\n"
 "PO-Revision-Date: 2019-08-31 08:10+0000\n"
-"Last-Translator: oɹʇuʞ <kntro@msn.com>, 2019\n"
+"Last-Translator: ᏦᏁᎢᎵᏫ <kntro@msn.com>, 2019\n"
 "Language-Team: Spanish (Argentina) (https://www.transifex.com/telegram-purple-developers/teams/53149/es_AR/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
