@@ -206,11 +206,11 @@ static char *tgp_msg_file_display (const char *path, const char *filename, const
   #error "Too outdated glib version!"
 #endif
   ;
-#ifndef BITLBEE
-  format = g_strdup_printf ("[%s <a href=\"file:///%s\">%s</a> %s %s]", capt, pth, fle, mme, fsize);
-#else
+  if (g_strcmp0(purple_core_get_ui(), "BitlBee") == 0) { 
   format = g_strdup_printf ("[%s file://%s %s %s %s]", capt, pth, fle, mme, fsize);
-#endif
+  } else {
+  format = g_strdup_printf ("[%s <a href=\"file:///%s\">%s</a> %s %s]", capt, pth, fle, mme, fsize);
+  }
   g_free (capt);
   g_free (pth);
   g_free (fle);
@@ -435,13 +435,13 @@ static char *tgp_msg_photo_display (struct tgl_state *TLS, const char *filename,
     return NULL;
   }
   used_images_add (conn, img);
-#ifndef BITLBEE
-  *flags |= PURPLE_MESSAGE_IMAGES;
-  return tgp_format_img (img);
-#else
+  if (g_strcmp0(purple_core_get_ui(), "BitlBee") == 0) {
   *flags |= PURPLE_MESSAGE_SYSTEM;
   return g_strdup_printf (_("file://%s"), filename);
-#endif
+  } else {
+  *flags |= PURPLE_MESSAGE_IMAGES;
+  return tgp_format_img (img);
+  }
 }
 
 static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from, const char *filename, int *flags) {
@@ -673,10 +673,10 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
               while (segment > (char *)path && *segment != G_DIR_SEPARATOR) {
                 segment --;
               }
-#ifdef BITLBEE
-            chmod(filename, 00444);
-#endif
-              filename = segment + 1;
+            if (g_strcmp0(purple_core_get_ui(), "BitlBee") == 0) { 
+            chmod(filename, 0444);
+            }
+            filename = segment + 1;
             }
 
             const char *mime = "";
