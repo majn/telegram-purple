@@ -1,6 +1,23 @@
 Changelog
 ---------
 
+##### 1.4.3
+
+- Bitlbee: Write files to /tmp instead (See #513)
+- Windows: Automatically adapt installer filename
+- Binaries should be "somewhat" reproducible now
+- Update translations.  Thanks to the following people:
+    * oɹʇuʞ <kntro@msn.com> (es_AR)
+    * Yngve Spjeld-Landro <l10n@landro.net> (nn)
+    * Piotr Drąg <piotrdrag@gmail.com> (pl_PL)
+    * Denis Brandl <denisbr@gmail.com> (pt_BR)
+    * Besnik <besnik@programeshqip.org> (sq)
+    * Самохвалов Антон <samant.ua@mail.ru> (uk)
+- Fix: Don't crash on immediately-finished transfers (See #530)
+    Thanks Vladimir Panteleev <git@thecybershadow.net>!
+- Fix: Don't crash on photos with geolocation (See https://github.com/majn/tgl/pull/30 )
+    Thanks to himselfv <me@boku.ru> !
+
 ##### 1.4.2
 
 - Still no support for Adium.  We just don't know how!  Help wanted!  PLEASE!
