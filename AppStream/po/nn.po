@@ -1,17 +1,17 @@
 # 
 # Translators:
-# justin [notsupplied] <inactive+justin50@transifex.com>, 2016
+# Yngve Spjeld-Landro <l10n@landro.net>, 2020
 msgid ""
 msgstr ""
 "Project-Id-Version: telegram-purple\n"
 "POT-Creation-Date: 2016-01-07 23:23+0100\n"
-"PO-Revision-Date: 2017-09-23 04:04+0000\n"
-"Last-Translator: justin [notsupplied] <inactive+justin50@transifex.com>\n"
-"Language-Team: Dutch (http://www.transifex.com/telegram-purple-developers/telegram-purple/language/nl/)\n"
+"PO-Revision-Date: 2020-01-26 03:13+0000\n"
+"Last-Translator: Yngve Spjeld-Landro <l10n@landro.net>\n"
+"Language-Team: Norwegian Nynorsk (http://www.transifex.com/telegram-purple-developers/telegram-purple/language/nn/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: nl\n"
+"Language: nn\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #. (itstool) path: component/name
@@ -22,4 +22,4 @@ msgstr "Telegram"
 #. (itstool) path: component/summary
 #: telegram-purple.metainfo.untranslated.xml:10
 msgid "A plugin that adds support for Telegram"
-msgstr "Een plug-in die ondersteuning voor Telegram toevoegt"
+msgstr "Eit programtillegg for å kunna nytta Telegram"
