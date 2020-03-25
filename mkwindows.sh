@@ -28,18 +28,39 @@ then
     USE_WEBP=y
     # Otherwise:
     # USE_WEBP=n
+else
+    echo "Note: webp disabled"
 fi
 if [ -z "${USE_PNG}" ]
 then
     USE_PNG=y
     # Otherwise:
     # USE_PNG=n
+else
+    echo "Note: png disabled"
 fi
 if [ -z "${USE_VERSIONINFO}" ]
 then
     USE_VERSIONINFO=y
     # Otherwise:
     # USE_VERSIONINFO=n
+fi
+if [ -z "${USE_REPRODUCIBLE}" ]
+then
+    USE_REPRODUCIBLE=y
+    # Otherwise:
+    # USE_REPRODUCIBLE=n
+    FAKETIME="with_faketime"
+    SOURCE_DATE_EPOCH="$(git log -1 --date='format:%s' --format=%cd)"
+
+    FAKETIME_DATETIME="$(git log -1 --date=iso --format=%cd)"
+    with_faketime () {
+        showargs faketime -f "${FAKETIME_DATETIME}" "$@"
+        faketime -f "${FAKETIME_DATETIME}" "$@"
+    }
+else
+    FAKETIME=""
+    SOURCE_DATE_EPOCH=""
 fi
 
 # Other flags go here, i.e., libpng
@@ -58,7 +79,6 @@ HOST="${HOST_MACHINE}-linux-gnu"
 MINGW_MACHINE="i686"
 MINGW_TARGET="${MINGW_MACHINE}-w64-mingw32"
 MINGW_BASE=/usr/${MINGW_TARGET}
-MINGW_INCLUDEDIR=/usr/share/mingw-w64/include
 
 # WebP compilation
 WEBP_INSTALL_DIR="objs/webp/install/"
@@ -70,21 +90,21 @@ WEBP_BUILD_DIR="objs/webp/build/"
 # Sadly, the library paths must be resolved *now* already.
 # AND, they must be absolute.  Sigh.
 mkdir -p win32
-WIN32_GTK_DEV_DIR=`realpath win32/gtk+-bundle_2.24.10-20120208_win32`
-WIN32_PIDGIN_DIR=`realpath win32/pidgin-2.13.0`
+WIN32_GTK_DEV_DIR=$(realpath win32/gtk+-bundle_2.24.10-20120208_win32)
+WIN32_PIDGIN_DIR=$(realpath win32/pidgin-2.13.0)
 WIN32_WEBP_PRISTINE="win32/libwebp-1.0.2/"
 
 # Versioning information
 ./configure -q
 make commit.h
-VERSION=`grep -E 'PACKAGE_VERSION' config.h | sed -re 's/^.*"(.*)".*$/\1/'`
-COMMIT=`grep -E 'define' commit.h | sed -re 's/^.*"(.*)".*$/\1/'`
+VERSION=$(grep -E 'PACKAGE_VERSION' config.h | sed -re 's/^.*"(.*)".*$/\1/')
+COMMIT=$(grep -E 'define' commit.h | sed -re 's/^.*"(.*)".*$/\1/')
 
 
 # === Ensure that all tools are available. ===
 
 # Commands
-for cmd in file make makensis "${MINGW_TARGET}-gcc" realpath sed tar unzip ; do
+for cmd in faketime file make makensis "${MINGW_TARGET}-gcc" realpath sed tar unzip ; do
     if ! command -v "$cmd" >/dev/null 2>&1 ; then
         echo "No '$cmd' available.  Are you sure you know what you're doing?"
         exit 1
@@ -143,9 +163,38 @@ else
         cd "${WEBP_BUILD_DIR}"
         # ./autogen.sh && ./configure && make
 
+        ./autogen.sh
+
+        WEBP_LDFLAGS=""
+        WEBP_CFLAGS="-g -O2 -pthread"  # Default CFLAGS.  Why can't I just add some?
+        if [ "y" = "${USE_REPRODUCIBLE}" ]
+        then
+            # Check if -fstack-protector-strong is supported before enabling it
+            WEBP_CC=i686-w64-mingw32-gcc
+            if ${WEBP_CC} -fstack-protector-strong 2>&1 | grep -q 'stack-protector-strong'
+            then
+                true  # Don't add flag: not supported.
+            else
+                WEBP_CFLAGS="${WEBP_CFLAGS} -fstack-protector-strong"
+            fi
+            # Check if -frandom-seed is supported before enabling it
+            if ${WEBP_CC} -frandom-seed=77e0418a98676b76729b50fe91cc1f250c14fd8f664f8430649487a6f918926d 2>&1 | grep -q 'random-seed'
+            then
+                true  # Don't add flag: not supported.
+            else
+                WEBP_CFLAGS="${WEBP_CFLAGS} "'-frandom-seed=0x$$(sha256sum $< | cut -f1 -d" ")'
+            fi
+            # Check if -ffile-prefix-map is supported before enabling it
+            if ${WEBP_CC} -ffile-prefix-map=/foo/bar/baz=/quux 2>&1 | grep -q 'file-prefix-map'
+            then
+                true  # Don't add flag: not supported.
+            else
+                WEBP_CFLAGS="${WEBP_CFLAGS} -ffile-prefix-map=$(realpath .)=webp"
+            fi
+        fi
+
         # Disable linking against PNG, JPEG, TIFF, GIF, WIC,
         # as those would either need cross-compilation, too, or some other magic.
-        ./autogen.sh
         # libtoolize (called by autoreconf, called by autogen.sh) must not see
         # `install-sh` because it would become confused by it.
         # That's why the hierarchy is so deep.
@@ -160,11 +209,13 @@ else
         # "configure: WARNING: using cross tools not prefixed with host triplet"
         # stems from the fact that 'mt' (magnetic tape control) is not available
         # for i686-w64-mingw32, so the x86_64 version is used.  We can ignore that.
-        #
-        # Finally.
-        make --quiet -j4 install
+
+        # For some reason, "--no-insert-timestamp" doesn't seem to work.
+        # To make the timestamp in the final DLL reproducible, use the time of
+        # the last commit instead.
+        ${FAKETIME} make --quiet -j4 CFLAGS="${WEBP_CFLAGS}" LDFLAGS="${WEBP_LDFLAGS}" install
     )
-    if ! [ -r ${WEBP_INSTALL_DIR}/include/webp/decode.h -a -r ${WEBP_INSTALL_DIR}/bin/libwebp-7.dll ] ; then
+    if [ ! -r ${WEBP_INSTALL_DIR}/include/webp/decode.h ] || [ ! -r ${WEBP_INSTALL_DIR}/bin/libwebp-7.dll ] ; then
         # I expect that cross-compiling webp is going to be very fragile,
         # so print a nice error in case this happens.
         echo "Cross-compilation apparently failed:"
@@ -216,7 +267,7 @@ PKG_CONFIG=/bin/false ./configure -q --build ${HOST} --host ${MINGW_TARGET} --ta
     PURPLE_LIBS="-lpurple -lglib-2.0" \
     LDFLAGS="-L${WIN32_GTK_DEV_DIR}/lib -L${WIN32_PIDGIN_DIR}-win32bin ${LDFLAGS_WEBP}" \
     LIBS="-lssp -lintl -lws2_32" \
-    ${CONFFLAGS_WEBP}
+    ${CONFFLAGS_WEBP} ${CONFFLAGS_PNG}
 (
     cd tgl
     ./configure -q --build ${HOST} --host ${MINGW_TARGET} --target ${MINGW_TARGET} \
@@ -266,7 +317,7 @@ BEGIN
   END
 END
 EOFRC
-    COMMA_VERSION=`grep -E 'PACKAGE_VERSION' config.h | sed -re 's/^.*"(.*)".*$/\1/' -e 's/\./,/g'`
+    COMMA_VERSION=$(grep -E 'PACKAGE_VERSION' config.h | sed -re 's/^.*"(.*)".*$/\1/' -e 's/\./,/g')
     sed -i -re "s/MAGIC_SED_VERSION/${COMMA_VERSION}/" objs/info.rc
     ${MINGW_TARGET}-windres objs/info.rc -O coff -o objs/info.res
     VERSIONINFO_OBJECTS="objs/info.res"
@@ -275,8 +326,9 @@ fi
 # PRPL_NAME: Assign Windows-specific name.
 #            (Baked into the file, so we can't just rename it.)
 # LDFLAGS: Remove -rdynamic flag.
-make -j4 bin/libtelegram.dll \
-    CFLAGS_INTL=-DENABLE_NLS \
+
+${FAKETIME} make -j4 bin/libtelegram.dll \
+    CFLAGS_INTL="-DENABLE_NLS -DSOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}" \
     PRPL_NAME=libtelegram.dll \
     EXTRA_OBJECTS="${VERSIONINFO_OBJECTS}" \
     LDFLAGS_EXTRA=-ggdb
@@ -284,7 +336,37 @@ make -j4 bin/libtelegram.dll \
 # Package it up
 echo "===== 10: Create installer"
 make PRPL_NAME=libtelegram.dll win-installer-deps
-makensis -DPLUGIN_VERSION="${VERSION}+g${COMMIT}" -DPRPL_NAME=libtelegram.dll \
+VARIANT_SUFFIX=""
+if [ "y" != "${USE_PNG}" ]
+then
+    VARIANT_SUFFIX="${VARIANT_SUFFIX}_nopng"
+fi
+if [ "y" != "${USE_WEBP}" ]
+then
+    VARIANT_SUFFIX="${VARIANT_SUFFIX}_nowebp"
+fi
+if [ "y" != "${USE_REPRODUCIBLE}" ]
+then
+    VARIANT_SUFFIX="${VARIANT_SUFFIX}_norepro"
+
+    # makensis packages the file mtimes.  I don't think this can be changed,
+    # and the project seems too slow to ever introduce a feature like that.
+    # Therefore, we need to "fix" the mtimes.
+    # The following files cannot be modified:
+    #     ${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico
+    #     ${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico
+    # But thankfully, Debian's package system includes mtime,
+    # so the time stamps are set by the pyckage version of nsis.
+    touch --no-create --date FAKETIME_DATETIME \
+        bin/libtelegram.dll contrib/libgcc_s_sjlj-1.dll contrib/libgpg-error-0.dll \
+        contrib/libgcrypt-20.dll contrib/libwebp-7.dll po/*.mo COPYING imgs/*
+fi
+if [ "i686" != "${MINGW_MACHINE}" ]
+then
+    VARIANT_SUFFIX="${VARIANT_SUFFIX}_${MINGW_MACHINE}"
+fi
+
+${FAKETIME} makensis -DPLUGIN_VERSION="${VERSION}+g${COMMIT}${VARIANT_SUFFIX}" -DPRPL_NAME=libtelegram.dll \
     -DWIN32_DEV_TOP=contrib telegram-purple.nsi
 
 # There's no monster under your bed, I swear.

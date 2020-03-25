@@ -25,7 +25,7 @@ We provide an installer for Windows users:
 
 1. Download and execute the corresponding setup from https://github.com/majn/telegram-purple/releases
 2. Restart Pidgin
-3. If not detected, restart pidgin again
+3. If not detected, restart Pidgin again
 
 This installer is built in a different way than previous builds
 (specifically, by Eion Robb http://eion.robbmob.com/telegram/),
@@ -145,7 +145,7 @@ Foreign users, like for example people you only know through a group chat but ne
 
 You can use Telegram secret chats with this plugin, they will show up as a new buddy with a '!' in front of the buddy name.
 
-One caveat of secret chats in Telegram is that they can only have one endpoint, this is a limitation of the protocol. This means that if you create a secret chat in Pidgin you will not be able to use that chat on your phone. You will be asked whether to accept each secret chat, so you can always choose to accept the chat on a different device if you want. You can set a default behavior for dealing with secret chats (Accept or Decline) in the account settings, if you don't want that prompt to appear every time.
+One caveat of secret chats in Telegram is that they can only have one endpoint, this is a limitation of the protocol. This means that if you create a secret chat in Pidgin or Adium you will not be able to use that chat on your phone. You will be asked whether to accept each secret chat, so you can always choose to accept the chat on a different device if you want. You can set a default behavior for dealing with secret chats (Accept or Decline) in the account settings, if you don't want that prompt to appear every time.
 
 Self destructive messages will be ignored, since I don't know any way to delete them from the conversation and the history.
 
@@ -155,7 +155,7 @@ Click on the buddy in the buddy list and click on "Show Info" to visualize the k
 
 ##### Initiate secret chats
 
-To initiate a secret chat from Pidgin, click on a Buddy in the Buddy List and hit "Start Secret Chat"
+To initiate a secret chat from Pidgin or Adium, click on a Buddy in the Buddy List and hit "Start Secret Chat"
 
 ##### Deleting secret chats
 

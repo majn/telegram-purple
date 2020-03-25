@@ -36,5 +36,5 @@ rm ${tmpfile}
 
 )
 
-test -r Makefile || (echo "Autoreconf didn't create Makefile?!"; exit 1)
+test -r Makefile || ./configure -q
 make --quiet build-nsi

@@ -67,9 +67,20 @@ PKG_CONFIG=@PKG_CONFIG@
 MSGFMT_PATH=@MSGFMT_PATH@
 
 # Check if -fstack-protector-strong is supported before enabling it
-SPUNSUPPORTED = $(shell $(CC) -fstack-protector-strong 2>&1 | grep -c 'stack-protector-strong')
-ifeq "$(SPUNSUPPORTED)" "0"
+STACK_PROTECTOR_UNSUPPORTED = $(shell $(CC) -fstack-protector-strong 2>&1 | grep -c 'stack-protector-strong')
+ifeq "$(STACK_PROTECTOR_UNSUPPORTED)" "0"
 	CFLAGS += -fstack-protector-strong
+endif
+# Check if -frandom-seed is supported before enabling it
+RANDOM_SEED_UNSUPPORTED = $(shell $(CC) -frandom-seed=77e0418a98676b76729b50fe91cc1f250c14fd8f664f8430649487a6f918926d 2>&1 | grep -c 'random-seed')
+ifeq "$(RANDOM_SEED_UNSUPPORTED)" "0"
+	CFLAGS += -frandom-seed=0x$$(sha256sum $< | cut -f1 -d" ")
+endif
+# Check if -ffile-prefix-map is supported before enabling it
+FILE_PREFIX_MAP_UNSUPPORTED = $(shell $(CC) -ffile-prefix-map=/foo/bar/baz=/quux 2>&1 | grep -c 'file-prefix-map')
+ifeq "$(FILE_PREFIX_MAP_UNSUPPORTED)" "0"
+	# FIXME
+	CFLAGS += "-ffile-prefix-map=$(realpath ${srcdir})=telegram-purple"
 endif
 
 DEP=dep
@@ -327,7 +338,7 @@ Are all submodules properly initialized and updated?"
 
 .PHONY: check-clean
 check-clean: .git
-	@test "x" = x"`git status --porcelain`" || (echo ${DIST_ERR_MSG}; exit 1)
+	@test "x" = x"$(git status --porcelain)" || (echo ${DIST_ERR_MSG}; exit 1)
 	@test -r tgl/.git || (echo ${SUBMOD_ERR_MSG}; exit 1)
 
 # Feel free to remove the "check-clean" dependency if you know what you're doing.
@@ -340,7 +351,7 @@ dist: check-clean commit.h .git create_dirs
 
 .PHONY: clean-here
 clean-here:
-	rm -rf ${DIR_LIST} $(PRPL_LIBNAME) telegram-purple.nsi po/*.mo autom4te.cache AppStream/po/*.mo commit.h
+	rm -rf ${DIR_LIST} "$(PRPL_LIBNAME)" telegram-purple.nsi po/*.mo autom4te.cache AppStream/po/*.mo commit.h
 
 -include test/Makefile
 
