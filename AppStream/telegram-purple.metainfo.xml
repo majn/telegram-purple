@@ -9,29 +9,33 @@
     <name>Telegram</name>
     <name xml:lang="bg">Telegram</name>
     <name xml:lang="cs-CZ">Telegram</name>
-    <name xml:lang="de-DE">Telegram</name>
+    <name xml:lang="de">Telegram</name>
     <name xml:lang="es">Telegram</name>
     <name xml:lang="es-AR">Telegram</name>
     <name xml:lang="fr">Telegram</name>
-    <name xml:lang="it-IT">Telegram</name>
+    <name xml:lang="it">Telegram</name>
     <name xml:lang="nl">Telegram</name>
-    <name xml:lang="pl-PL">Telegram</name>
-    <name xml:lang="ru-RU">Telegram</name>
+    <name xml:lang="nn">Telegram</name>
+    <name xml:lang="pl">Telegram</name>
+    <name xml:lang="pt-BR">Telegram</name>
+    <name xml:lang="ru">Telegram</name>
     <name xml:lang="sq">Telegram</name>
     <name xml:lang="uk">Телеграм</name>
     <summary>A plugin that adds support for Telegram</summary>
     <summary xml:lang="bg">Добавка, която добавя поддръжка на Telegram</summary>
     <summary xml:lang="cs-CZ">Zásuvný modul, který přidá podporu pro Telegram</summary>
-    <summary xml:lang="de-DE">Plugin zur Unterstützung von Telegram</summary>
+    <summary xml:lang="de">Plugin zur Unterstützung von Telegram</summary>
     <summary xml:lang="es">Un plugin que añade soporte para Telegram</summary>
     <summary xml:lang="es-AR">Un plugin que agrega soporte para Telegram</summary>
     <summary xml:lang="fr">Une extension qui ajoute le support pour Telegram</summary>
-    <summary xml:lang="it-IT">Un plugin che aggiunge il supporto per Telegram</summary>
+    <summary xml:lang="it">Un plugin che aggiunge il supporto per Telegram</summary>
     <summary xml:lang="nl">Een plug-in die ondersteuning voor Telegram toevoegt</summary>
-    <summary xml:lang="pl-PL">Wtyczka dodająca obsługę protokołu Telegram</summary>
-    <summary xml:lang="ru-RU">Плагин, добавляющий поддержку Telegram</summary>
+    <summary xml:lang="nn">Eit programtillegg for å kunna nytta Telegram</summary>
+    <summary xml:lang="pl">Wtyczka dodająca obsługę protokołu Telegram</summary>
+    <summary xml:lang="pt-BR">Um plugin que adiciona suporte para o Telegram</summary>
+    <summary xml:lang="ru">Плагин, добавляющий поддержку Telegram</summary>
     <summary xml:lang="sq">Një shtojcë që shton mbulim për Telegram-in</summary>
-    <summary xml:lang="uk">Плагін, що додає підтримку у Телеграм</summary>
+    <summary xml:lang="uk">Плагін, що дає підтримку Телеграм</summary>
     <url type="homepage">https://github.com/majn/telegram-purple</url>
     <url type="bugtracker">https://github.com/majn/telegram-purple/issues/</url>
     <metadata_license>GFDL-1.3</metadata_license>

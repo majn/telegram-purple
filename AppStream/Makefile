@@ -26,6 +26,24 @@ MSGFMT_PATH=msgfmt
 
 all: translate
 
+# I fucked up some of the language codes.
+# Fixing it in Transifex would require me to recreate these groups,
+# deleting all old translations and potentially losing the translators.
+# This is ugly, but better than losing translators.
+# The space in the matching pattern excludes the "Language-Team:" field.
+
+po/de.po: po/de_DE.po
+	sed -re 's/ de_DE/ de/' $< > $@
+
+po/it.po: po/it_IT.po
+	sed -re 's/ it_IT/ it/' $< > $@
+
+po/pl.po: po/pl_PL.po
+	sed -re 's/ pl_PL/ pl/' $< > $@
+
+po/ru.po: po/ru_RU.po
+	sed -re 's/ ru_RU/ ru/' $< > $@
+
 po/%.mo: po/%.po
 	${MSGFMT_PATH} -cf -o $@ $<
 
@@ -43,3 +61,7 @@ potfile: po/telegram-purple.metainfo.xml.pot
 
 .PHONY: translate
 translate: telegram-purple.metainfo.xml
+
+.PHONY: clean
+clean:
+	rm -rf po/*.mo po/de.po po/it.po po/pl.po po/ru.po

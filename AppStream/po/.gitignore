@@ -1,1 +1,7 @@
 /*.mo
+
+# I fucked up the locale names on Transifex; these are actually just intermediates:
+/de.po
+/it.po
+/pl.po
+/ru.po

@@ -23,7 +23,7 @@ Write [an issue](https://github.com/majn/telegram-purple/issues/new), shoot us a
 
 #### Translations
 
-Make sure that the string freeze has already happened.
+Ideally, do a string freeze beforehand; however, this has proven to be too impractical for this project.
 
 Go to the [translation site](https://www.transifex.com/telegram-purple-developers/telegram-purple/content/),
 and close the current resource for new translations.  Rename and re-prioritize it appropriately.
@@ -36,7 +36,7 @@ Run `make po/*.po` to fix the filenames.  Do not delete any files.  Rationale se
 
 Adjust `po/LINGUAS*` as you see fit.
 
-Also import the translations for `AppStream/po/`.
+Also import the translations for `AppStream/po/`, and run `make -C Appstream translate`.
 
 #### Increment version
 
