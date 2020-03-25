@@ -55,7 +55,7 @@ then
 
     FAKETIME_DATETIME="$(git log -1 --date=iso --format=%cd)"
     with_faketime () {
-        showargs faketime -f "${FAKETIME_DATETIME}" "$@"
+        echo faketime -f "${FAKETIME_DATETIME}" "$@"
         faketime -f "${FAKETIME_DATETIME}" "$@"
     }
 else
