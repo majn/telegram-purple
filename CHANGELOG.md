@@ -1,7 +1,29 @@
 Changelog
 ---------
 
-##### 1.4.3
+##### 1.4.5
+
+IMPORTANT: This repository barely sees any updates anymore.
+You should switch to [tdlib-purple](https://github.com/ars3niy/tdlib-purple/),
+which will hopefully become telegram-purple's successor.
+Note that only the following features are missing:
+- Retrieve history on first login (not everyone needs this)
+- Add options to ignore certain groups (why use a messenger if you don't want to ever see those messeges?!)
+- Turn off sending read receipts: https://github.com/ars3niy/tdlib-purple/issues/22
+So it's a good replacement in many cases already.
+For more details, see https://github.com/ars3niy/tdlib-purple/milestone/1
+
+The actual changes in this version are only minor stuff:
+- New feature: Enable setting the download URI base; this seems to be interesting for bitlbee users.
+- Improvement: Update and improve searching for zlib (ax_check_zlib.m4)
+- Fix: `sed` invocation on macOS
+- Fix: Cross-reference to telepathy-morse.
+- Improvement: Automatically build on ppc64le
+  Caveat emptor! We only *build* there. I don't have access to any such hardware,
+  telegram-purple has no real tests, and I know nothing about ppc64le.
+  Bugfixes and improvements are welcome.
+
+##### 1.4.4
 
 IMPORTANT: This repository barely sees any updates anymore.
 You may want to switch to [tdlib-purple](https://github.com/ars3niy/tdlib-purple/),
