@@ -348,7 +348,7 @@ fi
 if [ "y" != "${USE_REPRODUCIBLE}" ]
 then
     VARIANT_SUFFIX="${VARIANT_SUFFIX}_norepro"
-
+else
     # makensis packages the file mtimes.  I don't think this can be changed,
     # and the project seems too slow to ever introduce a feature like that.
     # Therefore, we need to "fix" the mtimes.
@@ -356,8 +356,8 @@ then
     #     ${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico
     #     ${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico
     # But thankfully, Debian's package system includes mtime,
-    # so the time stamps are set by the pyckage version of nsis.
-    touch --no-create --date FAKETIME_DATETIME \
+    # so the time stamps are set by the package version of nsis.
+    touch --no-create --date "${FAKETIME_DATETIME}" \
         bin/libtelegram.dll contrib/libgcc_s_sjlj-1.dll contrib/libgpg-error-0.dll \
         contrib/libgcrypt-20.dll contrib/libwebp-7.dll po/*.mo COPYING imgs/*
 fi

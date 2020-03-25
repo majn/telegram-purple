@@ -71,7 +71,7 @@ Remember to push the tag to github.
 Make a dist-bundle: `make dist`
 Keep the resulting `telegram-purple_1.something.orig.tar.gz` safe.
 
-Make the windows installer: `./mkwindows.sh`
+Make the windows installer: `./mkwindows.sh && USE_WEBP=n ./mkwindows.sh`
 Keep the resulting `telegram-purple-1.something+gcafebabe5.exe` safe.
 
 #### Create release on github
