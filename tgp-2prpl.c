@@ -141,7 +141,8 @@ PurpleConversation *p2tgl_find_conversation_with_account (struct tgl_state *TLS,
 void p2tgl_prpl_got_user_status (struct tgl_state *TLS, tgl_peer_id_t user, struct tgl_user_status *status) {
   connection_data *data = TLS->ev_base;
   
-  if (status->online == 1) {
+  if (status->online == 1 || 777000 == tgl_get_peer_id (user)) {
+    // 777000 is the magic number for the Telegram system account. It is *always* on the dialogue list.
     purple_prpl_got_user_status (tls_get_pa (TLS), tgp_blist_lookup_purple_name (TLS, user), "available", NULL);
   } else {
     debug ("%d: when=%d", tgl_get_peer_id (user), status->when);
