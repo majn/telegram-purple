@@ -157,7 +157,7 @@ po/%.mo: po/%.po
 	${MSGFMT_PATH} -cf -o $@ $< >/dev/null 2>&1
 
 ${PRPL_LIBNAME}: ${ALL_OBJS} tgl/libs/libtgl.a | create_dirs
-	${CC} -shared -o $@ $^ ${LDFLAGS}
+	${CC} -shared -o $@ $^ ${CFLAGS} ${LDFLAGS}
 
 
 ### == Translation fixes == ###
