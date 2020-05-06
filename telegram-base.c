@@ -406,8 +406,8 @@ gchar *get_download_dir (struct tgl_state *TLS) {
   dir = g_strconcat ("/tmp",  G_DIR_SEPARATOR_S, "downloads", NULL);
   } else {
   dir = g_strconcat (TLS->base_path, G_DIR_SEPARATOR_S, "downloads", NULL);
-  g_mkdir_with_parents (dir, 0700);
   }
+  g_mkdir_with_parents (dir, 0700);
   return dir;
 }
 
