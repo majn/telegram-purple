@@ -13,6 +13,7 @@
     <name xml:lang="es">Telegram</name>
     <name xml:lang="es-AR">Telegram</name>
     <name xml:lang="fr">Telegram</name>
+    <name xml:lang="fur">Telegram</name>
     <name xml:lang="it">Telegram</name>
     <name xml:lang="nl">Telegram</name>
     <name xml:lang="nn">Telegram</name>
@@ -28,6 +29,7 @@
     <summary xml:lang="es">Un plugin que añade soporte para Telegram</summary>
     <summary xml:lang="es-AR">Un plugin que agrega soporte para Telegram</summary>
     <summary xml:lang="fr">Une extension qui ajoute le support pour Telegram</summary>
+    <summary xml:lang="fur">Un plugin che al zonte il supuart par Telegram</summary>
     <summary xml:lang="it">Un plugin che aggiunge il supporto per Telegram</summary>
     <summary xml:lang="nl">Een plug-in die ondersteuning voor Telegram toevoegt</summary>
     <summary xml:lang="nn">Eit programtillegg for å kunna nytta Telegram</summary>

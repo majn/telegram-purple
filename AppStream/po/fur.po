@@ -1,24 +1,25 @@
 # 
 # Translators:
+# Fabio Tomat <f.t.public@gmail.com>, 2020
 msgid ""
 msgstr ""
 "Project-Id-Version: telegram-purple\n"
 "POT-Creation-Date: 2016-01-07 23:23+0100\n"
-"PO-Revision-Date: 2016-01-09 13:13+0000\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: Danish (http://www.transifex.com/telegram-purple-developers/telegram-purple/language/da/)\n"
+"PO-Revision-Date: 2020-09-11 09:51+0000\n"
+"Last-Translator: Fabio Tomat <f.t.public@gmail.com>\n"
+"Language-Team: Friulian (http://www.transifex.com/telegram-purple-developers/telegram-purple/language/fur/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: da\n"
+"Language: fur\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #. (itstool) path: component/name
 #: telegram-purple.metainfo.untranslated.xml:9
 msgid "Telegram"
-msgstr ""
+msgstr "Telegram"
 
 #. (itstool) path: component/summary
 #: telegram-purple.metainfo.untranslated.xml:10
 msgid "A plugin that adds support for Telegram"
-msgstr ""
+msgstr "Un plugin che al zonte il supuart par Telegram"

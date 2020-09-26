@@ -36,7 +36,7 @@ Run `make po/*.po` to fix the filenames.  Do not delete any files.  Rationale se
 
 Adjust `po/LINGUAS*` as you see fit.
 
-Also import the translations for `AppStream/po/`, and run `make -C Appstream translate`.
+Also import the translations for `AppStream/po/`, and run `make -C AppStream translate`.
 
 #### Increment version
 
