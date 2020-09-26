@@ -1,0 +1,672 @@
+# Translation (template) of telegram-purple
+# Copyright (C) 2014-2018 Matthias Jentsch, Ben Wiederhake, Christopher Althaus, Markus Endres
+# This file is distributed under the same license as the telegram-purple plugin.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+# Translators:
+# Fabio Tomat <f.t.public@gmail.com>, 2020
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: telegram-purple\n"
+"POT-Creation-Date: 2018-08-01 23:11+0200\n"
+"PO-Revision-Date: 2019-08-31 08:10+0000\n"
+"Last-Translator: Fabio Tomat <f.t.public@gmail.com>, 2020\n"
+"Language-Team: Friulian (https://www.transifex.com/telegram-purple-developers/teams/53149/fur/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fur\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../telegram-base.c:442
+msgid "Couldn't create group"
+msgstr "Impussibil creâ il grup"
+
+#: ../telegram-base.c:443
+msgid "Please select at least one other user."
+msgstr "Par plasê selezione almancul un altri utent."
+
+#: ../telegram-base.c:497
+msgid "Query Failed"
+msgstr "Interogazion falide"
+
+#: ../telegram-purple.c:159
+msgid "Secret chat ready."
+msgstr "Chat segrete pronte."
+
+#: ../telegram-purple.c:167
+msgid "Secret chat terminated."
+msgstr "Chat segrete terminade."
+
+#: ../telegram-purple.c:179
+msgid "Telegram"
+msgstr "Telegram"
+
+#: ../telegram-purple.c:226
+msgid "Message marked as read."
+msgstr "Messaç segnât come let."
+
+#: ../telegram-purple.c:343
+#, c-format
+msgid "Invite link: %s"
+msgstr "Colegament di invît: %s"
+
+#. FIXME: Can TGLCHF_MODERATOR export links?
+#: ../telegram-purple.c:354
+msgid "Creating chat link failed"
+msgstr "Creazion dal colegament ae chat falide"
+
+#: ../telegram-purple.c:355
+msgid "You need to be admin of the group  to do that."
+msgstr "Tu scugnis jessi l'aministradôr dal grup par podêlu fâ."
+
+#: ../telegram-purple.c:440
+msgid "Chat joined"
+msgstr "Jentrât te chat"
+
+#: ../telegram-purple.c:441
+msgid "Chat added to list of chat rooms."
+msgstr "Chat zontade ae liste des stanziis chat."
+
+#: ../telegram-purple.c:466
+msgid "Start secret chat..."
+msgstr "Scomence une chat segrete..."
+
+#. Generate Public Link
+#: ../telegram-purple.c:473
+msgid "Invite users by link..."
+msgstr "Invide i utents cul colegament..."
+
+#. Delete self from chat
+#: ../telegram-purple.c:481
+msgid "Delete and exit..."
+msgstr "Elimine e jes..."
+
+#: ../telegram-purple.c:560
+#, c-format
+msgid ""
+"Unable to sign on as %s: problem in the underlying library 'tgl'. Please "
+"submit a bug report with the debug log."
+msgstr ""
+"Impussibil jentrâ come %s: probleme te librarie disot 'tgl'. Par plasê "
+"segnale un erôr cul regjistri di debug."
+
+#: ../telegram-purple.c:564
+msgid "Problem in tgl"
+msgstr "Probleme in tgl"
+
+#. TRANSLATORS: Please fill in your own prefix!
+#: ../telegram-purple.c:576
+#, c-format
+msgid ""
+"Unable to sign on as %s: phone number lacks country prefix. Numbers must "
+"start with the full international prefix code, e.g. +1 for USA."
+msgstr ""
+"Impussibil jentrâ come %s: al numar di telefon al mancje il prefìs di paîs. "
+"I numars a scugnin scomençâ cul prefìs internazionâl complet, p.e. +1 pai "
+"Stâts Unîts."
+
+#: ../telegram-purple.c:581
+msgid "Incomplete phone number"
+msgstr "Numar di telefon incomplet"
+
+#: ../telegram-purple.c:639
+msgid "Secret chat was already deleted"
+msgstr "La chat segrete e je za stade eliminade"
+
+#: ../telegram-purple.c:641
+msgid "Secret chat is not ready"
+msgstr "La chat segrete no je pronte"
+
+#: ../telegram-purple.c:649
+msgid "Only the creator of a channel can post messages."
+msgstr "Dome il creadôr di un canâl al pues publicâ i messaçs."
+
+#: ../telegram-purple.c:692
+msgid "Cannot invite buddy to chat"
+msgstr "Impussibil invidâ l'amì te chat"
+
+#: ../telegram-purple.c:693
+msgid "Specified user does not exist."
+msgstr "L'utent specificât nol esist."
+
+#: ../telegram-purple.c:706
+msgid "phone no. (+ country prefix)"
+msgstr "N. telefon (+ prefìs di nazion)"
+
+#: ../telegram-purple.c:801
+msgid "kick <user>:  Kick a user from the room."
+msgstr "kick <user>: Pare fûr un utent de stanzie."
+
+#. Login
+#: ../telegram-purple.c:823
+msgid "Password (two factor authentication)"
+msgstr "Password (autenticazion a doi fatôrs)"
+
+#: ../telegram-purple.c:828
+msgid ""
+"Fallback SMS verification\n"
+"(Helps when not using Pidgin and you aren't being prompted for the code)"
+msgstr ""
+"Verifiche cun SMS di repeç\n"
+"(Al jude cuant che no si dopre Pidgin e no ti ven domandât il codiç)"
+
+#. Whether to do fallback SMS verification
+#: ../telegram-purple.c:835
+msgid "Always"
+msgstr "Simpri"
+
+#. Whether to do fallback SMS verification
+#: ../telegram-purple.c:837
+msgid "Never"
+msgstr "Mai"
+
+#. Whether to do fallback SMS verification
+#. How to handle "large" files
+#: ../telegram-purple.c:839 ../telegram-purple.c:860
+msgid "Ask"
+msgstr "Domande"
+
+#: ../telegram-purple.c:841
+msgid "Accept secret chats"
+msgstr "Acete chat segretis"
+
+#: ../telegram-purple.c:845
+msgid "Display buddies offline after (days)"
+msgstr "Mostre i amîs fûr rêt dopo (dîs)"
+
+#: ../telegram-purple.c:849
+msgid ""
+"Don't fetch history older than (days)\n"
+"(0 for unlimited)"
+msgstr ""
+"No sta recuperâ la cronologjie plui vecje di (dîs)\n"
+"(0 par ilimitât)"
+
+#. How to handle "large" files
+#: ../telegram-purple.c:856
+msgid "Discard"
+msgstr "Scarte"
+
+#. How to handle "large" files
+#: ../telegram-purple.c:858
+msgid "Auto load"
+msgstr "Cjarie in automatic"
+
+#: ../telegram-purple.c:862
+msgid "Auto load file transfers up to (kb)"
+msgstr "Cjarie in automatic i trasferiments di file fin a (kb)"
+
+#: ../telegram-purple.c:866
+msgid "Bigger file transfers"
+msgstr "Trasferiments di file plui grancj"
+
+#. Chats
+#: ../telegram-purple.c:870
+msgid "Add all group chats to buddy list"
+msgstr "Zonte dutis lis chat di grup te liste dai amîs"
+
+#. Receipts
+#: ../telegram-purple.c:875
+msgid "Display notices of receipt"
+msgstr "Visualize notifichis di ricezion"
+
+#: ../telegram-purple.c:879
+msgid "Send notices of receipt when present"
+msgstr "Invie notifichis di ricezion se presintis"
+
+#. IPv6
+#: ../telegram-purple.c:884
+msgid "Use IPv6 for connecting (restart required)"
+msgstr "Dopre IPv6 pe conession (al covente tornâ a inviâ)"
+
+#: ../telegram-purple.c:909
+msgid "Telegram Protocol Plugin."
+msgstr "Plugin pal protocol di Telegram."
+
+#: ../tgp-msg.c:58
+#, c-format
+msgid "%2$s created chat %1$s."
+msgstr "Chat %1$s creade di %2$s."
+
+#: ../tgp-msg.c:61
+#, c-format
+msgid "%2$s changed title to %1$s."
+msgstr "Titul cambiât a %1$s, modifiche di %2$s."
+
+#: ../tgp-msg.c:64
+#, c-format
+msgid "%s changed photo."
+msgstr "Foto cambiade di %s."
+
+#: ../tgp-msg.c:67
+#, c-format
+msgid "%s deleted photo."
+msgstr "Foto eliminade di %s."
+
+#: ../tgp-msg.c:75
+#, c-format
+msgid "%1$s added user %2$s by link."
+msgstr "Utent %2$s zontât cul colegament di %1$s."
+
+#: ../tgp-msg.c:90
+#, c-format
+msgid "%2$s added user %1$s."
+msgstr "Utent %1$s zontât di %2$s."
+
+#: ../tgp-msg.c:114 ../tgp-msg.c:131
+#, c-format
+msgid "%2$s deleted user %1$s."
+msgstr "Utent %1$s eliminât di %2$s."
+
+#: ../tgp-msg.c:138
+#, c-format
+msgid "%2$s set self destruction timer to %1$d second."
+msgid_plural "%2$s set self destruction timer to %1$d seconds."
+msgstr[0] "Temporizadôr di autodistruzion stabilît a %1$d secont di %2$s."
+msgstr[1] "Temporizadôr di autodistruzion stabilît a %1$d seconts di %2$s.   "
+
+#: ../tgp-msg.c:144
+#, c-format
+msgid "%2$s marked %1$d message read."
+msgid_plural "%2$s marked %1$d messages read."
+msgstr[0] "%2$s al/e à segnât %1$d messaç come let."
+msgstr[1] "%2$s al/e à segnât %1$d messaçs come lets."
+
+#: ../tgp-msg.c:150
+#, c-format
+msgid "%2$s deleted %1$d message."
+msgid_plural "%2$s deleted %1$d messages."
+msgstr[0] "%1$d messaç eliminât di %2$s."
+msgstr[1] "%1$d messaçs eliminâts di %2$s."
+
+#: ../tgp-msg.c:156
+#, c-format
+msgid "%2$s made a screenshot of %1$d message."
+msgid_plural "%2$s made a screenshot of %1$d messages."
+msgstr[0] "%2$s al/e à caturât la videade di %1$d messaç."
+msgstr[1] "%2$s al/e à caturât la videade di %1$d messaçs"
+
+#: ../tgp-msg.c:162
+#, c-format
+msgid "Channel %1$s created"
+msgstr "Canâl %1$s creât"
+
+#. FIXME: check if this makes sense
+#: ../tgp-msg.c:165 ../tgp-chat.c:124 ../tgp-chat.c:667
+msgid "Telegram Channels"
+msgstr "Canâi di Telegram"
+
+#: ../tgp-msg.c:222
+msgid "Sending message failed."
+msgstr "No si è rivâts a inviâ il messaç."
+
+#: ../tgp-msg.c:293
+msgid "Sending image failed."
+msgstr "No si è rivâts a inviâ la imagjin."
+
+#: ../tgp-msg.c:497
+#, c-format
+msgid "%s sent a sticker."
+msgstr "Sticker inviât di %s."
+
+#: ../tgp-msg.c:513
+msgid "[message unavailable]"
+msgstr "[messaç no disponibil]"
+
+#: ../tgp-msg.c:527
+msgid "[photo]"
+msgstr "[foto]"
+
+#: ../tgp-msg.c:531
+msgid "[audio]"
+msgstr "[audio]"
+
+#: ../tgp-msg.c:535
+msgid "[video]"
+msgstr "[video]"
+
+#: ../tgp-msg.c:540
+msgid "[document]"
+msgstr "[document]"
+
+#: ../tgp-msg.c:545
+msgid "[position]"
+msgstr "[posizion]"
+
+#: ../tgp-msg.c:549
+msgid "[contact]"
+msgstr "[contat]"
+
+#: ../tgp-msg.c:553
+msgid "[webpage]"
+msgstr "[pagjine web]"
+
+#: ../tgp-msg.c:557
+msgid "[unsupported media]"
+msgstr "[media no supuartât]"
+
+#: ../tgp-msg.c:582
+#, c-format
+msgid "%s<b>&gt; %s wrote:</b><br>&gt; %s<br>%s"
+msgstr "%s<b>&gt; %s al/e à scrit:</b><br>&gt; %s<br>%s"
+
+#: ../tgp-msg.c:584
+#, c-format
+msgid "%s<b>&gt; Unknown user wrote:</b><br>&gt; %s<br>%s"
+msgstr "%s<b>&gt; Utent no cognossût al à scrit:</b><br>&gt; %s<br>%s"
+
+#: ../tgp-msg.c:640
+msgid "failed loading message"
+msgstr "no si è rivâts a cjariâ il messaç"
+
+#. Content of a file transfer
+#: ../tgp-msg.c:682 ../tgp-msg.c:732
+msgid "document"
+msgstr "document"
+
+#. Content of a file transfer
+#: ../tgp-msg.c:685
+msgid "audio"
+msgstr "audio"
+
+#. Content of a file transfer
+#: ../tgp-msg.c:688
+msgid "animation"
+msgstr "animazion"
+
+#. Content of a file transfer
+#: ../tgp-msg.c:691
+msgid "video"
+msgstr "video"
+
+#: ../tgp-msg.c:810
+#, c-format
+msgid "<b>&gt; Forwarded from %s:</b><br>&gt; %s"
+msgstr "<b>&gt; Mandât indenant di %s:</b><br>&gt; %s"
+
+#: ../tgp-msg.c:812
+#, c-format
+msgid "<b>&gt; Forwarded:</b><br>&gt; %s"
+msgstr "<b>&gt; Mandât indenant:</b><br>&gt; %s"
+
+#: ../tgp-msg.c:921
+msgid "loading document or picture failed"
+msgstr "no si è rivâts a cjariâ il document o la figure"
+
+#: ../tgp-net.c:281
+msgid "Cannot connect to main server"
+msgstr "Impussibil conetisi al servidôr principâl"
+
+#: ../tgp-net.c:322
+msgid "Cannot connect to server: Ping timeout."
+msgstr "Impussibil conetisi al servidôr: timp scjadût pal ping."
+
+#: ../tgp-net.c:365
+msgid "Lost connection to the server..."
+msgstr "Conession al servidôr pierdude..."
+
+#: ../tgp-request.c:51
+msgid ""
+"Telegram wants to verify your identity. Please enter the login code that you"
+" have received via SMS."
+msgstr ""
+"Telegram al desidere verificâ la tô identitât. Par plasê inserìs il codiç di"
+" acès che tu âs ricevût vie SMS."
+
+#: ../tgp-request.c:54
+msgid "Login code"
+msgstr "Codiç di acès"
+
+#: ../tgp-request.c:54
+msgid "Enter login code"
+msgstr "Inserìs il codiç di acès"
+
+#: ../tgp-request.c:54
+msgid "the code"
+msgstr "il codiç"
+
+#: ../tgp-request.c:54 ../tgp-request.c:103 ../tgp-request.c:197
+#: ../tgp-request.c:232 ../tgp-request.c:262
+msgid "OK"
+msgstr "Va ben"
+
+#: ../tgp-request.c:55 ../tgp-request.c:103 ../tgp-request.c:122
+#: ../tgp-request.c:198 ../tgp-request.c:233 ../tgp-request.c:263
+msgid "Cancel"
+msgstr "Anule"
+
+#: ../tgp-request.c:94
+msgid "Registration"
+msgstr "Regjistrazion"
+
+#: ../tgp-request.c:95
+msgid "First name"
+msgstr "Non"
+
+#: ../tgp-request.c:98
+msgid "Last name"
+msgstr "Cognon"
+
+#: ../tgp-request.c:102
+msgid "Register"
+msgstr "Regjistre"
+
+#: ../tgp-request.c:102
+msgid "Please register your phone number."
+msgstr "Par plasê regjistre il to numar di telefon."
+
+#. purple_request API not available
+#: ../tgp-request.c:107
+msgid ""
+"Phone number is not registered. Please register your phone on a different "
+"client."
+msgstr ""
+"Il numar di telefon nol è regjistrât. Par plasê regjistre il to numar "
+"telefonic cuntun client diferent."
+
+#: ../tgp-request.c:109
+msgid "Not registered"
+msgstr "No regjistrât"
+
+#: ../tgp-request.c:121
+msgid "Password needed"
+msgstr "Password necessarie"
+
+#: ../tgp-request.c:121
+msgid "Enter password for two factor authentication"
+msgstr "Inserìs la password pe autenticazion a doi fatôrs"
+
+#: ../tgp-request.c:122
+msgid "Ok"
+msgstr "Va ben"
+
+#: ../tgp-request.c:124
+msgid ""
+"No password set for two factor authentication. Please enter it in the "
+"extended settings."
+msgstr ""
+"Nissune password stabilide pe autenticazion a doi fatôrs. Par plasê "
+"inserissile intes impostazions estesis."
+
+#: ../tgp-request.c:126
+msgid "Password invalid"
+msgstr "Password no valide"
+
+#: ../tgp-request.c:149
+#, c-format
+msgid "Accept secret chat '%s' on this device?"
+msgstr "Acetâ la chat segrete '%s' su chest dispositîf?"
+
+#: ../tgp-request.c:150
+msgid "Secret chat"
+msgstr "Chat segrete"
+
+#: ../tgp-request.c:150
+msgid ""
+"Secret chats can only have one end point. If you accept a secret chat on "
+"this device, its messages will not be available anywhere else. If you "
+"decline, you can still accept the chat on other devices."
+msgstr ""
+"Lis chat segretis a puedin vê dome un terminâl di destinazion. Se tu acetis "
+"une chat segrete su chest dipositîf, i siei messaçs no saran disponibii di "
+"nissune altre bande. Se tu declinis, tu podarâs ancjemò acetâ la chat su "
+"altris dispositîfs."
+
+#: ../tgp-request.c:181
+msgid ""
+"Invite at least one additional user by specifying\n"
+" their full name (autocompletion available).\n"
+"You can add more users once the chat was created."
+msgstr ""
+"Invide almancul un utent in plui specificant\n"
+"il lôr non complet (completament automatic disponibil).\n"
+"Tu puedis zontâ altris utents une volte creade la chat."
+
+#: ../tgp-request.c:184 ../tgp-request.c:188 ../tgp-request.c:192
+msgid "Username"
+msgstr "Non utent"
+
+#: ../tgp-request.c:197
+msgid "Create group chat"
+msgstr "Cree chat di grup"
+
+#: ../tgp-request.c:197
+msgid "Invite users"
+msgstr "Invide utents"
+
+#: ../tgp-request.c:216 ../tgp-request.c:231
+msgid "Change password"
+msgstr "Cambie password"
+
+#: ../tgp-request.c:218
+msgid "Current"
+msgstr "Atuâl"
+
+#: ../tgp-request.c:222 ../tgp-request.c:252
+msgid "Password"
+msgstr "Password"
+
+#: ../tgp-request.c:226 ../tgp-request.c:256
+msgid "Confirm"
+msgstr "Conferme"
+
+#: ../tgp-request.c:250 ../tgp-request.c:261
+msgid "New password"
+msgstr "Gnove password"
+
+#. if we arrive here for the second time the specified phone number is not
+#. valid. We do not
+#. ask for the phone number directly, cause in that case the account would
+#. still be created
+#. named with the invalid phone number, even though the login will work
+#: ../tgp-request.c:299
+msgid "Invalid phone number"
+msgstr "Numar di telefon no valit"
+
+#: ../tgp-request.c:300
+msgid ""
+"Please enter only numbers in the international phone number format, a leading + following by the country prefix and the phone number.\n"
+"Do not use any other special chars."
+msgstr ""
+"Par plasê inserìs dome numars intal formât di numar telefonic internazionâl, un + iniziâl, cun daûr il prefìs internazionâl e il numar di telefon.\n"
+"No sta doprâ nissun altri caratar speciâl."
+
+#: ../tgp-request.c:369
+msgid "Leave Chat"
+msgstr "Bandone la chat"
+
+#: ../tgp-request.c:371
+msgid "Do you want to leave this chat permanently?"
+msgstr "Lassâ par simpri cheste chat?"
+
+#: ../tgp-request.c:376
+msgid "Abort Secret Chat"
+msgstr "Interomp chat segrete"
+
+#: ../tgp-request.c:378
+msgid "Do you want to terminate this secret chat permanently?"
+msgstr "Terminâ par simpri cheste chat segrete?"
+
+#: ../tgp-request.c:383
+msgid "Delete Contact"
+msgstr "Elimine contat"
+
+#: ../tgp-request.c:385
+msgid "Do you want to remove this user from your global contact list?"
+msgstr "Gjavâ chest utent de tô liste dai contats globâl?"
+
+#: ../tgp-request.c:400
+msgid "Leave Channel"
+msgstr "Bandone il canâl"
+
+#: ../tgp-request.c:402
+msgid "Do you want to leave this channel?"
+msgstr "Lassâ chest canâl?"
+
+#. This should be the language's timestamp format. This is preceded by a
+#. colon.
+#: ../tgp-utils.c:27
+msgid "%d.%m.%Y %H:%M"
+msgstr "%d.%m.%Y - %H:%M"
+
+#. This is preceded by a colon.
+#: ../tgp-utils.c:48
+msgid "recently"
+msgstr "di pôc"
+
+#. This is preceded by a colon.
+#: ../tgp-utils.c:52
+msgid "last week"
+msgstr "la ultime setemane"
+
+#. This is preceded by a colon.
+#: ../tgp-utils.c:56
+msgid "last month"
+msgstr "l'ultin mês"
+
+#. This is preceded by a colon. It refers to a point on time.
+#: ../tgp-utils.c:60
+msgid "unknown"
+msgstr "no cognossût"
+
+#: ../tgp-chat.c:108 ../tgp-chat.c:673
+msgid "Telegram Chats"
+msgstr "Chat di Telegram"
+
+#: ../tgp-chat.c:113
+msgid "You have already left this chat."
+msgstr "Tu âs za lassât cheste chat."
+
+#: ../tgp-chat.c:300
+msgid "Subject:"
+msgstr "Ogjet:"
+
+#: ../tgp-chat.c:306
+msgid "Invite link:"
+msgstr "Colegament di invît:"
+
+#: ../tgp-chat.c:312
+msgid "Chat ID:"
+msgstr "ID de chat:"
+
+#: ../tgp-chat.c:418
+msgid "Supergroup"
+msgstr "Supergrup"
+
+#: ../tgp-chat.c:418
+msgid "Channel"
+msgstr "Canâl"
+
+#: ../tgp-chat.c:421
+msgid "Group"
+msgstr "Grup"
+
+#: ../tgp-chat.c:437
+msgid "Users in chat"
+msgstr "Utents te chat"
+
+#: ../tgp-chat.c:440
+msgid "Type"
+msgstr "Gjenar"
