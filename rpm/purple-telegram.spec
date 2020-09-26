@@ -40,6 +40,9 @@ appstream-util validate-relax --nonet %{buildroot}/%{_datadir}/appdata/telegram-
 %{_datadir}/appdata/telegram-purple.metainfo.xml
 
 %changelog
+* Wed Sep 26 2020 BenWiederhake 1.4.4-1
+- Build for 1.4.4
+
 * Wed Mar 25 2020 BenWiederhake 1.4.3-1
 - Build for 1.4.3
 
