@@ -22,10 +22,10 @@
 #   If both header file and library are found, shell commands
 #   'action-if-found' is run. If 'action-if-found' is not specified, the
 #   default action appends '-I${ZLIB_HOME}/include' to CPFLAGS, appends
-#   '-L$ZLIB_HOME}/lib' to LDFLAGS, prepends '-lz' to LIBS, and calls
-#   AC_DEFINE(HAVE_LIBZ). You should use autoheader to include a definition
-#   for this symbol in a config.h file. Sample usage in a C/C++ source is as
-#   follows:
+#   '-L${ZLIB_HOME}/lib' to LDFLAGS (BUT ONLY IF ZLIB_HOME IS NOT EXACTLY
+#   "/usr"), prepends '-lz' to LIBS, and calls AC_DEFINE(HAVE_LIBZ).
+#   You should use autoheader to include a definition for this symbol in a
+#   config.h file. Sample usage in a C/C++ source is as follows:
 #
 #     #ifdef HAVE_LIBZ
 #     #include <zlib.h>
@@ -62,7 +62,7 @@
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 16
+#serial 16.0.0.1
 
 AU_ALIAS([CHECK_ZLIB], [AX_CHECK_ZLIB])
 AC_DEFUN([AX_CHECK_ZLIB],
@@ -105,7 +105,9 @@ then
   ZLIB_OLD_LDFLAGS=$LDFLAGS
   ZLIB_OLD_CPPFLAGS=$CPPFLAGS
   if test -n "${ZLIB_HOME}"; then
-        LDFLAGS="$LDFLAGS -L${ZLIB_HOME}/lib"
+        if test "${ZLIB_HOME}" != "/usr"; then
+                LDFLAGS="$LDFLAGS -L${ZLIB_HOME}/lib"
+        fi
         CPPFLAGS="$CPPFLAGS -I${ZLIB_HOME}/include"
   fi
   AC_LANG_PUSH([C])
@@ -119,7 +121,9 @@ then
     #
     m4_ifblank([$1],[
                 CPPFLAGS="$CPPFLAGS -I${ZLIB_HOME}/include"
-                LDFLAGS="$LDFLAGS -L${ZLIB_HOME}/lib"
+                if test "${ZLIB_HOME}" != "/usr"; then
+                        LDFLAGS="$LDFLAGS -L${ZLIB_HOME}/lib"
+                fi
                 LIBS="-lz $LIBS"
                 AC_DEFINE([HAVE_LIBZ], [1],
                           [Define to 1 if you have `z' library (-lz)])
