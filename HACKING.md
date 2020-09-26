@@ -48,7 +48,7 @@ Adjust `telegram-adium/telegram-adium/telegram-adium-Info.plist`.
 
 Adjust `rpm/purple-telegram.spec`, in version at the top and "changelog" below.
 
-Don't update debian: It's abandoned anyway.
+Godspeed to the Debian maintainers. If you're reading this, check out [tdlip-purple](https://github.com/ars3niy/tdlib-purple/)!
 
 AppStream: Nothing to do.
 
