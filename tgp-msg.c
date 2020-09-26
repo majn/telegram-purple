@@ -476,11 +476,11 @@ static char *tgp_msg_photo_display (struct tgl_state *TLS, const char *filename,
   }
   used_images_add (conn, img);
   if (g_strcmp0(purple_core_get_ui(), "BitlBee") == 0) {
-  *flags |= PURPLE_MESSAGE_SYSTEM;
-  return g_strdup_printf (_("file://%s"), filename);
+    *flags |= PURPLE_MESSAGE_SYSTEM;
+    return g_strdup_printf ("file://%s", filename);
   } else {
-  *flags |= PURPLE_MESSAGE_IMAGES;
-  return tgp_format_img (img);
+    *flags |= PURPLE_MESSAGE_IMAGES;
+    return tgp_format_img (img);
   }
 }
 
