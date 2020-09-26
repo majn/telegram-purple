@@ -1,3 +1,14 @@
+Also see [tdlib-purple](https://github.com/ars3niy/tdlib-purple/)
+=================================================================
+
+If people send PRs or make suggestions, I'm very willing to merge them into telegram-purple.
+However, the list of issues is getting longer and longer, and tdlib-purple gets closer and
+closer to becoming a drop-in replacement.
+
+Note that some features like secret chats are missing, so it's not quite there yet.
+I don't intend to abandon telegram-purple before tdlib-purple is a full replacement,
+so this project is still *maintained* (read: on life support).
+
 Telegram-Purple Unofficial (Beta)
 =================================
 
