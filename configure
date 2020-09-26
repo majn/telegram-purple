@@ -2261,7 +2261,7 @@ ac_config_headers="$ac_config_headers config.h"
 
 
 # ===========================================================================
-#       http://www.gnu.org/software/autoconf-archive/ax_check_zlib.html
+#      https://www.gnu.org/software/autoconf-archive/ax_check_zlib.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -2309,7 +2309,7 @@ ac_config_headers="$ac_config_headers config.h"
 #   Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License along
-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#   with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #   As a special exception, the respective Autoconf Macro's copyright owner
 #   gives unlimited permission to copy, distribute and modify the configure
@@ -2324,7 +2324,7 @@ ac_config_headers="$ac_config_headers config.h"
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 14
+#serial 16
 
 # This is what autoupdate's m4 run will expand.  It fires
 # the warning (with _au_warn_XXX), outputs it into the
@@ -4079,10 +4079,11 @@ then
   ZLIB_OLD_LDFLAGS=$LDFLAGS
   ZLIB_OLD_CPPFLAGS=$CPPFLAGS
   if test -n "${ZLIB_HOME}"; then
-        LDFLAGS="$LDFLAGS -L${ZLIB_HOME}/lib"
+        if test "$ZLIB_HOME" != "/usr"; then
+                LDFLAGS="$LDFLAGS -L${ZLIB_HOME}/lib"
+        fi
         CPPFLAGS="$CPPFLAGS -I${ZLIB_HOME}/include"
   fi
-
   ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -4152,7 +4153,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
     #
 
                 CPPFLAGS="$CPPFLAGS -I${ZLIB_HOME}/include"
-                LDFLAGS="$LDFLAGS -L${ZLIB_HOME}/lib"
+                if test "$ZLIB_HOME" != "/usr"; then
+                        LDFLAGS="$LDFLAGS -L${ZLIB_HOME}/lib"
+                fi
                 LIBS="-lz $LIBS"
 
 $as_echo "#define HAVE_LIBZ 1" >>confdefs.h
