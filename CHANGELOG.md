@@ -3,6 +3,19 @@ Changelog
 
 ##### 1.4.3
 
+IMPORTANT: This repository barely sees any updates anymore.
+You may want to switch to [tdlib-purple](https://github.com/ars3niy/tdlib-purple/),
+which will hopefully become telegram-purple's successor.
+Note that some features like secret chats are missing,
+so it's not a good replacement yet.
+
+- Always display the system account 'Telegram' as online.
+- Adium: Lots of work, thanks to Kent Sutherland!
+- Fix some typos and build issues
+- AppStream: use new destination directory (which means we're not compatible with old AppStream versions!)
+
+##### 1.4.3
+
 - Bitlbee: Write files to /tmp instead (See #513)
 - Windows: Automatically adapt installer filename
 - Binaries should be "somewhat" reproducible now
