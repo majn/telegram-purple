@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Download base URI */
+#undef DOWNLOAD_URI_BASE
+
 /* Define the gettext package to be used */
 #undef GETTEXT_PACKAGE
 

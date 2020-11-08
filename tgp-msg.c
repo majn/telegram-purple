@@ -187,37 +187,40 @@ static char *format_geo_link_osm (double lat, double lon) {
   return link;
 }
 
-static char *tgp_msg_file_display (const char *path, const char *filename, const char* caption, const char *mime, long long size) {
-  gchar *format;
+static char *tgp_msg_file_display (struct tgl_state *TLS, const char *fpath, const char *fname, const char *fcapt,
+      const char *fmime, long long fsize) {
 
-  gchar *capt = g_markup_escape_text (caption, -1);
-  gchar *pth = g_markup_escape_text (path, -1);
-  gchar *fle = g_markup_escape_text (filename, -1);
-  gchar *mme = g_markup_escape_text (mime, -1);
-  gchar *fsize =
+  gchar *path = g_markup_escape_text (fpath, -1);
+  gchar *capt = g_markup_escape_text (fcapt, -1);
+  gchar *name = g_markup_escape_text (fname, -1);
+  gchar *mime = g_markup_escape_text (fmime, -1);
+  gchar *file = g_path_get_basename (path);
+  gchar *uri = get_download_uri (TLS, file);
+  gchar *size =
 #if GLIB_CHECK_VERSION(2,30,0)
     /* 'g_format_size' only exists since 2.30.0. */
-    g_format_size (size)
+    g_format_size (fsize)
 #elif GLIB_CHECK_VERSION(2,16,0)
     /* 'g_format_size_for_display' only exists since 2.16.0.
      * We compile on Windows with glib 2.28.8. */
-    g_format_size_for_display (size)
+    g_format_size_for_display (fsize)
 #else /* even older */
   #error "Too outdated glib version!"
 #endif
   ;
-  if (g_strcmp0(purple_core_get_ui(), "BitlBee") == 0) { 
-  format = g_strdup_printf ("[%s file://%s %s %s %s]", capt, pth, fle, mme, fsize);
-  } else {
-  format = g_strdup_printf ("[%s <a href=\"file:///%s\">%s</a> %s %s]", capt, pth, fle, mme, fsize);
-  }
-  g_free (capt);
-  g_free (pth);
-  g_free (fle);
-  g_free (mme);
-  g_free (fsize);
 
-  return format;
+  gchar *display_text = !g_strcmp0 (purple_core_get_ui(), "BitlBee")
+    ? g_strdup_printf ("[%s %s %s %s]", capt, uri, mime, size)
+    : g_strdup_printf ("[%s <a href=\"%s\">%s</a> %s %s]", capt, uri, name, mime, size);
+
+  g_free (size);
+  g_free (uri);
+  g_free (file);
+  g_free (mime);
+  g_free (name);
+  g_free (capt);
+
+  return display_text;
 }
 
 static void tgp_msg_send_done (struct tgl_state *TLS, void *callback_extra, int success, struct tgl_message *M) {
@@ -477,7 +480,10 @@ static char *tgp_msg_photo_display (struct tgl_state *TLS, const char *filename,
   used_images_add (conn, img);
   if (g_strcmp0(purple_core_get_ui(), "BitlBee") == 0) {
     *flags |= PURPLE_MESSAGE_SYSTEM;
-    return g_strdup_printf ("file://%s", filename);
+    gchar *file = g_path_get_basename (filename);
+    gchar *uri = get_download_uri (TLS, file);
+    g_free(file);
+    return uri;
   } else {
     *flags |= PURPLE_MESSAGE_IMAGES;
     return tgp_format_img (img);
@@ -717,7 +723,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
               mime = M->media.document->mime_type;
             }
 
-            text = tgp_msg_file_display (path, filename, caption, mime, M->media.document->size);
+            text = tgp_msg_file_display (TLS, path, filename, caption, mime, M->media.document->size);
 
           } else {
             if (! tgp_our_msg (TLS, M) && ! tls_get_ft_discard (TLS)) {
@@ -741,7 +747,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
           if (! tgp_our_msg (TLS, M)) {
             if (C->data) {
               // Content of a file transfer
-              text = tgp_msg_file_display (C->data, M->media.encr_document->caption, _("document"),
+              text = tgp_msg_file_display (TLS, C->data, M->media.encr_document->caption, _("document"),
                                            M->media.encr_document->mime_type, M->media.encr_document->size);
               
             } else {

@@ -31,8 +31,9 @@ void read_secret_chat_file (struct tgl_state *TLS);
 void write_secret_chat_file (struct tgl_state *TLS);
 void write_secret_chat_gw (struct tgl_state *TLS, void *extra, int success, struct tgl_secret_chat *E);
 
-gchar *get_config_dir (char const *username);
-gchar *get_download_dir (struct tgl_state *TLS);
+gchar *get_config_dir (const char *username);
+gchar *get_download_path (struct tgl_state *TLS, const char *filename);
+gchar *get_download_uri (struct tgl_state *TLS, const char *filename);
 
 int tgp_visualize_key (struct tgl_state *TLS, unsigned char* sha1_key);
 void tgp_create_group_chat_by_usernames (struct tgl_state *TLS, const char *title,
