@@ -38,8 +38,6 @@ static void update_user_handler (struct tgl_state *TLS, struct tgl_user *U, unsi
 static void update_secret_chat_handler (struct tgl_state *TLS, struct tgl_secret_chat *C, unsigned flags);
 static void update_on_failed_login (struct tgl_state *TLS);
 
-const char *config_dir = "telegram-purple";
-
 struct tgl_update_callback tgp_callback = {
   .new_msg = update_message_handler,
   .marked_read = update_marked_read,
@@ -532,23 +530,33 @@ static gulong chat_conversation_typing_signal = 0;
 static void tgprpl_login (PurpleAccount * acct) {
   info ("tgprpl_login(): Purple is telling the prpl to connect the account");
   
-  PurpleConnection *gc = purple_account_get_connection (acct);
-  
-  gc->flags |= PURPLE_CONNECTION_NO_BGCOLOR;
-  
   struct tgl_state *TLS = tgl_state_alloc ();
+  PurpleConnection *gc = purple_account_get_connection (acct);
+  gc->flags |= PURPLE_CONNECTION_NO_BGCOLOR;
   connection_data *conn = connection_data_init (TLS, gc, acct);
   purple_connection_set_protocol_data (gc, conn);
+  tgl_set_ev_base (TLS, conn);
 
   TLS->base_path = get_config_dir (purple_account_get_username (acct));
-  tgl_set_download_directory (TLS, get_download_dir(TLS));
   debug ("base configuration path: '%s'", TLS->base_path);
-  
+  g_mkdir_with_parents (TLS->base_path, 0700);
+
+  const gchar *base = !g_strcmp0 (purple_core_get_ui(), "BitlBee")
+                    ? g_get_tmp_dir() : TLS->base_path;
+  conn->download_dir = g_build_filename (base, "downloads", NULL);
+  debug ("telegram download directory: '%s'", conn->download_dir);
+  tgl_set_download_directory (TLS, conn->download_dir);
+  g_mkdir_with_parents (conn->download_dir, 0700);
+#ifdef DOWNLOAD_URI_BASE
+  conn->download_uri = g_strdup (DOWNLOAD_URI_BASE);
+#else
+  conn->download_uri = g_strconcat ("file://", conn->download_dir, NULL);
+#endif
+  debug ("telegram download uri base: '%s'", conn->download_uri);
+
   tgl_set_rsa_key_direct (TLS, tglmp_get_default_e(),
                                tglmp_get_default_key_len(),
                                tglmp_get_default_key());
-
-  tgl_set_ev_base (TLS, conn);
   tgl_set_net_methods (TLS, &tgp_conn_methods);
   tgl_set_timer_methods (TLS, &tgp_timers);
   tgl_set_callback (TLS, &tgp_callback);

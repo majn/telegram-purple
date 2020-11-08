@@ -50,6 +50,8 @@ typedef struct {
   GHashTable *channel_members;
   GList *pending_joins;
   int dialogues_ready;
+  gchar *download_dir;
+  gchar *download_uri;
 } connection_data;
 
 struct tgp_xfer_send_data {

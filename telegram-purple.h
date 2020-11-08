@@ -105,7 +105,6 @@
 
 extern const char *pk_path;
 extern const char *user_pk_filename;
-extern const char *config_dir;
 extern PurplePlugin *_telegram_protocol;
 void import_chat_link (struct tgl_state *TLS, const char *link);
 void export_chat_link_by_name (struct tgl_state *TLS, const char *name);

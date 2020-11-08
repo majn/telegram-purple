@@ -127,7 +127,9 @@ void *connection_data_free (connection_data *conn) {
   g_hash_table_destroy (conn->id_to_purple_name);
   g_hash_table_destroy (conn->purple_name_to_id);
   g_hash_table_destroy (conn->channel_members);
-  
+  g_free (conn->download_dir);
+  g_free (conn->download_uri);
+
   tgprpl_xfer_free_all (conn);
   g_free (conn->TLS->base_path);
   tgl_free_all (conn->TLS);

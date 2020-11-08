@@ -381,34 +381,26 @@ void read_secret_chat_file (struct tgl_state *TLS) {
   info ("read secret chat file: %d chats read", cnt);
 }
 
-gchar *get_config_dir (char const *username) {
-  gchar *dir = g_strconcat (purple_user_dir(), G_DIR_SEPARATOR_S, config_dir,
-                                G_DIR_SEPARATOR_S, username, NULL);
-  
+gchar *get_config_dir (const char *username) {
+  gchar *dir = g_build_filename (purple_user_dir(), "telegram-purple", username, NULL);
   if (g_str_has_prefix (dir, g_get_tmp_dir())) {
-    // telepathy-haze will set purple user dir to a tmp path,
-    // but we need the files to be persistent
+    // telepathy-haze will set purple user dir to a tmp path, but we need persistence
     g_free (dir);
-    dir = g_strconcat (g_get_home_dir(), G_DIR_SEPARATOR_S, ".telegram-purple",
-                                  G_DIR_SEPARATOR_S, username, NULL);
+    dir = g_build_filename (g_get_home_dir(), ".telegram-purple", username, NULL);
   }
-  g_mkdir_with_parents (dir, 0700);
   return dir;
 }
 
-gchar *get_download_dir (struct tgl_state *TLS) {
-  assert (TLS->base_path);
-  static gchar *dir;
-  if (dir) {
-    g_free (dir);
-  }
-  if (g_strcmp0(purple_core_get_ui(), "BitlBee") == 0) {
-  dir = g_strconcat ("/tmp",  G_DIR_SEPARATOR_S, "downloads", NULL);
-  } else {
-  dir = g_strconcat (TLS->base_path, G_DIR_SEPARATOR_S, "downloads", NULL);
-  }
-  g_mkdir_with_parents (dir, 0700);
-  return dir;
+gchar *get_download_path (struct tgl_state *TLS, const char *filename) {
+  connection_data *conn = tls_get_data (TLS);
+  g_return_val_if_fail (conn != NULL && conn->download_dir != NULL, NULL);
+  return g_build_filename (conn->download_dir, filename, NULL);
+}
+
+gchar *get_download_uri (struct tgl_state *TLS, const char *filename) {
+  connection_data *conn = tls_get_data (TLS);
+  g_return_val_if_fail (conn != NULL && conn->download_dir != NULL, NULL);
+  return g_build_filename (conn->download_uri, filename, NULL);
 }
 
 void write_secret_chat_gw (struct tgl_state *TLS, void *extra, int success, struct tgl_secret_chat *_) {
