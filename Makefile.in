@@ -168,16 +168,16 @@ ${PRPL_LIBNAME}: ${ALL_OBJS} tgl/libs/libtgl.a | create_dirs
 # The space in the matching pattern excludes the "Language-Team:" field.
 
 po/de.po: po/de_DE.po
-	sed -re 's/ de_DE/ de/' $< > $@
+	sed -Ee 's/ de_DE/ de/' $< > $@
 
 po/it.po: po/it_IT.po
-	sed -re 's/ it_IT/ it/' $< > $@
+	sed -Ee 's/ it_IT/ it/' $< > $@
 
 po/pl.po: po/pl_PL.po
-	sed -re 's/ pl_PL/ pl/' $< > $@
+	sed -Ee 's/ pl_PL/ pl/' $< > $@
 
 po/ru.po: po/ru_RU.po
-	sed -re 's/ru_RU/ru/' $< > $@
+	sed -Ee 's/ru_RU/ru/' $< > $@
 
 
 ### == noicon_{,un}install targets. Use only if you know that you don't need icons. Note that pidgin uses those files. == ###
