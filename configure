@@ -694,6 +694,7 @@ with_openssl
 with_zlib
 enable_libwebp
 enable_libpng
+with_download_base
 enable_icons
 enable_translation
 '
@@ -1347,6 +1348,8 @@ Optional Packages:
   --with-zlib=DIR         root directory path of zlib installation [defaults to
                           /usr/local or /usr if not found in /usr/local]
   --without-zlib          to disable zlib usage completely
+  --with-download-base=URI
+                          Set default base URI for downloads
 
 Some influential environment variables:
   CC          C compiler command
@@ -4570,6 +4573,29 @@ fi
 
 
 fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for download URI base path" >&5
+$as_echo_n "checking for download URI base path... " >&6; }
+
+# Check whether --with-download_base was given.
+if test "${with_download_base+set}" = set; then :
+  withval=$with_download_base; { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${withval}" >&5
+$as_echo "${withval}" >&6; }
+  if test x$withval != xno; then :
+
+
+cat >>confdefs.h <<_ACEOF
+#define DOWNLOAD_URI_BASE "$withval"
+_ACEOF
+
+
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+
 
 # Check whether --enable-icons was given.
 if test "${enable_icons+set}" = set; then :

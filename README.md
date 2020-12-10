@@ -407,7 +407,8 @@ Empathy / libtelepathy
 ----------------------
 
 Empathy doesn't natively support libpurple plugins since its based on libtelepathy, but there is a compatibillity layer called telepathy-haze that can be used to execute libpurple
-plugins. This means that you can basically run this plugin thanks to telepathy-haze but you will usually get less features and worse usability compared to real libpurple clients. If you use Empathy (or anything else based on libtelepathy) I recommend [telepathy-morse](https://projects.kde.org/projects/playground/network/telepathy/telepathy-morse/repository) which is a connection manager written specifically for your messenger.
+plugins. This means that you can basically run this plugin thanks to telepathy-haze but you will usually get less features and worse usability compared to real libpurple clients.
+If you use Empathy (or anything else based on libtelepathy) I recommend [telepathy-morse](https://github.com/TelepathyIM/telepathy-morse) which is a connection manager written specifically for your messenger.
 
 Authors
 -------

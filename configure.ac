@@ -86,6 +86,16 @@ AS_IF([test "x$enable_libpng" != "xno"], [
     AC_CHECK_LIB([png], [png_write_png], [], [AC_MSG_ERROR([no libpng found, try --disable-libpng])])
   ])
 
+AC_MSG_CHECKING([for download URI base path])
+AC_ARG_WITH([download_base],
+  AS_HELP_STRING([--with-download-base=URI], [Set default base URI for downloads]),
+  AC_MSG_RESULT([${withval}])
+  AS_IF([test x$withval != xno], [
+    AC_DEFINE_UNQUOTED([DOWNLOAD_URI_BASE], ["$withval"], [Download base URI])]
+  ),
+  AC_MSG_RESULT([no])
+)
+
 AC_ARG_ENABLE([icons],
   AS_HELP_STRING([--disable-icons], [Unsupported option. Use 'make noicon_install' instead.]))
 AS_IF([test "x$enable_icons" == "xno"], [
