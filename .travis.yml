@@ -9,7 +9,7 @@ git:
 before_install:
   - git submodule update --init --recursive
   - sudo apt-get update -qq
-  - sudo apt-get install -qq libssl-dev libgcrypt20-dev libpurple-dev libwebp-dev
+  - sudo apt-get install -qq gettext libgcrypt20-dev libpurple-dev libssl-dev libwebp-dev
 script:
   - ./configure $CONFIGURE_FLAGS
   - make -j2
@@ -73,3 +73,21 @@ matrix:
 #      env: CONFIGURE_FLAGS="--disable-png                  --disable-libwebp --disable-translation"
 #    - compiler: XXX
 #      env: CONFIGURE_FLAGS="--disable-png --disable-gcrypt --disable-libwebp --disable-translation"
+# Include power jobs for gcc
+  include:
+    - compiler: gcc
+      arch: ppc64le
+      dist: xenial
+      env: CONFIGURE_FLAGS=""
+    - compiler: gcc
+      arch: ppc64le
+      dist: xenial
+      env: CONFIGURE_FLAGS="                 --disable-libwebp"
+    - compiler: gcc
+      arch: ppc64le
+      dist: xenial
+      env: CONFIGURE_FLAGS="--disable-gcrypt --disable-libwebp --disable-translation"
+    - compiler: gcc
+      arch: ppc64le
+      dist: xenial
+      env: CONFIGURE_FLAGS="--disable-png"
