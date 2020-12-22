@@ -27,17 +27,16 @@ chmod 755 %{buildroot}/%{_libdir}/purple-2/telegram-purple.so
 %find_lang telegram-purple
 
 %check
-appstream-util validate-relax --nonet %{buildroot}/%{_datadir}/appdata/telegram-purple.metainfo.xml
+appstream-util validate-relax --nonet %{buildroot}/%{_datadir}/metainfo/telegram-purple.metainfo.xml
 
 %files -f telegram-purple.lang
 %doc README* CHANGELOG*
 %{_libdir}/purple-2/telegram-purple.so
 %config %{_sysconfdir}/telegram-purple/*
-%{_datadir}/appdata/telegram-purple.metainfo.xml
+%{_datadir}/metainfo/telegram-purple.metainfo.xml
 %{_datadir}/pixmaps/pidgin/protocols/16/telegram.png
 %{_datadir}/pixmaps/pidgin/protocols/22/telegram.png
 %{_datadir}/pixmaps/pidgin/protocols/48/telegram.png
-%{_datadir}/appdata/telegram-purple.metainfo.xml
 
 %changelog
 * Wed Sep 26 2020 BenWiederhake 1.4.4-1
