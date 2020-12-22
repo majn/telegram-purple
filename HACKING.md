@@ -56,7 +56,7 @@ Update `CHANGELOG.md`.
 
 #### Run some tests
 
-First locally, then on Travis.
+First locally (`make check`), then on Travis.
 Also, install it locally.  Don't forget to `./configure` first.
 
 #### Prepare release files
