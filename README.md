@@ -45,7 +45,7 @@ and may still have some issues.
 Specifically, the installer is compressed, so if you have an overzealous anti-virus installed,
 the installer may get flagged.
 
-The build is 32-bit, so connecting with Telegram for the first time may take a few moments.
+The build is 32-bit, so connecting with Telegram for the first time may take a few minutes.
 
 Alternatively, see "Building the Windows Installer" below.
 
@@ -329,6 +329,38 @@ After that, run the build script:
 This generates a file like `telegram-purple-1.3.1+gcb96ff77aa.exe`,
 which contains everything the Windows users need.
 
+If you see an error like this:
+```
+tools.c:52:5: error: redefinition of ‘vasprintf’
+   52 | int vasprintf(char ** __restrict__ ret,
+      |     ^~~~~~~~~
+In file included from tools.c:28:
+/usr/share/mingw-w64/include/stdio.h:262:5: note: previous definition of ‘vasprintf’ was here
+  262 | int vasprintf(char **__ret, const char *__format, __builtin_va_list __local_argv)
+      |     ^~~~~~~~~
+```
+
+then you will have to comment out the corresponding definition in `tgl/tools.c`. It should look like this:
+```
+//int vasprintf(char ** __restrict__ ret,
+//                      const char * __restrict__ format,
+//                      va_list ap) {
+//  ...
+//  return len;
+//}
+
+```
+
+With this it should build fine.
+
+Say thanks to the maintainers of mingw for this breaking change.
+
+On the one hand, defining `vasprintf` is the right thing to do,
+and it should have been like this from the start. So yeah, actually thanks for defining it!
+
+On the other hand, now we should try to distinguish between the mingw-`stdio.h` versions,
+and I have no idea how to do that properly.
+(And in case you're wondering: Yes, we do need that `#define _GNU_SOURCE`, I think.)
 
 Discussion / Help
 -----------------
