@@ -5,7 +5,13 @@ If people send PRs or make suggestions, I'm very willing to merge them into tele
 However, the list of issues is getting longer and longer, and tdlib-purple gets closer and
 closer to becoming a drop-in replacement.
 
-Note that some features like secret chats are missing, so it's not quite there yet.
+Note that only the following features are missing:
+- Retrieving history on first login
+- Ignoring certain groups (But why use a messenger if you don't want to ever see those messages?)
+- Not sending read receipts https://github.com/ars3niy/tdlib-purple/issues/22
+
+So it's a good replacement in many cases already. For more details, see https://github.com/ars3niy/tdlib-purple/milestone/1
+
 I don't intend to abandon telegram-purple before tdlib-purple is a full replacement,
 so this project is still *maintained* (read: on life support).
 
