@@ -315,7 +315,7 @@
 			};
 			buildConfigurationList = C410948119BB2D7D0083BF3F /* Build configuration list for PBXProject "telegram-adium" */;
 			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = English;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
