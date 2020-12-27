@@ -3,8 +3,8 @@
 
 set -ex
 
-LIBGPG_ERROR_VERSION="1.36"
-LIBGCRYPT_VERSION="1.8.5"
+LIBGPG_ERROR_VERSION="1.41"
+LIBGCRYPT_VERSION="1.8.7"
 
 # Start relative to the location of build_dependencies.sh
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
