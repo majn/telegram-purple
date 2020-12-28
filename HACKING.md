@@ -45,6 +45,7 @@ Attempt to use semver.
 Adjust `configure.ac`, in macro `AC_INIT`.  Remember to run `autoreconf`.
 
 Adjust `telegram-adium/telegram-adium/telegram-adium-Info.plist`.
+TWO PLACES!
 
 Adjust `rpm/purple-telegram.spec`, in version at the top and "changelog" below.
 

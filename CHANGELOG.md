@@ -1,6 +1,24 @@
 Changelog
 ---------
 
+##### 1.4.6
+
+IMPORTANT: This repository barely sees any updates anymore.
+You should switch to [tdlib-purple](https://github.com/ars3niy/tdlib-purple/),
+which will hopefully become telegram-purple's successor.
+Note that only the following features are missing:
+- Retrieve history on first login (not everyone needs this)
+- Add options to ignore certain groups (why use a messenger if you don't want to ever see those messeges?!)
+- Turn off sending read receipts: https://github.com/ars3niy/tdlib-purple/issues/22
+So it's a good replacement in many cases already.
+For more details, see https://github.com/ars3niy/tdlib-purple/milestone/1
+
+The actual changes in this version are only minor stuff:
+- Fixed minor details required to build telegram-adium (developmentRegion and no arm64)
+- Updated dependencies for newer MinGW versions
+- Updated dependencies for telegram-adium
+- Updated documentation and links
+
 ##### 1.4.5
 
 IMPORTANT: This repository barely sees any updates anymore.
