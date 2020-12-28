@@ -19,6 +19,7 @@
 ; Script based on the Skype4Pidgin and Off-the-Record Messaging NSI files
 
 SetCompressor /SOLID /FINAL lzma
+Unicode True
 
 ; todo: SetBrandingImage
 ; HM NIS Edit Wizard helper defines
