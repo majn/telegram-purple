@@ -1,6 +1,13 @@
 Changelog
 ---------
 
+##### 1.4.7
+
+You should still switch to [tdlib-purple](https://github.com/ars3niy/tdlib-purple/).
+
+The only change is literally a single character: A typo in the German translation that bugged me to no end.
+Happy easter, btw!
+
 ##### 1.4.6
 
 IMPORTANT: This repository barely sees any updates anymore.
