@@ -1,20 +1,18 @@
-Also see [tdlib-purple](https://github.com/ars3niy/tdlib-purple/)
+This project is abandoned! See instead [tdlib-purple](https://github.com/ars3niy/tdlib-purple/)
 =================================================================
 
-If people send PRs or make suggestions, I'm very willing to merge them into telegram-purple.
-However, the list of issues is getting longer and longer,
-so if you spend any effort on making Telegram usable with libpurple,
-please improve tdlib-purple instead.
+telegram-purple is now totally broken, as is every libtgl-based application.
+Please use tdlib-purple instead.
 
 Note that only the following features are missing:
 - Retrieving history on first login (didn't really work in telegram-purple anyway)
 - Ignoring certain groups (But why use a messenger if you don't want to ever see those messages?)
 - Not sending read receipts https://github.com/ars3niy/tdlib-purple/issues/22
 
-So tdlib-purple is a good replacement in many cases already.
+So tdlib-purple is a good replacement in most cases; feel free to ask politely if a feature is missing.
 For more details, see https://github.com/ars3niy/tdlib-purple/milestone/1
 
-This project is effectively *abandoned*.
+This project is *abandoned*.
 
 Telegram-Purple Unofficial (Beta)
 =================================
