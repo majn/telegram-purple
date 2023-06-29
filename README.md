@@ -1,4 +1,4 @@
-This project is abandoned! See instead [tdlib-purple](https://github.com/ars3niy/tdlib-purple/)
+This project is abandoned! See instead [tdlib-purple](https://github.com/BenWiederhake/tdlib-purple/)
 =================================================================
 
 telegram-purple is now totally broken, as is every libtgl-based application.
@@ -10,9 +10,12 @@ Note that only the following features are missing:
 - Not sending read receipts https://github.com/ars3niy/tdlib-purple/issues/22
 
 So tdlib-purple is a good replacement in most cases; feel free to ask politely if a feature is missing.
+For more details, see https://github.com/BenWiederhake/tdlib-purple/#new-libpurple-plugin-for-telegram
+
+Note that BenWiederhake's repo is actually just a fork of this original repo:
 For more details, see https://github.com/ars3niy/tdlib-purple/milestone/1
 
-This project is *abandoned*.
+telegram-purple is *abandoned* since 2021. Maybe it works, maybe it doesn't.
 
 Telegram-Purple Unofficial (Beta)
 =================================

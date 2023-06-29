@@ -49,7 +49,7 @@ TWO PLACES!
 
 Adjust `rpm/purple-telegram.spec`, in version at the top and "changelog" below.
 
-Godspeed to the Debian maintainers. If you're reading this, check out [tdlip-purple](https://github.com/ars3niy/tdlib-purple/)!
+Godspeed to the Debian maintainers. If you're reading this, check out [tdlib-purple](https://github.com/ars3niy/tdlib-purple/) and it's [fork](https://github.com/BenWiederhake/tdlib-purple/)!
 
 AppStream: Nothing to do.
 
